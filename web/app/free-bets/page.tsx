@@ -13,6 +13,11 @@ import { useVisibleBooks } from "@/lib/use-visible-books";
 import { BookFilter } from "@/components/book-filter";
 import { BookIncludeDropdown } from "@/components/book-include-dropdown";
 import { BookLogo } from "@/components/book-logo";
+import {
+  LiveStatusFilter,
+  matchesLiveFilter,
+  type LiveStatus,
+} from "@/components/live-status-filter";
 import { RefreshButton } from "@/components/refresh-button";
 import { BOOK_ORDER } from "@/lib/books";
 import { SPORTS, type SportKey } from "@/lib/sports";
@@ -93,8 +98,12 @@ export default function FreeBetsPage() {
   }, [data]);
 
   const [freeLegFilter, setFreeLegFilter] = useState<Set<string>>(new Set());
+  const [liveFilter, setLiveFilter] = useState<LiveStatus>("all");
   const filteredOpps = useMemo(() => {
     let ops = data?.opportunities ?? [];
+    if (liveFilter !== "all") {
+      ops = ops.filter(op => matchesLiveFilter(op.commence_time, liveFilter));
+    }
     if (minConversion > 0) {
       ops = ops.filter(op => op.conversion_pct >= minConversion);
     }
@@ -102,7 +111,7 @@ export default function FreeBetsPage() {
       ops = ops.filter(op => freeLegFilter.has(op.free_leg.book));
     }
     return ops;
-  }, [data, freeLegFilter, minConversion]);
+  }, [data, freeLegFilter, minConversion, liveFilter]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -143,6 +152,7 @@ export default function FreeBetsPage() {
               </button>
             ))}
           </div>
+          <LiveStatusFilter value={liveFilter} onChange={setLiveFilter} />
           <BookIncludeDropdown
             label="Free-bet book"
             availableBooks={freeBookOptions}

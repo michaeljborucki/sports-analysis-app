@@ -7,6 +7,11 @@ import { useVisibleBooks } from "@/lib/use-visible-books";
 import { ArbitrageTable } from "@/components/arbitrage-table";
 import { BookFilter } from "@/components/book-filter";
 import { BookIncludeDropdown } from "@/components/book-include-dropdown";
+import {
+  LiveStatusFilter,
+  matchesLiveFilter,
+  type LiveStatus,
+} from "@/components/live-status-filter";
 import { RefreshButton } from "@/components/refresh-button";
 import { BOOK_ORDER } from "@/lib/books";
 
@@ -35,11 +40,17 @@ export default function ArbitragePage() {
   // Page-level filter: restrict to opportunities where at least one side
   // uses a selected book. Empty set = no filter.
   const [pageFilter, setPageFilter] = useState<Set<string>>(new Set());
+  const [liveFilter, setLiveFilter] = useState<LiveStatus>("all");
   const filteredOpps = useMemo(() => {
-    const ops = data?.opportunities ?? [];
-    if (pageFilter.size === 0) return ops;
-    return ops.filter(op => op.sides.some(s => pageFilter.has(s.book)));
-  }, [data, pageFilter]);
+    let ops = data?.opportunities ?? [];
+    if (liveFilter !== "all") {
+      ops = ops.filter(op => matchesLiveFilter(op.commence_time, liveFilter));
+    }
+    if (pageFilter.size > 0) {
+      ops = ops.filter(op => op.sides.some(s => pageFilter.has(s.book)));
+    }
+    return ops;
+  }, [data, pageFilter, liveFilter]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -59,6 +70,7 @@ export default function ArbitragePage() {
           )}
         </div>
         <div className="flex items-center gap-3">
+          <LiveStatusFilter value={liveFilter} onChange={setLiveFilter} />
           <BookIncludeDropdown
             label="Must include"
             availableBooks={allBooksInPlay}
