@@ -31,6 +31,8 @@ export function medianAmerican(prices: number[]): number | null {
   return probToAmerican(median(prices.map(americanToImpliedProb)));
 }
 
+import { effectiveForBook } from "./effective-odds";
+
 /** Higher = better payout. For comparison only, not a real EV figure. */
 function payoutMultiplier(odds: number): number {
   return odds > 0 ? 1 + odds / 100 : 1 + 100 / -odds;
@@ -42,10 +44,17 @@ export interface PricedAtBook {
   point?: number | null;
 }
 
-/** Highest payout across the supplied price list. */
+/**
+ * Highest effective payout across the supplied price list. Each book's listed
+ * price is adjusted by its commission (if any) before comparison, so a +105 at
+ * Prophet Exchange (2% commission → effective +103) loses to a listed +104 at
+ * a commission-free book.
+ */
 export function pickBest<T extends PricedAtBook>(prices: T[]): T | null {
   if (!prices.length) return null;
-  return prices.reduce((a, b) =>
-    payoutMultiplier(a.price_american) >= payoutMultiplier(b.price_american) ? a : b
-  );
+  return prices.reduce((a, b) => {
+    const ma = payoutMultiplier(effectiveForBook(a.price_american, a.bookmaker_key));
+    const mb = payoutMultiplier(effectiveForBook(b.price_american, b.bookmaker_key));
+    return ma >= mb ? a : b;
+  });
 }

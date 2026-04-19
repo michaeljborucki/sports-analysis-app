@@ -14,7 +14,13 @@ export interface BookInfo {
   fg: string;          // pill text color (fallback)
   region: Region;
   priority: number;    // lower = shown first; defaults shown first
-  domain?: string;     // company website domain — used to pull real logos via Clearbit
+  domain?: string;     // company website domain — used to pull real logos
+  /**
+   * Commission on winnings for exchange-style books, as a decimal (0.02 = 2%).
+   * Applied when computing "effective" odds for Best comparison. Omit for
+   * standard sportsbooks (no commission on winnings).
+   */
+  commission?: number;
 }
 
 const BOOK_LIST: BookInfo[] = [
@@ -44,11 +50,11 @@ const BOOK_LIST: BookInfo[] = [
   { key: "betanysports", name: "BetAnySports", label: "BAS",  bg: "#0EA5E9", fg: "#FFFFFF", region: "US", priority: 35, domain: "betanysports.eu" },
 
   // US exchanges (us_ex region)
-  { key: "sporttrade",     name: "Sporttrade",       label: "STR", bg: "#111827", fg: "#22D3EE", region: "US", priority: 40, domain: "sporttrade.com" },
-  { key: "prophetx",       name: "Prophet Exchange", label: "PRX", bg: "#0F172A", fg: "#F59E0B", region: "US", priority: 41, domain: "prophetx.co" },
-  { key: "prophetexchange",name: "Prophet Exchange", label: "PRX", bg: "#0F172A", fg: "#F59E0B", region: "US", priority: 41, domain: "prophetx.co" },
-  { key: "rebet_exchange", name: "Rebet Exchange",   label: "REX", bg: "#3B82F6", fg: "#FDE047", region: "US", priority: 42, domain: "rebet.app" },
-  { key: "novig",          name: "Novig",            label: "NVG", bg: "#0F172A", fg: "#A78BFA", region: "US", priority: 43, domain: "novig.us" },
+  { key: "sporttrade",     name: "Sporttrade",       label: "STR", bg: "#111827", fg: "#22D3EE", region: "US", priority: 40, domain: "sporttrade.com", commission: 0 },
+  { key: "prophetx",       name: "Prophet Exchange", label: "PRX", bg: "#0F172A", fg: "#F59E0B", region: "US", priority: 41, domain: "prophetx.co",    commission: 0.02 },
+  { key: "prophetexchange",name: "Prophet Exchange", label: "PRX", bg: "#0F172A", fg: "#F59E0B", region: "US", priority: 41, domain: "prophetx.co",    commission: 0.02 },
+  { key: "rebet_exchange", name: "Rebet Exchange",   label: "REX", bg: "#3B82F6", fg: "#FDE047", region: "US", priority: 42, domain: "rebet.app",      commission: 0.02 },
+  { key: "novig",          name: "Novig",            label: "NVG", bg: "#0F172A", fg: "#A78BFA", region: "US", priority: 43, domain: "novig.us",       commission: 0 },
 
   // Pinnacle (sharp)
   { key: "pinnacle",     name: "Pinnacle",     label: "PIN",  bg: "#0A1F44", fg: "#FBBF24", region: "EU", priority: 20, domain: "pinnacle.com" },
@@ -56,7 +62,7 @@ const BOOK_LIST: BookInfo[] = [
   // Top UK
   { key: "williamhill",  name: "William Hill", label: "WH",   bg: "#002664", fg: "#FFDE00", region: "UK", priority: 50, domain: "williamhill.com" },
   { key: "bet365",       name: "bet365",       label: "B365", bg: "#027B5B", fg: "#FFE500", region: "UK", priority: 51, domain: "bet365.com" },
-  { key: "betfair_ex_uk", name: "Betfair Ex UK", label: "BFX",bg: "#FFDE00", fg: "#000000", region: "UK", priority: 52, domain: "betfair.com" },
+  { key: "betfair_ex_uk", name: "Betfair Ex UK", label: "BFX",bg: "#FFDE00", fg: "#000000", region: "UK", priority: 52, domain: "betfair.com", commission: 0.05 },
   { key: "paddypower",   name: "Paddy Power",  label: "PPW",  bg: "#00843D", fg: "#FFFFFF", region: "UK", priority: 53, domain: "paddypower.com" },
   { key: "ladbrokes_uk", name: "Ladbrokes",    label: "LAD",  bg: "#DA291C", fg: "#FFFFFF", region: "UK", priority: 54, domain: "ladbrokes.com" },
   { key: "coral",        name: "Coral",        label: "COR",  bg: "#BE1622", fg: "#FFFFFF", region: "UK", priority: 55, domain: "coral.co.uk" },
@@ -66,13 +72,13 @@ const BOOK_LIST: BookInfo[] = [
   { key: "virginbet",    name: "Virgin Bet",   label: "VIR",  bg: "#D71920", fg: "#FFFFFF", region: "UK", priority: 59, domain: "virginbet.com" },
   { key: "livescorebet", name: "LiveScore Bet", label: "LSB", bg: "#005FA1", fg: "#F59E0B", region: "UK", priority: 60, domain: "livescorebet.com" },
   { key: "grosvenor",    name: "Grosvenor",    label: "GRO",  bg: "#1E40AF", fg: "#D4AF37", region: "UK", priority: 61, domain: "grosvenorsport.com" },
-  { key: "smarkets",     name: "Smarkets",     label: "SMK",  bg: "#0F172A", fg: "#10B981", region: "UK", priority: 62, domain: "smarkets.com" },
-  { key: "matchbook",    name: "Matchbook",    label: "MBK",  bg: "#0EA5E9", fg: "#FFFFFF", region: "UK", priority: 63, domain: "matchbook.com" },
+  { key: "smarkets",     name: "Smarkets",     label: "SMK",  bg: "#0F172A", fg: "#10B981", region: "UK", priority: 62, domain: "smarkets.com",  commission: 0.02 },
+  { key: "matchbook",    name: "Matchbook",    label: "MBK",  bg: "#0EA5E9", fg: "#FFFFFF", region: "UK", priority: 63, domain: "matchbook.com", commission: 0.02 },
   { key: "sport888",     name: "888sport",     label: "888",  bg: "#F59E0B", fg: "#000000", region: "UK", priority: 64, domain: "888sport.com" },
   { key: "marathonbet",  name: "Marathonbet",  label: "MAR",  bg: "#EF4444", fg: "#FFFFFF", region: "UK", priority: 65, domain: "marathonbet.com" },
 
   // EU
-  { key: "betfair_ex_eu", name: "Betfair Ex EU", label: "BFX", bg: "#FFDE00", fg: "#000000", region: "EU", priority: 70, domain: "betfair.com" },
+  { key: "betfair_ex_eu", name: "Betfair Ex EU", label: "BFX", bg: "#FFDE00", fg: "#000000", region: "EU", priority: 70, domain: "betfair.com", commission: 0.05 },
   { key: "unibet_fr",    name: "Unibet FR",    label: "UNF",  bg: "#147A3D", fg: "#FDE047", region: "EU", priority: 71, domain: "unibet.fr" },
   { key: "unibet_nl",    name: "Unibet NL",    label: "UNN",  bg: "#147A3D", fg: "#FDE047", region: "EU", priority: 72, domain: "unibet.nl" },
   { key: "unibet_se",    name: "Unibet SE",    label: "UNS",  bg: "#147A3D", fg: "#FDE047", region: "EU", priority: 73, domain: "unibet.se" },

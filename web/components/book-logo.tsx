@@ -30,10 +30,10 @@ export function BookLogo({
       ? { h: 16, w: 28, textSize: "text-[9px]" }
       : { h: 20, w: 36, textSize: "text-[10px]" };
 
-  const filter =
-    mode === "header"
-      ? "grayscale(1) brightness(1.1) contrast(0.9) opacity(0.85)"
-      : undefined;
+  // Full color in every mode — the user wants brand-recognizable headers.
+  // The old monochrome-on-header treatment (from competitor research) is
+  // available if we ever re-introduce it.
+  const filter: string | undefined = undefined;
 
   if (hasLogo) {
     const src = `/logos/${info.domain}.png`;
