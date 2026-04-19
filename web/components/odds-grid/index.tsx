@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useState, Fragment } from "react";
 import clsx from "clsx";
 
 import type { Game, Market, MarketOutcome } from "@/lib/api";
@@ -37,21 +37,67 @@ function priceAtBook(outcome: MarketOutcome | undefined, bookKey: string) {
   return outcome?.prices.find(p => p.bookmaker_key === bookKey);
 }
 
-function primaryOutcome(
+/**
+ * Two outcomes per game — [top row, bottom row]. Order:
+ *   h2h:     away team, home team   (reading order of "AWAY @ HOME")
+ *   spreads: away team, home team   (same)
+ *   totals:  Over,       Under
+ *
+ * If a market has multiple (outcome_name, point) tuples (e.g. different books
+ * offering different main lines), we pick the most-priced one per side — i.e.
+ * the consensus main line.
+ */
+function orderedOutcomes(
   market: Market | undefined,
-  game: Game
-): MarketOutcome | undefined {
-  if (!market) return undefined;
-  if (market.market_key === "h2h" || market.market_key === "spreads") {
-    return (
-      market.outcomes.find(o => o.outcome_name === game.home_team) ??
-      market.outcomes[0]
+  game: Game,
+  key: MarketKey
+): [MarketOutcome | undefined, MarketOutcome | undefined] {
+  if (!market) return [undefined, undefined];
+  const best = (candidates: MarketOutcome[]): MarketOutcome | undefined => {
+    if (candidates.length === 0) return undefined;
+    return candidates.reduce((a, b) =>
+      a.prices.length >= b.prices.length ? a : b
     );
+  };
+  if (key === "totals") {
+    return [
+      best(market.outcomes.filter(o => o.outcome_name === "Over")),
+      best(market.outcomes.filter(o => o.outcome_name === "Under")),
+    ];
   }
-  if (market.market_key === "totals") {
-    return market.outcomes.find(o => o.outcome_name === "Over") ?? market.outcomes[0];
+  return [
+    best(market.outcomes.filter(o => o.outcome_name === game.away_team)),
+    best(market.outcomes.filter(o => o.outcome_name === game.home_team)),
+  ];
+}
+
+function sideLabel(
+  outcome: MarketOutcome | undefined,
+  game: Game,
+  key: MarketKey
+): string {
+  if (!outcome) return "—";
+  if (key === "h2h") {
+    return outcome.outcome_name === game.home_team
+      ? abbrev(game.home_team)
+      : abbrev(game.away_team);
   }
-  return market.outcomes[0];
+  if (key === "spreads") {
+    const team =
+      outcome.outcome_name === game.home_team
+        ? abbrev(game.home_team)
+        : abbrev(game.away_team);
+    const p = outcome.best_price?.point ?? outcome.prices[0]?.point ?? null;
+    if (p == null) return team;
+    const sign = p > 0 ? "+" : "";
+    return `${team} ${sign}${p}`;
+  }
+  if (key === "totals") {
+    const letter = outcome.outcome_name === "Over" ? "O" : "U";
+    const p = outcome.best_price?.point ?? outcome.prices[0]?.point ?? null;
+    return p == null ? letter : `${letter} ${p}`;
+  }
+  return outcome.outcome_name;
 }
 
 export function OddsGrid({ games }: { games: Game[] }) {
@@ -64,7 +110,7 @@ export function OddsGrid({ games }: { games: Game[] }) {
         for (const o of m.outcomes) for (const p of o.prices) present.add(p.bookmaker_key);
     const ordered = BOOK_ORDER.filter(b => present.has(b));
     const extras = [...present].filter(b => !BOOK_ORDER.includes(b)).sort();
-    return [...ordered, ...extras].slice(0, 10); // cap visible columns
+    return [...ordered, ...extras].slice(0, 10);
   }, [games]);
 
   return (
@@ -80,6 +126,9 @@ export function OddsGrid({ games }: { games: Game[] }) {
             <tr>
               <th className="text-left px-3 py-2 font-medium uppercase tracking-wide text-[11px]">
                 Game
+              </th>
+              <th className="text-left px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
+                Side
               </th>
               <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
                 Best
@@ -98,7 +147,7 @@ export function OddsGrid({ games }: { games: Game[] }) {
             {games.length === 0 && (
               <tr>
                 <td
-                  colSpan={2 + books.length}
+                  colSpan={3 + books.length}
                   className="text-center py-12 text-text-3"
                 >
                   No MLB odds cached yet. Waiting for fetcher…
@@ -107,76 +156,102 @@ export function OddsGrid({ games }: { games: Game[] }) {
             )}
             {games.map(g => {
               const m = findMarket(g, market);
-              const out = primaryOutcome(m, g);
-              const best = out?.best_price;
+              const [topOutcome, bottomOutcome] = orderedOutcomes(m, g, market);
               return (
-                <tr
-                  key={g.event_id}
-                  className="border-t border-border-subtle hover:bg-bg-1/40"
-                >
-                  <td className="px-3 py-2 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <span className="text-text-1 font-medium">
-                        {abbrev(g.away_team)} @ {abbrev(g.home_team)}
-                      </span>
-                      {g.is_live ? (
-                        <span className="inline-flex items-center gap-1.5 text-price-down text-[10px] font-semibold uppercase tracking-wide">
-                          <span className="live-dot" aria-hidden />
-                          live
-                        </span>
-                      ) : (
-                        <span className="text-text-3 text-[11px] tabular">
-                          ·{" "}
-                          {new Date(g.commence_time).toLocaleTimeString([], {
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="text-right px-2 py-2 tabular">
-                    {best ? (
-                      <BestCell
-                        price={best.price_american}
-                        book={best.bookmaker_key}
-                      />
-                    ) : (
-                      <span className="text-text-3">—</span>
-                    )}
-                  </td>
-                  {books.map(b => {
-                    const p = priceAtBook(out, b);
-                    if (!p)
-                      return (
-                        <td
-                          key={b}
-                          className="text-right px-2 py-2 text-text-3 tabular"
-                        >
-                          —
-                        </td>
-                      );
-                    const isBest =
-                      best &&
-                      p.bookmaker_key === best.bookmaker_key &&
-                      p.price_american === best.price_american;
+                <Fragment key={g.event_id}>
+                  {[topOutcome, bottomOutcome].map((out, idx) => {
+                    const isFirst = idx === 0;
+                    const best = out?.best_price;
                     return (
-                      <td
-                        key={b}
+                      <tr
+                        key={`${g.event_id}-${idx}`}
                         className={clsx(
-                          "text-right px-2 py-2 tabular transition-colors",
-                          isBest
-                            ? "text-price-up font-semibold bg-price-up/[0.06] border-l border-price-up/25"
-                            : "text-text-1"
+                          isFirst && "border-t border-border-subtle",
+                          "hover:bg-bg-1/40"
                         )}
                       >
-                        <CellFlash value={p.price_american}>
-                          {formatAmerican(p.price_american)}
-                        </CellFlash>
-                      </td>
+                        {isFirst && (
+                          <td
+                            rowSpan={2}
+                            className="px-3 py-1.5 align-middle whitespace-nowrap border-r border-border-subtle/60"
+                          >
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-text-1 font-medium">
+                                {abbrev(g.away_team)} @ {abbrev(g.home_team)}
+                              </span>
+                              <span className="text-text-3 text-[11px] flex items-center gap-1.5">
+                                {g.is_live ? (
+                                  <>
+                                    <span className="live-dot" aria-hidden />
+                                    <span className="text-price-down font-semibold uppercase tracking-wide">
+                                      live
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="tabular">
+                                    {new Date(g.commence_time).toLocaleTimeString(
+                                      [],
+                                      { hour: "numeric", minute: "2-digit" }
+                                    )}
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          </td>
+                        )}
+                        <td
+                          className={clsx(
+                            "px-2 py-1.5 whitespace-nowrap text-text-1",
+                            idx === 1 && "text-text-2"
+                          )}
+                        >
+                          {sideLabel(out, g, market)}
+                        </td>
+                        <td className="text-right px-2 py-1.5 tabular">
+                          {best ? (
+                            <BestCell
+                              price={best.price_american}
+                              book={best.bookmaker_key}
+                            />
+                          ) : (
+                            <span className="text-text-3">—</span>
+                          )}
+                        </td>
+                        {books.map(b => {
+                          const p = priceAtBook(out, b);
+                          if (!p)
+                            return (
+                              <td
+                                key={b}
+                                className="text-right px-2 py-1.5 text-text-3 tabular"
+                              >
+                                —
+                              </td>
+                            );
+                          const isBest =
+                            !!best &&
+                            p.bookmaker_key === best.bookmaker_key &&
+                            p.price_american === best.price_american;
+                          return (
+                            <td
+                              key={b}
+                              className={clsx(
+                                "text-right px-2 py-1.5 tabular transition-colors",
+                                isBest
+                                  ? "text-price-up font-semibold bg-price-up/[0.06] border-l border-price-up/25"
+                                  : "text-text-1"
+                              )}
+                            >
+                              <CellFlash value={p.price_american}>
+                                {formatAmerican(p.price_american)}
+                              </CellFlash>
+                            </td>
+                          );
+                        })}
+                      </tr>
                     );
                   })}
-                </tr>
+                </Fragment>
               );
             })}
           </tbody>
