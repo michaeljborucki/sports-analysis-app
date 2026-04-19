@@ -19,6 +19,7 @@ class Config:
     host: str
     port: int
     cache_db: Path
+    picks_date_override: str  # YYYY-MM-DD; empty string = use today
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -37,4 +38,5 @@ class Config:
             host=os.environ.get("HOST", "127.0.0.1"),
             port=int(os.environ.get("PORT", "8000")),
             cache_db=Path(__file__).parent / "cache.db",
+            picks_date_override=os.environ.get("PICKS_DATE_OVERRIDE", "").strip(),
         )

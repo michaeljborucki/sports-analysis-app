@@ -8,12 +8,13 @@ from ..models import Pick, PicksResponse
 from ..picks.reader import PicksReader
 
 
-def build_router(reader: PicksReader) -> APIRouter:
+def build_router(reader: PicksReader, date_override: str = "") -> APIRouter:
     router = APIRouter()
 
     @router.get("/api/picks/mlb", response_model=PicksResponse)
     async def get_mlb_picks() -> PicksResponse:
-        result = reader.get_picks_for_date(date.today())
+        target = date.fromisoformat(date_override) if date_override else date.today()
+        result = reader.get_picks_for_date(target)
         picks = [Pick.model_validate(p) for p in result["picks"]]
         return PicksResponse(
             picks=picks,

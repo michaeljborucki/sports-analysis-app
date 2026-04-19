@@ -50,7 +50,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health_router(cache))
     app.include_router(odds_router(cache))
-    app.include_router(picks_router(picks_reader))
+    app.include_router(picks_router(picks_reader, date_override=config.picks_date_override))
 
     return app
 
