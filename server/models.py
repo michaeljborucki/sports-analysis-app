@@ -84,3 +84,13 @@ class FetcherStatus(BaseModel):
     requests_used: int | None = None
     requests_remaining: int | None = None
     last_error: str | None = None
+    fetcher_running: bool = False
+    enabled_tiers: list[str] = Field(default_factory=list)
+
+
+class FetcherControlResponse(BaseModel):
+    status: str
+    tiers: list[str] = Field(default_factory=list)
+    retry_after_seconds: int | None = None
+    event_id: str | None = None
+    polled: list[str] = Field(default_factory=list)

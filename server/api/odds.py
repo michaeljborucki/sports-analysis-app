@@ -6,6 +6,7 @@ from fastapi import APIRouter
 
 from ..models import OddsResponse, Game
 from ..odds.cache import OddsCache
+from ..odds.market_config import is_prop_market
 from ..odds.normalize import rows_to_games
 
 
@@ -21,7 +22,8 @@ def build_router(cache: OddsCache) -> APIRouter:
     @router.get("/api/odds/mlb", response_model=OddsResponse)
     async def get_mlb_odds() -> OddsResponse:
         now = datetime.now(timezone.utc)
-        rows = cache.all_current()
+        # Exclude player prop markets — they live on /api/props/mlb.
+        rows = [r for r in cache.all_current() if not is_prop_market(r["market_key"])]
         game_dicts = rows_to_games(rows, now=now)
 
         # Filter out finished games (zombies from prior days) and far-future games

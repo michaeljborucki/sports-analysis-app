@@ -1,0 +1,65 @@
+# Market fetch configuration.
+#
+# Each [tier] is one APScheduler job. Change values here and restart the
+# backend (or toggle via POST /api/fetcher/{start,stop}).
+#
+# WARNING: 60-second intervals on all per-event tiers (alternates, first_innings,
+# player_props) are only viable in the snapshot-seeding workflow — burning the
+# fetcher 24/7 at this cadence will exhaust a 100k/day quota in hours. For
+# sustained live mode, bump per-event intervals to ≥ 600s.
+
+[main]
+enabled          = true
+interval_seconds = 60
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets          = ["h2h", "spreads", "totals"]
+
+[alternates]
+enabled          = true
+interval_seconds = 60
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets          = ["alternate_spreads", "alternate_totals"]
+
+[first_innings]
+enabled          = true
+interval_seconds = 60
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+# F5 only by default. Uncomment F3/F1 rows to enable those windows.
+markets = [
+  "h2h_1st_5_innings",
+  "spreads_1st_5_innings",
+  "totals_1st_5_innings",
+  # "h2h_1st_3_innings",
+  # "spreads_1st_3_innings",
+  # "totals_1st_3_innings",
+  # "h2h_1st_1_innings",
+  # "totals_1st_1_innings",
+]
+
+[player_props]
+enabled             = true
+interval_seconds    = 60
+regions             = ["us", "us2", "us_ex", "eu", "uk"]
+# Only poll games starting within this many hours from now
+games_window_hours  = 3
+markets = [
+  "pitcher_strikeouts",
+  "pitcher_outs",
+  "pitcher_hits_allowed",
+  "pitcher_earned_runs",
+  "pitcher_walks",
+  "batter_hits",
+  "batter_total_bases",
+  "batter_home_runs",
+  "batter_rbis",
+  "batter_runs_scored",
+  "batter_hits_runs_rbis",
+  "batter_singles",
+  "batter_doubles",
+  "batter_stolen_bases",
+]
+
+[on_demand]
+enabled          = true
+# Per-event debounce — ignore refresh requests for the same event within this window
+debounce_seconds = 60

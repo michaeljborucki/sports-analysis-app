@@ -4,19 +4,36 @@ from datetime import datetime, timezone
 from typing import Iterable
 
 
+def _encode_outcome_name(market_key: str, name: str, description: str | None) -> str:
+    """Player props come back as (name='Over', description='Drew Rasmussen').
+    Encode both into a single outcome_name so the cache PK stays stable
+    across different players with the same line.
+    """
+    if description and market_key.startswith(("pitcher_", "batter_")):
+        return f"{description} {name}"
+    return name
+
+
 def normalize_odds_response(games: list[dict], fetched_at: datetime) -> list[dict]:
-    """Flatten Odds API response into cache rows."""
+    """Flatten Odds API response (game-level OR per-event) into cache rows."""
     rows: list[dict] = []
-    for game in games:
+    # Per-event responses are a single event dict, not a list; wrap if needed.
+    iterable = games if isinstance(games, list) else [games]
+    for game in iterable:
+        if not game:  # empty per-event response
+            continue
         event_id = game["id"]
-        home = game["home_team"]
-        away = game["away_team"]
+        home = game.get("home_team", "")
+        away = game.get("away_team", "")
         commence = datetime.fromisoformat(game["commence_time"].replace("Z", "+00:00"))
         for bm in game.get("bookmakers", []):
             bk = bm["key"]
             for mk in bm.get("markets", []):
                 market_key = mk["key"]
                 for oc in mk.get("outcomes", []):
+                    encoded_name = _encode_outcome_name(
+                        market_key, oc["name"], oc.get("description")
+                    )
                     rows.append({
                         "event_id": event_id,
                         "home_team": home,
@@ -24,7 +41,7 @@ def normalize_odds_response(games: list[dict], fetched_at: datetime) -> list[dic
                         "commence_time": commence,
                         "bookmaker_key": bk,
                         "market_key": market_key,
-                        "outcome_name": oc["name"],
+                        "outcome_name": encoded_name,
                         "outcome_point": oc.get("point"),
                         "price_american": int(oc["price"]),
                         "fetched_at": fetched_at,

@@ -41,6 +41,24 @@
         }
       }
     },
+    "/api/props/mlb": {
+      "get": {
+        "summary": "Get Mlb Props",
+        "operationId": "get_mlb_props_api_props_mlb_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OddsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/picks/mlb": {
       "get": {
         "summary": "Get Mlb Picks",
@@ -52,6 +70,81 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PicksResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fetcher/start": {
+      "post": {
+        "summary": "Start",
+        "operationId": "start_api_fetcher_start_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetcherControlResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fetcher/stop": {
+      "post": {
+        "summary": "Stop",
+        "operationId": "stop_api_fetcher_stop_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetcherControlResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/refresh/{event_id}": {
+      "post": {
+        "summary": "Refresh",
+        "operationId": "refresh_api_refresh__event_id__post",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetcherControlResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -96,6 +189,55 @@
           "fetched_at"
         ],
         "title": "BookPrice"
+      },
+      "FetcherControlResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "tiers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tiers"
+          },
+          "retry_after_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retry After Seconds"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "polled": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Polled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "FetcherControlResponse"
       },
       "FetcherStatus": {
         "properties": {
@@ -143,6 +285,18 @@
               }
             ],
             "title": "Last Error"
+          },
+          "fetcher_running": {
+            "type": "boolean",
+            "title": "Fetcher Running",
+            "default": false
+          },
+          "enabled_tiers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Enabled Tiers"
           }
         },
         "type": "object",
@@ -194,6 +348,19 @@
           "markets"
         ],
         "title": "Game"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
       },
       "Market": {
         "properties": {
@@ -455,6 +622,46 @@
           "last_checked_at"
         ],
         "title": "PicksResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       }
     }
   }

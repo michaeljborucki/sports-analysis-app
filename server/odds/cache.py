@@ -132,3 +132,30 @@ class OddsCache:
                 (cutoff,),
             )
             return cur.rowcount
+
+    def distinct_events(self, within_hours_ahead: int | None = None) -> list[dict]:
+        """List distinct (event_id, commence_time, home_team, away_team) known
+        to the cache, optionally filtering to games starting within N hours.
+        Used by per-event fetchers to know which events to poll.
+        """
+        from datetime import datetime, timezone
+        q = """
+            SELECT event_id, MAX(commence_time) AS commence_time,
+                   MAX(home_team) AS home_team, MAX(away_team) AS away_team
+            FROM odds_snapshot
+            GROUP BY event_id
+        """
+        with self._conn() as c:
+            rows = [dict(r) for r in c.execute(q)]
+        if within_hours_ahead is None:
+            return rows
+        now = datetime.now(timezone.utc)
+        horizon = now + timedelta(hours=within_hours_ahead)
+        out = []
+        for r in rows:
+            ct = datetime.fromisoformat(r["commence_time"])
+            if ct.tzinfo is None:
+                ct = ct.replace(tzinfo=timezone.utc)
+            if now <= ct <= horizon:
+                out.append({**r, "commence_time": ct})
+        return out

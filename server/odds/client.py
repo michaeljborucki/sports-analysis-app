@@ -9,12 +9,6 @@ logger = logging.getLogger(__name__)
 
 BASE_URL = "https://api.the-odds-api.com/v4"
 MLB_SPORT_KEY = "baseball_mlb"
-CORE_MARKETS = "h2h,spreads,totals"
-# All regions — US (regulated books), US2 (extras + BetOnline etc.),
-# US_EX (US exchanges: Sporttrade, Prophet Exchange, Rebet exchange),
-# EU (Pinnacle, Bet365 EU entity), UK (Bet365, William Hill, Ladbrokes).
-# Each region adds books at the cost of 1 quota unit per market.
-REGIONS = "us,us2,us_ex,eu,uk"
 TIMEOUT = 15.0
 
 
@@ -22,50 +16,65 @@ class OddsAPIError(Exception):
     pass
 
 
+def _rate_info(resp: httpx.Response) -> dict:
+    return {
+        "requests_used": int(resp.headers.get("x-requests-used", 0) or 0),
+        "requests_remaining": int(resp.headers.get("x-requests-remaining", 0) or 0),
+    }
+
+
 class OddsAPIClient:
     def __init__(self, api_key: str):
         self.api_key = api_key
 
-    async def fetch_mlb_core(self) -> tuple[list[dict], dict]:
-        """Fetch today's MLB games with h2h/spreads/totals."""
+    async def fetch_game_level(
+        self, markets: list[str], regions: list[str]
+    ) -> tuple[list[dict], dict]:
+        """Game-level endpoint — one call covers every MLB event today.
+        Used by the `main` tier. Quota cost = regions × markets.
+        """
         params = {
             "apiKey": self.api_key,
-            "regions": REGIONS,
+            "regions": ",".join(regions),
             "oddsFormat": "american",
-            "markets": CORE_MARKETS,
+            "markets": ",".join(markets),
         }
         url = f"{BASE_URL}/sports/{MLB_SPORT_KEY}/odds"
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
             resp = await client.get(url, params=params)
-            rate_info = {
-                "requests_used": int(resp.headers.get("x-requests-used", 0) or 0),
-                "requests_remaining": int(resp.headers.get("x-requests-remaining", 0) or 0),
-            }
+            info = _rate_info(resp)
             if resp.status_code == 200:
-                return resp.json(), rate_info
+                return resp.json(), info
             if resp.status_code == 422:
-                logger.warning("422 from odds API: %s", resp.text[:200])
-                return [], rate_info
+                logger.warning("422 from odds API (game-level): %s", resp.text[:200])
+                return [], info
             raise OddsAPIError(f"{resp.status_code}: {resp.text[:500]}")
 
     async def fetch_event_markets(
-        self, event_id: str, markets: str
+        self, event_id: str, markets: list[str], regions: list[str]
     ) -> tuple[dict, dict]:
+        """Per-event endpoint — for alt lines, first-innings, player props.
+        Quota cost = regions × markets **returned** (empties are free).
+        """
         params = {
             "apiKey": self.api_key,
-            "regions": REGIONS,
+            "regions": ",".join(regions),
             "oddsFormat": "american",
-            "markets": markets,
+            "markets": ",".join(markets),
         }
         url = f"{BASE_URL}/sports/{MLB_SPORT_KEY}/events/{event_id}/odds"
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
             resp = await client.get(url, params=params)
-            rate_info = {
-                "requests_used": int(resp.headers.get("x-requests-used", 0) or 0),
-                "requests_remaining": int(resp.headers.get("x-requests-remaining", 0) or 0),
-            }
+            info = _rate_info(resp)
             if resp.status_code == 200:
-                return resp.json(), rate_info
+                return resp.json(), info
             if resp.status_code == 422:
-                return {}, rate_info
+                return {}, info
             raise OddsAPIError(f"{resp.status_code}: {resp.text[:500]}")
+
+    # Backwards-compat for any remaining callers
+    async def fetch_mlb_core(self) -> tuple[list[dict], dict]:
+        return await self.fetch_game_level(
+            markets=["h2h", "spreads", "totals"],
+            regions=["us", "us2", "us_ex", "eu", "uk"],
+        )
