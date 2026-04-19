@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/props/mlb": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Mlb Props */
+        get: operations["get_mlb_props_api_props_mlb_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/picks/mlb": {
         parameters: {
             query?: never;
@@ -49,6 +66,57 @@ export interface paths {
         get: operations["get_mlb_picks_api_picks_mlb_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/fetcher/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start */
+        post: operations["start_api_fetcher_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/fetcher/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop */
+        post: operations["stop_api_fetcher_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/refresh/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh */
+        post: operations["refresh_api_refresh__event_id__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -73,6 +141,19 @@ export interface components {
              */
             fetched_at: string;
         };
+        /** FetcherControlResponse */
+        FetcherControlResponse: {
+            /** Status */
+            status: string;
+            /** Tiers */
+            tiers?: string[];
+            /** Retry After Seconds */
+            retry_after_seconds?: number | null;
+            /** Event Id */
+            event_id?: string | null;
+            /** Polled */
+            polled?: string[];
+        };
         /** FetcherStatus */
         FetcherStatus: {
             /** Last Fetch At */
@@ -83,6 +164,13 @@ export interface components {
             requests_remaining?: number | null;
             /** Last Error */
             last_error?: string | null;
+            /**
+             * Fetcher Running
+             * @default false
+             */
+            fetcher_running: boolean;
+            /** Enabled Tiers */
+            enabled_tiers?: string[];
         };
         /** Game */
         Game: {
@@ -109,6 +197,11 @@ export interface components {
              * @default 0
              */
             stale_seconds: number;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
         };
         /** Market */
         Market: {
@@ -208,6 +301,19 @@ export interface components {
             /** Bet Card Date */
             bet_card_date?: string | null;
         };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
+        };
     };
     responses: never;
     parameters: never;
@@ -257,6 +363,26 @@ export interface operations {
             };
         };
     };
+    get_mlb_props_api_props_mlb_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OddsResponse"];
+                };
+            };
+        };
+    };
     get_mlb_picks_api_picks_mlb_get: {
         parameters: {
             query?: never;
@@ -273,6 +399,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PicksResponse"];
+                };
+            };
+        };
+    };
+    start_api_fetcher_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FetcherControlResponse"];
+                };
+            };
+        };
+    };
+    stop_api_fetcher_stop_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FetcherControlResponse"];
+                };
+            };
+        };
+    };
+    refresh_api_refresh__event_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FetcherControlResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

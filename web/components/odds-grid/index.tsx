@@ -8,6 +8,7 @@ import { BOOK_ORDER } from "@/lib/books";
 import { useVisibleBooks } from "@/lib/use-visible-books";
 import { pickBest, findAllBest } from "@/lib/consensus";
 import { bookInfo } from "@/lib/books";
+import { AltLinesPanel } from "./alt-lines-panel";
 import { MarketTabs, type MarketKey } from "./market-tabs";
 import { BestCell } from "./best-cell";
 import { CellFlash } from "./cell-flash";
@@ -88,6 +89,7 @@ function sideLabel(
 
 export function OddsGrid({ games }: { games: Game[] }) {
   const [market, setMarket] = useState<MarketKey>("h2h");
+  const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
   const { visible, toggle, setAll } = useVisibleBooks();
 
   // All books present in the current dataset, ordered by registry priority.
@@ -169,6 +171,7 @@ export function OddsGrid({ games }: { games: Game[] }) {
             {games.map(g => {
               const m = findMarket(g, market);
               const [topOutcome, bottomOutcome] = orderedOutcomes(m, g, market);
+              const isExpanded = expandedEventId === g.event_id;
               return (
                 <Fragment key={g.event_id}>
                   {[topOutcome, bottomOutcome].map((out, idx) => {
@@ -207,24 +210,44 @@ export function OddsGrid({ games }: { games: Game[] }) {
                         {isFirst && (
                           <td
                             rowSpan={2}
-                            className="px-3 py-1.5 align-middle whitespace-nowrap border-r border-border-subtle/60"
+                            onClick={() =>
+                              setExpandedEventId(
+                                isExpanded ? null : g.event_id
+                              )
+                            }
+                            className={clsx(
+                              "px-3 py-1.5 align-middle whitespace-nowrap",
+                              "border-r border-border-subtle/60 cursor-pointer",
+                              isExpanded && "bg-bg-1/50"
+                            )}
                           >
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-text-1 font-medium">
-                                {abbrev(g.away_team)} @ {abbrev(g.home_team)}
-                              </span>
-                              <span className="text-text-3 text-[11px] flex items-center gap-1.5">
-                                {g.is_live ? (
-                                  <>
-                                    <span className="live-dot" aria-hidden />
-                                    <span className="text-price-down font-semibold uppercase tracking-wide">
-                                      live
-                                    </span>
-                                  </>
-                                ) : (
-                                  <GameTime commenceTime={g.commence_time} />
+                            <div className="flex items-center gap-2">
+                              <span
+                                aria-hidden
+                                className={clsx(
+                                  "text-text-3 text-[10px] transition-transform",
+                                  isExpanded ? "rotate-90" : "rotate-0"
                                 )}
+                              >
+                                ▶
                               </span>
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-text-1 font-medium">
+                                  {abbrev(g.away_team)} @ {abbrev(g.home_team)}
+                                </span>
+                                <span className="text-text-3 text-[11px] flex items-center gap-1.5">
+                                  {g.is_live ? (
+                                    <>
+                                      <span className="live-dot" aria-hidden />
+                                      <span className="text-price-down font-semibold uppercase tracking-wide">
+                                        live
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <GameTime commenceTime={g.commence_time} />
+                                  )}
+                                </span>
+                              </div>
                             </div>
                           </td>
                         )}
@@ -280,6 +303,16 @@ export function OddsGrid({ games }: { games: Game[] }) {
                       </tr>
                     );
                   })}
+                  {isExpanded && (
+                    <tr>
+                      <td
+                        colSpan={4 + books.length}
+                        className="p-0 border-t border-border-subtle"
+                      >
+                        <AltLinesPanel game={g} />
+                      </td>
+                    </tr>
+                  )}
                 </Fragment>
               );
             })}

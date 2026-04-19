@@ -2,9 +2,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
+import { FetcherToggle } from "./fetcher-toggle";
 
 const tabs = [
   { href: "/odds/mlb", label: "Odds" },
+  { href: "/props/mlb", label: "Props" },
   { href: "/picks/mlb", label: "Picks" },
 ];
 
@@ -34,7 +36,12 @@ export function NavShell({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
           </nav>
-          <div className="ml-auto text-xs text-text-3 tabular">MLB · laptop build</div>
+          <div className="ml-auto flex items-center gap-3">
+            <span className="text-xs text-text-3 tabular hidden md:inline">
+              MLB · laptop build
+            </span>
+            <FetcherToggle />
+          </div>
         </div>
       </header>
       <main className="flex-1 max-w-[1600px] mx-auto w-full px-6 py-4">

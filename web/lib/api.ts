@@ -21,6 +21,11 @@ export async function fetchJson<T>(path: string): Promise<T> {
 
 export const apiPaths = {
   odds: "/api/odds/mlb",
+  props: "/api/props/mlb",
   picks: "/api/picks/mlb",
   health: "/api/health",
 } as const;
+
+export function refreshEventUrl(eventId: string): string {
+  return `/api/refresh/${encodeURIComponent(eventId)}`;
+}
