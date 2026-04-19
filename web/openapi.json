@@ -1,0 +1,461 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Betting Site API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetcherStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/odds/mlb": {
+      "get": {
+        "summary": "Get Mlb Odds",
+        "operationId": "get_mlb_odds_api_odds_mlb_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OddsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/picks/mlb": {
+      "get": {
+        "summary": "Get Mlb Picks",
+        "operationId": "get_mlb_picks_api_picks_mlb_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PicksResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BookPrice": {
+        "properties": {
+          "bookmaker_key": {
+            "type": "string",
+            "title": "Bookmaker Key"
+          },
+          "price_american": {
+            "type": "integer",
+            "title": "Price American"
+          },
+          "point": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Point"
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fetched At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bookmaker_key",
+          "price_american",
+          "fetched_at"
+        ],
+        "title": "BookPrice"
+      },
+      "FetcherStatus": {
+        "properties": {
+          "last_fetch_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Fetch At"
+          },
+          "requests_used": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Used"
+          },
+          "requests_remaining": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Remaining"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          }
+        },
+        "type": "object",
+        "title": "FetcherStatus"
+      },
+      "Game": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "home_team": {
+            "type": "string",
+            "title": "Home Team"
+          },
+          "away_team": {
+            "type": "string",
+            "title": "Away Team"
+          },
+          "commence_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Commence Time"
+          },
+          "is_live": {
+            "type": "boolean",
+            "title": "Is Live",
+            "default": false
+          },
+          "markets": {
+            "items": {
+              "$ref": "#/components/schemas/Market"
+            },
+            "type": "array",
+            "title": "Markets"
+          },
+          "stale_seconds": {
+            "type": "integer",
+            "title": "Stale Seconds",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "home_team",
+          "away_team",
+          "commence_time",
+          "markets"
+        ],
+        "title": "Game"
+      },
+      "Market": {
+        "properties": {
+          "market_key": {
+            "type": "string",
+            "title": "Market Key"
+          },
+          "outcomes": {
+            "items": {
+              "$ref": "#/components/schemas/MarketOutcome"
+            },
+            "type": "array",
+            "title": "Outcomes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "market_key",
+          "outcomes"
+        ],
+        "title": "Market"
+      },
+      "MarketOutcome": {
+        "properties": {
+          "outcome_name": {
+            "type": "string",
+            "title": "Outcome Name"
+          },
+          "prices": {
+            "items": {
+              "$ref": "#/components/schemas/BookPrice"
+            },
+            "type": "array",
+            "title": "Prices"
+          },
+          "best_price": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookPrice"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "consensus_price_american": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consensus Price American"
+          }
+        },
+        "type": "object",
+        "required": [
+          "outcome_name",
+          "prices"
+        ],
+        "title": "MarketOutcome"
+      },
+      "OddsResponse": {
+        "properties": {
+          "games": {
+            "items": {
+              "$ref": "#/components/schemas/Game"
+            },
+            "type": "array",
+            "title": "Games"
+          },
+          "stale_seconds": {
+            "type": "integer",
+            "title": "Stale Seconds"
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fetched At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "games",
+          "stale_seconds",
+          "fetched_at"
+        ],
+        "title": "OddsResponse"
+      },
+      "Pick": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "tier": {
+            "$ref": "#/components/schemas/PickTier"
+          },
+          "game_label": {
+            "type": "string",
+            "title": "Game Label"
+          },
+          "market_label": {
+            "type": "string",
+            "title": "Market Label"
+          },
+          "pick_side": {
+            "type": "string",
+            "title": "Pick Side"
+          },
+          "odds_american": {
+            "type": "integer",
+            "title": "Odds American"
+          },
+          "best_book": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Book"
+          },
+          "stake_units": {
+            "type": "number",
+            "title": "Stake Units"
+          },
+          "probability_pct": {
+            "type": "number",
+            "title": "Probability Pct"
+          },
+          "market_probability_pct": {
+            "type": "number",
+            "title": "Market Probability Pct"
+          },
+          "edge_pct": {
+            "type": "number",
+            "title": "Edge Pct"
+          },
+          "stats": {
+            "items": {
+              "$ref": "#/components/schemas/PickStat"
+            },
+            "type": "array",
+            "title": "Stats"
+          },
+          "reasoning": {
+            "type": "string",
+            "title": "Reasoning"
+          },
+          "agent_key": {
+            "type": "string",
+            "title": "Agent Key",
+            "default": "baseball-agents"
+          },
+          "agent_record_30d": {
+            "type": "string",
+            "title": "Agent Record 30D",
+            "default": ""
+          },
+          "commence_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commence Time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tier",
+          "game_label",
+          "market_label",
+          "pick_side",
+          "odds_american",
+          "stake_units",
+          "probability_pct",
+          "market_probability_pct",
+          "edge_pct",
+          "reasoning"
+        ],
+        "title": "Pick"
+      },
+      "PickStat": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "PickStat"
+      },
+      "PickTier": {
+        "type": "string",
+        "enum": [
+          "high",
+          "sweet",
+          "lean"
+        ],
+        "title": "PickTier"
+      },
+      "PicksResponse": {
+        "properties": {
+          "picks": {
+            "items": {
+              "$ref": "#/components/schemas/Pick"
+            },
+            "type": "array",
+            "title": "Picks"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "no_picks_today"
+            ],
+            "title": "Status"
+          },
+          "last_checked_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Checked At"
+          },
+          "bet_card_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bet Card Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "picks",
+          "status",
+          "last_checked_at"
+        ],
+        "title": "PicksResponse"
+      }
+    }
+  }
+}
