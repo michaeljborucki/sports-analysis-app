@@ -9,8 +9,12 @@ CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 
 # Tier names — one per [section] in the toml. "main" is special: game-level
 # endpoint, one API call covers every event. All others are per-event tiers.
+# Tier names used across all sports. The "periods" tier covers each sport's
+# sub-game structure — baseball's 1st 1/3/5/7 innings, NBA's quarters and
+# halves, NHL's periods. The tier key is neutral; sport-specific labels
+# render in the UI (see frontend TIER_LABELS).
 MAIN_TIER = "main"
-PER_EVENT_TIERS = ("alternates", "first_innings", "player_props")
+PER_EVENT_TIERS = ("alternates", "periods", "player_props")
 PROP_TIER = "player_props"
 
 

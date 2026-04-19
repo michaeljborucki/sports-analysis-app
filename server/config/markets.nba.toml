@@ -27,7 +27,7 @@ markets = [
 ]
 
 # "first_innings" tier renamed semantically to period markets (Q1–Q4, H1/H2).
-[first_innings]
+[periods]
 enabled          = true
 interval_seconds = 60
 regions          = ["us", "us2", "us_ex", "eu", "uk"]

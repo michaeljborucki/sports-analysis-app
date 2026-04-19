@@ -28,7 +28,7 @@ markets          = []
 
 # No set-level markets available on The Odds API for tennis.
 # (No set winners, set spreads/totals, correct-set-score, etc.)
-[first_innings]
+[periods]
 enabled          = false
 interval_seconds = 60
 regions          = []

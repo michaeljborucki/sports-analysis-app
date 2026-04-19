@@ -11,6 +11,7 @@ def app(monkeypatch, tmp_path):
     monkeypatch.setenv("BETS_CSV", str(Path(__file__).parent / "fixtures" / "bets_example.csv"))
 
     import server.config as config_mod
+    import server.user_settings as us_mod
 
     original_from_env = config_mod.Config.from_env
 
@@ -20,6 +21,9 @@ def app(monkeypatch, tmp_path):
         return c
 
     monkeypatch.setattr(config_mod.Config, "from_env", staticmethod(patched_from_env))
+    # Isolate user settings — otherwise the real user_settings.json (edited
+    # by running the backend) leaks into the test's view of enabled sports.
+    monkeypatch.setattr(us_mod, "SETTINGS_PATH", tmp_path / "user_settings.json")
 
     from server.main import create_app
     return create_app()
@@ -56,12 +60,13 @@ def test_picks_endpoint_returns_valid_status(app):
     assert body["status"] in ("ok", "no_picks_today")
 
 
-def test_sports_endpoint_lists_mlb_and_tennis(app):
+def test_sports_endpoint_lists_registered_sports(app):
     with TestClient(app) as c:
         r = c.get("/api/sports")
     assert r.status_code == 200
     keys = {s["key"] for s in r.json()["sports"]}
-    assert keys == {"mlb", "tennis"}
+    # Registry in server/sports.py — update this set when sports are added.
+    assert keys == {"mlb", "tennis", "nba", "nhl", "baseball_ncaa"}
 
 
 def test_openapi_schema_accessible(app):

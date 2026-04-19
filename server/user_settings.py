@@ -77,18 +77,24 @@ class UserSettingsStore:
             logger.exception("Failed to load %s; starting with empty settings", self.path)
             return UserSettings()
 
+    def _snapshot_locked(self) -> UserSettings:
+        """Deep copy of current settings. Caller must hold self._lock."""
+        return UserSettings(
+            disabled_sports=set(self._settings.disabled_sports),
+            disabled_markets={
+                k: set(v) for k, v in self._settings.disabled_markets.items()
+            },
+        )
+
     def get(self) -> UserSettings:
         with self._lock:
-            return UserSettings(
-                disabled_sports=set(self._settings.disabled_sports),
-                disabled_markets={
-                    k: set(v) for k, v in self._settings.disabled_markets.items()
-                },
-            )
+            return self._snapshot_locked()
 
     def set(self, new: UserSettings) -> UserSettings:
         with self._lock:
             self._settings = new
             self.path.parent.mkdir(parents=True, exist_ok=True)
             self.path.write_text(json.dumps(new.to_dict(), indent=2))
-            return self.get()
+            # Must not call self.get() here — threading.Lock is non-reentrant
+            # and would deadlock. Snapshot under the already-held lock.
+            return self._snapshot_locked()

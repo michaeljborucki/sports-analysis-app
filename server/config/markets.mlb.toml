@@ -27,7 +27,7 @@ markets = [
   "h2h_lay",                      # exchange-only (Betfair/Matchbook/Smarkets)
 ]
 
-[first_innings]
+[periods]
 enabled          = true
 interval_seconds = 60
 regions          = ["us", "us2", "us_ex", "eu", "uk"]

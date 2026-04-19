@@ -24,7 +24,7 @@ markets = [
 ]
 
 # "first_innings" tier used as period markets (NHL has 3 periods: p1/p2/p3).
-[first_innings]
+[periods]
 enabled          = true
 interval_seconds = 60
 regions          = ["us", "us2", "us_ex", "eu", "uk"]

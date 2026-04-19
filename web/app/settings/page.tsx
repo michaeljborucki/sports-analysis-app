@@ -18,9 +18,24 @@ const API_BASE =
 const TIER_LABELS: Record<string, string> = {
   main: "Main Markets",
   alternates: "Alternate Lines",
-  first_innings: "First Innings (F5 / F3 / F1)",
+  periods: "Period / Inning Markets",
   player_props: "Player Props",
 };
+
+// Per-sport override for the "periods" tier (structure varies by sport).
+const PERIOD_LABEL_BY_SPORT: Record<string, string> = {
+  mlb: "First Innings (F5 / F3 / F1 / F7)",
+  baseball_ncaa: "First Innings (F5 / F3 / F1)",
+  nba: "Quarters & Halves",
+  nhl: "Periods (P1 / P2 / P3)",
+};
+
+function tierLabel(tierName: string, sportKey: string): string {
+  if (tierName === "periods") {
+    return PERIOD_LABEL_BY_SPORT[sportKey] ?? TIER_LABELS.periods;
+  }
+  return TIER_LABELS[tierName] ?? tierName;
+}
 
 function formatMarketKey(key: string): string {
   // Make Odds-API keys human-readable: pitcher_strikeouts → "Pitcher Strikeouts"
@@ -31,29 +46,27 @@ function formatMarketKey(key: string): string {
 }
 
 /**
- * Tri-state checkbox: on / off / mixed (partial — when some children selected).
+ * Tri-state checkbox: on / off / mixed.
+ *
+ * Renders as a `<span>` so it can safely live inside a parent `<button>`
+ * (React 19 hard-errors on nested native buttons and that can block
+ * hydration in dev). The parent element's click handler drives the toggle.
  */
-function TriCheckbox({
-  state,
-  onClick,
-}: {
-  state: "on" | "off" | "mixed";
-  onClick: () => void;
-}) {
+function TriCheckbox({ state }: { state: "on" | "off" | "mixed" }) {
   return (
-    <button
-      onClick={onClick}
+    <span
+      role="checkbox"
+      aria-checked={state === "on" ? "true" : state === "mixed" ? "mixed" : "false"}
       className={clsx(
         "inline-flex w-3.5 h-3.5 rounded-sm border items-center justify-center text-[10px] font-bold",
         "transition-colors flex-shrink-0",
         state === "on" && "bg-accent border-accent text-bg-0",
         state === "mixed" && "bg-accent/40 border-accent text-bg-0",
-        state === "off" && "border-text-3 hover:border-text-1"
+        state === "off" && "border-text-3"
       )}
-      aria-pressed={state === "on"}
     >
       {state === "on" ? "✓" : state === "mixed" ? "–" : ""}
-    </button>
+    </span>
   );
 }
 
@@ -259,10 +272,13 @@ export default function SettingsPage() {
                 className="border border-border-subtle rounded-md bg-bg-0 overflow-hidden"
               >
                 <div className="flex items-center gap-3 px-4 py-3 bg-bg-1 border-b border-border-subtle">
-                  <TriCheckbox
-                    state={sportOn ? "on" : "off"}
+                  <button
                     onClick={() => toggleSport(sport.key)}
-                  />
+                    className="flex-shrink-0 cursor-pointer"
+                    aria-label={`${sportOn ? "Disable" : "Enable"} ${sport.label}`}
+                  >
+                    <TriCheckbox state={sportOn ? "on" : "off"} />
+                  </button>
                   <span className="text-sm font-semibold text-text-1">
                     {sport.label}
                   </span>
@@ -291,18 +307,17 @@ export default function SettingsPage() {
                       return (
                         <div key={tier.name} className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <TriCheckbox
-                              state={state}
+                            <button
                               onClick={() =>
-                                setTierState(
-                                  sport,
-                                  tier.name,
-                                  state !== "on"
-                                )
+                                setTierState(sport, tier.name, state !== "on")
                               }
-                            />
+                              className="flex-shrink-0 cursor-pointer"
+                              aria-label={`Toggle ${tier.name}`}
+                            >
+                              <TriCheckbox state={state} />
+                            </button>
                             <span className="text-xs font-semibold text-text-1">
-                              {TIER_LABELS[tier.name] ?? tier.name}
+                              {tierLabel(tier.name, sport.key)}
                             </span>
                             <span className="text-[10px] text-text-3 tabular uppercase tracking-wide">
                               {tier.interval_seconds}s
@@ -331,9 +346,6 @@ export default function SettingsPage() {
                                 >
                                   <TriCheckbox
                                     state={disabled ? "off" : "on"}
-                                    onClick={() =>
-                                      toggleMarket(sport.key, market.key)
-                                    }
                                   />
                                   <span className="tabular">
                                     {formatMarketKey(market.key)}

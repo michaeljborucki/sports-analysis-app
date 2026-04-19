@@ -1,12 +1,18 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+import asyncio
+import logging
+
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 
 from ..odds.fetcher import FetcherRegistry
 from ..odds.market_config import MarketConfig
 from ..sports import Sport
 from ..user_settings import UserSettings, UserSettingsStore
+
+
+logger = logging.getLogger(__name__)
 
 
 class MarketOption(BaseModel):
@@ -96,7 +102,9 @@ def build_router(
         return _build_response(store.get(), sports)
 
     @router.post("/api/settings", response_model=SettingsUpdateResponse)
-    async def post_settings(payload: SettingsPayload) -> SettingsUpdateResponse:
+    async def post_settings(
+        payload: SettingsPayload,
+    ) -> SettingsUpdateResponse:
         valid_sport_keys = {s.key for s in sports}
         unknown = [s for s in payload.disabled_sports if s not in valid_sport_keys]
         if unknown:
@@ -112,10 +120,24 @@ def build_router(
             },
         )
         store.set(new)
-        reload_result = fetcher.hot_reload()
+
+        # Run hot_reload off the event loop so the scheduler's sync state
+        # mutations don't serialize against the async response send. This
+        # fires-and-completes; any exception is logged but doesn't fail
+        # the request.
+        was_running = fetcher.is_running
+        status = "not_running"
+        if was_running:
+            try:
+                await asyncio.to_thread(fetcher.hot_reload)
+                status = "reloaded"
+            except Exception:
+                logger.exception("hot_reload failed")
+                status = "reload_failed"
+
         return SettingsUpdateResponse(
             settings=_build_response(store.get(), sports),
-            reload_status=reload_result.get("status", "unknown"),
+            reload_status=status,
         )
 
     return router
