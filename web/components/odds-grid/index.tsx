@@ -120,11 +120,12 @@ export function OddsGrid({ games }: { games: Game[] }) {
                         {abbrev(g.away_team)} @ {abbrev(g.home_team)}
                       </span>
                       {g.is_live ? (
-                        <span className="text-price-down text-[10px] font-semibold uppercase tracking-wide">
-                          · live
+                        <span className="inline-flex items-center gap-1.5 text-price-down text-[10px] font-semibold uppercase tracking-wide">
+                          <span className="live-dot" aria-hidden />
+                          live
                         </span>
                       ) : (
-                        <span className="text-text-3 text-[11px]">
+                        <span className="text-text-3 text-[11px] tabular">
                           ·{" "}
                           {new Date(g.commence_time).toLocaleTimeString([], {
                             hour: "numeric",
@@ -163,9 +164,9 @@ export function OddsGrid({ games }: { games: Game[] }) {
                       <td
                         key={b}
                         className={clsx(
-                          "text-right px-2 py-2 tabular",
+                          "text-right px-2 py-2 tabular transition-colors",
                           isBest
-                            ? "text-price-up font-semibold"
+                            ? "text-price-up font-semibold bg-price-up/[0.06] border-l border-price-up/25"
                             : "text-text-1"
                         )}
                       >

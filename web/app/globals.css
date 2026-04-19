@@ -28,8 +28,49 @@ html, body {
   font-feature-settings: 'tnum' 1;
 }
 
-/* Subtle baseline so the page doesn't render pure system font before tokens load */
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Live-game pulsing dot with a halo. Halved intensity + infinite loop. */
+@keyframes live-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.22); }
+  50%      { box-shadow: 0 0 0 7px rgba(229, 72, 77, 0.03); }
+}
+.live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-price-down);
+  animation: live-pulse 1.6s ease-in-out infinite;
+  box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.22);
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot { animation: none; }
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-1) 0%,
+    var(--color-bg-2) 50%,
+    var(--color-bg-1) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
+}
+
+/* Focus-visible ring for keyboard nav */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 3px;
 }

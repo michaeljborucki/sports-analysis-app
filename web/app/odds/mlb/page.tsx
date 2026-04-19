@@ -4,6 +4,8 @@ import { apiPaths, type OddsResponse } from "@/lib/api";
 import { intervals } from "@/lib/swr";
 import { OddsGrid } from "@/components/odds-grid";
 import { StaleIndicator } from "@/components/stale-indicator";
+import { StaleBanner } from "@/components/stale-banner";
+import { OddsGridSkeleton } from "@/components/skeletons";
 
 export default function OddsMlbPage() {
   const { data, error, isLoading } = useSWR<OddsResponse>(apiPaths.odds, {
@@ -12,9 +14,9 @@ export default function OddsMlbPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold">MLB Odds</h1>
+      <header className="flex items-end justify-between gap-4">
+        <div className="flex items-baseline gap-4">
+          <h1 className="text-2xl font-bold tracking-tight">MLB Odds</h1>
           <span className="text-xs text-text-3 tabular">
             {new Date().toLocaleDateString([], { month: "short", day: "numeric" })}
           </span>
@@ -24,14 +26,14 @@ export default function OddsMlbPage() {
         </div>
       </header>
 
+      {data && <StaleBanner staleSeconds={data.stale_seconds ?? 0} />}
+
       {error && (
         <div className="text-price-down text-sm">
           Backend unreachable. Is the FastAPI server running on :8000?
         </div>
       )}
-      {isLoading && !data && (
-        <div className="text-text-2 text-sm">Loading odds…</div>
-      )}
+      {isLoading && !data && <OddsGridSkeleton />}
       {data && <OddsGrid games={data.games ?? []} />}
     </div>
   );

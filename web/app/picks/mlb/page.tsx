@@ -3,6 +3,7 @@ import useSWR from "swr";
 import { apiPaths, type PicksResponse } from "@/lib/api";
 import { intervals } from "@/lib/swr";
 import { PicksTable } from "@/components/picks-table";
+import { PicksTableSkeleton } from "@/components/skeletons";
 
 export default function PicksMlbPage() {
   const { data, error, isLoading } = useSWR<PicksResponse>(apiPaths.picks, {
@@ -11,9 +12,9 @@ export default function PicksMlbPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold">MLB Picks</h1>
+      <header className="flex items-end justify-between gap-4">
+        <div className="flex items-baseline gap-4">
+          <h1 className="text-2xl font-bold tracking-tight">MLB Picks</h1>
           {data?.bet_card_date && (
             <span className="text-xs text-text-3 tabular">
               Bet card: {data.bet_card_date}
@@ -33,9 +34,7 @@ export default function PicksMlbPage() {
           Backend unreachable. Is the FastAPI server running on :8000?
         </div>
       )}
-      {isLoading && !data && (
-        <div className="text-text-2 text-sm">Loading picks…</div>
-      )}
+      {isLoading && !data && <PicksTableSkeleton />}
       {data && <PicksTable picks={data.picks ?? []} />}
     </div>
   );
