@@ -12,6 +12,11 @@ import { formatAmerican } from "@/lib/format";
 import { useVisibleBooks } from "@/lib/use-visible-books";
 import { BookFilter } from "@/components/book-filter";
 import { BookIncludeDropdown } from "@/components/book-include-dropdown";
+import {
+  LiveStatusFilter,
+  matchesLiveFilter,
+  type LiveStatus,
+} from "@/components/live-status-filter";
 import { BookLogo } from "@/components/book-logo";
 import { RefreshButton } from "@/components/refresh-button";
 import { BOOK_ORDER } from "@/lib/books";
@@ -71,11 +76,17 @@ export default function LowHoldPage() {
   }, [data]);
 
   const [pageFilter, setPageFilter] = useState<Set<string>>(new Set());
+  const [liveFilter, setLiveFilter] = useState<LiveStatus>("all");
   const filteredOpps = useMemo(() => {
-    const ops = data?.opportunities ?? [];
-    if (pageFilter.size === 0) return ops;
-    return ops.filter(op => op.sides.some(s => pageFilter.has(s.book)));
-  }, [data, pageFilter]);
+    let ops = data?.opportunities ?? [];
+    if (liveFilter !== "all") {
+      ops = ops.filter(op => matchesLiveFilter(op.commence_time, liveFilter));
+    }
+    if (pageFilter.size > 0) {
+      ops = ops.filter(op => op.sides.some(s => pageFilter.has(s.book)));
+    }
+    return ops;
+  }, [data, pageFilter, liveFilter]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -111,6 +122,7 @@ export default function LowHoldPage() {
               </button>
             ))}
           </div>
+          <LiveStatusFilter value={liveFilter} onChange={setLiveFilter} />
           <BookIncludeDropdown
             label="Must include"
             availableBooks={allBooksInPlay}

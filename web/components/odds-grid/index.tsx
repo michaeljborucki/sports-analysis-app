@@ -16,6 +16,10 @@ import { CellFlash } from "./cell-flash";
 import { GameTime } from "./game-time";
 import { BookLogo } from "../book-logo";
 import { BookFilter } from "../book-filter";
+import {
+  LiveStatusFilter,
+  type LiveStatus,
+} from "../live-status-filter";
 import { MarketExpansionPanel } from "./market-expansion-panel";
 
 function findMarket(game: Game, key: string): Market | undefined {
@@ -86,12 +90,20 @@ function sideLabel(
 }
 
 export function OddsGrid({
-  games,
+  games: allGames,
   sport,
 }: {
   games: Game[];
   sport: Sport;
 }) {
+  const [liveFilter, setLiveFilter] = useState<LiveStatus>("all");
+  const games = useMemo(() => {
+    if (liveFilter === "all") return allGames;
+    return allGames.filter(g =>
+      liveFilter === "live" ? g.is_live : !g.is_live
+    );
+  }, [allGames, liveFilter]);
+
   // Which market_groups actually have any data in this dataset
   const availableGroups = useMemo(() => {
     const present = new Set<string>();
@@ -147,14 +159,20 @@ export function OddsGrid({
               tabs={tabs}
             />
           )}
-          <div className="text-xs text-text-3 tabular">{games.length} games</div>
+          <div className="text-xs text-text-3 tabular">
+            {games.length}
+            {games.length !== allGames.length && ` / ${allGames.length}`} games
+          </div>
         </div>
-        <BookFilter
-          availableBooks={availableBooks}
-          visible={visible}
-          onToggle={toggle}
-          onSetAll={setAll}
-        />
+        <div className="flex items-center gap-3">
+          <LiveStatusFilter value={liveFilter} onChange={setLiveFilter} />
+          <BookFilter
+            availableBooks={availableBooks}
+            visible={visible}
+            onToggle={toggle}
+            onSetAll={setAll}
+          />
+        </div>
       </div>
 
       <div className="border border-border-subtle rounded-md overflow-hidden bg-bg-0">
