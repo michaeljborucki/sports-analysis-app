@@ -75,6 +75,8 @@ def create_app() -> FastAPI:
     from .api.sports import build_router as sports_router
     from .api.arbitrage import build_router as arbitrage_router
     from .api.dashboard import build_router as dashboard_router
+    from .api.low_hold import build_router as low_hold_router
+    from .api.free_bets import build_router as free_bets_router
 
     app.include_router(health_router(cache, fetcher))
     app.include_router(odds_router(cache))
@@ -86,6 +88,8 @@ def create_app() -> FastAPI:
     app.include_router(refresh_router(fetcher))
     app.include_router(sports_router())
     app.include_router(arbitrage_router(cache))
+    app.include_router(low_hold_router(cache))
+    app.include_router(free_bets_router(cache))
     app.include_router(
         dashboard_router(
             cache, fetcher, picks_readers, sports,

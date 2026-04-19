@@ -163,6 +163,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/low-hold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Low Hold */
+        get: operations["get_low_hold_api_low_hold_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/free-bets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Free Bets */
+        get: operations["get_free_bets_api_free_bets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/dashboard": {
         parameters: {
             query?: never;
@@ -298,6 +332,58 @@ export interface components {
             /** Enabled Tiers */
             enabled_tiers?: string[];
         };
+        /** FreeBetLeg */
+        FreeBetLeg: {
+            /** Outcome Name */
+            outcome_name: string;
+            /** Book */
+            book: string;
+            /** Price American */
+            price_american: number;
+            /** Point */
+            point?: number | null;
+        };
+        /** FreeBetOpportunity */
+        FreeBetOpportunity: {
+            /** Sport Key */
+            sport_key: string;
+            /** Event Id */
+            event_id: string;
+            /** Home Team */
+            home_team: string;
+            /** Away Team */
+            away_team: string;
+            /**
+             * Commence Time
+             * Format: date-time
+             */
+            commence_time: string;
+            /**
+             * Market Kind
+             * @enum {string}
+             */
+            market_kind: "h2h" | "spreads" | "totals";
+            /** Point */
+            point?: number | null;
+            /** Conversion Pct */
+            conversion_pct: number;
+            /** Hedge Stake Per 100 */
+            hedge_stake_per_100: number;
+            free_leg: components["schemas"]["FreeBetLeg"];
+            hedge_leg: components["schemas"]["FreeBetLeg"];
+        };
+        /** FreeBetResponse */
+        FreeBetResponse: {
+            /** Opportunities */
+            opportunities: components["schemas"]["FreeBetOpportunity"][];
+            /**
+             * Scanned At
+             * Format: date-time
+             */
+            scanned_at: string;
+            /** Min Free Odds */
+            min_free_odds: number;
+        };
         /** Game */
         Game: {
             /** Event Id */
@@ -333,6 +419,56 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** LowHoldOpportunity */
+        LowHoldOpportunity: {
+            /** Sport Key */
+            sport_key: string;
+            /** Event Id */
+            event_id: string;
+            /** Home Team */
+            home_team: string;
+            /** Away Team */
+            away_team: string;
+            /**
+             * Commence Time
+             * Format: date-time
+             */
+            commence_time: string;
+            /**
+             * Market Kind
+             * @enum {string}
+             */
+            market_kind: "h2h" | "spreads" | "totals";
+            /** Point */
+            point?: number | null;
+            /** Hold Pct */
+            hold_pct: number;
+            /** Sides */
+            sides: components["schemas"]["LowHoldSide"][];
+        };
+        /** LowHoldResponse */
+        LowHoldResponse: {
+            /** Opportunities */
+            opportunities: components["schemas"]["LowHoldOpportunity"][];
+            /**
+             * Scanned At
+             * Format: date-time
+             */
+            scanned_at: string;
+            /** Max Hold Pct */
+            max_hold_pct: number;
+        };
+        /** LowHoldSide */
+        LowHoldSide: {
+            /** Outcome Name */
+            outcome_name: string;
+            /** Book */
+            book: string;
+            /** Price American */
+            price_american: number;
+            /** Point */
+            point?: number | null;
         };
         /** Market */
         Market: {
@@ -722,6 +858,71 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ArbResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_low_hold_api_low_hold_get: {
+        parameters: {
+            query?: {
+                books?: string;
+                max_hold_pct?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LowHoldResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_free_bets_api_free_bets_get: {
+        parameters: {
+            query?: {
+                books?: string;
+                min_free_odds?: number;
+                max_results?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FreeBetResponse"];
                 };
             };
             /** @description Validation Error */

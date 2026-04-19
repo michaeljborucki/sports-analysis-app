@@ -27,12 +27,29 @@ export const apiPaths = {
   picks: (sport: string) => `/api/picks/${sport}`,
   arbitrage: (books: string[]) =>
     `/api/arbitrage${books.length ? `?books=${books.join(",")}` : ""}`,
+  lowHold: (books: string[], maxHoldPct = 2.5) => {
+    const qs = new URLSearchParams();
+    if (books.length) qs.set("books", books.join(","));
+    qs.set("max_hold_pct", String(maxHoldPct));
+    return `/api/low-hold?${qs.toString()}`;
+  },
+  freeBets: (books: string[], minFreeOdds = 100) => {
+    const qs = new URLSearchParams();
+    if (books.length) qs.set("books", books.join(","));
+    qs.set("min_free_odds", String(minFreeOdds));
+    return `/api/free-bets?${qs.toString()}`;
+  },
   dashboard: "/api/dashboard",
 } as const;
 
 export type ArbResponse = components["schemas"]["ArbResponse"];
 export type ArbOpportunity = components["schemas"]["ArbOpportunity"];
 export type ArbSide = components["schemas"]["ArbSide"];
+export type LowHoldResponse = components["schemas"]["LowHoldResponse"];
+export type LowHoldOpportunity = components["schemas"]["LowHoldOpportunity"];
+export type FreeBetResponse = components["schemas"]["FreeBetResponse"];
+export type FreeBetOpportunity = components["schemas"]["FreeBetOpportunity"];
+export type FreeBetLeg = components["schemas"]["FreeBetLeg"];
 export type DashboardResponse = components["schemas"]["DashboardResponse"];
 export type SportSummary = components["schemas"]["SportSummary"];
 

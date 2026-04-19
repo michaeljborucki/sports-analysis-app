@@ -20,6 +20,8 @@ export const SECTIONS: Section[] = [
   { key: "props",     label: "Props",     scope: "per-sport" },
   { key: "picks",     label: "Picks",     scope: "per-sport" },
   { key: "arbitrage", label: "Arbitrage", scope: "global"    },
+  { key: "low-hold",  label: "Low Hold",  scope: "global"    },
+  { key: "free-bets", label: "Free Bets", scope: "global"    },
 ];
 
 export function sectionByKey(key: string | undefined): Section | undefined {

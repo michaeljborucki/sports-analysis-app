@@ -274,6 +274,116 @@
         }
       }
     },
+    "/api/low-hold": {
+      "get": {
+        "summary": "Get Low Hold",
+        "operationId": "get_low_hold_api_low_hold_get",
+        "parameters": [
+          {
+            "name": "books",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Books"
+            }
+          },
+          {
+            "name": "max_hold_pct",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "default": 2.5,
+              "title": "Max Hold Pct"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LowHoldResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/free-bets": {
+      "get": {
+        "summary": "Get Free Bets",
+        "operationId": "get_free_bets_api_free_bets_get",
+        "parameters": [
+          {
+            "name": "books",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Books"
+            }
+          },
+          {
+            "name": "min_free_odds",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Min Free Odds"
+            }
+          },
+          {
+            "name": "max_results",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 150,
+              "title": "Max Results"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeBetResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/dashboard": {
       "get": {
         "summary": "Dashboard",
@@ -626,6 +736,140 @@
         "type": "object",
         "title": "FetcherStatus"
       },
+      "FreeBetLeg": {
+        "properties": {
+          "outcome_name": {
+            "type": "string",
+            "title": "Outcome Name"
+          },
+          "book": {
+            "type": "string",
+            "title": "Book"
+          },
+          "price_american": {
+            "type": "integer",
+            "title": "Price American"
+          },
+          "point": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Point"
+          }
+        },
+        "type": "object",
+        "required": [
+          "outcome_name",
+          "book",
+          "price_american"
+        ],
+        "title": "FreeBetLeg"
+      },
+      "FreeBetOpportunity": {
+        "properties": {
+          "sport_key": {
+            "type": "string",
+            "title": "Sport Key"
+          },
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "home_team": {
+            "type": "string",
+            "title": "Home Team"
+          },
+          "away_team": {
+            "type": "string",
+            "title": "Away Team"
+          },
+          "commence_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Commence Time"
+          },
+          "market_kind": {
+            "type": "string",
+            "enum": [
+              "h2h",
+              "spreads",
+              "totals"
+            ],
+            "title": "Market Kind"
+          },
+          "point": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Point"
+          },
+          "conversion_pct": {
+            "type": "number",
+            "title": "Conversion Pct"
+          },
+          "hedge_stake_per_100": {
+            "type": "number",
+            "title": "Hedge Stake Per 100"
+          },
+          "free_leg": {
+            "$ref": "#/components/schemas/FreeBetLeg"
+          },
+          "hedge_leg": {
+            "$ref": "#/components/schemas/FreeBetLeg"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sport_key",
+          "event_id",
+          "home_team",
+          "away_team",
+          "commence_time",
+          "market_kind",
+          "conversion_pct",
+          "hedge_stake_per_100",
+          "free_leg",
+          "hedge_leg"
+        ],
+        "title": "FreeBetOpportunity"
+      },
+      "FreeBetResponse": {
+        "properties": {
+          "opportunities": {
+            "items": {
+              "$ref": "#/components/schemas/FreeBetOpportunity"
+            },
+            "type": "array",
+            "title": "Opportunities"
+          },
+          "scanned_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scanned At"
+          },
+          "min_free_odds": {
+            "type": "integer",
+            "title": "Min Free Odds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "opportunities",
+          "scanned_at",
+          "min_free_odds"
+        ],
+        "title": "FreeBetResponse"
+      },
       "Game": {
         "properties": {
           "event_id": {
@@ -690,6 +934,135 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "LowHoldOpportunity": {
+        "properties": {
+          "sport_key": {
+            "type": "string",
+            "title": "Sport Key"
+          },
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "home_team": {
+            "type": "string",
+            "title": "Home Team"
+          },
+          "away_team": {
+            "type": "string",
+            "title": "Away Team"
+          },
+          "commence_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Commence Time"
+          },
+          "market_kind": {
+            "type": "string",
+            "enum": [
+              "h2h",
+              "spreads",
+              "totals"
+            ],
+            "title": "Market Kind"
+          },
+          "point": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Point"
+          },
+          "hold_pct": {
+            "type": "number",
+            "title": "Hold Pct"
+          },
+          "sides": {
+            "items": {
+              "$ref": "#/components/schemas/LowHoldSide"
+            },
+            "type": "array",
+            "title": "Sides"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sport_key",
+          "event_id",
+          "home_team",
+          "away_team",
+          "commence_time",
+          "market_kind",
+          "hold_pct",
+          "sides"
+        ],
+        "title": "LowHoldOpportunity"
+      },
+      "LowHoldResponse": {
+        "properties": {
+          "opportunities": {
+            "items": {
+              "$ref": "#/components/schemas/LowHoldOpportunity"
+            },
+            "type": "array",
+            "title": "Opportunities"
+          },
+          "scanned_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scanned At"
+          },
+          "max_hold_pct": {
+            "type": "number",
+            "title": "Max Hold Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "opportunities",
+          "scanned_at",
+          "max_hold_pct"
+        ],
+        "title": "LowHoldResponse"
+      },
+      "LowHoldSide": {
+        "properties": {
+          "outcome_name": {
+            "type": "string",
+            "title": "Outcome Name"
+          },
+          "book": {
+            "type": "string",
+            "title": "Book"
+          },
+          "price_american": {
+            "type": "integer",
+            "title": "Price American"
+          },
+          "point": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Point"
+          }
+        },
+        "type": "object",
+        "required": [
+          "outcome_name",
+          "book",
+          "price_american"
+        ],
+        "title": "LowHoldSide"
       },
       "Market": {
         "properties": {
