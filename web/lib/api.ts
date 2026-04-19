@@ -27,7 +27,7 @@ export const apiPaths = {
   picks: (sport: string) => `/api/picks/${sport}`,
   arbitrage: (books: string[]) =>
     `/api/arbitrage${books.length ? `?books=${books.join(",")}` : ""}`,
-  lowHold: (books: string[], maxHoldPct = 2.5) => {
+  lowHold: (books: string[], maxHoldPct = 1) => {
     const qs = new URLSearchParams();
     if (books.length) qs.set("books", books.join(","));
     qs.set("max_hold_pct", String(maxHoldPct));

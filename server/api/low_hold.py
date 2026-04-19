@@ -43,7 +43,7 @@ def build_router(cache: OddsCache) -> APIRouter:
     @router.get("/api/low-hold", response_model=LowHoldResponse)
     async def get_low_hold(
         books: str = "",
-        max_hold_pct: float = 2.5,
+        max_hold_pct: float = 1.0,
     ) -> LowHoldResponse:
         books_set: set[str] | None = None
         if books.strip():

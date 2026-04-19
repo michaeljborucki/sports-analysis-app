@@ -51,7 +51,7 @@ function holdColor(pct: number): string {
 
 export default function LowHoldPage() {
   const { visible, toggle, setAll } = useVisibleBooks();
-  const [maxHold, setMaxHold] = useState<number>(2.5);
+  const [maxHold, setMaxHold] = useState<number>(1);
 
   const { data, error, isLoading, isValidating, mutate } =
     useSWR<LowHoldResponse>(
