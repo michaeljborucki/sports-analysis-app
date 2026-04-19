@@ -171,15 +171,14 @@ export function OddsGrid({ games }: { games: Game[] }) {
                 <Fragment key={g.event_id}>
                   {[topOutcome, bottomOutcome].map((out, idx) => {
                     const isFirst = idx === 0;
-                    // Best and Consensus are both computed from the visible-books
-                    // subset so the filter is internally consistent — toggling a
-                    // book recenters both columns.
-                    const visiblePrices = out
-                      ? out.prices.filter(p => visible.has(p.bookmaker_key))
-                      : [];
-                    const best = pickBest(visiblePrices);
+                    // Best and Consensus are market-level summaries — computed
+                    // across all available books so they don't shift when the
+                    // user filters the display. The book filter only affects
+                    // which per-book columns are rendered.
+                    const allPrices = out?.prices ?? [];
+                    const best = pickBest(allPrices);
                     const consensus = medianAmerican(
-                      visiblePrices.map(p => p.price_american)
+                      allPrices.map(p => p.price_american)
                     );
                     return (
                       <tr
