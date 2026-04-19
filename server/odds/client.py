@@ -11,9 +11,10 @@ BASE_URL = "https://api.the-odds-api.com/v4"
 MLB_SPORT_KEY = "baseball_mlb"
 CORE_MARKETS = "h2h,spreads,totals"
 # All regions — US (regulated books), US2 (extras + BetOnline etc.),
+# US_EX (US exchanges: Sporttrade, Prophet Exchange, Rebet exchange),
 # EU (Pinnacle, Bet365 EU entity), UK (Bet365, William Hill, Ladbrokes).
 # Each region adds books at the cost of 1 quota unit per market.
-REGIONS = "us,us2,eu,uk"
+REGIONS = "us,us2,us_ex,eu,uk"
 TIMEOUT = 15.0
 
 
