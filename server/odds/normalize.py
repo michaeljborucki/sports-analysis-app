@@ -14,13 +14,17 @@ def _encode_outcome_name(market_key: str, name: str, description: str | None) ->
     return name
 
 
-def normalize_odds_response(games: list[dict], fetched_at: datetime) -> list[dict]:
+def normalize_odds_response(
+    games: list[dict],
+    fetched_at: datetime,
+    sport_key: str = "mlb",
+) -> list[dict]:
     """Flatten Odds API response (game-level OR per-event) into cache rows."""
     rows: list[dict] = []
     # Per-event responses are a single event dict, not a list; wrap if needed.
     iterable = games if isinstance(games, list) else [games]
     for game in iterable:
-        if not game:  # empty per-event response
+        if not game:
             continue
         event_id = game["id"]
         home = game.get("home_team", "")
@@ -36,6 +40,7 @@ def normalize_odds_response(games: list[dict], fetched_at: datetime) -> list[dic
                     )
                     rows.append({
                         "event_id": event_id,
+                        "sport_key": sport_key,
                         "home_team": home,
                         "away_team": away,
                         "commence_time": commence,

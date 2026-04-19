@@ -20,10 +20,11 @@ export async function fetchJson<T>(path: string): Promise<T> {
 }
 
 export const apiPaths = {
-  odds: "/api/odds/mlb",
-  props: "/api/props/mlb",
-  picks: "/api/picks/mlb",
   health: "/api/health",
+  sports: "/api/sports",
+  odds: (sport: string) => `/api/odds/${sport}`,
+  props: (sport: string) => `/api/props/${sport}`,
+  picks: (sport: string) => `/api/picks/${sport}`,
 } as const;
 
 export function refreshEventUrl(eventId: string): string {

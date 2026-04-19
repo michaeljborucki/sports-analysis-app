@@ -1,17 +1,28 @@
 "use client";
+import { use } from "react";
+import { notFound } from "next/navigation";
 import useSWR from "swr";
+import { useIsMounted } from "@/lib/use-is-mounted";
 import { apiPaths, type OddsResponse } from "@/lib/api";
 import { intervals } from "@/lib/swr";
-import { useIsMounted } from "@/lib/use-is-mounted";
+import { isSportKey, getSport } from "@/lib/sports";
 import { OddsGrid } from "@/components/odds-grid";
 import { StaleIndicator } from "@/components/stale-indicator";
 import { StaleBanner } from "@/components/stale-banner";
 import { OddsGridSkeleton } from "@/components/skeletons";
 import { RefreshButton } from "@/components/refresh-button";
 
-export default function OddsMlbPage() {
+export default function OddsPage({
+  params,
+}: {
+  params: Promise<{ sport: string }>;
+}) {
+  const { sport } = use(params);
+  if (!isSportKey(sport)) notFound();
+  const sportMeta = getSport(sport);
+
   const { data, error, isLoading, isValidating, mutate } = useSWR<OddsResponse>(
-    apiPaths.odds,
+    apiPaths.odds(sport),
     { refreshInterval: intervals.odds }
   );
   const mounted = useIsMounted();
@@ -20,7 +31,9 @@ export default function OddsMlbPage() {
     <div className="flex flex-col gap-4">
       <header className="flex items-end justify-between gap-4">
         <div className="flex items-baseline gap-4">
-          <h1 className="text-2xl font-bold tracking-tight">MLB Odds</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {sportMeta.label} Odds
+          </h1>
           <span className="text-xs text-text-3 tabular">
             {mounted
               ? new Date().toLocaleDateString([], {
@@ -32,10 +45,7 @@ export default function OddsMlbPage() {
         </div>
         <div className="flex items-center gap-3">
           {data && <StaleIndicator staleSeconds={data.stale_seconds ?? 0} />}
-          <RefreshButton
-            onRefresh={() => mutate()}
-            isValidating={isValidating}
-          />
+          <RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />
         </div>
       </header>
 
@@ -47,7 +57,7 @@ export default function OddsMlbPage() {
         </div>
       )}
       {isLoading && !data && <OddsGridSkeleton />}
-      {data && <OddsGrid games={data.games ?? []} />}
+      {data && <OddsGrid games={data.games ?? []} sport={sportMeta} />}
     </div>
   );
 }

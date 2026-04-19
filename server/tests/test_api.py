@@ -42,8 +42,13 @@ def test_odds_endpoint_empty_cache(app):
     assert body["stale_seconds"] == 0
 
 
+def test_odds_endpoint_rejects_unknown_sport(app):
+    with TestClient(app) as c:
+        r = c.get("/api/odds/notasport")
+    assert r.status_code == 404
+
+
 def test_picks_endpoint_returns_valid_status(app):
-    # Today (runtime) likely doesn't match fixture date — accept either outcome
     with TestClient(app) as c:
         r = c.get("/api/picks/mlb")
     assert r.status_code == 200
@@ -51,9 +56,20 @@ def test_picks_endpoint_returns_valid_status(app):
     assert body["status"] in ("ok", "no_picks_today")
 
 
+def test_sports_endpoint_lists_mlb_and_tennis(app):
+    with TestClient(app) as c:
+        r = c.get("/api/sports")
+    assert r.status_code == 200
+    keys = {s["key"] for s in r.json()["sports"]}
+    assert keys == {"mlb", "tennis"}
+
+
 def test_openapi_schema_accessible(app):
     with TestClient(app) as c:
         r = c.get("/openapi.json")
     assert r.status_code == 200
-    assert "/api/odds/mlb" in r.json()["paths"]
-    assert "/api/picks/mlb" in r.json()["paths"]
+    paths = r.json()["paths"]
+    assert "/api/odds/{sport}" in paths
+    assert "/api/picks/{sport}" in paths
+    assert "/api/props/{sport}" in paths
+    assert "/api/sports" in paths

@@ -21,15 +21,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/odds/mlb": {
+    "/api/odds/{sport}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Mlb Odds */
-        get: operations["get_mlb_odds_api_odds_mlb_get"];
+        /** Get Odds */
+        get: operations["get_odds_api_odds__sport__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -38,15 +38,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/props/mlb": {
+    "/api/props/{sport}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Mlb Props */
-        get: operations["get_mlb_props_api_props_mlb_get"];
+        /** Get Props */
+        get: operations["get_props_api_props__sport__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -55,15 +55,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/picks/mlb": {
+    "/api/picks/{sport}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Mlb Picks */
-        get: operations["get_mlb_picks_api_picks_mlb_get"];
+        /** Get Picks */
+        get: operations["get_picks_api_picks__sport__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -117,6 +117,23 @@ export interface paths {
         put?: never;
         /** Refresh */
         post: operations["refresh_api_refresh__event_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Sports */
+        get: operations["get_sports_api_sports_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -210,6 +227,21 @@ export interface components {
             /** Outcomes */
             outcomes: components["schemas"]["MarketOutcome"][];
         };
+        /** MarketGroupModel */
+        MarketGroupModel: {
+            /** Label */
+            label: string;
+            /** Main Key */
+            main_key: string;
+            /** Alt Key */
+            alt_key?: string | null;
+            /**
+             * Display
+             * @default moneyline
+             * @enum {string}
+             */
+            display: "moneyline" | "spread" | "total";
+        };
         /** MarketOutcome */
         MarketOutcome: {
             /** Outcome Name */
@@ -301,6 +333,20 @@ export interface components {
             /** Bet Card Date */
             bet_card_date?: string | null;
         };
+        /** SportModel */
+        SportModel: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Market Groups */
+            market_groups: components["schemas"]["MarketGroupModel"][];
+        };
+        /** SportsResponse */
+        SportsResponse: {
+            /** Sports */
+            sports: components["schemas"]["SportModel"][];
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -343,11 +389,13 @@ export interface operations {
             };
         };
     };
-    get_mlb_odds_api_odds_mlb_get: {
+    get_odds_api_odds__sport__get: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                sport: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -361,13 +409,24 @@ export interface operations {
                     "application/json": components["schemas"]["OddsResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
-    get_mlb_props_api_props_mlb_get: {
+    get_props_api_props__sport__get: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                sport: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -381,13 +440,24 @@ export interface operations {
                     "application/json": components["schemas"]["OddsResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
-    get_mlb_picks_api_picks_mlb_get: {
+    get_picks_api_picks__sport__get: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                sport: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -399,6 +469,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PicksResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -470,6 +549,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_sports_api_sports_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SportsResponse"];
                 };
             };
         };

@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 
-DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "markets.toml"
+CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 
 # Tier names — one per [section] in the toml. "main" is special: game-level
 # endpoint, one API call covers every event. All others are per-event tiers.
@@ -46,8 +46,13 @@ class MarketConfig:
     )
 
     @classmethod
-    def load(cls, path: Path | None = None) -> "MarketConfig":
-        cfg_path = path or DEFAULT_CONFIG_PATH
+    def load(cls, filename: str | Path = "markets.mlb.toml") -> "MarketConfig":
+        """Load a markets config by filename (resolved under server/config/) or
+        by an absolute Path. Default preserves backwards compat with MLB."""
+        if isinstance(filename, Path) and filename.is_absolute():
+            cfg_path = filename
+        else:
+            cfg_path = CONFIG_DIR / str(filename)
         raw = tomllib.loads(cfg_path.read_text())
 
         tiers: dict[str, TierConfig] = {}

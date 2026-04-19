@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState, Fragment } from "react";
+import { useEffect, useMemo, useState, Fragment } from "react";
 import clsx from "clsx";
 
 import type { Game, Market, MarketOutcome } from "@/lib/api";
@@ -8,15 +8,17 @@ import { BOOK_ORDER } from "@/lib/books";
 import { useVisibleBooks } from "@/lib/use-visible-books";
 import { pickBest, findAllBest } from "@/lib/consensus";
 import { bookInfo } from "@/lib/books";
-import { AltLinesPanel } from "./alt-lines-panel";
-import { MarketTabs, type MarketKey } from "./market-tabs";
+import type { Sport, MarketGroup, DisplayKind } from "@/lib/sports";
+import { renderTeam } from "@/lib/sports";
+import { MarketTabs } from "./market-tabs";
 import { BestCell } from "./best-cell";
 import { CellFlash } from "./cell-flash";
 import { GameTime } from "./game-time";
 import { BookLogo } from "../book-logo";
 import { BookFilter } from "../book-filter";
+import { MarketExpansionPanel } from "./market-expansion-panel";
 
-function findMarket(game: Game, key: MarketKey): Market | undefined {
+function findMarket(game: Game, key: string): Market | undefined {
   return game.markets?.find(m => m.market_key === key);
 }
 
@@ -25,19 +27,14 @@ function priceAtBook(outcome: MarketOutcome | undefined, bookKey: string) {
 }
 
 /**
- * Two outcomes per game — [top row, bottom row]. Order:
- *   h2h:     away team, home team   (reading order of "AWAY @ HOME")
- *   spreads: away team, home team   (same)
- *   totals:  Over,       Under
- *
- * If a market has multiple (outcome_name, point) tuples (e.g. different books
- * offering different main lines), we pick the most-priced one per side — i.e.
- * the consensus main line.
+ * Pick the two outcomes to show in the main grid row for this game + market
+ * group. For h2h/spreads markets: [away team, home team]. For totals: [Over, Under].
+ * Picks the most-priced outcome per side when multiple (point, name) tuples exist.
  */
 function orderedOutcomes(
   market: Market | undefined,
   game: Game,
-  key: MarketKey
+  display: DisplayKind
 ): [MarketOutcome | undefined, MarketOutcome | undefined] {
   if (!market) return [undefined, undefined];
   const best = (candidates: MarketOutcome[]): MarketOutcome | undefined => {
@@ -46,7 +43,7 @@ function orderedOutcomes(
       a.prices.length >= b.prices.length ? a : b
     );
   };
-  if (key === "totals") {
+  if (display === "total") {
     return [
       best(market.outcomes.filter(o => o.outcome_name === "Over")),
       best(market.outcomes.filter(o => o.outcome_name === "Under")),
@@ -61,25 +58,26 @@ function orderedOutcomes(
 function sideLabel(
   outcome: MarketOutcome | undefined,
   game: Game,
-  key: MarketKey
+  display: DisplayKind,
+  sport: Sport
 ): string {
   if (!outcome) return "—";
-  if (key === "h2h") {
+  if (display === "moneyline") {
     return outcome.outcome_name === game.home_team
-      ? abbrev(game.home_team)
-      : abbrev(game.away_team);
+      ? renderTeam(game.home_team, sport)
+      : renderTeam(game.away_team, sport);
   }
-  if (key === "spreads") {
+  if (display === "spread") {
     const team =
       outcome.outcome_name === game.home_team
-        ? abbrev(game.home_team)
-        : abbrev(game.away_team);
+        ? renderTeam(game.home_team, sport)
+        : renderTeam(game.away_team, sport);
     const p = outcome.best_price?.point ?? outcome.prices[0]?.point ?? null;
     if (p == null) return team;
     const sign = p > 0 ? "+" : "";
     return `${team} ${sign}${p}`;
   }
-  if (key === "totals") {
+  if (display === "total") {
     const letter = outcome.outcome_name === "Over" ? "O" : "U";
     const p = outcome.best_price?.point ?? outcome.prices[0]?.point ?? null;
     return p == null ? letter : `${letter} ${p}`;
@@ -87,12 +85,40 @@ function sideLabel(
   return outcome.outcome_name;
 }
 
-export function OddsGrid({ games }: { games: Game[] }) {
-  const [market, setMarket] = useState<MarketKey>("h2h");
+export function OddsGrid({
+  games,
+  sport,
+}: {
+  games: Game[];
+  sport: Sport;
+}) {
+  // Which market_groups actually have any data in this dataset
+  const availableGroups = useMemo(() => {
+    const present = new Set<string>();
+    for (const g of games)
+      for (const m of g.markets ?? []) present.add(m.market_key);
+    return sport.marketGroups.filter(mg => present.has(mg.mainKey));
+  }, [games, sport]);
+
+  const fallbackGroup: MarketGroup =
+    availableGroups[0] ?? sport.marketGroups[0];
+  const [activeKey, setActiveKey] = useState<string>(fallbackGroup.mainKey);
+
+  // If the sport changes (user switches via nav), clamp the selected market
+  useEffect(() => {
+    if (!sport.marketGroups.some(mg => mg.mainKey === activeKey)) {
+      setActiveKey(sport.marketGroups[0].mainKey);
+    }
+  }, [sport, activeKey]);
+
+  const activeGroup: MarketGroup =
+    sport.marketGroups.find(mg => mg.mainKey === activeKey) ??
+    sport.marketGroups[0];
+
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
   const { visible, toggle, setAll } = useVisibleBooks();
 
-  // All books present in the current dataset, ordered by registry priority.
+  // Books present in this dataset, ordered by registry priority.
   const availableBooks = useMemo(() => {
     const present = new Set<string>();
     for (const g of games)
@@ -103,17 +129,24 @@ export function OddsGrid({ games }: { games: Game[] }) {
     return [...ordered, ...extras];
   }, [games]);
 
-  // Only the subset the user has toggled on.
   const books = useMemo(
     () => availableBooks.filter(b => visible.has(b)),
     [availableBooks, visible]
   );
 
+  const tabs = availableGroups.map(g => ({ key: g.mainKey, label: g.label }));
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-4 justify-between">
-        <div className="flex items-center gap-4">
-          <MarketTabs value={market} onChange={setMarket} />
+        <div className="flex items-center gap-4 flex-wrap">
+          {tabs.length > 0 && (
+            <MarketTabs
+              value={activeKey}
+              onChange={setActiveKey}
+              tabs={tabs}
+            />
+          )}
           <div className="text-xs text-text-3 tabular">{games.length} games</div>
         </div>
         <BookFilter
@@ -156,7 +189,8 @@ export function OddsGrid({ games }: { games: Game[] }) {
                   colSpan={4 + books.length}
                   className="text-center py-12 text-text-3"
                 >
-                  No MLB odds cached yet. Waiting for fetcher…
+                  No {sport.label} odds cached yet. Turn the fetcher on or wait
+                  for the first tick.
                 </td>
               </tr>
             )}
@@ -169,26 +203,26 @@ export function OddsGrid({ games }: { games: Game[] }) {
               </tr>
             )}
             {games.map(g => {
-              const m = findMarket(g, market);
-              const [topOutcome, bottomOutcome] = orderedOutcomes(m, g, market);
+              const m = findMarket(g, activeKey);
+              const [topOutcome, bottomOutcome] = orderedOutcomes(
+                m,
+                g,
+                activeGroup.display
+              );
               const isExpanded = expandedEventId === g.event_id;
               return (
                 <Fragment key={g.event_id}>
                   {[topOutcome, bottomOutcome].map((out, idx) => {
                     const isFirst = idx === 0;
                     const allPrices = out?.prices ?? [];
-                    // Best follows the filter — best price among books you'd
-                    // actually bet at. Consensus is server-computed (median in
-                    // implied-probability space across every book).
+                    // Best follows the filter; consensus is server-computed.
                     const visiblePrices = allPrices.filter(p =>
                       visible.has(p.bookmaker_key)
                     );
-                    // All books tied at the top effective payout — every one
-                    // of them gets the green highlight in the row.
                     const tiedBest = findAllBest(visiblePrices);
-                    const tiedKeys = new Set(tiedBest.map(p => p.bookmaker_key));
-                    // Representative for the Best column display: the tied
-                    // book with the highest priority (lowest priority number).
+                    const tiedKeys = new Set(
+                      tiedBest.map(p => p.bookmaker_key)
+                    );
                     const best =
                       tiedBest.length > 0
                         ? tiedBest.reduce((a, b) =>
@@ -233,7 +267,8 @@ export function OddsGrid({ games }: { games: Game[] }) {
                               </span>
                               <div className="flex flex-col gap-0.5">
                                 <span className="text-text-1 font-medium">
-                                  {abbrev(g.away_team)} @ {abbrev(g.home_team)}
+                                  {renderTeam(g.away_team, sport)} @{" "}
+                                  {renderTeam(g.home_team, sport)}
                                 </span>
                                 <span className="text-text-3 text-[11px] flex items-center gap-1.5">
                                   {g.is_live ? (
@@ -257,7 +292,7 @@ export function OddsGrid({ games }: { games: Game[] }) {
                             idx === 1 && "text-text-2"
                           )}
                         >
-                          {sideLabel(out, g, market)}
+                          {sideLabel(out, g, activeGroup.display, sport)}
                         </td>
                         <td className="text-right px-2 py-1.5 tabular">
                           {best ? (
@@ -270,7 +305,9 @@ export function OddsGrid({ games }: { games: Game[] }) {
                           )}
                         </td>
                         <td className="text-right px-2 py-1.5 tabular text-text-2 border-r border-border-subtle/60">
-                          {consensus != null ? formatAmerican(consensus) : "—"}
+                          {consensus != null
+                            ? formatAmerican(consensus)
+                            : "—"}
                         </td>
                         {books.map(b => {
                           const p = priceAtBook(out, b);
@@ -309,7 +346,11 @@ export function OddsGrid({ games }: { games: Game[] }) {
                         colSpan={4 + books.length}
                         className="p-0 border-t border-border-subtle"
                       >
-                        <AltLinesPanel game={g} visible={visible} />
+                        <MarketExpansionPanel
+                          game={g}
+                          sport={sport}
+                          visible={visible}
+                        />
                       </td>
                     </tr>
                   )}
@@ -320,50 +361,5 @@ export function OddsGrid({ games }: { games: Game[] }) {
         </table>
       </div>
     </div>
-  );
-}
-
-function abbrev(team: string): string {
-  const map: Record<string, string> = {
-    "Arizona Diamondbacks": "ARI",
-    "Atlanta Braves": "ATL",
-    "Baltimore Orioles": "BAL",
-    "Boston Red Sox": "BOS",
-    "Chicago Cubs": "CHC",
-    "Chicago White Sox": "CWS",
-    "Cincinnati Reds": "CIN",
-    "Cleveland Guardians": "CLE",
-    "Colorado Rockies": "COL",
-    "Detroit Tigers": "DET",
-    "Houston Astros": "HOU",
-    "Kansas City Royals": "KC",
-    "Los Angeles Angels": "LAA",
-    "Los Angeles Dodgers": "LAD",
-    "Miami Marlins": "MIA",
-    "Milwaukee Brewers": "MIL",
-    "Minnesota Twins": "MIN",
-    "New York Mets": "NYM",
-    "New York Yankees": "NYY",
-    "Oakland Athletics": "OAK",
-    "Athletics": "OAK",
-    "Philadelphia Phillies": "PHI",
-    "Pittsburgh Pirates": "PIT",
-    "San Diego Padres": "SD",
-    "Seattle Mariners": "SEA",
-    "San Francisco Giants": "SF",
-    "St. Louis Cardinals": "STL",
-    "Tampa Bay Rays": "TB",
-    "Texas Rangers": "TEX",
-    "Toronto Blue Jays": "TOR",
-    "Washington Nationals": "WSH",
-  };
-  return (
-    map[team] ??
-    team
-      .split(" ")
-      .map(w => w[0])
-      .join("")
-      .slice(0, 3)
-      .toUpperCase()
   );
 }

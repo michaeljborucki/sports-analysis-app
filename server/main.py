@@ -10,8 +10,8 @@ from .config import Config
 from .odds.cache import OddsCache
 from .odds.client import OddsAPIClient
 from .odds.fetcher import FetcherRegistry
-from .odds.market_config import MarketConfig
 from .picks.reader import PicksReader
+from .sports import all_sports
 
 
 logging.basicConfig(level=logging.INFO)
@@ -22,12 +22,17 @@ def create_app() -> FastAPI:
     cache = OddsCache(config.cache_db)
     cache.init()
     client = OddsAPIClient(api_key=config.odds_api_key)
-    market_cfg = MarketConfig.load()
-    fetcher = FetcherRegistry(config, market_cfg, cache, client)
-    picks_reader = PicksReader(
-        bet_card_dir=config.bet_card_dir,
-        bets_csv=config.bets_csv,
-    )
+    sports = all_sports()
+    fetcher = FetcherRegistry(config, sports, cache, client)
+
+    # One picks reader per sport, rooted at that sport's sibling agents repo.
+    picks_readers: dict[str, PicksReader] = {}
+    for sp in sports:
+        picks_readers[sp.key] = PicksReader(
+            bet_card_dir=sp.agent_dir,
+            bets_csv=sp.agent_dir / "bets.csv",
+            agent_key=sp.agent_dir.parent.name,
+        )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -57,15 +62,17 @@ def create_app() -> FastAPI:
     from .api.props import build_router as props_router
     from .api.fetcher_ctl import build_router as fetcher_ctl_router
     from .api.refresh import build_router as refresh_router
+    from .api.sports import build_router as sports_router
 
     app.include_router(health_router(cache, fetcher))
     app.include_router(odds_router(cache))
     app.include_router(props_router(cache))
     app.include_router(
-        picks_router(picks_reader, date_override=config.picks_date_override)
+        picks_router(picks_readers, date_override=config.picks_date_override)
     )
     app.include_router(fetcher_ctl_router(fetcher))
     app.include_router(refresh_router(fetcher))
+    app.include_router(sports_router())
 
     return app
 

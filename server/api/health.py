@@ -18,13 +18,16 @@ def build_router(cache: OddsCache, fetcher: FetcherRegistry) -> APIRouter:
         last_fetch = status.get("last_fetch_at")
         if isinstance(last_fetch, str):
             last_fetch = datetime.fromisoformat(last_fetch)
+        enabled = [
+            f"{sp.key}:{t.name}" for sp, t in fetcher.all_enabled_tiers()
+        ]
         return FetcherStatus(
             last_fetch_at=last_fetch,
             requests_used=status.get("requests_used"),
             requests_remaining=status.get("requests_remaining"),
             last_error=status.get("last_error"),
             fetcher_running=fetcher.is_running,
-            enabled_tiers=[t.name for t in fetcher.market_cfg.enabled_tiers()],
+            enabled_tiers=enabled,
         )
 
     return router

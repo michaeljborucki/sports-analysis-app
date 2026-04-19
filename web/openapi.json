@@ -23,10 +23,21 @@
         }
       }
     },
-    "/api/odds/mlb": {
+    "/api/odds/{sport}": {
       "get": {
-        "summary": "Get Mlb Odds",
-        "operationId": "get_mlb_odds_api_odds_mlb_get",
+        "summary": "Get Odds",
+        "operationId": "get_odds_api_odds__sport__get",
+        "parameters": [
+          {
+            "name": "sport",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sport"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -37,14 +48,35 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/api/props/mlb": {
+    "/api/props/{sport}": {
       "get": {
-        "summary": "Get Mlb Props",
-        "operationId": "get_mlb_props_api_props_mlb_get",
+        "summary": "Get Props",
+        "operationId": "get_props_api_props__sport__get",
+        "parameters": [
+          {
+            "name": "sport",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sport"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -55,14 +87,35 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/api/picks/mlb": {
+    "/api/picks/{sport}": {
       "get": {
-        "summary": "Get Mlb Picks",
-        "operationId": "get_mlb_picks_api_picks_mlb_get",
+        "summary": "Get Picks",
+        "operationId": "get_picks_api_picks__sport__get",
+        "parameters": [
+          {
+            "name": "sport",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sport"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -70,6 +123,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PicksResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -145,6 +208,24 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sports": {
+      "get": {
+        "summary": "Get Sports",
+        "operationId": "get_sports_api_sports_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SportsResponse"
                 }
               }
             }
@@ -382,6 +463,45 @@
           "outcomes"
         ],
         "title": "Market"
+      },
+      "MarketGroupModel": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "main_key": {
+            "type": "string",
+            "title": "Main Key"
+          },
+          "alt_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alt Key"
+          },
+          "display": {
+            "type": "string",
+            "enum": [
+              "moneyline",
+              "spread",
+              "total"
+            ],
+            "title": "Display",
+            "default": "moneyline"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "main_key"
+        ],
+        "title": "MarketGroupModel"
       },
       "MarketOutcome": {
         "properties": {
@@ -622,6 +742,48 @@
           "last_checked_at"
         ],
         "title": "PicksResponse"
+      },
+      "SportModel": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "market_groups": {
+            "items": {
+              "$ref": "#/components/schemas/MarketGroupModel"
+            },
+            "type": "array",
+            "title": "Market Groups"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "market_groups"
+        ],
+        "title": "SportModel"
+      },
+      "SportsResponse": {
+        "properties": {
+          "sports": {
+            "items": {
+              "$ref": "#/components/schemas/SportModel"
+            },
+            "type": "array",
+            "title": "Sports"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sports"
+        ],
+        "title": "SportsResponse"
       },
       "ValidationError": {
         "properties": {

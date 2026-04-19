@@ -1,20 +1,14 @@
 "use client";
 import clsx from "clsx";
 
-export type MarketKey = "h2h" | "spreads" | "totals";
-
-const tabs: { key: MarketKey; label: string }[] = [
-  { key: "h2h", label: "Moneyline" },
-  { key: "spreads", label: "Run Line" },
-  { key: "totals", label: "Total" },
-];
-
-export function MarketTabs({
+export function MarketTabs<T extends string>({
   value,
   onChange,
+  tabs,
 }: {
-  value: MarketKey;
-  onChange: (k: MarketKey) => void;
+  value: T;
+  onChange: (k: T) => void;
+  tabs: { key: T; label: string }[];
 }) {
   return (
     <div className="inline-flex rounded-md bg-bg-1 border border-border-subtle p-0.5">

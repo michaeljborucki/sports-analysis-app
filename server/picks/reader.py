@@ -54,9 +54,15 @@ def _stable_id(game_label: str, bet_type: str, side: str) -> str:
 
 
 class PicksReader:
-    def __init__(self, bet_card_dir: Path, bets_csv: Path):
+    def __init__(
+        self,
+        bet_card_dir: Path,
+        bets_csv: Path,
+        agent_key: str = "baseball-agents",
+    ):
         self.bet_card_dir = Path(bet_card_dir)
         self.bets_csv = Path(bets_csv)
+        self.agent_key = agent_key
 
     def _card_path(self, for_date: date) -> Path:
         return self.bet_card_dir / f"bet_card_{for_date.isoformat()}.txt"
@@ -97,7 +103,7 @@ class PicksReader:
                         {"label": "Kelly", "value": f"{p['kelly_pct']*100:.1f}%"},
                     ],
                     "reasoning": _synthesize_reasoning(p),
-                    "agent_key": "baseball-agents",
+                    "agent_key": self.agent_key,
                     "agent_record_30d": record["label"],
                     "commence_time": None,
                 })

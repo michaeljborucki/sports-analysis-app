@@ -9,6 +9,7 @@ from typing import Iterable
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS odds_snapshot (
   event_id       TEXT NOT NULL,
+  sport_key      TEXT NOT NULL DEFAULT 'mlb',
   home_team      TEXT NOT NULL,
   away_team      TEXT NOT NULL,
   commence_time  TEXT NOT NULL,
@@ -33,6 +34,14 @@ CREATE TABLE IF NOT EXISTS fetcher_status (
 """
 
 
+# Schema migrations applied after CREATE IF NOT EXISTS. Each entry is a SQL
+# statement that's tolerant of being re-run.
+_MIGRATIONS = [
+    # 0.2: add sport_key column (defaulted to 'mlb' for existing rows)
+    "ALTER TABLE odds_snapshot ADD COLUMN sport_key TEXT NOT NULL DEFAULT 'mlb'",
+]
+
+
 class OddsCache:
     def __init__(self, path: Path):
         self.path = path
@@ -45,6 +54,18 @@ class OddsCache:
     def init(self) -> None:
         with self._conn() as c:
             c.executescript(SCHEMA)
+            # Apply idempotent migrations — tolerate "duplicate column" errors
+            # if an older schema has already been bumped.
+            for stmt in _MIGRATIONS:
+                try:
+                    c.execute(stmt)
+                except sqlite3.OperationalError as e:
+                    if "duplicate column" not in str(e).lower():
+                        raise
+            # Ensure the index exists after migrations
+            c.execute(
+                "CREATE INDEX IF NOT EXISTS idx_odds_sport ON odds_snapshot(sport_key)"
+            )
 
     def upsert(self, rows: Iterable[dict]) -> None:
         prepared = []
@@ -57,6 +78,7 @@ class OddsCache:
             point = r.get("outcome_point")
             prepared.append({
                 **r,
+                "sport_key": r.get("sport_key", "mlb"),
                 "commence_time": ct.isoformat() if isinstance(ct, datetime) else ct,
                 "fetched_at": fa.isoformat() if isinstance(fa, datetime) else fa,
                 "outcome_point": 0.0 if point is None else float(point),
@@ -65,11 +87,11 @@ class OddsCache:
             c.executemany(
                 """
                 INSERT INTO odds_snapshot
-                  (event_id, home_team, away_team, commence_time,
+                  (event_id, sport_key, home_team, away_team, commence_time,
                    bookmaker_key, market_key, outcome_name, outcome_point,
                    price_american, fetched_at)
                 VALUES
-                  (:event_id, :home_team, :away_team, :commence_time,
+                  (:event_id, :sport_key, :home_team, :away_team, :commence_time,
                    :bookmaker_key, :market_key, :outcome_name, :outcome_point,
                    :price_american, :fetched_at)
                 ON CONFLICT(event_id, bookmaker_key, market_key, outcome_name, outcome_point)
@@ -78,15 +100,22 @@ class OddsCache:
                    fetched_at     = excluded.fetched_at,
                    commence_time  = excluded.commence_time,
                    home_team      = excluded.home_team,
-                   away_team      = excluded.away_team
+                   away_team      = excluded.away_team,
+                   sport_key      = excluded.sport_key
                 """,
                 prepared,
             )
 
-    def all_current(self) -> list[dict]:
+    def all_current(self, sport_key: str | None = None) -> list[dict]:
+        """All cached rows, optionally filtered to a single sport."""
+        q = "SELECT * FROM odds_snapshot"
+        args: tuple = ()
+        if sport_key:
+            q += " WHERE sport_key = ?"
+            args = (sport_key,)
         with self._conn() as c:
             rows = []
-            for r in c.execute("SELECT * FROM odds_snapshot"):
+            for r in c.execute(q, args):
                 d = dict(r)
                 # Reverse the sentinel for h2h markets where point is meaningless
                 if d.get("market_key") == "h2h":
@@ -133,20 +162,27 @@ class OddsCache:
             )
             return cur.rowcount
 
-    def distinct_events(self, within_hours_ahead: int | None = None) -> list[dict]:
-        """List distinct (event_id, commence_time, home_team, away_team) known
-        to the cache, optionally filtering to games starting within N hours.
-        Used by per-event fetchers to know which events to poll.
-        """
+    def distinct_events(
+        self,
+        within_hours_ahead: int | None = None,
+        sport_key: str | None = None,
+    ) -> list[dict]:
+        """List distinct (event_id, sport_key, commence_time, home, away)
+        known to the cache, optionally filtering by sport + time window."""
         from datetime import datetime, timezone
         q = """
-            SELECT event_id, MAX(commence_time) AS commence_time,
+            SELECT event_id, MAX(sport_key) AS sport_key,
+                   MAX(commence_time) AS commence_time,
                    MAX(home_team) AS home_team, MAX(away_team) AS away_team
             FROM odds_snapshot
-            GROUP BY event_id
         """
+        args: tuple = ()
+        if sport_key:
+            q += " WHERE sport_key = ?"
+            args = (sport_key,)
+        q += " GROUP BY event_id"
         with self._conn() as c:
-            rows = [dict(r) for r in c.execute(q)]
+            rows = [dict(r) for r in c.execute(q, args)]
         if within_hours_ahead is None:
             return rows
         now = datetime.now(timezone.utc)

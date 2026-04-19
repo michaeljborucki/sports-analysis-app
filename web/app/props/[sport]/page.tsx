@@ -1,16 +1,27 @@
 "use client";
+import { use } from "react";
+import { notFound } from "next/navigation";
 import useSWR from "swr";
 import { useIsMounted } from "@/lib/use-is-mounted";
 import { apiPaths, type OddsResponse } from "@/lib/api";
 import { intervals } from "@/lib/swr";
+import { isSportKey, getSport } from "@/lib/sports";
 import { PropsTable } from "@/components/props-table";
 import { StaleIndicator } from "@/components/stale-indicator";
 import { RefreshButton } from "@/components/refresh-button";
 import { OddsGridSkeleton } from "@/components/skeletons";
 
-export default function PropsMlbPage() {
+export default function PropsPage({
+  params,
+}: {
+  params: Promise<{ sport: string }>;
+}) {
+  const { sport } = use(params);
+  if (!isSportKey(sport)) notFound();
+  const sportMeta = getSport(sport);
+
   const { data, error, isLoading, isValidating, mutate } = useSWR<OddsResponse>(
-    apiPaths.props,
+    apiPaths.props(sport),
     { refreshInterval: intervals.odds }
   );
   const mounted = useIsMounted();
@@ -19,7 +30,9 @@ export default function PropsMlbPage() {
     <div className="flex flex-col gap-4">
       <header className="flex items-end justify-between gap-4">
         <div className="flex items-baseline gap-4">
-          <h1 className="text-2xl font-bold tracking-tight">MLB Player Props</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {sportMeta.label} Player Props
+          </h1>
           <span className="text-xs text-text-3 tabular">
             {mounted
               ? new Date().toLocaleDateString([], {

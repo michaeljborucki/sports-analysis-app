@@ -1,0 +1,37 @@
+# Tennis market fetch configuration (ATP + WTA main tour).
+#
+# Same tier shape as MLB, but tennis has no first-innings analog so that tier
+# is disabled. Player props deferred for now — scope locked to core markets:
+# moneyline, game spread, total games.
+
+[main]
+enabled          = true
+interval_seconds = 60
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets          = ["h2h", "spreads", "totals"]
+
+[alternates]
+enabled          = true
+interval_seconds = 60
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets          = ["alternate_spreads", "alternate_totals"]
+
+# Tennis has no first-innings equivalent; disabled.
+[first_innings]
+enabled          = false
+interval_seconds = 60
+regions          = []
+markets          = []
+
+# Player props deferred — re-enable and add tennis-specific keys
+# (player_aces, player_games, etc.) when ready.
+[player_props]
+enabled             = false
+interval_seconds    = 60
+regions             = []
+games_window_hours  = 3
+markets             = []
+
+[on_demand]
+enabled          = true
+debounce_seconds = 60
