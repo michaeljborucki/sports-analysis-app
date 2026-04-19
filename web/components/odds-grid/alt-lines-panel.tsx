@@ -40,8 +40,15 @@ function groupByPoint(outcomes: MarketOutcome[] | undefined): MarketOutcome[] {
   });
 }
 
-function AltRow({ outcome }: { outcome: MarketOutcome }) {
-  const tied = findAllBest(outcome.prices);
+function AltRow({
+  outcome,
+  visible,
+}: {
+  outcome: MarketOutcome;
+  visible: Set<string>;
+}) {
+  const visiblePrices = outcome.prices.filter(p => visible.has(p.bookmaker_key));
+  const tied = findAllBest(visiblePrices);
   const best = tied[0];
   const point = best?.point ?? outcome.prices[0]?.point ?? null;
   return (
@@ -81,9 +88,11 @@ function AltRow({ outcome }: { outcome: MarketOutcome }) {
 function AltSection({
   title,
   outcomes,
+  visible,
 }: {
   title: string;
   outcomes: MarketOutcome[];
+  visible: Set<string>;
 }) {
   if (!outcomes.length) {
     return (
@@ -124,6 +133,7 @@ function AltSection({
               <AltRow
                 key={`${o.outcome_name}-${o.best_price?.point ?? i}`}
                 outcome={o}
+                visible={visible}
               />
             ))}
           </tbody>
@@ -133,7 +143,13 @@ function AltSection({
   );
 }
 
-export function AltLinesPanel({ game }: { game: Game }) {
+export function AltLinesPanel({
+  game,
+  visible,
+}: {
+  game: Game;
+  visible: Set<string>;
+}) {
   const altSpreads = findMarket(game, "alternate_spreads");
   const altTotals = findMarket(game, "alternate_totals");
   const f5Spreads = findMarket(game, "spreads_1st_5_innings");
@@ -200,10 +216,12 @@ export function AltLinesPanel({ game }: { game: Game }) {
         <AltSection
           title="Alt Spreads"
           outcomes={groupByPoint(altSpreads?.outcomes)}
+          visible={visible}
         />
         <AltSection
           title="Alt Totals"
           outcomes={groupByPoint(altTotals?.outcomes)}
+          visible={visible}
         />
       </div>
 
@@ -212,14 +230,17 @@ export function AltLinesPanel({ game }: { game: Game }) {
           <AltSection
             title="F5 Moneyline"
             outcomes={groupByPoint(f5H2h?.outcomes)}
+            visible={visible}
           />
           <AltSection
             title="F5 Run Line"
             outcomes={groupByPoint(f5Spreads?.outcomes)}
+            visible={visible}
           />
           <AltSection
             title="F5 Total"
             outcomes={groupByPoint(f5Totals?.outcomes)}
+            visible={visible}
           />
         </div>
       )}

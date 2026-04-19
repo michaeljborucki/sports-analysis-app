@@ -309,7 +309,7 @@ export function OddsGrid({ games }: { games: Game[] }) {
                         colSpan={4 + books.length}
                         className="p-0 border-t border-border-subtle"
                       >
-                        <AltLinesPanel game={g} />
+                        <AltLinesPanel game={g} visible={visible} />
                       </td>
                     </tr>
                   )}
