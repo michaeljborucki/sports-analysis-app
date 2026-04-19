@@ -4,6 +4,8 @@
 # burn daily quota fast. Enable selectively via /settings.
 
 [main]
+# Game-level endpoint only accepts featured markets. h2h_3_way / outrights
+# belong in [alternates] (per-event) — Odds API rejects them here with 422.
 enabled          = true
 interval_seconds = 60
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
@@ -11,7 +13,6 @@ markets = [
   "h2h",
   "spreads",
   "totals",
-  "h2h_3_way",
 ]
 
 [alternates]
@@ -19,6 +20,7 @@ enabled          = true
 interval_seconds = 60
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
 markets = [
+  "h2h_3_way",     # per-event only
   "alternate_spreads",
   "alternate_totals",
   "team_totals",

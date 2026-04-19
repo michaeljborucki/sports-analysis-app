@@ -1,6 +1,8 @@
 # NHL (icehockey_nhl) market configuration.
 
 [main]
+# h2h_3_way is per-event only — moved to [alternates]. Odds API returns 422
+# if requested here.
 enabled          = true
 interval_seconds = 60
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
@@ -8,7 +10,6 @@ markets = [
   "h2h",          # moneyline incl. OT/SO
   "spreads",      # puck line
   "totals",
-  "h2h_3_way",    # regulation time result (home / draw / away)
 ]
 
 [alternates]
@@ -16,6 +17,7 @@ enabled          = true
 interval_seconds = 60
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
 markets = [
+  "h2h_3_way",    # regulation-time result (per-event only)
   "alternate_spreads",
   "alternate_totals",
   "team_totals",
