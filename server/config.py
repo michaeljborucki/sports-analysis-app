@@ -20,6 +20,7 @@ class Config:
     port: int
     cache_db: Path
     picks_date_override: str  # YYYY-MM-DD; empty string = use today
+    fetcher_enabled: bool     # false = don't poll the Odds API (frozen snapshot mode)
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -39,4 +40,6 @@ class Config:
             port=int(os.environ.get("PORT", "8000")),
             cache_db=Path(__file__).parent / "cache.db",
             picks_date_override=os.environ.get("PICKS_DATE_OVERRIDE", "").strip(),
+            fetcher_enabled=os.environ.get("FETCHER_ENABLED", "true").lower()
+            not in ("false", "0", "no", "off"),
         )

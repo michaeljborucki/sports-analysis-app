@@ -29,10 +29,14 @@ def create_app() -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        if config.odds_api_key:
-            fetcher.start()
-        else:
+        if not config.fetcher_enabled:
+            logging.warning(
+                "FETCHER_ENABLED=false — serving frozen cache, no API polling"
+            )
+        elif not config.odds_api_key:
             logging.warning("ODDS_API_KEY not set — fetcher not started")
+        else:
+            fetcher.start()
         yield
         fetcher.stop()
 

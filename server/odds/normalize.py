@@ -33,8 +33,14 @@ def normalize_odds_response(games: list[dict], fetched_at: datetime) -> list[dic
 
 
 def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
-    """Group cache rows into Game → Market → MarketOutcome → BookPrice."""
+    """Group cache rows into Game → Market → MarketOutcome → BookPrice.
+
+    Applies commission-on-winnings per book at this layer, so `price_american`
+    on every emitted BookPrice is the *effective* (post-commission) price.
+    The cache still stores the listed price; commission is applied on read.
+    """
     from .best_odds import pick_best_price, median_american_odds
+    from .commissions import effective_american
 
     by_event: dict[str, dict] = {}
     for r in rows:
@@ -54,9 +60,14 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
             "prices": [],
         })
         fetched_at = _coerce_dt(r["fetched_at"])
+        # Apply commission — every price emitted by the API is already the
+        # effective payout number; the frontend treats it as-is.
+        effective_price = effective_american(
+            int(r["price_american"]), r["bookmaker_key"]
+        )
         out["prices"].append({
             "bookmaker_key": r["bookmaker_key"],
-            "price_american": r["price_american"],
+            "price_american": effective_price,
             "point": r.get("outcome_point"),
             "fetched_at": fetched_at,
         })

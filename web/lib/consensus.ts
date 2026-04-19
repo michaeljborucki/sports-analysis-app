@@ -1,10 +1,7 @@
 /**
- * Median American odds in implied-probability space.
- * Client mirror of `server/odds/best_odds.py::median_american_odds`.
- *
- * Used for the "Consensus" column, which is computed from the user's currently
- * visible books (not a fixed server value), so toggling the book filter
- * re-centers the consensus.
+ * Median American odds in implied-probability space. Mirror of
+ * `server/odds/best_odds.py::median_american_odds`. Prices passed in are
+ * already commission-adjusted effective prices (applied server-side).
  */
 
 function americanToImpliedProb(odds: number): number {
@@ -31,9 +28,7 @@ export function medianAmerican(prices: number[]): number | null {
   return probToAmerican(median(prices.map(americanToImpliedProb)));
 }
 
-import { effectiveForBook } from "./effective-odds";
-
-/** Higher = better payout. For comparison only, not a real EV figure. */
+/** Higher = better payout. For comparison only. */
 function payoutMultiplier(odds: number): number {
   return odds > 0 ? 1 + odds / 100 : 1 + 100 / -odds;
 }
@@ -44,17 +39,25 @@ export interface PricedAtBook {
   point?: number | null;
 }
 
-/**
- * Highest effective payout across the supplied price list. Each book's listed
- * price is adjusted by its commission (if any) before comparison, so a +105 at
- * Prophet Exchange (2% commission → effective +103) loses to a listed +104 at
- * a commission-free book.
- */
+/** Highest payout across the supplied price list. Prices are already
+ * effective (commission-adjusted server-side). */
 export function pickBest<T extends PricedAtBook>(prices: T[]): T | null {
   if (!prices.length) return null;
-  return prices.reduce((a, b) => {
-    const ma = payoutMultiplier(effectiveForBook(a.price_american, a.bookmaker_key));
-    const mb = payoutMultiplier(effectiveForBook(b.price_american, b.bookmaker_key));
-    return ma >= mb ? a : b;
-  });
+  return prices.reduce((a, b) =>
+    payoutMultiplier(a.price_american) >= payoutMultiplier(b.price_american) ? a : b
+  );
+}
+
+/** Every price tied for best payout. */
+export function findAllBest<T extends PricedAtBook>(prices: T[]): T[] {
+  if (!prices.length) return [];
+  let bestMult = -Infinity;
+  const mults: number[] = [];
+  for (const p of prices) {
+    const m = payoutMultiplier(p.price_american);
+    mults.push(m);
+    if (m > bestMult) bestMult = m;
+  }
+  const EPS = 1e-9;
+  return prices.filter((_, i) => Math.abs(mults[i] - bestMult) < EPS);
 }

@@ -6,7 +6,8 @@ import type { Game, Market, MarketOutcome } from "@/lib/api";
 import { formatAmerican } from "@/lib/format";
 import { BOOK_ORDER } from "@/lib/books";
 import { useVisibleBooks } from "@/lib/use-visible-books";
-import { pickBest } from "@/lib/consensus";
+import { pickBest, findAllBest } from "@/lib/consensus";
+import { bookInfo } from "@/lib/books";
 import { MarketTabs, type MarketKey } from "./market-tabs";
 import { BestCell } from "./best-cell";
 import { CellFlash } from "./cell-flash";
@@ -173,14 +174,27 @@ export function OddsGrid({ games }: { games: Game[] }) {
                   {[topOutcome, bottomOutcome].map((out, idx) => {
                     const isFirst = idx === 0;
                     const allPrices = out?.prices ?? [];
-                    // Best follows the filter — it's the best price among books
-                    // you'd actually bet at. Consensus is server-computed
-                    // (median in implied-probability space across every book)
-                    // and served on the outcome itself.
+                    // Best follows the filter — best price among books you'd
+                    // actually bet at. Consensus is server-computed (median in
+                    // implied-probability space across every book).
                     const visiblePrices = allPrices.filter(p =>
                       visible.has(p.bookmaker_key)
                     );
-                    const best = pickBest(visiblePrices);
+                    // All books tied at the top effective payout — every one
+                    // of them gets the green highlight in the row.
+                    const tiedBest = findAllBest(visiblePrices);
+                    const tiedKeys = new Set(tiedBest.map(p => p.bookmaker_key));
+                    // Representative for the Best column display: the tied
+                    // book with the highest priority (lowest priority number).
+                    const best =
+                      tiedBest.length > 0
+                        ? tiedBest.reduce((a, b) =>
+                            bookInfo(a.bookmaker_key).priority <=
+                            bookInfo(b.bookmaker_key).priority
+                              ? a
+                              : b
+                          )
+                        : pickBest(visiblePrices);
                     const consensus = out?.consensus_price_american ?? null;
                     return (
                       <tr
@@ -246,10 +260,7 @@ export function OddsGrid({ games }: { games: Game[] }) {
                                 —
                               </td>
                             );
-                          const isBest =
-                            !!best &&
-                            p.bookmaker_key === best.bookmaker_key &&
-                            p.price_american === best.price_american;
+                          const isBest = tiedKeys.has(p.bookmaker_key);
                           return (
                             <td
                               key={b}
