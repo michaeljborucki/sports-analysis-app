@@ -18,9 +18,20 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // suppressHydrationWarning on <html> + <body> narrowly silences attribute
+  // mismatches injected by browser extensions (Dark Reader, Grammarly) or
+  // Next 16's dev overlay (which adds `isolation: isolate` to body). It does
+  // NOT suppress warnings for children — real hydration bugs still surface.
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-bg-0 text-text-1">
+    <html
+      lang="en"
+      className={`${inter.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <body
+        className="min-h-full flex flex-col bg-bg-0 text-text-1"
+        suppressHydrationWarning
+      >
         <SwrProvider>
           <NavShell>{children}</NavShell>
         </SwrProvider>
