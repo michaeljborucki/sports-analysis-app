@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Iterable
 
@@ -121,3 +121,14 @@ class OddsCache:
         with self._conn() as c:
             row = c.execute("SELECT * FROM fetcher_status WHERE key='default'").fetchone()
             return dict(row) if row else None
+
+    def purge_finished_games(self, now: datetime, past_hours: int = 6) -> int:
+        """Delete rows for any event whose commence_time is more than `past_hours`
+        behind `now`. Returns count removed."""
+        cutoff = (now - timedelta(hours=past_hours)).isoformat()
+        with self._conn() as c:
+            cur = c.execute(
+                "DELETE FROM odds_snapshot WHERE commence_time < ?",
+                (cutoff,),
+            )
+            return cur.rowcount

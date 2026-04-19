@@ -32,6 +32,9 @@ class OddsFetcher:
             rows = normalize_odds_response(games, fetched_at=now)
             if rows:
                 self.cache.upsert(rows)
+            # GC finished games (commence_time > 6h past) so zombie rows don't
+            # poison per-cell staleness or clutter the response.
+            self.cache.purge_finished_games(now=now)
             self.cache.set_status(
                 last_fetch_at=now,
                 requests_used=rate.get("requests_used"),

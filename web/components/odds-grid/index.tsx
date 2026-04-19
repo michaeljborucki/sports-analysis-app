@@ -3,31 +3,15 @@ import { useMemo, useState, Fragment } from "react";
 import clsx from "clsx";
 
 import type { Game, Market, MarketOutcome } from "@/lib/api";
-import { formatAmerican, formatBookAbbrev } from "@/lib/format";
+import { formatAmerican } from "@/lib/format";
+import { BOOK_ORDER } from "@/lib/books";
+import { useVisibleBooks } from "@/lib/use-visible-books";
+import { medianAmerican, pickBest } from "@/lib/consensus";
 import { MarketTabs, type MarketKey } from "./market-tabs";
 import { BestCell } from "./best-cell";
 import { CellFlash } from "./cell-flash";
-
-const BOOK_ORDER = [
-  "draftkings",
-  "fanduel",
-  "betmgm",
-  "caesars",
-  "williamhill_us",
-  "fanatics",
-  "hardrockbet",
-  "espnbet",
-  "pointsbetus",
-  "betrivers",
-  "unibet_us",
-  "twinspires",
-  "superbook",
-  "lowvig",
-  "betonlineag",
-  "bovada",
-  "betus",
-  "mybookieag",
-];
+import { BookLogo } from "../book-logo";
+import { BookFilter } from "../book-filter";
 
 function findMarket(game: Game, key: MarketKey): Market | undefined {
   return game.markets?.find(m => m.market_key === key);
@@ -102,22 +86,38 @@ function sideLabel(
 
 export function OddsGrid({ games }: { games: Game[] }) {
   const [market, setMarket] = useState<MarketKey>("h2h");
+  const { visible, toggle, setAll } = useVisibleBooks();
 
-  const books = useMemo(() => {
+  // All books present in the current dataset, ordered by registry priority.
+  const availableBooks = useMemo(() => {
     const present = new Set<string>();
     for (const g of games)
       for (const m of g.markets ?? [])
         for (const o of m.outcomes) for (const p of o.prices) present.add(p.bookmaker_key);
     const ordered = BOOK_ORDER.filter(b => present.has(b));
     const extras = [...present].filter(b => !BOOK_ORDER.includes(b)).sort();
-    return [...ordered, ...extras].slice(0, 10);
+    return [...ordered, ...extras];
   }, [games]);
+
+  // Only the subset the user has toggled on.
+  const books = useMemo(
+    () => availableBooks.filter(b => visible.has(b)),
+    [availableBooks, visible]
+  );
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-4">
-        <MarketTabs value={market} onChange={setMarket} />
-        <div className="text-xs text-text-3 tabular">{games.length} games</div>
+      <div className="flex items-center gap-4 justify-between">
+        <div className="flex items-center gap-4">
+          <MarketTabs value={market} onChange={setMarket} />
+          <div className="text-xs text-text-3 tabular">{games.length} games</div>
+        </div>
+        <BookFilter
+          availableBooks={availableBooks}
+          visible={visible}
+          onToggle={toggle}
+          onSetAll={setAll}
+        />
       </div>
 
       <div className="border border-border-subtle rounded-md overflow-hidden bg-bg-0">
@@ -133,12 +133,14 @@ export function OddsGrid({ games }: { games: Game[] }) {
               <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
                 Best
               </th>
+              <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
+                Consensus
+              </th>
               {books.map(b => (
-                <th
-                  key={b}
-                  className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]"
-                >
-                  {formatBookAbbrev(b)}
+                <th key={b} className="text-right px-2 py-2">
+                  <div className="flex justify-end">
+                    <BookLogo bookKey={b} mode="header" />
+                  </div>
                 </th>
               ))}
             </tr>
@@ -147,10 +149,18 @@ export function OddsGrid({ games }: { games: Game[] }) {
             {games.length === 0 && (
               <tr>
                 <td
-                  colSpan={3 + books.length}
+                  colSpan={4 + books.length}
                   className="text-center py-12 text-text-3"
                 >
                   No MLB odds cached yet. Waiting for fetcher…
+                </td>
+              </tr>
+            )}
+            {games.length > 0 && books.length === 0 && (
+              <tr>
+                <td colSpan={4} className="text-center py-12 text-text-3">
+                  No books selected. Click the Books button above to pick which
+                  sportsbooks to show.
                 </td>
               </tr>
             )}
@@ -161,7 +171,16 @@ export function OddsGrid({ games }: { games: Game[] }) {
                 <Fragment key={g.event_id}>
                   {[topOutcome, bottomOutcome].map((out, idx) => {
                     const isFirst = idx === 0;
-                    const best = out?.best_price;
+                    // Best and Consensus are both computed from the visible-books
+                    // subset so the filter is internally consistent — toggling a
+                    // book recenters both columns.
+                    const visiblePrices = out
+                      ? out.prices.filter(p => visible.has(p.bookmaker_key))
+                      : [];
+                    const best = pickBest(visiblePrices);
+                    const consensus = medianAmerican(
+                      visiblePrices.map(p => p.price_american)
+                    );
                     return (
                       <tr
                         key={`${g.event_id}-${idx}`}
@@ -216,6 +235,9 @@ export function OddsGrid({ games }: { games: Game[] }) {
                           ) : (
                             <span className="text-text-3">—</span>
                           )}
+                        </td>
+                        <td className="text-right px-2 py-1.5 tabular text-text-2 border-r border-border-subtle/60">
+                          {consensus != null ? formatAmerican(consensus) : "—"}
                         </td>
                         {books.map(b => {
                           const p = priceAtBook(out, b);
