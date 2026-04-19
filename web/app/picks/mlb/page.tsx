@@ -4,11 +4,13 @@ import { apiPaths, type PicksResponse } from "@/lib/api";
 import { intervals } from "@/lib/swr";
 import { PicksTable } from "@/components/picks-table";
 import { PicksTableSkeleton } from "@/components/skeletons";
+import { RefreshButton } from "@/components/refresh-button";
 
 export default function PicksMlbPage() {
-  const { data, error, isLoading } = useSWR<PicksResponse>(apiPaths.picks, {
-    refreshInterval: intervals.picks,
-  });
+  const { data, error, isLoading, isValidating, mutate } = useSWR<PicksResponse>(
+    apiPaths.picks,
+    { refreshInterval: intervals.picks }
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -24,8 +26,14 @@ export default function PicksMlbPage() {
             <span className="text-xs text-flash">No picks today</span>
           )}
         </div>
-        <div className="text-xs text-text-3">
-          Agent: <span className="text-text-1">baseball-agents</span>
+        <div className="flex items-center gap-3">
+          <div className="text-xs text-text-3">
+            Agent: <span className="text-text-1">baseball-agents</span>
+          </div>
+          <RefreshButton
+            onRefresh={() => mutate()}
+            isValidating={isValidating}
+          />
         </div>
       </header>
 

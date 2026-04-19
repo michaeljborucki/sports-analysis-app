@@ -6,10 +6,11 @@ import type { Game, Market, MarketOutcome } from "@/lib/api";
 import { formatAmerican } from "@/lib/format";
 import { BOOK_ORDER } from "@/lib/books";
 import { useVisibleBooks } from "@/lib/use-visible-books";
-import { medianAmerican, pickBest } from "@/lib/consensus";
+import { pickBest } from "@/lib/consensus";
 import { MarketTabs, type MarketKey } from "./market-tabs";
 import { BestCell } from "./best-cell";
 import { CellFlash } from "./cell-flash";
+import { GameTime } from "./game-time";
 import { BookLogo } from "../book-logo";
 import { BookFilter } from "../book-filter";
 
@@ -173,15 +174,14 @@ export function OddsGrid({ games }: { games: Game[] }) {
                     const isFirst = idx === 0;
                     const allPrices = out?.prices ?? [];
                     // Best follows the filter — it's the best price among books
-                    // you'd actually bet at. Consensus is market-level, always
-                    // computed across every available book.
+                    // you'd actually bet at. Consensus is server-computed
+                    // (median in implied-probability space across every book)
+                    // and served on the outcome itself.
                     const visiblePrices = allPrices.filter(p =>
                       visible.has(p.bookmaker_key)
                     );
                     const best = pickBest(visiblePrices);
-                    const consensus = medianAmerican(
-                      allPrices.map(p => p.price_american)
-                    );
+                    const consensus = out?.consensus_price_american ?? null;
                     return (
                       <tr
                         key={`${g.event_id}-${idx}`}
@@ -208,12 +208,7 @@ export function OddsGrid({ games }: { games: Game[] }) {
                                     </span>
                                   </>
                                 ) : (
-                                  <span className="tabular">
-                                    {new Date(g.commence_time).toLocaleTimeString(
-                                      [],
-                                      { hour: "numeric", minute: "2-digit" }
-                                    )}
-                                  </span>
+                                  <GameTime commenceTime={g.commence_time} />
                                 )}
                               </span>
                             </div>
