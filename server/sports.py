@@ -58,7 +58,6 @@ SPORTS: dict[str, Sport] = {
     "tennis": Sport(
         key="tennis",
         label="Tennis",
-        # ATP + WTA main tour — prefix match, resolved at fetch time via /sports
         odds_api_sport_keys=("tennis_atp_*", "tennis_wta_*"),
         agent_dir=HOME / "personal_workspace/agents/tennis-agents/data",
         markets_config="markets.tennis.toml",
@@ -66,6 +65,56 @@ SPORTS: dict[str, Sport] = {
             MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
             MarketGroup("Game Spread", main_key="spreads", alt_key="alternate_spreads", display="spread"),
             MarketGroup("Total Games", main_key="totals", alt_key="alternate_totals", display="total"),
+        ),
+    ),
+    "nba": Sport(
+        key="nba",
+        label="NBA",
+        odds_api_sport_keys=("basketball_nba",),
+        agent_dir=HOME / "personal_workspace/agents/nba-agents/data",
+        markets_config="markets.nba.toml",
+        market_groups=(
+            MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
+            MarketGroup("Spread", main_key="spreads", alt_key="alternate_spreads", display="spread"),
+            MarketGroup("Total", main_key="totals", alt_key="alternate_totals", display="total"),
+            MarketGroup("1H ML", main_key="h2h_h1", display="moneyline"),
+            MarketGroup("1H Spread", main_key="spreads_h1", alt_key="alternate_spreads_h1", display="spread"),
+            MarketGroup("1H Total", main_key="totals_h1", alt_key="alternate_totals_h1", display="total"),
+            MarketGroup("Q1 ML", main_key="h2h_q1", display="moneyline"),
+            MarketGroup("Q1 Spread", main_key="spreads_q1", alt_key="alternate_spreads_q1", display="spread"),
+            MarketGroup("Q1 Total", main_key="totals_q1", alt_key="alternate_totals_q1", display="total"),
+        ),
+    ),
+    "nhl": Sport(
+        key="nhl",
+        label="NHL",
+        odds_api_sport_keys=("icehockey_nhl",),
+        # No NHL agent dir today; path is a placeholder so the picks reader
+        # gracefully returns no_picks_today until/unless one is created.
+        agent_dir=HOME / "personal_workspace/agents/nhl-agents/data",
+        markets_config="markets.nhl.toml",
+        market_groups=(
+            MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
+            MarketGroup("Puck Line", main_key="spreads", alt_key="alternate_spreads", display="spread"),
+            MarketGroup("Total", main_key="totals", alt_key="alternate_totals", display="total"),
+            MarketGroup("1P ML", main_key="h2h_p1", display="moneyline"),
+            MarketGroup("1P Spread", main_key="spreads_p1", alt_key="alternate_spreads_p1", display="spread"),
+            MarketGroup("1P Total", main_key="totals_p1", alt_key="alternate_totals_p1", display="total"),
+        ),
+    ),
+    "baseball_ncaa": Sport(
+        key="baseball_ncaa",
+        label="NCAA Baseball",
+        odds_api_sport_keys=("baseball_ncaa",),
+        agent_dir=HOME / "personal_workspace/agents/baseball-ncaa-agents/data",
+        markets_config="markets.baseball_ncaa.toml",
+        market_groups=(
+            MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
+            MarketGroup("Run Line", main_key="spreads", alt_key="alternate_spreads", display="spread"),
+            MarketGroup("Total", main_key="totals", alt_key="alternate_totals", display="total"),
+            MarketGroup("F5 ML", main_key="h2h_1st_5_innings", display="moneyline"),
+            MarketGroup("F5 RL", main_key="spreads_1st_5_innings", display="spread"),
+            MarketGroup("F5 Total", main_key="totals_1st_5_innings", display="total"),
         ),
     ),
 }

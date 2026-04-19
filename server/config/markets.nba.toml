@@ -1,0 +1,136 @@
+# NBA (basketball_nba) market configuration.
+#
+# QUOTA WARNING: same as MLB — toggling every market at 60s cadence will
+# burn daily quota fast. Enable selectively via /settings.
+
+[main]
+enabled          = true
+interval_seconds = 60
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets = [
+  "h2h",
+  "spreads",
+  "totals",
+  "h2h_3_way",
+]
+
+[alternates]
+enabled          = true
+interval_seconds = 60
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets = [
+  "alternate_spreads",
+  "alternate_totals",
+  "team_totals",
+  "alternate_team_totals",
+  "h2h_lay",
+]
+
+# "first_innings" tier renamed semantically to period markets (Q1–Q4, H1/H2).
+[first_innings]
+enabled          = true
+interval_seconds = 60
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets = [
+  # Moneyline by period
+  "h2h_q1", "h2h_q2", "h2h_q3", "h2h_q4",
+  "h2h_h1", "h2h_h2",
+  # 3-way moneyline by period
+  "h2h_3_way_q1", "h2h_3_way_q2", "h2h_3_way_q3", "h2h_3_way_q4",
+  "h2h_3_way_h1", "h2h_3_way_h2",
+  # Spreads by period
+  "spreads_q1", "spreads_q2", "spreads_q3", "spreads_q4",
+  "spreads_h1", "spreads_h2",
+  "alternate_spreads_q1", "alternate_spreads_q2", "alternate_spreads_q3", "alternate_spreads_q4",
+  "alternate_spreads_h1", "alternate_spreads_h2",
+  # Totals by period
+  "totals_q1", "totals_q2", "totals_q3", "totals_q4",
+  "totals_h1", "totals_h2",
+  "alternate_totals_q1", "alternate_totals_q2", "alternate_totals_q3", "alternate_totals_q4",
+  "alternate_totals_h1", "alternate_totals_h2",
+  # Team totals by period
+  "team_totals_q1", "team_totals_q2", "team_totals_q3", "team_totals_q4",
+  "team_totals_h1", "team_totals_h2",
+  "alternate_team_totals_q1", "alternate_team_totals_q2", "alternate_team_totals_q3", "alternate_team_totals_q4",
+  "alternate_team_totals_h1", "alternate_team_totals_h2",
+]
+
+[player_props]
+enabled             = true
+interval_seconds    = 60
+regions             = ["us", "us2", "us_ex", "eu", "uk"]
+games_window_hours  = 3
+markets = [
+  # Core scoring / box score
+  "player_points",
+  "player_rebounds",
+  "player_assists",
+  "player_threes",
+  "player_blocks",
+  "player_steals",
+  "player_blocks_steals",
+  "player_turnovers",
+  "player_field_goals",
+  "player_frees_made",
+  "player_frees_attempts",
+  # Combos
+  "player_points_rebounds_assists",
+  "player_points_rebounds",
+  "player_points_assists",
+  "player_rebounds_assists",
+  # Quarter-specific props
+  "player_points_q1",
+  "player_rebounds_q1",
+  "player_assists_q1",
+  # Game / novelty
+  "player_first_basket",            # Yes/No
+  "player_first_team_basket",       # Yes/No
+  "player_double_double",           # Yes/No
+  "player_triple_double",           # Yes/No
+  "player_method_of_first_basket",  # categorical
+  # DFS-only
+  "player_fantasy_points",
+  # Alternate lines
+  "player_points_alternate",
+  "player_rebounds_alternate",
+  "player_assists_alternate",
+  "player_threes_alternate",
+  "player_blocks_alternate",
+  "player_steals_alternate",
+  "player_turnovers_alternate",
+  "player_points_assists_alternate",
+  "player_points_rebounds_alternate",
+  "player_rebounds_assists_alternate",
+  "player_points_rebounds_assists_alternate",
+  "player_fantasy_points_alternate",
+]
+
+[on_demand]
+enabled          = true
+debounce_seconds = 60
+
+[picks]
+include_bet_types = [
+  "moneyline",
+  "spread",
+  "total",
+  "first_half_ml",
+  "first_half_spread",
+  "first_half_total",
+  "first_quarter_ml",
+  "first_quarter_spread",
+  "first_quarter_total",
+  "player_points",
+  "player_rebounds",
+  "player_assists",
+  "player_threes",
+  "player_blocks",
+  "player_steals",
+  "player_turnovers",
+  "player_points_rebounds_assists",
+  "player_points_rebounds",
+  "player_points_assists",
+  "player_rebounds_assists",
+  "player_double_double",
+  "player_triple_double",
+]

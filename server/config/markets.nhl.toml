@@ -1,0 +1,95 @@
+# NHL (icehockey_nhl) market configuration.
+
+[main]
+enabled          = true
+interval_seconds = 60
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets = [
+  "h2h",          # moneyline incl. OT/SO
+  "spreads",      # puck line
+  "totals",
+  "h2h_3_way",    # regulation time result (home / draw / away)
+]
+
+[alternates]
+enabled          = true
+interval_seconds = 60
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets = [
+  "alternate_spreads",
+  "alternate_totals",
+  "team_totals",
+  "alternate_team_totals",
+  "h2h_lay",
+]
+
+# "first_innings" tier used as period markets (NHL has 3 periods: p1/p2/p3).
+[first_innings]
+enabled          = true
+interval_seconds = 60
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets = [
+  # Moneyline by period
+  "h2h_p1", "h2h_p2", "h2h_p3",
+  "h2h_3_way_p1", "h2h_3_way_p2", "h2h_3_way_p3",
+  # Spreads by period
+  "spreads_p1", "spreads_p2", "spreads_p3",
+  "alternate_spreads_p1", "alternate_spreads_p2", "alternate_spreads_p3",
+  # Totals by period
+  "totals_p1", "totals_p2", "totals_p3",
+  "alternate_totals_p1", "alternate_totals_p2", "alternate_totals_p3",
+  # Team totals by period
+  "team_totals_p1", "team_totals_p2", "team_totals_p3",
+  "alternate_team_totals_p1", "alternate_team_totals_p2", "alternate_team_totals_p3",
+]
+
+[player_props]
+enabled             = true
+interval_seconds    = 60
+regions             = ["us", "us2", "us_ex", "eu", "uk"]
+games_window_hours  = 3
+markets = [
+  # Skater props
+  "player_points",
+  "player_power_play_points",
+  "player_assists",
+  "player_goals",
+  "player_shots_on_goal",
+  "player_blocked_shots",
+  # Goalie props
+  "player_total_saves",
+  # Goal-scorer novelty
+  "player_goal_scorer_first",       # Yes/No
+  "player_goal_scorer_last",        # Yes/No
+  "player_goal_scorer_anytime",     # Yes/No
+  # Alternates
+  "player_points_alternate",
+  "player_assists_alternate",
+  "player_goals_alternate",
+  "player_power_play_points_alternate",
+  "player_shots_on_goal_alternate",
+  "player_blocked_shots_alternate",
+  "player_total_saves_alternate",
+]
+
+[on_demand]
+enabled          = true
+debounce_seconds = 60
+
+[picks]
+include_bet_types = [
+  "moneyline",
+  "puck_line",
+  "total",
+  "first_period_ml",
+  "first_period_spread",
+  "first_period_total",
+  "player_points",
+  "player_goals",
+  "player_assists",
+  "player_shots_on_goal",
+  "player_power_play_points",
+  "player_blocked_shots",
+  "player_total_saves",
+  "player_goal_scorer_anytime",
+]

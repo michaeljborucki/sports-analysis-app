@@ -1,0 +1,22 @@
+{
+  "disabled_sports": [],
+  "disabled_markets": {
+    "baseball_ncaa": [
+      "alternate_spreads",
+      "alternate_spreads_1st_5_innings",
+      "alternate_team_totals",
+      "alternate_totals",
+      "alternate_totals_1st_5_innings",
+      "h2h_1st_1_innings",
+      "h2h_1st_3_innings",
+      "h2h_1st_5_innings",
+      "h2h_lay",
+      "spreads_1st_3_innings",
+      "spreads_1st_5_innings",
+      "team_totals",
+      "totals_1st_1_innings",
+      "totals_1st_3_innings",
+      "totals_1st_5_innings"
+    ]
+  }
+}
