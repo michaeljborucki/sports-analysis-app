@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg-0: #0B0F14;
+  --color-bg-1: #131A22;
+  --color-bg-2: #1C2530;
+  --color-border-subtle: #263140;
+  --color-text-1: #F5F7FA;
+  --color-text-2: #9AA5B4;
+  --color-text-3: #6B7685;
+  --color-price-up: #2CB459;
+  --color-price-down: #E5484D;
+  --color-flash: #F5A524;
+  --color-accent: #22D3EE;
+  --color-violet-accent: #7C5CFF;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+html, body {
+  background: var(--color-bg-0);
+  color: var(--color-text-1);
+  font-family: var(--font-sans);
+  font-feature-settings: 'tnum' 1, 'ss01' 1;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Subtle baseline so the page doesn't render pure system font before tokens load */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
