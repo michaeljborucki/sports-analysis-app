@@ -56,6 +56,12 @@ export function BookFilter({
     const info = BOOKS[key] ?? bookInfo(key);
     byRegion[info.region].push(key);
   }
+  // Sort each region's books alphabetically by display name.
+  for (const r of Object.keys(byRegion) as Region[]) {
+    byRegion[r].sort((a, b) =>
+      bookInfo(a).name.toLowerCase().localeCompare(bookInfo(b).name.toLowerCase())
+    );
+  }
 
   return (
     <div className="relative">
