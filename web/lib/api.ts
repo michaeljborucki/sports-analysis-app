@@ -25,7 +25,13 @@ export const apiPaths = {
   odds: (sport: string) => `/api/odds/${sport}`,
   props: (sport: string) => `/api/props/${sport}`,
   picks: (sport: string) => `/api/picks/${sport}`,
+  arbitrage: (books: string[]) =>
+    `/api/arbitrage${books.length ? `?books=${books.join(",")}` : ""}`,
 } as const;
+
+export type ArbResponse = components["schemas"]["ArbResponse"];
+export type ArbOpportunity = components["schemas"]["ArbOpportunity"];
+export type ArbSide = components["schemas"]["ArbSide"];
 
 export function refreshEventUrl(eventId: string): string {
   return `/api/refresh/${encodeURIComponent(eventId)}`;

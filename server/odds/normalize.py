@@ -68,6 +68,7 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
     for r in rows:
         ev = by_event.setdefault(r["event_id"], {
             "event_id": r["event_id"],
+            "sport_key": r.get("sport_key", "mlb"),
             "home_team": r["home_team"],
             "away_team": r["away_team"],
             "commence_time": _coerce_dt(r["commence_time"]),
@@ -123,6 +124,7 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
             markets.append({"market_key": mk_key, "outcomes": out_list})
         games.append({
             "event_id": ev["event_id"],
+            "sport_key": ev["sport_key"],
             "home_team": ev["home_team"],
             "away_team": ev["away_team"],
             "commence_time": ev["commence_time"],

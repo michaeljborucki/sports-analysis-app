@@ -232,10 +232,185 @@
           }
         }
       }
+    },
+    "/api/arbitrage": {
+      "get": {
+        "summary": "Get Arbs",
+        "description": "Scan the cache for two-way arbitrage opportunities.\n\n`books` is an optional comma-separated allowlist \u2014 only prices from\nthese bookmaker keys are considered. Empty = all books in the cache.",
+        "operationId": "get_arbs_api_arbitrage_get",
+        "parameters": [
+          {
+            "name": "books",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Books"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArbResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ArbOpportunity": {
+        "properties": {
+          "sport_key": {
+            "type": "string",
+            "title": "Sport Key"
+          },
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "home_team": {
+            "type": "string",
+            "title": "Home Team"
+          },
+          "away_team": {
+            "type": "string",
+            "title": "Away Team"
+          },
+          "commence_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Commence Time"
+          },
+          "market_kind": {
+            "type": "string",
+            "enum": [
+              "h2h",
+              "spreads",
+              "totals"
+            ],
+            "title": "Market Kind"
+          },
+          "point": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Point"
+          },
+          "roi_pct": {
+            "type": "number",
+            "title": "Roi Pct"
+          },
+          "sides": {
+            "items": {
+              "$ref": "#/components/schemas/ArbSide"
+            },
+            "type": "array",
+            "title": "Sides"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sport_key",
+          "event_id",
+          "home_team",
+          "away_team",
+          "commence_time",
+          "market_kind",
+          "roi_pct",
+          "sides"
+        ],
+        "title": "ArbOpportunity"
+      },
+      "ArbResponse": {
+        "properties": {
+          "opportunities": {
+            "items": {
+              "$ref": "#/components/schemas/ArbOpportunity"
+            },
+            "type": "array",
+            "title": "Opportunities"
+          },
+          "scanned_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scanned At"
+          },
+          "book_count": {
+            "type": "integer",
+            "title": "Book Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "opportunities",
+          "scanned_at",
+          "book_count"
+        ],
+        "title": "ArbResponse"
+      },
+      "ArbSide": {
+        "properties": {
+          "outcome_name": {
+            "type": "string",
+            "title": "Outcome Name"
+          },
+          "book": {
+            "type": "string",
+            "title": "Book"
+          },
+          "price_american": {
+            "type": "integer",
+            "title": "Price American"
+          },
+          "point": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Point"
+          },
+          "stake_pct": {
+            "type": "number",
+            "title": "Stake Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "outcome_name",
+          "book",
+          "price_american",
+          "stake_pct"
+        ],
+        "title": "ArbSide"
+      },
       "BookPrice": {
         "properties": {
           "bookmaker_key": {
@@ -388,6 +563,11 @@
           "event_id": {
             "type": "string",
             "title": "Event Id"
+          },
+          "sport_key": {
+            "type": "string",
+            "title": "Sport Key",
+            "default": "mlb"
           },
           "home_team": {
             "type": "string",

@@ -140,10 +140,85 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/arbitrage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Arbs
+         * @description Scan the cache for two-way arbitrage opportunities.
+         *
+         *     `books` is an optional comma-separated allowlist — only prices from
+         *     these bookmaker keys are considered. Empty = all books in the cache.
+         */
+        get: operations["get_arbs_api_arbitrage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ArbOpportunity */
+        ArbOpportunity: {
+            /** Sport Key */
+            sport_key: string;
+            /** Event Id */
+            event_id: string;
+            /** Home Team */
+            home_team: string;
+            /** Away Team */
+            away_team: string;
+            /**
+             * Commence Time
+             * Format: date-time
+             */
+            commence_time: string;
+            /**
+             * Market Kind
+             * @enum {string}
+             */
+            market_kind: "h2h" | "spreads" | "totals";
+            /** Point */
+            point?: number | null;
+            /** Roi Pct */
+            roi_pct: number;
+            /** Sides */
+            sides: components["schemas"]["ArbSide"][];
+        };
+        /** ArbResponse */
+        ArbResponse: {
+            /** Opportunities */
+            opportunities: components["schemas"]["ArbOpportunity"][];
+            /**
+             * Scanned At
+             * Format: date-time
+             */
+            scanned_at: string;
+            /** Book Count */
+            book_count: number;
+        };
+        /** ArbSide */
+        ArbSide: {
+            /** Outcome Name */
+            outcome_name: string;
+            /** Book */
+            book: string;
+            /** Price American */
+            price_american: number;
+            /** Point */
+            point?: number | null;
+            /** Stake Pct */
+            stake_pct: number;
+        };
         /** BookPrice */
         BookPrice: {
             /** Bookmaker Key */
@@ -193,6 +268,11 @@ export interface components {
         Game: {
             /** Event Id */
             event_id: string;
+            /**
+             * Sport Key
+             * @default mlb
+             */
+            sport_key: string;
             /** Home Team */
             home_team: string;
             /** Away Team */
@@ -569,6 +649,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SportsResponse"];
+                };
+            };
+        };
+    };
+    get_arbs_api_arbitrage_get: {
+        parameters: {
+            query?: {
+                books?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArbResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

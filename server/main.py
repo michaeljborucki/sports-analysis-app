@@ -73,6 +73,7 @@ def create_app() -> FastAPI:
     from .api.fetcher_ctl import build_router as fetcher_ctl_router
     from .api.refresh import build_router as refresh_router
     from .api.sports import build_router as sports_router
+    from .api.arbitrage import build_router as arbitrage_router
 
     app.include_router(health_router(cache, fetcher))
     app.include_router(odds_router(cache))
@@ -83,6 +84,7 @@ def create_app() -> FastAPI:
     app.include_router(fetcher_ctl_router(fetcher))
     app.include_router(refresh_router(fetcher))
     app.include_router(sports_router())
+    app.include_router(arbitrage_router(cache))
 
     return app
 

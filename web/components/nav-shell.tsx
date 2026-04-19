@@ -6,11 +6,15 @@ import { FetcherToggle } from "./fetcher-toggle";
 import { SportSwitcher } from "./sport-switcher";
 import { isSportKey } from "@/lib/sports";
 
-const sections = [
+// Per-sport sections — routed as /<section>/<sport>
+const sportSections = [
   { key: "odds", label: "Odds" },
   { key: "props", label: "Props" },
   { key: "picks", label: "Picks" },
 ] as const;
+
+// Global sections — routed as /<section> (no sport in URL)
+const globalSections = [{ key: "arbitrage", label: "Arbitrage" }] as const;
 
 export function NavShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "";
@@ -29,12 +33,30 @@ export function NavShell({ children }: { children: React.ReactNode }) {
           </div>
           <SportSwitcher />
           <nav className="flex gap-5 text-sm">
-            {sections.map(s => {
+            {sportSections.map(s => {
               const active = section === s.key;
               return (
                 <Link
                   key={s.key}
                   href={`/${s.key}/${sport}`}
+                  className={clsx(
+                    "py-1 transition-colors",
+                    active
+                      ? "text-text-1 border-b-2 border-accent"
+                      : "text-text-2 hover:text-text-1"
+                  )}
+                >
+                  {s.label}
+                </Link>
+              );
+            })}
+            <span className="text-text-3/40">·</span>
+            {globalSections.map(s => {
+              const active = section === s.key;
+              return (
+                <Link
+                  key={s.key}
+                  href={`/${s.key}`}
                   className={clsx(
                     "py-1 transition-colors",
                     active
