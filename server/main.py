@@ -26,12 +26,22 @@ def create_app() -> FastAPI:
     fetcher = FetcherRegistry(config, sports, cache, client)
 
     # One picks reader per sport, rooted at that sport's sibling agents repo.
+    # Each reader honors the [picks] section of that sport's markets.<sport>.toml
+    # so show/hide is a config edit, not a code change.
+    from .odds.market_config import MarketConfig
     picks_readers: dict[str, PicksReader] = {}
     for sp in sports:
+        try:
+            mc = MarketConfig.load(sp.markets_config)
+            include = mc.picks.include_bet_types
+        except Exception:
+            logging.warning("Failed to load picks config for %s", sp.key)
+            include = ()
         picks_readers[sp.key] = PicksReader(
             bet_card_dir=sp.agent_dir,
             bets_csv=sp.agent_dir / "bets.csv",
             agent_key=sp.agent_dir.parent.name,
+            include_bet_types=include,
         )
 
     @asynccontextmanager

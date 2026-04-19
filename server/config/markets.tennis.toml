@@ -35,3 +35,14 @@ markets             = []
 [on_demand]
 enabled          = true
 debounce_seconds = 60
+
+# Picks filter. Only bet_types in this list surface on /picks/tennis.
+# Leave empty to show everything; add/remove to taste.
+[picks]
+include_bet_types = [
+  "moneyline",
+  "game_spread",
+  "total_games",
+  "set_spread",
+  "total_sets",
+]

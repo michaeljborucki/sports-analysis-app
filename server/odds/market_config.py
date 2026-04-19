@@ -39,11 +39,20 @@ class OnDemandConfig:
 
 
 @dataclass(frozen=True)
+class PicksConfig:
+    """Per-sport filter for /api/picks/<sport>. If `include_bet_types` is
+    non-empty, only picks with a matching bet_type are surfaced. Empty list
+    means surface everything (backwards compat)."""
+    include_bet_types: tuple[str, ...] = field(default_factory=tuple)
+
+
+@dataclass(frozen=True)
 class MarketConfig:
     tiers: dict[str, TierConfig] = field(default_factory=dict)
     on_demand: OnDemandConfig = field(
         default_factory=lambda: OnDemandConfig(enabled=True, debounce_seconds=60)
     )
+    picks: PicksConfig = field(default_factory=PicksConfig)
 
     @classmethod
     def load(cls, filename: str | Path = "markets.mlb.toml") -> "MarketConfig":
@@ -75,7 +84,12 @@ class MarketConfig:
             debounce_seconds=int(on_demand_raw.get("debounce_seconds", 60)),
         )
 
-        return cls(tiers=tiers, on_demand=on_demand)
+        picks_raw = raw.get("picks", {})
+        picks = PicksConfig(
+            include_bet_types=tuple(picks_raw.get("include_bet_types", [])),
+        )
+
+        return cls(tiers=tiers, on_demand=on_demand, picks=picks)
 
     def enabled_tiers(self) -> list[TierConfig]:
         return [t for t in self.tiers.values() if t.enabled]

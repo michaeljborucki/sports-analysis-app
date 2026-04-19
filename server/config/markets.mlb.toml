@@ -63,3 +63,37 @@ markets = [
 enabled          = true
 # Per-event debounce — ignore refresh requests for the same event within this window
 debounce_seconds = 60
+
+# Picks filter. Only bet_types in this list surface on /picks/mlb.
+# Leave empty to show every pick the bet card contains. The bet_type column
+# of bet_card_YYYY-MM-DD.txt is the source of these values (e.g. first_5_rl,
+# pitcher_outs, batter_hits_runs_rbis).
+[picks]
+include_bet_types = [
+  # Main game markets
+  "moneyline",
+  "run_line",
+  "total",
+  # First-N-innings
+  "first_5_ml",
+  "first_5_rl",
+  "first_5_total",
+  "first_3_total",
+  "first_1_total",
+  # Pitcher props
+  "pitcher_strikeouts",
+  "pitcher_outs",
+  "pitcher_hits_allowed",
+  "pitcher_earned_runs",
+  "pitcher_walks",
+  # Batter props
+  "batter_hits",
+  "batter_total_bases",
+  "batter_home_runs",
+  "batter_rbis",
+  "batter_runs_scored",
+  "batter_hits_runs_rbis",
+  "batter_singles",
+  "batter_doubles",
+  "batter_stolen_bases",
+]

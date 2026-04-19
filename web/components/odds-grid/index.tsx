@@ -349,6 +349,7 @@ export function OddsGrid({
                         <MarketExpansionPanel
                           game={g}
                           sport={sport}
+                          group={activeGroup}
                           visible={visible}
                         />
                       </td>

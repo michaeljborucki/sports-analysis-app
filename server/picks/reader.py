@@ -59,10 +59,13 @@ class PicksReader:
         bet_card_dir: Path,
         bets_csv: Path,
         agent_key: str = "baseball-agents",
+        include_bet_types: tuple[str, ...] = (),
     ):
         self.bet_card_dir = Path(bet_card_dir)
         self.bets_csv = Path(bets_csv)
         self.agent_key = agent_key
+        # Empty = include everything; non-empty = filter to this set
+        self.include_bet_types = set(include_bet_types)
 
     def _card_path(self, for_date: date) -> Path:
         return self.bet_card_dir / f"bet_card_{for_date.isoformat()}.txt"
@@ -84,6 +87,11 @@ class PicksReader:
         picks: list[dict] = []
         for game in card["games"]:
             for p in game["picks"]:
+                if (
+                    self.include_bet_types
+                    and p["bet_type"] not in self.include_bet_types
+                ):
+                    continue
                 picks.append({
                     "id": _stable_id(game["game_label"], p["bet_type"], p["side"]),
                     "tier": _tier_from_kelly(p["kelly_pct"]),
