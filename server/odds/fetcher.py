@@ -110,6 +110,10 @@ class FetcherRegistry:
             logger.warning("ODDS_API_KEY empty; refusing to start fetcher")
             return {"status": "no_api_key"}
 
+        # Drop cached per-sport MarketConfigs so hot_reload picks up TOML
+        # edits that happened between stop and start.
+        self._market_cfg.clear()
+
         enabled = self.all_enabled_tiers()
         if not enabled:
             return {"status": "no_tiers_enabled"}
