@@ -1,0 +1,109 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Iterable
+
+
+def normalize_odds_response(games: list[dict], fetched_at: datetime) -> list[dict]:
+    """Flatten Odds API response into cache rows."""
+    rows: list[dict] = []
+    for game in games:
+        event_id = game["id"]
+        home = game["home_team"]
+        away = game["away_team"]
+        commence = datetime.fromisoformat(game["commence_time"].replace("Z", "+00:00"))
+        for bm in game.get("bookmakers", []):
+            bk = bm["key"]
+            for mk in bm.get("markets", []):
+                market_key = mk["key"]
+                for oc in mk.get("outcomes", []):
+                    rows.append({
+                        "event_id": event_id,
+                        "home_team": home,
+                        "away_team": away,
+                        "commence_time": commence,
+                        "bookmaker_key": bk,
+                        "market_key": market_key,
+                        "outcome_name": oc["name"],
+                        "outcome_point": oc.get("point"),
+                        "price_american": int(oc["price"]),
+                        "fetched_at": fetched_at,
+                    })
+    return rows
+
+
+def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
+    """Group cache rows into Game → Market → MarketOutcome → BookPrice."""
+    from .best_odds import pick_best_price, median_american_odds
+
+    by_event: dict[str, dict] = {}
+    for r in rows:
+        ev = by_event.setdefault(r["event_id"], {
+            "event_id": r["event_id"],
+            "home_team": r["home_team"],
+            "away_team": r["away_team"],
+            "commence_time": _coerce_dt(r["commence_time"]),
+            "markets_by_key": {},
+            "stale_seconds": 0,
+        })
+        mk = ev["markets_by_key"].setdefault(r["market_key"], {})
+        out_key = (r["outcome_name"], r.get("outcome_point"))
+        out = mk.setdefault(out_key, {
+            "outcome_name": r["outcome_name"],
+            "outcome_point": r.get("outcome_point"),
+            "prices": [],
+        })
+        fetched_at = _coerce_dt(r["fetched_at"])
+        out["prices"].append({
+            "bookmaker_key": r["bookmaker_key"],
+            "price_american": r["price_american"],
+            "point": r.get("outcome_point"),
+            "fetched_at": fetched_at,
+        })
+        now_utc = now if now.tzinfo else now.replace(tzinfo=timezone.utc)
+        age = max(0, int((now_utc - fetched_at).total_seconds()))
+        if age > ev["stale_seconds"]:
+            ev["stale_seconds"] = age
+
+    games = []
+    now_utc = now if now.tzinfo else now.replace(tzinfo=timezone.utc)
+    for ev in by_event.values():
+        markets = []
+        for mk_key, outcomes in ev["markets_by_key"].items():
+            out_list = []
+            for out in outcomes.values():
+                price_tuples = [(p["bookmaker_key"], p["price_american"]) for p in out["prices"]]
+                best = pick_best_price(price_tuples)
+                best_price = None
+                if best is not None:
+                    best_price = next(
+                        p for p in out["prices"]
+                        if p["bookmaker_key"] == best[0] and p["price_american"] == best[1]
+                    )
+                consensus = median_american_odds([p["price_american"] for p in out["prices"]])
+                out_list.append({
+                    "outcome_name": out["outcome_name"],
+                    "prices": out["prices"],
+                    "best_price": best_price,
+                    "consensus_price_american": consensus,
+                })
+            markets.append({"market_key": mk_key, "outcomes": out_list})
+        games.append({
+            "event_id": ev["event_id"],
+            "home_team": ev["home_team"],
+            "away_team": ev["away_team"],
+            "commence_time": ev["commence_time"],
+            "is_live": ev["commence_time"] <= now_utc,
+            "markets": markets,
+            "stale_seconds": ev["stale_seconds"],
+        })
+    games.sort(key=lambda g: g["commence_time"])
+    return games
+
+
+def _coerce_dt(v) -> datetime:
+    if isinstance(v, datetime):
+        return v if v.tzinfo else v.replace(tzinfo=timezone.utc)
+    if isinstance(v, str):
+        return datetime.fromisoformat(v.replace("Z", "+00:00"))
+    return datetime.fromisoformat(str(v))
