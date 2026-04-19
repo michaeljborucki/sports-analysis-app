@@ -11,12 +11,18 @@ import {
 import { formatAmerican } from "@/lib/format";
 import { useVisibleBooks } from "@/lib/use-visible-books";
 import { BookFilter } from "@/components/book-filter";
+import { BookIncludeDropdown } from "@/components/book-include-dropdown";
 import { BookLogo } from "@/components/book-logo";
 import { RefreshButton } from "@/components/refresh-button";
 import { BOOK_ORDER } from "@/lib/books";
 import { SPORTS, type SportKey } from "@/lib/sports";
 
-const MIN_ODDS_PRESETS = [100, 150, 200, 300];
+const MIN_CONVERSION_PRESETS = [
+  { label: "All", value: 0 },
+  { label: "≥ 70%", value: 70 },
+  { label: "≥ 80%", value: 80 },
+  { label: "≥ 90%", value: 90 },
+];
 
 function sportLabel(key: string): string {
   if (key in SPORTS) return SPORTS[key as SportKey].label;
@@ -51,11 +57,14 @@ function conversionColor(pct: number): string {
 
 export default function FreeBetsPage() {
   const { visible, toggle, setAll } = useVisibleBooks();
-  const [minOdds, setMinOdds] = useState<number>(100);
+  const [minConversion, setMinConversion] = useState<number>(0);
+  // Backend min_free_odds stays at +100 (anything below is strictly worse
+  // than cash) — the user-facing filter is now conversion-rate-based.
+  const MIN_FREE_ODDS = 100;
 
   const { data, error, isLoading, isValidating, mutate } =
     useSWR<FreeBetResponse>(
-      apiPaths.freeBets([...visible].sort(), minOdds),
+      apiPaths.freeBets([...visible].sort(), MIN_FREE_ODDS),
       { refreshInterval: 15_000 }
     );
 
@@ -70,6 +79,31 @@ export default function FreeBetsPage() {
     return [...known, ...unknown];
   }, [data]);
 
+  // Books that appear as the free-bet leg in the current dataset — the
+  // dropdown is scoped to these since the filter is specifically for the
+  // free-bet leg, not the hedge.
+  const freeBookOptions = useMemo(() => {
+    const s = new Set<string>();
+    for (const op of data?.opportunities ?? []) {
+      s.add(op.free_leg.book);
+    }
+    const known = BOOK_ORDER.filter(b => s.has(b));
+    const unknown = [...s].filter(b => !BOOK_ORDER.includes(b)).sort();
+    return [...known, ...unknown];
+  }, [data]);
+
+  const [freeLegFilter, setFreeLegFilter] = useState<Set<string>>(new Set());
+  const filteredOpps = useMemo(() => {
+    let ops = data?.opportunities ?? [];
+    if (minConversion > 0) {
+      ops = ops.filter(op => op.conversion_pct >= minConversion);
+    }
+    if (freeLegFilter.size > 0) {
+      ops = ops.filter(op => freeLegFilter.has(op.free_leg.book));
+    }
+    return ops;
+  }, [data, freeLegFilter, minConversion]);
+
   return (
     <div className="flex flex-col gap-4">
       <header className="flex items-end justify-between gap-4 flex-wrap">
@@ -80,28 +114,41 @@ export default function FreeBetsPage() {
           </span>
           {data && (
             <span className="text-xs text-text-3 tabular">
-              {data.opportunities.length} opportunities
+              {freeLegFilter.size > 0 && filteredOpps.length !== data.opportunities.length
+                ? `${filteredOpps.length} / ${data.opportunities.length}`
+                : `${data.opportunities.length}`}{" "}
+              opportunities
             </span>
           )}
         </div>
         <div className="flex items-center gap-3">
           <div className="inline-flex rounded-md bg-bg-1 border border-border-subtle p-0.5">
-            {MIN_ODDS_PRESETS.map(o => (
+            {MIN_CONVERSION_PRESETS.map(p => (
               <button
-                key={o}
-                onClick={() => setMinOdds(o)}
+                key={p.value}
+                onClick={() => setMinConversion(p.value)}
                 className={clsx(
                   "px-3 py-1 text-xs tracking-wide uppercase transition-colors rounded-sm tabular",
-                  minOdds === o
+                  minConversion === p.value
                     ? "bg-bg-2 text-text-1"
                     : "text-text-2 hover:text-text-1"
                 )}
-                title={`Minimum free-bet side odds`}
+                title={
+                  p.value === 0
+                    ? "Show all conversions"
+                    : `Show conversions at ${p.value}% or higher`
+                }
               >
-                +{o}
+                {p.label}
               </button>
             ))}
           </div>
+          <BookIncludeDropdown
+            label="Free-bet book"
+            availableBooks={freeBookOptions}
+            selected={freeLegFilter}
+            onChange={setFreeLegFilter}
+          />
           <BookFilter
             availableBooks={allBooksInPlay.length ? allBooksInPlay : BOOK_ORDER}
             visible={visible}
@@ -120,10 +167,11 @@ export default function FreeBetsPage() {
       {isLoading && !data && (
         <div className="text-text-2 text-sm">Scanning cache…</div>
       )}
-      {data && data.opportunities.length === 0 ? (
+      {data && filteredOpps.length === 0 ? (
         <div className="text-center text-text-3 py-16 text-sm">
-          No free-bet conversions match the current filters. Lower the minimum
-          free-bet odds or widen the book filter.
+          {minConversion > 0 || freeLegFilter.size > 0
+            ? "No free-bet conversions match the current filters. Lower the minimum conversion threshold or widen the free-bet book filter."
+            : "No free-bet conversions found."}
         </div>
       ) : data ? (
         <div className="border border-border-subtle rounded-md overflow-hidden bg-bg-0">
@@ -157,7 +205,7 @@ export default function FreeBetsPage() {
               </tr>
             </thead>
             <tbody>
-              {data.opportunities.map((op, i) => (
+              {filteredOpps.map((op, i) => (
                 <tr
                   key={`${op.event_id}-${op.market_kind}-${op.point ?? "na"}-${i}`}
                   className="border-t border-border-subtle hover:bg-bg-1/40"

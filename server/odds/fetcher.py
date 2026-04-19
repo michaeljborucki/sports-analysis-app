@@ -10,6 +10,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from ..config import Config
 from ..sports import Sport
+from ..user_settings import UserSettingsStore
 from .cache import OddsCache
 from .client import OddsAPIClient, OddsAPIError
 from .market_config import MarketConfig, TierConfig
@@ -37,22 +38,19 @@ class FetcherRegistry:
         sports: list[Sport],
         cache: OddsCache,
         client: OddsAPIClient,
+        settings_store: UserSettingsStore,
     ):
         self.config = config
         self.sports = sports
         self.cache = cache
         self.client = client
+        self.settings_store = settings_store
         self.scheduler = AsyncIOScheduler()
         self._running = False
         self._last_error: dict[str, str] = {}
         self._event_refresh_ts: dict[str, float] = {}
-        # Resolved sport keys per sport (e.g., tennis resolves to active
-        # tennis_atp_* + tennis_wta_* tournaments).
         self._resolved_keys: dict[str, list[str]] = {}
-        # Per-sport markets config, loaded lazily.
         self._market_cfg: dict[str, MarketConfig] = {}
-        # Map (sport_key→tournament event_id) — used to route per-event fetches
-        # to the correct Odds API sport_key for tennis.
         self._event_sport_map: dict[str, str] = {}
 
     @property
@@ -65,16 +63,43 @@ class FetcherRegistry:
         return self._market_cfg[sport.key]
 
     def all_enabled_tiers(self) -> list[tuple[Sport, TierConfig]]:
+        """Tiers to schedule — honors both markets.<sport>.toml *and* user
+        settings (disabled sports / markets). A tier whose markets list is
+        entirely filtered out by the user is dropped."""
+        settings = self.settings_store.get()
         out: list[tuple[Sport, TierConfig]] = []
         for sport in self.sports:
+            if not settings.is_sport_enabled(sport.key):
+                continue
             try:
                 cfg = self._cfg_for(sport)
             except Exception:
                 logger.exception("Failed to load markets config for %s", sport.key)
                 continue
             for tier in cfg.enabled_tiers():
-                out.append((sport, tier))
+                filtered = settings.filter_markets(sport.key, tier.markets)
+                if not filtered:
+                    continue
+                # Synthesize a TierConfig with the user-filtered market list
+                effective = TierConfig(
+                    name=tier.name,
+                    enabled=tier.enabled,
+                    interval_seconds=tier.interval_seconds,
+                    regions=tier.regions,
+                    markets=filtered,
+                    games_window_hours=tier.games_window_hours,
+                )
+                out.append((sport, effective))
         return out
+
+    def hot_reload(self) -> dict:
+        """Call after settings change. If the fetcher is running, restart it so
+        the new enabled-tier set takes effect on the next tick. No-op if
+        stopped."""
+        if not self._running:
+            return {"status": "not_running"}
+        self.stop_all()
+        return self.start_all()
 
     # ---------- Scheduler control ----------
 

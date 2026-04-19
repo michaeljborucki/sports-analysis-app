@@ -11,6 +11,7 @@ import {
 import { formatAmerican } from "@/lib/format";
 import { useVisibleBooks } from "@/lib/use-visible-books";
 import { BookFilter } from "@/components/book-filter";
+import { BookIncludeDropdown } from "@/components/book-include-dropdown";
 import { BookLogo } from "@/components/book-logo";
 import { RefreshButton } from "@/components/refresh-button";
 import { BOOK_ORDER } from "@/lib/books";
@@ -69,6 +70,13 @@ export default function LowHoldPage() {
     return [...known, ...unknown];
   }, [data]);
 
+  const [pageFilter, setPageFilter] = useState<Set<string>>(new Set());
+  const filteredOpps = useMemo(() => {
+    const ops = data?.opportunities ?? [];
+    if (pageFilter.size === 0) return ops;
+    return ops.filter(op => op.sides.some(s => pageFilter.has(s.book)));
+  }, [data, pageFilter]);
+
   return (
     <div className="flex flex-col gap-4">
       <header className="flex items-end justify-between gap-4 flex-wrap">
@@ -79,7 +87,10 @@ export default function LowHoldPage() {
           </span>
           {data && (
             <span className="text-xs text-text-3 tabular">
-              {data.opportunities.length} opportunities
+              {pageFilter.size > 0 && filteredOpps.length !== data.opportunities.length
+                ? `${filteredOpps.length} / ${data.opportunities.length}`
+                : `${data.opportunities.length}`}{" "}
+              opportunities
             </span>
           )}
         </div>
@@ -100,6 +111,12 @@ export default function LowHoldPage() {
               </button>
             ))}
           </div>
+          <BookIncludeDropdown
+            label="Must include"
+            availableBooks={allBooksInPlay}
+            selected={pageFilter}
+            onChange={setPageFilter}
+          />
           <BookFilter
             availableBooks={allBooksInPlay.length ? allBooksInPlay : BOOK_ORDER}
             visible={visible}
@@ -118,11 +135,11 @@ export default function LowHoldPage() {
       {isLoading && !data && (
         <div className="text-text-2 text-sm">Scanning cache…</div>
       )}
-      {data && data.opportunities.length === 0 ? (
+      {data && filteredOpps.length === 0 ? (
         <div className="text-center text-text-3 py-16 text-sm">
-          No low-hold lines under {maxHold}% across your selected books.
-          Try raising the cap or including sharper books (Pinnacle, Novig,
-          Betfair exchanges, Kalshi).
+          {pageFilter.size > 0
+            ? "No low-hold lines match the selected book filter."
+            : `No low-hold lines under ${maxHold}% across your selected books. Try raising the cap or including sharper books (Pinnacle, Novig, Betfair exchanges, Kalshi).`}
         </div>
       ) : data ? (
         <div className="border border-border-subtle rounded-md overflow-hidden bg-bg-0">
@@ -153,7 +170,7 @@ export default function LowHoldPage() {
               </tr>
             </thead>
             <tbody>
-              {data.opportunities.map((op, i) => {
+              {filteredOpps.map((op, i) => {
                 const a = op.sides[0];
                 const b = op.sides[1];
                 return (

@@ -295,7 +295,7 @@
             "required": false,
             "schema": {
               "type": "number",
-              "default": 2.5,
+              "default": 1.0,
               "title": "Max Hold Pct"
             }
           }
@@ -367,6 +367,60 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/FreeBetResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings": {
+      "get": {
+        "summary": "Get Settings",
+        "operationId": "get_settings_api_settings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Post Settings",
+        "operationId": "post_settings_api_settings_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsUpdateResponse"
                 }
               }
             }
@@ -1124,6 +1178,24 @@
         ],
         "title": "MarketGroupModel"
       },
+      "MarketOption": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "enabled"
+        ],
+        "title": "MarketOption"
+      },
       "MarketOutcome": {
         "properties": {
           "outcome_name": {
@@ -1375,6 +1447,85 @@
         ],
         "title": "PicksResponse"
       },
+      "SettingsPayload": {
+        "properties": {
+          "disabled_sports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Disabled Sports"
+          },
+          "disabled_markets": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Disabled Markets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "disabled_sports",
+          "disabled_markets"
+        ],
+        "title": "SettingsPayload"
+      },
+      "SettingsResponse": {
+        "properties": {
+          "disabled_sports": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Disabled Sports"
+          },
+          "disabled_markets": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Disabled Markets"
+          },
+          "sports": {
+            "items": {
+              "$ref": "#/components/schemas/SportOption"
+            },
+            "type": "array",
+            "title": "Sports"
+          }
+        },
+        "type": "object",
+        "required": [
+          "disabled_sports",
+          "disabled_markets",
+          "sports"
+        ],
+        "title": "SettingsResponse"
+      },
+      "SettingsUpdateResponse": {
+        "properties": {
+          "settings": {
+            "$ref": "#/components/schemas/SettingsResponse"
+          },
+          "reload_status": {
+            "type": "string",
+            "title": "Reload Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "settings",
+          "reload_status"
+        ],
+        "title": "SettingsUpdateResponse"
+      },
       "SportModel": {
         "properties": {
           "key": {
@@ -1400,6 +1551,37 @@
           "market_groups"
         ],
         "title": "SportModel"
+      },
+      "SportOption": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "tiers": {
+            "items": {
+              "$ref": "#/components/schemas/TierOption"
+            },
+            "type": "array",
+            "title": "Tiers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "enabled",
+          "tiers"
+        ],
+        "title": "SportOption"
       },
       "SportSummary": {
         "properties": {
@@ -1460,6 +1642,37 @@
           "sports"
         ],
         "title": "SportsResponse"
+      },
+      "TierOption": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "enabled_in_config": {
+            "type": "boolean",
+            "title": "Enabled In Config"
+          },
+          "interval_seconds": {
+            "type": "integer",
+            "title": "Interval Seconds"
+          },
+          "markets": {
+            "items": {
+              "$ref": "#/components/schemas/MarketOption"
+            },
+            "type": "array",
+            "title": "Markets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "enabled_in_config",
+          "interval_seconds",
+          "markets"
+        ],
+        "title": "TierOption"
       },
       "ValidationError": {
         "properties": {

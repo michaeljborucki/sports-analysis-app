@@ -197,6 +197,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Settings */
+        get: operations["get_settings_api_settings_get"];
+        put?: never;
+        /** Post Settings */
+        post: operations["post_settings_api_settings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/dashboard": {
         parameters: {
             query?: never;
@@ -492,6 +510,13 @@ export interface components {
              */
             display: "moneyline" | "spread" | "total";
         };
+        /** MarketOption */
+        MarketOption: {
+            /** Key */
+            key: string;
+            /** Enabled */
+            enabled: boolean;
+        };
         /** MarketOutcome */
         MarketOutcome: {
             /** Outcome Name */
@@ -585,6 +610,32 @@ export interface components {
             /** Bet Card Date */
             bet_card_date?: string | null;
         };
+        /** SettingsPayload */
+        SettingsPayload: {
+            /** Disabled Sports */
+            disabled_sports: string[];
+            /** Disabled Markets */
+            disabled_markets: {
+                [key: string]: string[];
+            };
+        };
+        /** SettingsResponse */
+        SettingsResponse: {
+            /** Disabled Sports */
+            disabled_sports: string[];
+            /** Disabled Markets */
+            disabled_markets: {
+                [key: string]: string[];
+            };
+            /** Sports */
+            sports: components["schemas"]["SportOption"][];
+        };
+        /** SettingsUpdateResponse */
+        SettingsUpdateResponse: {
+            settings: components["schemas"]["SettingsResponse"];
+            /** Reload Status */
+            reload_status: string;
+        };
         /** SportModel */
         SportModel: {
             /** Key */
@@ -593,6 +644,17 @@ export interface components {
             label: string;
             /** Market Groups */
             market_groups: components["schemas"]["MarketGroupModel"][];
+        };
+        /** SportOption */
+        SportOption: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Tiers */
+            tiers: components["schemas"]["TierOption"][];
         };
         /** SportSummary */
         SportSummary: {
@@ -613,6 +675,17 @@ export interface components {
         SportsResponse: {
             /** Sports */
             sports: components["schemas"]["SportModel"][];
+        };
+        /** TierOption */
+        TierOption: {
+            /** Name */
+            name: string;
+            /** Enabled In Config */
+            enabled_in_config: boolean;
+            /** Interval Seconds */
+            interval_seconds: number;
+            /** Markets */
+            markets: components["schemas"]["MarketOption"][];
         };
         /** ValidationError */
         ValidationError: {
@@ -923,6 +996,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FreeBetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_api_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsResponse"];
+                };
+            };
+        };
+    };
+    post_settings_api_settings_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SettingsPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsUpdateResponse"];
                 };
             };
             /** @description Validation Error */

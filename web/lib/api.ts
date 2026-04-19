@@ -40,6 +40,7 @@ export const apiPaths = {
     return `/api/free-bets?${qs.toString()}`;
   },
   dashboard: "/api/dashboard",
+  settings: "/api/settings",
 } as const;
 
 export type ArbResponse = components["schemas"]["ArbResponse"];
@@ -52,6 +53,11 @@ export type FreeBetOpportunity = components["schemas"]["FreeBetOpportunity"];
 export type FreeBetLeg = components["schemas"]["FreeBetLeg"];
 export type DashboardResponse = components["schemas"]["DashboardResponse"];
 export type SportSummary = components["schemas"]["SportSummary"];
+export type SettingsResponse = components["schemas"]["SettingsResponse"];
+export type SportOption = components["schemas"]["SportOption"];
+export type TierOption = components["schemas"]["TierOption"];
+export type MarketOption = components["schemas"]["MarketOption"];
+export type SettingsPayload = components["schemas"]["SettingsPayload"];
 
 export function refreshEventUrl(eventId: string): string {
   return `/api/refresh/${encodeURIComponent(eventId)}`;

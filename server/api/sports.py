@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from ..sports import all_sports
+from ..user_settings import UserSettingsStore
 
 
 class MarketGroupModel(BaseModel):
@@ -25,11 +26,15 @@ class SportsResponse(BaseModel):
     sports: list[SportModel]
 
 
-def build_router() -> APIRouter:
+def build_router(settings_store: UserSettingsStore | None = None) -> APIRouter:
     router = APIRouter()
 
     @router.get("/api/sports", response_model=SportsResponse)
     async def get_sports() -> SportsResponse:
+        settings = settings_store.get() if settings_store else None
+        sports = all_sports()
+        if settings:
+            sports = [s for s in sports if settings.is_sport_enabled(s.key)]
         return SportsResponse(
             sports=[
                 SportModel(
@@ -45,7 +50,7 @@ def build_router() -> APIRouter:
                         for mg in sp.market_groups
                     ],
                 )
-                for sp in all_sports()
+                for sp in sports
             ]
         )
 

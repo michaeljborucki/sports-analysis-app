@@ -1,11 +1,12 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import useSWR from "swr";
 
 import { apiPaths, type ArbResponse } from "@/lib/api";
 import { useVisibleBooks } from "@/lib/use-visible-books";
 import { ArbitrageTable } from "@/components/arbitrage-table";
 import { BookFilter } from "@/components/book-filter";
+import { BookIncludeDropdown } from "@/components/book-include-dropdown";
 import { RefreshButton } from "@/components/refresh-button";
 import { BOOK_ORDER } from "@/lib/books";
 
@@ -21,18 +22,24 @@ export default function ArbitragePage() {
     { refreshInterval: 15_000 }
   );
 
-  // All books that actually appear across the current arb set — so the filter
-  // panel can show a meaningful list even without a prior odds-page visit.
   const allBooksInPlay = useMemo(() => {
     const s = new Set<string>();
     for (const op of data?.opportunities ?? []) {
       for (const side of op.sides) s.add(side.book);
     }
-    // Preserve registry order for books we recognize; append strangers alphabetically.
     const known = BOOK_ORDER.filter(b => s.has(b));
     const unknown = [...s].filter(b => !BOOK_ORDER.includes(b)).sort();
     return [...known, ...unknown];
   }, [data, booksKey]);
+
+  // Page-level filter: restrict to opportunities where at least one side
+  // uses a selected book. Empty set = no filter.
+  const [pageFilter, setPageFilter] = useState<Set<string>>(new Set());
+  const filteredOpps = useMemo(() => {
+    const ops = data?.opportunities ?? [];
+    if (pageFilter.size === 0) return ops;
+    return ops.filter(op => op.sides.some(s => pageFilter.has(s.book)));
+  }, [data, pageFilter]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -44,11 +51,20 @@ export default function ArbitragePage() {
           </span>
           {data && (
             <span className="text-xs text-text-3 tabular">
-              {data.opportunities.length} opportunities
+              {pageFilter.size > 0 && filteredOpps.length !== data.opportunities.length
+                ? `${filteredOpps.length} / ${data.opportunities.length}`
+                : `${data.opportunities.length}`}{" "}
+              opportunities
             </span>
           )}
         </div>
         <div className="flex items-center gap-3">
+          <BookIncludeDropdown
+            label="Must include"
+            availableBooks={allBooksInPlay}
+            selected={pageFilter}
+            onChange={setPageFilter}
+          />
           <BookFilter
             availableBooks={allBooksInPlay.length ? allBooksInPlay : BOOK_ORDER}
             visible={visible}
@@ -67,7 +83,7 @@ export default function ArbitragePage() {
       {isLoading && !data && (
         <div className="text-text-2 text-sm">Scanning cache…</div>
       )}
-      {data && <ArbitrageTable opportunities={data.opportunities} />}
+      {data && <ArbitrageTable opportunities={filteredOpps} />}
     </div>
   );
 }

@@ -12,6 +12,7 @@ from .odds.client import OddsAPIClient
 from .odds.fetcher import FetcherRegistry
 from .picks.reader import PicksReader
 from .sports import all_sports
+from .user_settings import UserSettingsStore
 
 
 logging.basicConfig(level=logging.INFO)
@@ -23,11 +24,9 @@ def create_app() -> FastAPI:
     cache.init()
     client = OddsAPIClient(api_key=config.odds_api_key)
     sports = all_sports()
-    fetcher = FetcherRegistry(config, sports, cache, client)
+    settings_store = UserSettingsStore()
+    fetcher = FetcherRegistry(config, sports, cache, client, settings_store)
 
-    # One picks reader per sport, rooted at that sport's sibling agents repo.
-    # Each reader honors the [picks] section of that sport's markets.<sport>.toml
-    # so show/hide is a config edit, not a code change.
     from .odds.market_config import MarketConfig
     picks_readers: dict[str, PicksReader] = {}
     for sp in sports:
@@ -77,6 +76,7 @@ def create_app() -> FastAPI:
     from .api.dashboard import build_router as dashboard_router
     from .api.low_hold import build_router as low_hold_router
     from .api.free_bets import build_router as free_bets_router
+    from .api.settings import build_router as settings_router
 
     app.include_router(health_router(cache, fetcher))
     app.include_router(odds_router(cache))
@@ -86,10 +86,11 @@ def create_app() -> FastAPI:
     )
     app.include_router(fetcher_ctl_router(fetcher))
     app.include_router(refresh_router(fetcher))
-    app.include_router(sports_router())
+    app.include_router(sports_router(settings_store))
     app.include_router(arbitrage_router(cache))
     app.include_router(low_hold_router(cache))
     app.include_router(free_bets_router(cache))
+    app.include_router(settings_router(settings_store, fetcher, sports))
     app.include_router(
         dashboard_router(
             cache, fetcher, picks_readers, sports,
