@@ -4,17 +4,13 @@ import clsx from "clsx";
 import { bookInfo } from "@/lib/books";
 
 /**
- * Sportsbook brand — real logo pulled from Google's public favicon service at
- * 128px, falling back to a colored-letter pill if the image fails to load or
- * the book has no registered domain.
+ * Sportsbook brand logo — references a locally-bundled, auto-trimmed PNG under
+ * /public/logos/<domain>.png (regenerate via scripts/download_logos.py). Falls
+ * back to a colored-letter pill if the logo is missing or fails to load.
  *
- * Runtime-only (the image is fetched from google.com); if the user is offline
- * the pill fallback takes over. For a fully local build, these files could be
- * predownloaded into /public/logos/ — deferred to later.
- *
- *   mode="header" : monochrome in column headers
- *   mode="full"   : full color — for best-cell
- *   mode="label"  : small full color — for filter / inline labels
+ *   mode="header" : monochrome for column headers
+ *   mode="full"   : full color — Best cell
+ *   mode="label"  : small full color — filter / inline
  */
 export function BookLogo({
   bookKey,
@@ -40,15 +36,12 @@ export function BookLogo({
       : undefined;
 
   if (hasLogo) {
-    const src = `https://www.google.com/s2/favicons?domain=${info.domain}&sz=128`;
+    const src = `/logos/${info.domain}.png`;
     return (
       <span
         title={info.name}
         className={clsx(
           "inline-flex items-center justify-center rounded-sm overflow-hidden",
-          mode === "header"
-            ? "bg-bg-2/60 border border-border-subtle"
-            : "bg-white",
           className
         )}
         style={{ height: size.h, width: size.w }}
@@ -71,7 +64,7 @@ export function BookLogo({
     );
   }
 
-  // Fallback: colored-letter pill
+  // Fallback: colored-letter pill (only for books with no local logo file)
   if (mode === "header") {
     return (
       <span
