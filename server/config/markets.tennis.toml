@@ -1,30 +1,41 @@
-# Tennis market fetch configuration (ATP + WTA main tour).
+# Tennis (ATP + WTA tournaments) market configuration.
 #
-# Same tier shape as MLB, but tennis has no first-innings analog so that tier
-# is disabled. Player props deferred for now — scope locked to core markets:
-# moneyline, game spread, total games.
+# The Odds API's tennis coverage is minimal. Only h2h, spreads (game spreads),
+# totals (game totals), and outrights (tournament winners) are available.
+# There are NO alternate lines, NO set-level markets, and NO player props on
+# The Odds API for tennis — those require a different data provider.
+#
+# Sport keys are per-tournament (tennis_atp_wimbledon, tennis_wta_us_open,
+# tennis_atp_french_open, etc.) and are discovered dynamically at fetch time.
 
 [main]
 enabled          = true
 interval_seconds = 60
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
-markets          = ["h2h", "spreads", "totals"]
+markets = [
+  "h2h",          # Match winner — widely covered
+  "spreads",      # Game spreads — limited bookmaker coverage
+  "totals",       # Total games over/under — limited bookmaker coverage
+  "h2h_lay",      # Exchange-only (Betfair/Matchbook/Smarkets)
+]
 
+# No alternate lines available on The Odds API for tennis.
 [alternates]
-enabled          = true
+enabled          = false
 interval_seconds = 60
-regions          = ["us", "us2", "us_ex", "eu", "uk"]
-markets          = ["alternate_spreads", "alternate_totals"]
+regions          = []
+markets          = []
 
-# Tennis has no first-innings equivalent; disabled.
+# No set-level markets available on The Odds API for tennis.
+# (No set winners, set spreads/totals, correct-set-score, etc.)
 [first_innings]
 enabled          = false
 interval_seconds = 60
 regions          = []
 markets          = []
 
-# Player props deferred — re-enable and add tennis-specific keys
-# (player_aces, player_games, etc.) when ready.
+# No player props available on The Odds API for tennis.
+# (No player_aces, player_games, player_double_faults, player_sets_won, etc.)
 [player_props]
 enabled             = false
 interval_seconds    = 60
@@ -36,13 +47,14 @@ markets             = []
 enabled          = true
 debounce_seconds = 60
 
-# Picks filter. Only bet_types in this list surface on /picks/tennis.
-# Leave empty to show everything; add/remove to taste.
+# Picks filter — which bet types surface on /picks/tennis.
 [picks]
 include_bet_types = [
   "moneyline",
   "game_spread",
   "total_games",
+  # Present on tennis-agents bet cards — keep even though markets aren't
+  # on The Odds API so they still appear on /picks/tennis:
   "set_spread",
   "total_sets",
 ]
