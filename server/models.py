@@ -71,6 +71,10 @@ class Pick(BaseModel):
     agent_key: str = "baseball-agents"
     agent_record_30d: str = ""
     commence_time: datetime | None = None
+    # Populated only on cross-sport aggregations (e.g. /api/dashboard) so the
+    # frontend knows which sport a pick came from. Per-sport endpoints leave
+    # this unset.
+    sport_key: str | None = None
 
 
 class PicksResponse(BaseModel):

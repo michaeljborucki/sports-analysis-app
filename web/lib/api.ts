@@ -27,11 +27,14 @@ export const apiPaths = {
   picks: (sport: string) => `/api/picks/${sport}`,
   arbitrage: (books: string[]) =>
     `/api/arbitrage${books.length ? `?books=${books.join(",")}` : ""}`,
+  dashboard: "/api/dashboard",
 } as const;
 
 export type ArbResponse = components["schemas"]["ArbResponse"];
 export type ArbOpportunity = components["schemas"]["ArbOpportunity"];
 export type ArbSide = components["schemas"]["ArbSide"];
+export type DashboardResponse = components["schemas"]["DashboardResponse"];
+export type SportSummary = components["schemas"]["SportSummary"];
 
 export function refreshEventUrl(eventId: string): string {
   return `/api/refresh/${encodeURIComponent(eventId)}`;

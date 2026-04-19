@@ -4,16 +4,10 @@ import re
 from typing import TypedDict
 
 
-HEADER_DATE_RE = re.compile(r"MIROFISH BET CARD\s+—\s+(\d{4}-\d{2}-\d{2})")
-GAME_HEADER_RE = re.compile(r"^\s{2}([A-Z]{2,4}@[A-Z]{2,4})\s*$")
-PICK_LINE_RE = re.compile(
-    r"^\s+(?P<bet_type>[a-z_0-9]+)\s*\|\s*"
-    r"(?P<side>[^|]+?)\s*\|\s*"
-    r"(?P<odds>[+-]\d+)\s*\|\s*"
-    r"Mkt:\s*(?P<mkt>[\d.]+)%\s*\|\s*"
-    r"Model:\s*(?P<model>[\d.]+)%\s*\|\s*"
-    r"Edge:\s*(?P<edge>[\d.\-]+)%\s*\|\s*"
-    r"Kelly:\s*(?P<kelly>[\d.\-]+)%"
+# "MIROFISH BET CARD — 2026-04-01" (baseball)
+# "MIROFISH TENNIS BET CARD — 2026-04-19" (tennis; extra sport word)
+HEADER_DATE_RE = re.compile(
+    r"MIROFISH\s+(?:\w+\s+)?BET CARD\s+—\s+(\d{4}-\d{2}-\d{2})"
 )
 
 
@@ -37,6 +31,77 @@ class CardDict(TypedDict):
     games: list[GameDict]
 
 
+def _is_separator(stripped: str) -> bool:
+    """Separator lines in bet cards are only '=' or '-' characters."""
+    return bool(stripped) and set(stripped) <= {"=", "-"}
+
+
+def _is_header_noise(stripped: str) -> bool:
+    """Lines from the ASCII card header that aren't pick data."""
+    if "MIROFISH" in stripped and "BET CARD" in stripped:
+        return True
+    # "N picks across M games" / "N picks across M matches"
+    if re.match(r"^\d+\s+picks?\s+across\s+\d+\s+(games?|matches?)", stripped):
+        return True
+    return False
+
+
+def _parse_pick_line(stripped: str) -> PickDict | None:
+    """Parse a single pick line. Accepts both the full baseball format (with
+    Mkt/Model explicit) and the tennis format (Mkt/Model omitted — derived
+    from odds + edge).
+
+    Format: bet_type | side | +/-odds | [Mkt: X%] | [Model: Y%] | Edge: Z% | Kelly: W%
+    """
+    if "|" not in stripped or "Edge:" not in stripped:
+        return None
+    parts = [p.strip() for p in stripped.split("|")]
+    if len(parts) < 4:
+        return None
+    bet_type = parts[0]
+    side = parts[1]
+    odds_match = re.search(r"[+-]\d+", parts[2])
+    if not odds_match:
+        return None
+    odds = int(odds_match.group())
+
+    mkt = model = edge = kelly = None
+    label_re = re.compile(r"^(Mkt|Model|Edge|Kelly):\s*([+-]?[\d.]+)")
+    for p in parts[3:]:
+        m = label_re.match(p)
+        if not m:
+            continue
+        label, val = m.group(1), float(m.group(2))
+        if label == "Mkt":
+            mkt = val
+        elif label == "Model":
+            model = val
+        elif label == "Edge":
+            edge = val
+        elif label == "Kelly":
+            kelly = val
+
+    if edge is None or kelly is None:
+        return None
+
+    # Derive implied market probability from odds if the card didn't print it
+    if mkt is None:
+        mkt = (100 / (odds + 100) * 100) if odds > 0 else (-odds / (-odds + 100) * 100)
+    # Derive model probability as market + edge
+    if model is None:
+        model = mkt + edge
+
+    return {
+        "bet_type": bet_type,
+        "side": side,
+        "odds_american": odds,
+        "market_prob": mkt / 100.0,
+        "model_prob": model / 100.0,
+        "edge": edge / 100.0,
+        "kelly_pct": kelly / 100.0,
+    }
+
+
 def parse_bet_card(text: str) -> CardDict:
     date_match = HEADER_DATE_RE.search(text)
     if not date_match:
@@ -45,21 +110,28 @@ def parse_bet_card(text: str) -> CardDict:
     games: list[GameDict] = []
     current: GameDict | None = None
 
-    for line in text.splitlines():
-        if (m := GAME_HEADER_RE.match(line)):
-            current = {"game_label": m.group(1), "picks": []}
-            games.append(current)
+    for raw in text.splitlines():
+        stripped = raw.strip()
+        if not stripped:
             continue
-        if current is not None and (m := PICK_LINE_RE.match(line)):
-            current["picks"].append({
-                "bet_type": m.group("bet_type"),
-                "side": m.group("side").strip(),
-                "odds_american": int(m.group("odds")),
-                "market_prob": float(m.group("mkt")) / 100.0,
-                "model_prob": float(m.group("model")) / 100.0,
-                "edge": float(m.group("edge")) / 100.0,
-                "kelly_pct": float(m.group("kelly")) / 100.0,
-            })
+        if _is_separator(stripped):
+            continue
+        if _is_header_noise(stripped):
+            continue
+
+        pick = _parse_pick_line(stripped)
+        if pick is not None:
+            if current is None:
+                # Pick before any game header — attach to an "Unknown" block
+                current = {"game_label": "Unknown", "picks": []}
+                games.append(current)
+            current["picks"].append(pick)
+            continue
+
+        # Otherwise, treat as a new game header. Handles both "WSH@PHI"
+        # (baseball) and "F. Cobolli vs B. Shelton" (tennis).
+        current = {"game_label": stripped, "picks": []}
+        games.append(current)
 
     games = [g for g in games if g["picks"]]
     return {"date": date_match.group(1), "games": games}

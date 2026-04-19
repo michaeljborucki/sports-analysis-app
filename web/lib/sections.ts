@@ -15,6 +15,7 @@ export interface Section {
  *   global    → URL is /{key}, no sport context bar
  */
 export const SECTIONS: Section[] = [
+  { key: "dashboard", label: "Dashboard", scope: "global"    },
   { key: "odds",      label: "Odds",      scope: "per-sport" },
   { key: "props",     label: "Props",     scope: "per-sport" },
   { key: "picks",     label: "Picks",     scope: "per-sport" },

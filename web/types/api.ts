@@ -163,6 +163,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dashboard */
+        get: operations["dashboard_api_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -232,6 +249,23 @@ export interface components {
              * Format: date-time
              */
             fetched_at: string;
+        };
+        /** DashboardResponse */
+        DashboardResponse: {
+            /** Sports */
+            sports: components["schemas"]["SportSummary"][];
+            /** Top Arbs */
+            top_arbs: components["schemas"]["ArbOpportunity"][];
+            /** Top Picks */
+            top_picks: components["schemas"]["Pick"][];
+            /** Upcoming Games */
+            upcoming_games: components["schemas"]["Game"][];
+            fetcher: components["schemas"]["FetcherStatus"];
+            /**
+             * Scanned At
+             * Format: date-time
+             */
+            scanned_at: string;
         };
         /** FetcherControlResponse */
         FetcherControlResponse: {
@@ -383,6 +417,8 @@ export interface components {
             agent_record_30d: string;
             /** Commence Time */
             commence_time?: string | null;
+            /** Sport Key */
+            sport_key?: string | null;
         };
         /** PickStat */
         PickStat: {
@@ -421,6 +457,21 @@ export interface components {
             label: string;
             /** Market Groups */
             market_groups: components["schemas"]["MarketGroupModel"][];
+        };
+        /** SportSummary */
+        SportSummary: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Upcoming Games */
+            upcoming_games: number;
+            /** Starting In 3H */
+            starting_in_3h: number;
+            /** Picks Today */
+            picks_today: number;
+            /** Bet Card Date */
+            bet_card_date?: string | null;
         };
         /** SportsResponse */
         SportsResponse: {
@@ -680,6 +731,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dashboard_api_dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardResponse"];
                 };
             };
         };

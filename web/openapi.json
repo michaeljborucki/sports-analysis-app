@@ -273,6 +273,24 @@
           }
         }
       }
+    },
+    "/api/dashboard": {
+      "get": {
+        "summary": "Dashboard",
+        "operationId": "dashboard_api_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -445,6 +463,56 @@
           "fetched_at"
         ],
         "title": "BookPrice"
+      },
+      "DashboardResponse": {
+        "properties": {
+          "sports": {
+            "items": {
+              "$ref": "#/components/schemas/SportSummary"
+            },
+            "type": "array",
+            "title": "Sports"
+          },
+          "top_arbs": {
+            "items": {
+              "$ref": "#/components/schemas/ArbOpportunity"
+            },
+            "type": "array",
+            "title": "Top Arbs"
+          },
+          "top_picks": {
+            "items": {
+              "$ref": "#/components/schemas/Pick"
+            },
+            "type": "array",
+            "title": "Top Picks"
+          },
+          "upcoming_games": {
+            "items": {
+              "$ref": "#/components/schemas/Game"
+            },
+            "type": "array",
+            "title": "Upcoming Games"
+          },
+          "fetcher": {
+            "$ref": "#/components/schemas/FetcherStatus"
+          },
+          "scanned_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scanned At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sports",
+          "top_arbs",
+          "top_picks",
+          "upcoming_games",
+          "fetcher",
+          "scanned_at"
+        ],
+        "title": "DashboardResponse"
       },
       "FetcherControlResponse": {
         "properties": {
@@ -836,6 +904,17 @@
               }
             ],
             "title": "Commence Time"
+          },
+          "sport_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sport Key"
           }
         },
         "type": "object",
@@ -948,6 +1027,50 @@
           "market_groups"
         ],
         "title": "SportModel"
+      },
+      "SportSummary": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "upcoming_games": {
+            "type": "integer",
+            "title": "Upcoming Games"
+          },
+          "starting_in_3h": {
+            "type": "integer",
+            "title": "Starting In 3H"
+          },
+          "picks_today": {
+            "type": "integer",
+            "title": "Picks Today"
+          },
+          "bet_card_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bet Card Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "upcoming_games",
+          "starting_in_3h",
+          "picks_today"
+        ],
+        "title": "SportSummary"
       },
       "SportsResponse": {
         "properties": {
