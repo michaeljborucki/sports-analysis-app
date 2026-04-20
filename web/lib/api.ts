@@ -39,6 +39,17 @@ export const apiPaths = {
     qs.set("min_free_odds", String(minFreeOdds));
     return `/api/free-bets?${qs.toString()}`;
   },
+  ev: (
+    books: string[],
+    opts: { minEv?: number; maxLongshotOdds?: number; staleSeconds?: number } = {},
+  ) => {
+    const qs = new URLSearchParams();
+    if (books.length) qs.set("books", books.join(","));
+    qs.set("min_ev", String(opts.minEv ?? 1));
+    qs.set("max_longshot_odds", String(opts.maxLongshotOdds ?? 800));
+    qs.set("stale_seconds", String(opts.staleSeconds ?? 300));
+    return `/api/ev?${qs.toString()}`;
+  },
   dashboard: "/api/dashboard",
   settings: "/api/settings",
 } as const;
@@ -51,6 +62,8 @@ export type LowHoldOpportunity = components["schemas"]["LowHoldOpportunity"];
 export type FreeBetResponse = components["schemas"]["FreeBetResponse"];
 export type FreeBetOpportunity = components["schemas"]["FreeBetOpportunity"];
 export type FreeBetLeg = components["schemas"]["FreeBetLeg"];
+export type EVResponse = components["schemas"]["EVResponse"];
+export type EVOpportunity = components["schemas"]["EVOpportunity"];
 export type DashboardResponse = components["schemas"]["DashboardResponse"];
 export type SportSummary = components["schemas"]["SportSummary"];
 export type SettingsResponse = components["schemas"]["SettingsResponse"];

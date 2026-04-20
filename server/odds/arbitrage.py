@@ -14,9 +14,8 @@ Three-way markets (soccer draws) and player props are skipped.
 """
 from __future__ import annotations
 
-from collections import defaultdict
-
 from .devig import american_to_implied_prob
+from .pairing import collect_spread_pairs, collect_total_pairs
 
 
 def _payout_multiplier(american: int) -> float:
@@ -132,72 +131,24 @@ def scan_game_arbs(
             best_a, best_b, roi = pair
             out.append(_emit(game, "h2h", None, a, b, best_a, best_b, roi))
 
-    # --- Spreads (main + alt) — pair by |point| ----------------------------
-    spread_by_abs: dict[float, dict[str, dict]] = defaultdict(dict)
-    for mk in ("spreads", "alternate_spreads"):
-        m = _find_market(game, mk)
-        if not m:
-            continue
-        for o in m["outcomes"]:
-            pt = _outcome_point(o)
-            if pt is None:
-                continue
-            key = round(abs(pt), 1)
-            if o["outcome_name"] == game["home_team"]:
-                spread_by_abs[key]["home"] = o
-            elif o["outcome_name"] == game["away_team"]:
-                spread_by_abs[key]["away"] = o
-    for abs_pt, sides in spread_by_abs.items():
-        if "home" not in sides or "away" not in sides:
-            continue
-        pair = _try_pair(sides["home"], sides["away"], books_filter)
+    # --- Spreads (main + alt) — pair by complementary signed points -------
+    for abs_pt, home_side, away_side in collect_spread_pairs(game):
+        pair = _try_pair(home_side, away_side, books_filter)
         if pair:
             best_a, best_b, roi = pair
             out.append(
-                _emit(
-                    game,
-                    "spreads",
-                    abs_pt,
-                    sides["home"],
-                    sides["away"],
-                    best_a,
-                    best_b,
-                    roi,
-                )
+                _emit(game, "spreads", abs_pt, home_side, away_side,
+                      best_a, best_b, roi)
             )
 
-    # --- Totals (main + alt) — pair by point value -------------------------
-    total_by_point: dict[float, dict[str, dict]] = defaultdict(dict)
-    for mk in ("totals", "alternate_totals"):
-        m = _find_market(game, mk)
-        if not m:
-            continue
-        for o in m["outcomes"]:
-            pt = _outcome_point(o)
-            if pt is None:
-                continue
-            key = round(pt, 1)
-            if o["outcome_name"] == "Over":
-                total_by_point[key]["over"] = o
-            elif o["outcome_name"] == "Under":
-                total_by_point[key]["under"] = o
-    for pt, sides in total_by_point.items():
-        if "over" not in sides or "under" not in sides:
-            continue
-        pair = _try_pair(sides["over"], sides["under"], books_filter)
+    # --- Totals (main + alt) — pair Over and Under at same point ----------
+    for pt, over_side, under_side in collect_total_pairs(game):
+        pair = _try_pair(over_side, under_side, books_filter)
         if pair:
             best_a, best_b, roi = pair
             out.append(
-                _emit(
-                    game,
-                    "totals",
-                    pt,
-                    sides["over"],
-                    sides["under"],
-                    best_a,
-                    best_b,
-                    roi,
-                )
+                _emit(game, "totals", pt, over_side, under_side,
+                      best_a, best_b, roi)
             )
 
     return out

@@ -7,9 +7,10 @@ from typing import Iterable
 def _encode_outcome_name(market_key: str, name: str, description: str | None) -> str:
     """Player props come back as (name='Over', description='Drew Rasmussen').
     Encode both into a single outcome_name so the cache PK stays stable
-    across different players with the same line.
-    """
-    if description and market_key.startswith(("pitcher_", "batter_")):
+    across different players with the same line. Applies to all player-level
+    prop markets across sports: MLB (pitcher_*, batter_*), NBA/NHL/etc.
+    (player_*)."""
+    if description and market_key.startswith(("pitcher_", "batter_", "player_")):
         return f"{description} {name}"
     return name
 

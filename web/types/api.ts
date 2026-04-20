@@ -197,6 +197,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ev": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Ev
+         * @description Scan the cache for +EV opportunities.
+         *
+         *     Query params:
+         *       - books: csv of offered-side bookmaker keys (empty = all)
+         *       - sharp_books: csv of sharp anchor books (empty = SHARP_BOOKS default)
+         *       - min_ev: minimum EV percentage (ROI per $1) to include, default 1.0
+         *       - max_longshot_odds: filter out offered prices above this American
+         *         value; default +800 to avoid devig noise on longshots
+         *       - stale_seconds: drop offered prices older than this; default 60
+         *       - max_results: server-side cap after sort; default 300
+         *       - tag_arb: also_in_arb flag — set false to skip arb pre-scan
+         */
+        get: operations["get_ev_api_ev_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/settings": {
         parameters: {
             query?: never;
@@ -318,6 +348,72 @@ export interface components {
              * Format: date-time
              */
             scanned_at: string;
+        };
+        /** EVOpportunity */
+        EVOpportunity: {
+            /** Sport Key */
+            sport_key: string;
+            /** Event Id */
+            event_id: string;
+            /** Home Team */
+            home_team: string;
+            /** Away Team */
+            away_team: string;
+            /**
+             * Commence Time
+             * Format: date-time
+             */
+            commence_time: string;
+            /** Market Kind */
+            market_kind: string;
+            /** Point */
+            point?: number | null;
+            /** Outcome Name */
+            outcome_name: string;
+            /** Book */
+            book: string;
+            /** Offered Price American */
+            offered_price_american: number;
+            /** Fair Price American */
+            fair_price_american: number;
+            /** Fair Probability */
+            fair_probability: number;
+            /** Ev Pct */
+            ev_pct: number;
+            /** Kelly Full Pct */
+            kelly_full_pct: number;
+            /** Kelly Quarter Pct */
+            kelly_quarter_pct: number;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "pinnacle" | "consensus";
+            /** Anchor Book Count */
+            anchor_book_count: number;
+            /** Offered Age S */
+            offered_age_s: number;
+            /** Also In Arb */
+            also_in_arb: boolean;
+            /**
+             * Confidence
+             * @enum {string}
+             */
+            confidence: "normal" | "low";
+        };
+        /** EVResponse */
+        EVResponse: {
+            /** Opportunities */
+            opportunities: components["schemas"]["EVOpportunity"][];
+            /**
+             * Scanned At
+             * Format: date-time
+             */
+            scanned_at: string;
+            /** Min Ev Pct */
+            min_ev_pct: number;
+            /** Sharp Anchor Books */
+            sharp_anchor_books: string[];
         };
         /** FetcherControlResponse */
         FetcherControlResponse: {
@@ -695,10 +791,6 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
-            /** Input */
-            input?: unknown;
-            /** Context */
-            ctx?: Record<string, never>;
         };
     };
     responses: never;
@@ -996,6 +1088,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FreeBetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ev_api_ev_get: {
+        parameters: {
+            query?: {
+                books?: string;
+                sharp_books?: string;
+                min_ev?: number;
+                max_longshot_odds?: number;
+                stale_seconds?: number;
+                max_results?: number;
+                tag_arb?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EVResponse"];
                 };
             };
             /** @description Validation Error */

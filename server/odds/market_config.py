@@ -102,8 +102,8 @@ class MarketConfig:
         return self.tiers.get(PROP_TIER)
 
 
-# Prefix-based classifier — anything starting with pitcher_ or batter_ is a prop.
-PROP_MARKET_PREFIXES = ("pitcher_", "batter_")
+# Prefix-based classifier — player-level props across all sports.
+PROP_MARKET_PREFIXES = ("pitcher_", "batter_", "player_")
 
 
 def is_prop_market(market_key: str) -> bool:
