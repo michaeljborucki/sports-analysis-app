@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import Config
+from .odds.books.coral33 import Coral33Fetcher
 from .odds.cache import OddsCache
 from .odds.client import OddsAPIClient
 from .odds.fetcher import FetcherRegistry
@@ -26,6 +27,14 @@ def create_app() -> FastAPI:
     sports = all_sports()
     settings_store = UserSettingsStore()
     fetcher = FetcherRegistry(config, sports, cache, client, settings_store)
+
+    from pathlib import Path as _Path
+    coral33_fetcher = Coral33Fetcher(
+        customer_id=config.coral33_customer_id,
+        password=config.coral33_password,
+        cache=cache,
+        config_path=_Path(__file__).parent / "config" / "coral33.toml",
+    )
 
     from .odds.market_config import MarketConfig
     picks_readers: dict[str, PicksReader] = {}
@@ -54,7 +63,17 @@ def create_app() -> FastAPI:
             logging.warning("ODDS_API_KEY not set — fetcher disabled")
         else:
             fetcher.start_all()
+
+        if config.coral33_enabled:
+            if config.coral33_customer_id and config.coral33_password:
+                coral33_fetcher.start_all()
+            else:
+                logging.warning("CORAL33_ENABLED=true but credentials missing — skipping")
+        else:
+            logging.info("coral33 fetcher disabled (CORAL33_ENABLED=false)")
+
         yield
+        coral33_fetcher.shutdown()
         fetcher.shutdown()
 
     app = FastAPI(title="Betting Site API", lifespan=lifespan)
@@ -76,6 +95,7 @@ def create_app() -> FastAPI:
     from .api.dashboard import build_router as dashboard_router
     from .api.low_hold import build_router as low_hold_router
     from .api.free_bets import build_router as free_bets_router
+    from .api.ev import build_router as ev_router
     from .api.settings import build_router as settings_router
 
     app.include_router(health_router(cache, fetcher))
@@ -90,6 +110,7 @@ def create_app() -> FastAPI:
     app.include_router(arbitrage_router(cache))
     app.include_router(low_hold_router(cache))
     app.include_router(free_bets_router(cache))
+    app.include_router(ev_router(cache))
     app.include_router(settings_router(settings_store, fetcher, sports))
     app.include_router(
         dashboard_router(

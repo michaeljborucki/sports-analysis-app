@@ -21,6 +21,9 @@ class Config:
     cache_db: Path
     picks_date_override: str  # YYYY-MM-DD; empty string = use today
     fetcher_enabled: bool     # false = don't poll the Odds API (frozen snapshot mode)
+    coral33_customer_id: str
+    coral33_password: str
+    coral33_enabled: bool
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -41,5 +44,9 @@ class Config:
             cache_db=Path(__file__).parent / "cache.db",
             picks_date_override=os.environ.get("PICKS_DATE_OVERRIDE", "").strip(),
             fetcher_enabled=os.environ.get("FETCHER_ENABLED", "true").lower()
+            not in ("false", "0", "no", "off"),
+            coral33_customer_id=os.environ.get("CORAL33_CUSTOMER_ID", "").strip(),
+            coral33_password=os.environ.get("CORAL33_PASSWORD", ""),
+            coral33_enabled=os.environ.get("CORAL33_ENABLED", "false").lower()
             not in ("false", "0", "no", "off"),
         )

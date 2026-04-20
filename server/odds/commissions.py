@@ -19,6 +19,8 @@ BOOK_COMMISSION: dict[str, float] = {
     "rebet_exchange": 0.02,
     "sporttrade": 0.0,  # spread-based, no commission on winnings
     "novig": 0.0,       # peer-to-peer, no commission
+    # coral33.com — offshore book, not an exchange, 0% vig commission
+    "coral33": 0.0,
 }
 
 

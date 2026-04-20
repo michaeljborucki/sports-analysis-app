@@ -42,6 +42,7 @@ const BOOK_LIST: BookInfo[] = [
   { key: "betparx",      name: "betPARX",      label: "PRX",  bg: "#6D28D9", fg: "#FFFFFF", region: "US", priority: 15, domain: "betparx.com" },
 
   // US offshore / gray
+  { key: "coral33",      name: "coral33",      label: "C33",  bg: "#BE1622", fg: "#FFFFFF", region: "US", priority: 29, domain: "coral33.com" },
   { key: "bovada",       name: "Bovada",       label: "BVD",  bg: "#E63946", fg: "#FFFFFF", region: "US", priority: 30, domain: "bovada.lv" },
   { key: "betonlineag",  name: "BetOnline",    label: "BOL",  bg: "#1E293B", fg: "#F5A524", region: "US", priority: 31, domain: "betonline.ag" },
   { key: "betus",        name: "BetUS",        label: "BU",   bg: "#0F172A", fg: "#2CB459", region: "US", priority: 32, domain: "betus.com.pa" },

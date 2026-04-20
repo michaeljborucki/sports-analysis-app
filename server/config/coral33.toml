@@ -1,0 +1,55 @@
+# coral33.com integration — sport/endpoint mapping.
+#
+# Each [sports.<our_key>] block declares how to iterate coral33's endpoint
+# space (sportType × sportSubType × period) for that sport. The fetcher makes
+# one Get_LeagueLines2 call per (sport_type, subtype, period) tuple per tick.
+#
+# Team aliases are applied after normalization (lowercase, punctuation stripped,
+# whitespace collapsed) during event matching. Add entries only when coral33
+# and Odds API disagree — identity matches are the common case.
+
+[sports.nba]
+sport_type    = "BASKETBALL"
+subtypes_main = ["NBA"]
+subtypes_alt  = ["NBA+ALT+LINE"]
+subtypes_prop = ["NBAPLAYERPRO"]        # deferred — live probe needed
+periods = ["Game", "1st Half", "2nd Half", "1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter"]
+
+[sports.nhl]
+sport_type    = "HOCKEY"
+subtypes_main = ["NHL"]
+subtypes_alt  = ["HOCKEY+ALTER"]
+subtypes_prop = []                      # probe for NHLPLAYERPRO or similar
+periods = ["Game", "1st Period", "2nd Period", "3rd Period"]
+
+[sports.mlb]
+sport_type    = "BASEBALL"
+subtypes_main = ["MLB"]
+subtypes_alt  = ["MLB+ALT+LINE"]        # probe to confirm name
+subtypes_prop = ["MLBPLAYERPRO"]        # deferred
+periods = ["Game", "1st 5 Innings"]
+
+[sports.baseball_ncaa]
+sport_type    = "BASEBALL"
+subtypes_main = ["NCAABASEBALL"]        # probe to confirm — might be "NCAA+BASEBALL" or similar
+subtypes_alt  = []                      # confirm if alt lines are posted
+periods = ["Game"]
+
+[sports.tennis]
+sport_type    = "TENNIS"
+subtypes_main = []                      # populate after Get_SportsLeagues probe
+                                        # (ATP, WTA, CHALLENGER, etc.)
+subtypes_alt  = []
+periods = ["Game"]
+
+
+[team_aliases.nba]
+# Empty — populate as orphan-rate monitoring surfaces mismatches.
+
+[team_aliases.nhl]
+
+[team_aliases.mlb]
+
+[team_aliases.baseball_ncaa]
+
+[team_aliases.tennis]
