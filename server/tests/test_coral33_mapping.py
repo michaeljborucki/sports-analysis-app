@@ -18,7 +18,7 @@ def test_default_config_loads():
     assert "mlb" in cfg.sports
     assert cfg.sports["nba"].sport_type == "BASKETBALL"
     assert "NBA" in cfg.sports["nba"].subtypes_main
-    assert "NBA+ALT+LINE" in cfg.sports["nba"].subtypes_alt
+    assert "NBA ALT LINE" in cfg.sports["nba"].subtypes_alt
 
 
 def test_main_period_call_expansion():
@@ -34,7 +34,7 @@ def test_main_period_call_expansion():
 def test_alt_calls_fixed_to_game_period():
     cfg = load_coral33_config(CONFIG)
     alts = cfg.sports["nba"].alt_calls
-    assert alts == [("BASKETBALL", "NBA+ALT+LINE", "Game")]
+    assert alts == [("BASKETBALL", "NBA ALT LINE", "Game")]
 
 
 def test_period_suffixes_cover_expected_names():

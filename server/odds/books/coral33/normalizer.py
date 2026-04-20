@@ -13,23 +13,28 @@ logger = logging.getLogger(__name__)
 BOOK_KEY = "coral33"
 
 
+try:
+    from zoneinfo import ZoneInfo
+    _CORAL_TZ = ZoneInfo("America/Denver")
+except Exception:
+    _CORAL_TZ = timezone(-__import__("datetime").timedelta(hours=6))  # MDT fallback
+
+
 def _parse_coral_datetime(s: str) -> datetime:
-    """coral33 datetimes are naive strings like '2026-04-19 19:00:01.000'.
-    The platform is US-operated and all values empirically align with UTC
-    (site has no tz selector). Treat as UTC."""
+    """coral33 datetimes are naive strings like '2026-04-19 19:00:01.000' in
+    the server's local timezone (empirically America/Denver — MDT/MST).
+    Parse as local time, convert to UTC for matching against Odds API
+    commence_time."""
     if not s:
         raise ValueError("empty datetime")
     s = s.strip()
-    # Strip fractional seconds if present — fromisoformat handles them in 3.11+
-    # but be defensive.
     if "." in s:
         s = s.split(".")[0]
-    # Accept "YYYY-MM-DD HH:MM:SS" or ISO
     s = s.replace(" ", "T")
     dt = datetime.fromisoformat(s)
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt
+        dt = dt.replace(tzinfo=_CORAL_TZ)
+    return dt.astimezone(timezone.utc)
 
 
 _ALT_SUFFIXES = (" Alt Line", " Alternate Line", " Series")

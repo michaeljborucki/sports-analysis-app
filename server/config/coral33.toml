@@ -8,37 +8,46 @@
 # whitespace collapsed) during event matching. Add entries only when coral33
 # and Odds API disagree — identity matches are the common case.
 
+# Subtype strings use the LITERAL server names with spaces (not URL-encoded).
+# Confirmed via Get_SportsLeagues probe (2026-04-20):
+#   BASKETBALL: NBA, NBA ALT LINE, NBAPLAYERPRO, NBA GPROPS, NBA ADJ SERI
+#   HOCKEY:     NHL, HOCKEY ALTER, NHL GAME PRO, NHL ADJ SERI, NHL REG TIME
+#   BASEBALL:   MLB, MLB ALT LINE, MLB SERIES, NCAABASEBALL, BASEPLAPROP
+#   TENNIS:     (only Futures + WTA MATCHUPS currently in catalog; live-match
+#                subtypes may appear dynamically during tournaments)
+
 [sports.nba]
 sport_type    = "BASKETBALL"
 subtypes_main = ["NBA"]
-subtypes_alt  = ["NBA+ALT+LINE"]
-subtypes_prop = ["NBAPLAYERPRO"]        # deferred — live probe needed
+subtypes_alt  = ["NBA ALT LINE"]
+subtypes_prop = ["NBAPLAYERPRO"]
 periods = ["Game", "1st Half", "2nd Half", "1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter"]
 
 [sports.nhl]
 sport_type    = "HOCKEY"
 subtypes_main = ["NHL"]
-subtypes_alt  = ["HOCKEY+ALTER"]
-subtypes_prop = []                      # probe for NHLPLAYERPRO or similar
+subtypes_alt  = ["HOCKEY ALTER"]
+subtypes_prop = ["NHL GAME PRO"]
 periods = ["Game", "1st Period", "2nd Period", "3rd Period"]
 
 [sports.mlb]
 sport_type    = "BASEBALL"
 subtypes_main = ["MLB"]
-subtypes_alt  = ["MLB+ALT+LINE"]        # probe to confirm name
-subtypes_prop = ["MLBPLAYERPRO"]        # deferred
+subtypes_alt  = ["MLB ALT LINE"]
+subtypes_prop = ["BASEPLAPROP"]
 periods = ["Game", "1st 5 Innings"]
 
 [sports.baseball_ncaa]
 sport_type    = "BASEBALL"
-subtypes_main = ["NCAABASEBALL"]        # probe to confirm — might be "NCAA+BASEBALL" or similar
-subtypes_alt  = []                      # confirm if alt lines are posted
+subtypes_main = ["NCAABASEBALL"]
+subtypes_alt  = []                      # not offered by coral33 for NCAA
 periods = ["Game"]
 
 [sports.tennis]
 sport_type    = "TENNIS"
-subtypes_main = []                      # populate after Get_SportsLeagues probe
-                                        # (ATP, WTA, CHALLENGER, etc.)
+subtypes_main = []                      # no live ATP/WTA match subtypes in
+                                        # current catalog — populate
+                                        # dynamically during tournaments
 subtypes_alt  = []
 periods = ["Game"]
 
