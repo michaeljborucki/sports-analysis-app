@@ -47,6 +47,41 @@ class Coral33SportConfig:
     def alt_calls(self) -> list[tuple[str, str, str]]:
         return [(self.sport_type, sst, "Game") for sst in self.subtypes_alt]
 
+    @property
+    def prop_calls(self) -> list[tuple[str, str, str]]:
+        return [(self.sport_type, sst, "Game") for sst in self.subtypes_prop]
+
+
+# Coral33 "Team2ID" (stat name) → our cache market_key. Sport-scoped because
+# the same stat name can mean different things across sports (e.g., "Strikeouts"
+# is a pitcher market in baseball but a skater category would differ).
+PROP_STAT_TO_MARKET_KEY: dict[str, dict[str, str]] = {
+    "nba": {
+        "Points":           "player_points",
+        "Rebounds":         "player_rebounds",
+        "Assists":          "player_assists",
+        "3pt Shots Made":   "player_threes",
+        "Pts+Rebs+Asts":    "player_points_rebounds_assists",
+        # Extensible — add as we see more variants in Get_LeagueLines2
+        "Blocks":           "player_blocks",
+        "Steals":           "player_steals",
+        "Turnovers":        "player_turnovers",
+        "Pts+Rebs":         "player_points_rebounds",
+        "Pts+Asts":         "player_points_assists",
+        "Rebs+Asts":        "player_rebounds_assists",
+    },
+    "mlb": {
+        "Bases":       "batter_total_bases",
+        "Strikeouts":  "pitcher_strikeouts",
+        "Hits":        "batter_hits",
+        "Home Runs":   "batter_home_runs",
+        "RBIs":        "batter_rbis",
+        "Runs Scored": "batter_runs_scored",
+    },
+    # NHL GAME PRO is Yes/No game props (no point value), different shape —
+    # deferred until we build a categorical-prop normalizer.
+}
+
 
 @dataclass
 class Coral33Config:

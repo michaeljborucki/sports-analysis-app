@@ -167,11 +167,16 @@ class Coral33Client:
         async with self._lock:
             if not self._token or self._token_expired():
                 await self.authenticate()
+            token_at_call = self._token
         try:
             return await self._raw_post(operation, params or {})
         except Coral33AuthError:
             async with self._lock:
-                await self.authenticate()
+                # Double-check: a concurrent request may have already refreshed
+                # the token after we 401'd. Re-auth only if our stale token
+                # is still what's stored (or if it's been wiped to None).
+                if self._token is None or self._token == token_at_call:
+                    await self.authenticate()
             return await self._raw_post(operation, params or {})
 
     async def _raw_post(

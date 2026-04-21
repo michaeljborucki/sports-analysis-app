@@ -48,7 +48,10 @@ def build_router(
     router = APIRouter()
 
     @router.get("/api/dashboard", response_model=DashboardResponse)
-    async def dashboard() -> DashboardResponse:
+    async def dashboard(books: str = "") -> DashboardResponse:
+        books_set: set[str] | None = None
+        if books.strip():
+            books_set = {b for b in books.split(",") if b}
         now = datetime.now(timezone.utc)
         target_date = (
             date.fromisoformat(picks_date_override)
@@ -98,14 +101,14 @@ def build_router(
                 )
             )
 
-        # Top 5 arbitrage opportunities across all sports, no book filter
-        # (dashboard gives the full-market view; the dedicated /arbitrage
-        # page applies the user's filter).
+        # Top 5 arbitrage opportunities across all sports. When the caller
+        # passes ?books=..., filter to those books — this keeps the dashboard
+        # consistent with the user's global book-visibility settings.
         arb_rows = [
             r for r in cache.all_current() if not is_prop_market(r["market_key"])
         ]
         arb_games = rows_to_games(arb_rows, now=now)
-        all_arbs = scan_all_arbs(arb_games, books_filter=None)
+        all_arbs = scan_all_arbs(arb_games, books_filter=books_set)
         top_arbs = all_arbs[:5]
 
         # Top 10 picks by edge percentage

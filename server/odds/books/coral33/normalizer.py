@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Callable
 
-from .mapping import PERIOD_SUFFIX
+from .mapping import PERIOD_SUFFIX, PROP_STAT_TO_MARKET_KEY
 
 
 logger = logging.getLogger(__name__)
@@ -97,9 +97,11 @@ def normalize_league_lines(
     # noise); skip ML extraction in alt mode.
     include_ml = not is_alternate
 
+    now = fetched_at if fetched_at.tzinfo else fetched_at.replace(tzinfo=timezone.utc)
     rows: list[dict] = []
     orphans = 0
     circled = 0
+    live = 0
     for line in lines:
         if line.get("Status") != "O":
             circled += 1
@@ -111,6 +113,12 @@ def normalize_league_lines(
         try:
             commence = _parse_coral_datetime(line.get("GameDateTime", ""))
         except ValueError:
+            continue
+        # Skip live / in-progress games — coral33's in-play prices move in ways
+        # the sharp-book devig model doesn't trust, so users explicitly don't
+        # want them polluting EV / arb output.
+        if commence <= now:
+            live += 1
             continue
 
         # coral33 Team1 = home, Team2 = away (their convention — confirmed from
@@ -143,10 +151,105 @@ def normalize_league_lines(
         rows.extend(_extract_total(line, suffix, base, market_prefix_total))
         rows.extend(_extract_team_totals(line, suffix, base, team1, team2, market_prefix_tt))
 
-    if orphans or circled:
+    if orphans or circled or live:
         logger.info(
-            "coral33 %s %s: %d rows, %d orphans, %d circled (from %d lines)",
-            sport_key, period, len(rows), orphans, circled, len(lines),
+            "coral33 %s %s: %d rows, %d orphans, %d circled, %d live (from %d lines)",
+            sport_key, period, len(rows), orphans, circled, live, len(lines),
+        )
+    return rows
+
+
+def normalize_player_props(
+    response: dict,
+    sport_key: str,
+    fetched_at: datetime,
+    game_num_lookup: Callable[[object], dict | None],
+) -> list[dict]:
+    """Decode a Get_LeagueLines2 response from a PLAYERPRO subtype (one row per
+    player-stat Over/Under) into cache rows.
+
+    Prop rows don't carry home/away teams directly. They share a
+    `CorrelationID` string (e.g. "503-g") with the parent game's main-tier
+    row; `game_num_lookup(correlation_id)` returns a dict with `event_id`,
+    `home_team`, `away_team`, `commence_time` for that parent, or None.
+    Rows without a match are dropped as orphans.
+
+    (Historical note: `GameNum` looked like the right key but coral33
+    generates a *per-row* GameNum on prop endpoints, not a per-game one.)
+
+    Outcome naming matches the rest of the pipeline: "<Player Name> Over" /
+    "<Player Name> Under", matching what `_encode_outcome_name` produces for
+    the Odds API pipeline. That way the EV scanner's per-player bucket
+    logic pairs coral33 prices with sharp anchors cleanly.
+    """
+    stat_map = PROP_STAT_TO_MARKET_KEY.get(sport_key)
+    if not stat_map:
+        return []
+
+    now = fetched_at if fetched_at.tzinfo else fetched_at.replace(tzinfo=timezone.utc)
+    lines = response.get("Lines") or []
+    rows: list[dict] = []
+    orphans = 0
+    circled = 0
+    live = 0
+    unknown_stat = 0
+    for line in lines:
+        if line.get("Status") != "O":
+            circled += 1
+            continue
+        player = _clean_team(line.get("Team1ID", ""))
+        stat = (line.get("Team2ID") or "").strip()
+        if not player or not stat:
+            continue
+        market_key = stat_map.get(stat)
+        if market_key is None:
+            unknown_stat += 1
+            continue
+        point = _float_or_none(line.get("TotalPoints"))
+        over = _int_or_none(line.get("TtlPtsAdj1"))
+        under = _int_or_none(line.get("TtlPtsAdj2"))
+        if point is None or over is None or under is None:
+            continue
+
+        correlation_id = (line.get("CorrelationID") or "").strip()
+        if not correlation_id:
+            orphans += 1
+            continue
+        ref = game_num_lookup(correlation_id)
+        if ref is None:
+            orphans += 1
+            continue
+        commence = ref.get("commence_time")
+        if isinstance(commence, str):
+            commence = datetime.fromisoformat(commence.replace("Z", "+00:00"))
+        if commence is not None and commence.tzinfo is None:
+            commence = commence.replace(tzinfo=timezone.utc)
+        if commence is not None and commence <= now:
+            live += 1
+            continue
+
+        base = {
+            "event_id": ref["event_id"],
+            "sport_key": sport_key,
+            "home_team": ref["home_team"],
+            "away_team": ref["away_team"],
+            "commence_time": commence,
+            "bookmaker_key": BOOK_KEY,
+            "fetched_at": fetched_at,
+        }
+        rows.append({**base, "market_key": market_key,
+                     "outcome_name": f"{player} Over",
+                     "outcome_point": point, "price_american": over})
+        rows.append({**base, "market_key": market_key,
+                     "outcome_name": f"{player} Under",
+                     "outcome_point": point, "price_american": under})
+
+    if orphans or circled or live or unknown_stat:
+        logger.info(
+            "coral33 %s props: %d rows, %d orphans, %d circled, %d live, "
+            "%d unknown-stat (from %d lines)",
+            sport_key, len(rows), orphans, circled, live, unknown_stat,
+            len(lines),
         )
     return rows
 

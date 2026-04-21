@@ -67,13 +67,30 @@ class PicksReader:
         # Empty = include everything; non-empty = filter to this set
         self.include_bet_types = set(include_bet_types)
 
-    def _card_path(self, for_date: date) -> Path:
-        return self.bet_card_dir / f"bet_card_{for_date.isoformat()}.txt"
+    def _resolve_card_path(self, for_date: date) -> Path | None:
+        """Pick the best available bet-card file for `for_date`:
+          1. Dated file: `bet_card_YYYY-MM-DD.txt` — preferred, unambiguous
+          2. Undated rolling file: `bet_card.txt` — accept only if its
+             embedded header date matches `for_date` (many agents now write
+             only this file and overwrite daily).
+        """
+        dated = self.bet_card_dir / f"bet_card_{for_date.isoformat()}.txt"
+        if dated.exists():
+            return dated
+        rolling = self.bet_card_dir / "bet_card.txt"
+        if rolling.exists():
+            try:
+                card = parse_bet_card(rolling.read_text())
+                if card["date"] == for_date.isoformat():
+                    return rolling
+            except Exception:
+                pass
+        return None
 
     def get_picks_for_date(self, for_date: date) -> dict:
-        path = self._card_path(for_date)
+        path = self._resolve_card_path(for_date)
         now = datetime.now(timezone.utc)
-        if not path.exists():
+        if path is None:
             return {
                 "picks": [],
                 "status": "no_picks_today",

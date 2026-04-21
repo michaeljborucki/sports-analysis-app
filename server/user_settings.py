@@ -27,6 +27,11 @@ class UserSettings:
     # Per-sport disabled market keys. Anything in this set is filtered out of
     # its tier's market list before fetcher scheduling.
     disabled_markets: dict[str, set[str]] = field(default_factory=dict)
+    # Globally visible sportsbook keys for the UI. `None` means "frontend's
+    # default set" (preserves backwards compatibility and lets a never-saved
+    # install use the client's DEFAULT_VISIBLE_BOOKS). An empty list is a
+    # legitimate user choice ("show nothing") and is distinct from None.
+    visible_books: list[str] | None = None
 
     def is_sport_enabled(self, sport_key: str) -> bool:
         return sport_key not in self.disabled_sports
@@ -36,7 +41,7 @@ class UserSettings:
         return [m for m in markets if m not in disabled]
 
     def to_dict(self) -> dict:
-        return {
+        out: dict = {
             "disabled_sports": sorted(self.disabled_sports),
             "disabled_markets": {
                 sport: sorted(keys)
@@ -44,9 +49,14 @@ class UserSettings:
                 if keys
             },
         }
+        if self.visible_books is not None:
+            out["visible_books"] = sorted(self.visible_books)
+        return out
 
     @classmethod
     def from_dict(cls, raw: dict) -> "UserSettings":
+        raw_books = raw.get("visible_books")
+        visible = sorted(raw_books) if isinstance(raw_books, list) else None
         return cls(
             disabled_sports=set(raw.get("disabled_sports") or []),
             disabled_markets={
@@ -54,6 +64,7 @@ class UserSettings:
                 for sport, keys in (raw.get("disabled_markets") or {}).items()
                 if keys
             },
+            visible_books=visible,
         )
 
 
@@ -84,6 +95,11 @@ class UserSettingsStore:
             disabled_markets={
                 k: set(v) for k, v in self._settings.disabled_markets.items()
             },
+            visible_books=(
+                list(self._settings.visible_books)
+                if self._settings.visible_books is not None
+                else None
+            ),
         )
 
     def get(self) -> UserSettings:

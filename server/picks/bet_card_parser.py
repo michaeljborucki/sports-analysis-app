@@ -4,10 +4,13 @@ import re
 from typing import TypedDict
 
 
-# "MIROFISH BET CARD — 2026-04-01" (baseball)
-# "MIROFISH TENNIS BET CARD — 2026-04-19" (tennis; extra sport word)
+# Accept any agent's uppercase-word title prefix before "BET CARD — DATE":
+#   "MIROFISH BET CARD — 2026-04-01"        (older baseball)
+#   "MAINLINE BET CARD — 2026-04-20"        (current baseball)
+#   "MIROFISH TENNIS BET CARD — 2026-04-19" (tennis; with sport word)
+# Permissive so new agent brands don't silently drop picks from the UI.
 HEADER_DATE_RE = re.compile(
-    r"MIROFISH\s+(?:\w+\s+)?BET CARD\s+—\s+(\d{4}-\d{2}-\d{2})"
+    r"(?:[A-Z][A-Z]+\s+)+BET CARD\s+—\s+(\d{4}-\d{2}-\d{2})"
 )
 
 
@@ -38,7 +41,7 @@ def _is_separator(stripped: str) -> bool:
 
 def _is_header_noise(stripped: str) -> bool:
     """Lines from the ASCII card header that aren't pick data."""
-    if "MIROFISH" in stripped and "BET CARD" in stripped:
+    if "BET CARD" in stripped and "—" in stripped:
         return True
     # "N picks across M games" / "N picks across M matches"
     if re.match(r"^\d+\s+picks?\s+across\s+\d+\s+(games?|matches?)", stripped):

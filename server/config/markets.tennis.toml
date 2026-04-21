@@ -51,10 +51,13 @@ debounce_seconds = 60
 [picks]
 include_bet_types = [
   "moneyline",
+  # tennis-agents bet cards use "game_handicap" for game-count spreads.
+  # Keep "game_spread" as an alias in case that file format changes.
+  "game_handicap",
   "game_spread",
   "total_games",
-  # Present on tennis-agents bet cards — keep even though markets aren't
-  # on The Odds API so they still appear on /picks/tennis:
+  # Set-level markets present on tennis-agents bet cards but not sold on
+  # The Odds API — keep in include list so they still appear here:
   "set_spread",
   "total_sets",
 ]

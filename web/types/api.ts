@@ -227,6 +227,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/coral33/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh
+         * @description Trigger one immediate coral33 cycle (main → alt/prop) across every
+         *     configured sport. Sports run in parallel; tiers within a sport run
+         *     sequentially.
+         */
+        post: operations["refresh_api_coral33_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/coral33/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_coral33_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/settings": {
         parameters: {
             query?: never;
@@ -331,6 +370,36 @@ export interface components {
              * Format: date-time
              */
             fetched_at: string;
+        };
+        /** Coral33RefreshResponse */
+        Coral33RefreshResponse: {
+            /** Status */
+            status: string;
+            /** Sports Refreshed */
+            sports_refreshed: string[];
+            /** Duration S */
+            duration_s: number;
+            /** Errors */
+            errors: string[];
+            /** Last Cycle Rows */
+            last_cycle_rows: {
+                [key: string]: number;
+            };
+        };
+        /** Coral33StatusResponse */
+        Coral33StatusResponse: {
+            /** Running */
+            running: boolean;
+            /** Last Cycle At */
+            last_cycle_at?: string | null;
+            /** Last Cycle Rows */
+            last_cycle_rows: {
+                [key: string]: number;
+            };
+            /** Captcha Backoff Remaining S */
+            captcha_backoff_remaining_s: number;
+            /** Jwt Authenticated */
+            jwt_authenticated: boolean;
         };
         /** DashboardResponse */
         DashboardResponse: {
@@ -714,6 +783,8 @@ export interface components {
             disabled_markets: {
                 [key: string]: string[];
             };
+            /** Visible Books */
+            visible_books?: string[] | null;
         };
         /** SettingsResponse */
         SettingsResponse: {
@@ -725,6 +796,8 @@ export interface components {
             };
             /** Sports */
             sports: components["schemas"]["SportOption"][];
+            /** Visible Books */
+            visible_books?: string[] | null;
         };
         /** SettingsUpdateResponse */
         SettingsUpdateResponse: {
@@ -1138,6 +1211,46 @@ export interface operations {
             };
         };
     };
+    refresh_api_coral33_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Coral33RefreshResponse"];
+                };
+            };
+        };
+    };
+    status_api_coral33_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Coral33StatusResponse"];
+                };
+            };
+        };
+    };
     get_settings_api_settings_get: {
         parameters: {
             query?: never;
@@ -1193,7 +1306,9 @@ export interface operations {
     };
     dashboard_api_dashboard_get: {
         parameters: {
-            query?: never;
+            query?: {
+                books?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1207,6 +1322,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DashboardResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

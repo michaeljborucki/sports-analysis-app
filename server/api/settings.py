@@ -37,12 +37,16 @@ class SportOption(BaseModel):
 class SettingsPayload(BaseModel):
     disabled_sports: list[str]
     disabled_markets: dict[str, list[str]]
+    # Omit / None = don't change visible_books on save. [] = user wants
+    # nothing visible. [a, b, ...] = explicit set.
+    visible_books: list[str] | None = None
 
 
 class SettingsResponse(BaseModel):
     disabled_sports: list[str]
     disabled_markets: dict[str, list[str]]
     sports: list[SportOption]
+    visible_books: list[str] | None = None
 
 
 class SettingsUpdateResponse(BaseModel):
@@ -87,6 +91,11 @@ def _build_response(
             k: sorted(v) for k, v in settings.disabled_markets.items() if v
         },
         sports=sport_options,
+        visible_books=(
+            sorted(settings.visible_books)
+            if settings.visible_books is not None
+            else None
+        ),
     )
 
 
@@ -113,11 +122,18 @@ def build_router(
             if sport_key not in valid_sport_keys:
                 raise HTTPException(400, f"Unknown sport key: {sport_key}")
 
+        # Preserve existing visible_books if the client omits the field.
+        current = store.get()
         new = UserSettings(
             disabled_sports=set(payload.disabled_sports),
             disabled_markets={
                 k: set(v) for k, v in payload.disabled_markets.items()
             },
+            visible_books=(
+                list(payload.visible_books)
+                if payload.visible_books is not None
+                else current.visible_books
+            ),
         )
         store.set(new)
 

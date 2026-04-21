@@ -122,6 +122,10 @@ include_bet_types = [
   "moneyline",
   "run_line",
   "total",
+  # Team totals and first-inning specials (present on current MAINLINE cards)
+  "team_total_home",
+  "team_total_away",
+  "nrfi",
   # First-N-innings
   "first_5_ml",
   "first_5_rl",

@@ -96,6 +96,7 @@ def create_app() -> FastAPI:
     from .api.low_hold import build_router as low_hold_router
     from .api.free_bets import build_router as free_bets_router
     from .api.ev import build_router as ev_router
+    from .api.coral33_ctl import build_router as coral33_ctl_router
     from .api.settings import build_router as settings_router
 
     app.include_router(health_router(cache, fetcher))
@@ -111,6 +112,7 @@ def create_app() -> FastAPI:
     app.include_router(low_hold_router(cache))
     app.include_router(free_bets_router(cache))
     app.include_router(ev_router(cache))
+    app.include_router(coral33_ctl_router(coral33_fetcher))
     app.include_router(settings_router(settings_store, fetcher, sports))
     app.include_router(
         dashboard_router(

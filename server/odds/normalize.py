@@ -7,10 +7,21 @@ from typing import Iterable
 def _encode_outcome_name(market_key: str, name: str, description: str | None) -> str:
     """Player props come back as (name='Over', description='Drew Rasmussen').
     Encode both into a single outcome_name so the cache PK stays stable
-    across different players with the same line. Applies to all player-level
-    prop markets across sports: MLB (pitcher_*, batter_*), NBA/NHL/etc.
-    (player_*)."""
-    if description and market_key.startswith(("pitcher_", "batter_", "player_")):
+    across different players/teams with the same line.
+
+    Applied to:
+      - All player-level prop markets: MLB (pitcher_*, batter_*), NBA/NHL/etc.
+        (player_*).
+      - Team-totals markets: outcomes come back as (name='Over', description
+        '<team>'). Without this encoding, home and away team Over/Unders at
+        the same point would collide in the PK.
+    """
+    if not description:
+        return name
+    if market_key.startswith(("pitcher_", "batter_", "player_")):
+        return f"{description} {name}"
+    # team_totals + alternate_team_totals + any period variant of those.
+    if "team_totals" in market_key:
         return f"{description} {name}"
     return name
 
