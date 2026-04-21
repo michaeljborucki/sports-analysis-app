@@ -15,6 +15,7 @@ import { matchesLiveFilter } from "@/components/live-status-filter";
 import { useLiveFilter } from "@/lib/use-live-filter";
 import { BookLogo } from "@/components/book-logo";
 import { RefreshButton } from "@/components/refresh-button";
+import { FreshnessChip } from "@/components/freshness-chip";
 import { BOOK_ORDER } from "@/lib/books";
 import { SPORTS, type SportKey } from "@/lib/sports";
 
@@ -168,6 +169,7 @@ export default function EVPage() {
           )}
         </div>
         <div className="flex items-center gap-3 flex-wrap">
+          <FreshnessChip staleAfterSeconds={300} />
           {/* Min EV */}
           <div className="inline-flex rounded-md bg-bg-1 border border-border-subtle p-0.5">
             {MIN_EV_PRESETS.map(p => (
@@ -265,7 +267,7 @@ export default function EVPage() {
         <div className="text-center text-text-3 py-16 text-sm">
           {minEv > 0 || sourceFilter !== "all" || pageFilter.size > 0
             ? "No +EV edges match current filters — try lowering min EV or widening max odds."
-            : "No +EV edges found. Ensure Pinnacle is included in your book visibility (global filter)."}
+            : "No +EV edges found. Check freshness chip above — stale cache yields zero EV (scanner drops prices older than 300s). Otherwise, ensure Pinnacle is in your visible books."}
         </div>
       ) : data ? (
         <div className="border border-border-subtle rounded-md overflow-hidden bg-bg-0">

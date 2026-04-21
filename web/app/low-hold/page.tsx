@@ -15,6 +15,7 @@ import { matchesLiveFilter } from "@/components/live-status-filter";
 import { useLiveFilter } from "@/lib/use-live-filter";
 import { BookLogo } from "@/components/book-logo";
 import { RefreshButton } from "@/components/refresh-button";
+import { FreshnessChip } from "@/components/freshness-chip";
 import { BOOK_ORDER } from "@/lib/books";
 import { SPORTS, type SportKey } from "@/lib/sports";
 
@@ -102,6 +103,7 @@ export default function LowHoldPage() {
           )}
         </div>
         <div className="flex items-center gap-3">
+          <FreshnessChip />
           <div className="inline-flex rounded-md bg-bg-1 border border-border-subtle p-0.5">
             {HOLD_CAP_PRESETS.map(h => (
               <button

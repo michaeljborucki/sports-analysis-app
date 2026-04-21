@@ -279,14 +279,19 @@ export default function SettingsPage() {
             onClick={save}
             disabled={!dirty || saving}
             className={clsx(
-              "h-8 px-4 rounded-md text-xs font-medium border transition-colors",
+              "h-8 px-4 rounded-md text-xs font-medium border transition-colors tracking-wide",
               dirty
                 ? "bg-accent/15 border-accent/50 text-accent hover:bg-accent/20"
-                : "bg-bg-1 border-border-subtle text-text-3 cursor-default",
+                : "bg-transparent border-border-subtle/50 text-text-3/60 cursor-default opacity-60",
               saving && "opacity-60 cursor-wait"
             )}
+            title={
+              dirty
+                ? "Persist your changes to the backend"
+                : "Nothing to save — toggle a sport, market, tier, or visible book to enable."
+            }
           >
-            {saving ? "Saving…" : dirty ? "Save changes" : "No changes"}
+            {saving ? "Saving…" : dirty ? "Save changes" : "Nothing to save"}
           </button>
           <RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />
         </div>

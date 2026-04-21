@@ -36,12 +36,17 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
   }, [games, liveFilter]);
 
   // Markets in-play across the current dataset's games (so tabs don't dangle
-  // with zero data behind them).
+  // with zero data behind them). We also require at least one outcome that
+  // the row parser can actually split into "<Player> Over/Under" — otherwise
+  // markets like "First Team Basket" (win/lose style) show an enabled tab
+  // that renders an empty matrix.
   const marketsInData = useMemo(() => {
     const s = new Set<string>();
     for (const g of filteredGames)
       for (const m of g.markets ?? []) {
-        if (isPropMarket(m.market_key)) s.add(m.market_key);
+        if (!isPropMarket(m.market_key)) continue;
+        if (!m.outcomes.some(o => splitOutcome(o.outcome_name))) continue;
+        s.add(m.market_key);
       }
     return s;
   }, [filteredGames]);
@@ -67,12 +72,34 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
   const [gameFilter, setGameFilter] = useState<string>("all");
   const [sideMode, setSideMode] = useState<"both" | "over" | "under">("both");
 
-  // Seed active tab once the tab list resolves.
+  // Remember the last-used market tab per sport so the props page doesn't
+  // reset to market[0] every time the user switches sports or comes back
+  // from another page. Keyed by sport so NBA's "Points" doesn't leak into
+  // MLB's tab list.
+  const activeMarketStorageKey = `props_active_market_${sport}`;
+
+  // Seed active tab: prefer persisted value if still valid, otherwise tab[0].
   useEffect(() => {
     if (activeMarket && enabledTabs.includes(activeMarket)) return;
+    const persisted =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem(activeMarketStorageKey)
+        : null;
+    if (persisted && enabledTabs.includes(persisted)) {
+      setActiveMarket(persisted);
+      return;
+    }
     if (enabledTabs.length > 0) setActiveMarket(enabledTabs[0]);
     else setActiveMarket(null);
-  }, [enabledTabs, activeMarket]);
+  }, [enabledTabs, activeMarket, activeMarketStorageKey]);
+
+  // Persist whenever active tab changes (but only after it's been set).
+  useEffect(() => {
+    if (!activeMarket) return;
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(activeMarketStorageKey, activeMarket);
+    }
+  }, [activeMarket, activeMarketStorageKey]);
 
   // Books to render as columns: visible set ∩ books that have prices in this
   // market across the filtered games. Ordered by registry priority.
@@ -95,8 +122,10 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
 
   // Rows: one MatrixRow per (player, point). Over/Under come from the pair
   // of outcomes with "<Player> Over" / "<Player> Under" names at that point.
-  const rows = useMemo<MatrixRow[]>(() => {
-    if (!activeMarket) return [];
+  // We return `rawRowCount` alongside so the empty-state can distinguish
+  // "tab has no data at all" from "filter matched nothing".
+  const { rows, rawRowCount } = useMemo<{ rows: MatrixRow[]; rawRowCount: number }>(() => {
+    if (!activeMarket) return { rows: [], rawRowCount: 0 };
     type Bucket = { player: string; point: number | null; over?: MarketOutcome; under?: MarketOutcome };
     const buckets = new Map<string, Bucket>();
     for (const g of filteredGames) {
@@ -119,7 +148,7 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
       }
     }
     const filter = playerFilter.trim().toLowerCase();
-    return Array.from(buckets.values())
+    const rowsOut = Array.from(buckets.values())
       .filter(b =>
         filter === "" || b.player.toLowerCase().includes(filter)
       )
@@ -135,6 +164,7 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
         over: b.over,
         under: b.under,
       }));
+    return { rows: rowsOut, rawRowCount: buckets.size };
   }, [activeMarket, filteredGames, gameFilter, playerFilter]);
 
   const gameOptions = useMemo(() => {
@@ -221,9 +251,11 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
           sideMode={sideMode}
           rowLabelHeader="Player"
           emptyMessage={
-            playerFilter
-              ? `No players match "${playerFilter}"`
-              : `No data for ${formatMarketLabel(activeMarket)} yet.`
+            rawRowCount === 0
+              ? `No data for ${formatMarketLabel(activeMarket)} yet.`
+              : playerFilter
+              ? `No players match "${playerFilter}" in ${formatMarketLabel(activeMarket)}.`
+              : `No rows match current filters.`
           }
         />
       )}

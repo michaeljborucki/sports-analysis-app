@@ -12,6 +12,11 @@ import { BookMatrixTable, type MatrixRow, type SideLabels } from "./book-matrix-
 
 type TabKey = "spreads" | "totals" | "team_totals";
 
+// How many alt lines to keep on each side of a main row when collapsed.
+// Picks a reasonable "±5 around mainline" default that keeps the drawer
+// under ~11 rows per main without a user-configurable knob.
+const COLLAPSE_WINDOW = 5;
+
 
 interface TabConfig {
   key: TabKey;
@@ -134,30 +139,61 @@ export function AltLinesMatrix({
     return buildTeamTotalRows(game, sport, mainM, altM, visible);
   }, [tabCfg, game, sport, visible]);
 
+  // Keep "collapsed vs expanded" state per-tab — switching tabs shouldn't
+  // carry the user's last choice from a different market family.
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    setExpanded(false);
+  }, [activeTab]);
+
+  const displayedRows = useMemo(
+    () => (expanded ? rows : collapseAroundMain(rows, COLLAPSE_WINDOW)),
+    [rows, expanded],
+  );
+  const hiddenCount = rows.length - displayedRows.length;
+
   return (
     <div className="flex flex-col gap-3">
-      {availableTabs.length > 1 && (
-        <div className="inline-flex self-start rounded-md bg-bg-1 border border-border-subtle p-0.5">
-          {availableTabs.map(t => (
-            <button
-              key={t.key}
-              onClick={() => setActiveTab(t.key)}
-              className={clsx(
-                "px-3 py-1 text-xs tracking-wide uppercase transition-colors rounded-sm",
-                activeTab === t.key
-                  ? "bg-bg-2 text-text-1"
-                  : "text-text-2 hover:text-text-1"
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="flex items-center gap-3 flex-wrap">
+        {availableTabs.length > 1 && (
+          <div className="inline-flex self-start rounded-md bg-bg-1 border border-border-subtle p-0.5">
+            {availableTabs.map(t => (
+              <button
+                key={t.key}
+                onClick={() => setActiveTab(t.key)}
+                className={clsx(
+                  "px-3 py-1 text-xs tracking-wide uppercase transition-colors rounded-sm",
+                  activeTab === t.key
+                    ? "bg-bg-2 text-text-1"
+                    : "text-text-2 hover:text-text-1"
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {(hiddenCount > 0 || expanded) && (
+          <button
+            onClick={() => setExpanded(v => !v)}
+            className="text-[11px] px-2 h-7 rounded-md border border-border-subtle text-text-2 hover:text-text-1 hover:border-accent/50 transition-colors tracking-wide"
+            title={
+              expanded
+                ? `Collapse back to ±${COLLAPSE_WINDOW} alts around each main line`
+                : `${hiddenCount} more alt line${hiddenCount === 1 ? "" : "s"} hidden`
+            }
+          >
+            {expanded ? "Collapse" : `Show all (${rows.length})`}
+          </button>
+        )}
+        <span className="text-[11px] text-text-3 tabular">
+          {displayedRows.length} row{displayedRows.length === 1 ? "" : "s"} · {books.length} book{books.length === 1 ? "" : "s"}
+        </span>
+      </div>
 
       {tabCfg && (
         <BookMatrixTable
-          rows={rows}
+          rows={displayedRows}
           books={books}
           sideMode="both"
           sideLabels={tabCfg.sideLabels}
@@ -167,6 +203,45 @@ export function AltLinesMatrix({
       )}
     </div>
   );
+}
+
+
+/**
+ * Keep a small window of rows around each "main-line cluster". Main rows are
+ * clustered (consecutive mains within `window*2` indices collapse into one
+ * group) so dense main-line counts — which happen when many books quote
+ * slightly different mainlines on the same side — don't blow the window up.
+ * Each cluster contributes exactly `2*window+1` rows centered on its median
+ * main. For team_totals, home and away form separate clusters naturally.
+ */
+function collapseAroundMain(rows: MatrixRow[], window: number): MatrixRow[] {
+  if (rows.length <= window * 2 + 1) return rows;
+  const mains = rows
+    .map((r, i) => (r.isMain ? i : -1))
+    .filter(i => i >= 0);
+  const keep = new Set<number>();
+  const addWindow = (anchor: number) => {
+    for (let i = anchor - window; i <= anchor + window; i++) {
+      if (i >= 0 && i < rows.length) keep.add(i);
+    }
+  };
+  if (mains.length === 0) {
+    addWindow(Math.floor(rows.length / 2));
+  } else {
+    const clusters: number[][] = [];
+    for (const m of mains) {
+      const last = clusters[clusters.length - 1];
+      if (last && m - last[last.length - 1] <= window * 2) {
+        last.push(m);
+      } else {
+        clusters.push([m]);
+      }
+    }
+    for (const cluster of clusters) {
+      addWindow(cluster[Math.floor(cluster.length / 2)]);
+    }
+  }
+  return rows.filter((_, i) => keep.has(i));
 }
 
 

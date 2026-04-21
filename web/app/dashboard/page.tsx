@@ -7,6 +7,7 @@ import { apiPaths, type DashboardResponse, type ArbOpportunity, type Pick, type 
 import { formatAmerican, formatPct, formatUnits } from "@/lib/format";
 import { BookLogo } from "@/components/book-logo";
 import { RefreshButton } from "@/components/refresh-button";
+import { FreshnessChip } from "@/components/freshness-chip";
 import { SPORTS, type SportKey } from "@/lib/sports";
 import { useVisibleBooks } from "@/lib/use-visible-books";
 
@@ -74,8 +75,18 @@ function MetricsStrip({ data }: { data: DashboardResponse }) {
   const totalGames = data.sports.reduce((sum, s) => sum + s.upcoming_games, 0);
   const totalPicks = data.sports.reduce((sum, s) => sum + s.picks_today, 0);
   const quotaRemaining = data.fetcher.requests_remaining;
+  const quotaUsed = data.fetcher.requests_used;
+  // Derive the plan total from used+remaining — the Odds API tier varies
+  // per account (we've seen 500, 100k, 5M), so hardcoding a denominator
+  // gave nonsense percentages like "4570% remaining".
+  const quotaTotal =
+    quotaRemaining != null && quotaUsed != null
+      ? quotaRemaining + quotaUsed
+      : null;
   const quotaPct =
-    quotaRemaining != null ? Math.round((quotaRemaining / 100_000) * 100) : null;
+    quotaRemaining != null && quotaTotal && quotaTotal > 0
+      ? Math.round((quotaRemaining / quotaTotal) * 100)
+      : null;
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -335,7 +346,10 @@ export default function DashboardPage() {
             everything that matters right now
           </span>
         </div>
-        <RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />
+        <div className="flex items-center gap-3">
+          <FreshnessChip />
+          <RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />
+        </div>
       </header>
 
       {error && (

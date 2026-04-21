@@ -84,7 +84,7 @@ const BOOK_LIST: BookInfo[] = [
   { key: "unibet_nl",    name: "Unibet NL",    label: "UNN",  bg: "#147A3D", fg: "#FDE047", region: "EU", priority: 72, domain: "unibet.nl" },
   { key: "unibet_se",    name: "Unibet SE",    label: "UNS",  bg: "#147A3D", fg: "#FDE047", region: "EU", priority: 73, domain: "unibet.se" },
   { key: "leovegas",     name: "LeoVegas",     label: "LEO",  bg: "#FF6600", fg: "#FFFFFF", region: "EU", priority: 74, domain: "leovegas.com" },
-  { key: "leovegas_se",  name: "LeoVegas SE",  label: "LES",  bg: "#FF6600", fg: "#FFFFFF", region: "EU", priority: 75, domain: "leovegas.se" },
+  { key: "leovegas_se",  name: "LeoVegas SE",  label: "LES",  bg: "#FF6600", fg: "#FFFFFF", region: "EU", priority: 75, domain: "leovegas.com" },
   { key: "tipico_de",    name: "Tipico DE",    label: "TIP",  bg: "#DA291C", fg: "#FFFFFF", region: "EU", priority: 76, domain: "tipico.de" },
   { key: "winamax_de",   name: "Winamax DE",   label: "WDE",  bg: "#1E40AF", fg: "#F97316", region: "EU", priority: 77, domain: "winamax.de" },
   { key: "winamax_fr",   name: "Winamax FR",   label: "WFR",  bg: "#1E40AF", fg: "#F97316", region: "EU", priority: 78, domain: "winamax.fr" },

@@ -9,6 +9,7 @@ import { ArbitrageTable } from "@/components/arbitrage-table";
 import { BookIncludeDropdown } from "@/components/book-include-dropdown";
 import { matchesLiveFilter } from "@/components/live-status-filter";
 import { RefreshButton } from "@/components/refresh-button";
+import { FreshnessChip } from "@/components/freshness-chip";
 import { BOOK_ORDER } from "@/lib/books";
 
 export default function ArbitragePage() {
@@ -66,6 +67,7 @@ export default function ArbitragePage() {
           )}
         </div>
         <div className="flex items-center gap-3">
+          <FreshnessChip />
           <BookIncludeDropdown
             label="Must include"
             availableBooks={allBooksInPlay}

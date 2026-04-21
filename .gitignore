@@ -27,3 +27,9 @@ server/cache.db-journal
 
 # OS
 .DS_Store
+
+# Playwright MCP screenshots / snapshots (audit artifacts, local-only)
+.playwright-mcp/
+# UI audit artifacts written to repo root by Playwright screenshots / snapshots
+/*.png
+/*-snapshot.yml

@@ -3,6 +3,24 @@ import { useState } from "react";
 import clsx from "clsx";
 import { bookInfo } from "@/lib/books";
 
+// Mirror of /public/logos/*.png filenames (minus extension). Regenerate with
+// `ls web/public/logos | sed 's/\.png$//'` when adding or removing logos.
+// Used to avoid firing a <img src> for a file we know doesn't exist — the
+// dev-tools 404s were cosmetically ugly and polluted the console sweep.
+const LOGO_DOMAINS = new Set<string>([
+  "1xbet.com", "888sport.com", "ballybet.com", "bet365.com", "betanysports.eu",
+  "betmgm.com", "betonline.ag", "betparx.com", "betrivers.com", "betsson.com",
+  "betus.com.pa", "betvictor.com", "betway.com", "bovada.lv", "boylesports.com",
+  "caesars.com", "casumo.com", "coolbet.com", "coral.co.uk", "draftkings.com",
+  "espnbet.com", "everygame.eu", "fanatics.com", "fanduel.com", "grosvenorsport.com",
+  "hardrockbet.com", "ladbrokes.com", "leovegas.com", "livescorebet.com",
+  "marathonbet.com", "matchbook.com", "mybookie.ag", "nordicbet.com", "novig.us",
+  "paddypower.com", "pinnacle.com", "pmu.fr", "pointsbet.com", "prophetx.co",
+  "rebet.app", "smarkets.com", "sporttrade.com", "tipico.de", "unibet.fr",
+  "unibet.nl", "unibet.se", "virginbet.com", "williamhill.com", "winamax.de",
+  "winamax.fr",
+]);
+
 /**
  * Sportsbook brand logo — references a locally-bundled, auto-trimmed PNG under
  * /public/logos/<domain>.png (regenerate via scripts/download_logos.py). Falls
@@ -23,7 +41,8 @@ export function BookLogo({
 }) {
   const info = bookInfo(bookKey);
   const [imgFailed, setImgFailed] = useState(false);
-  const hasLogo = !!info.domain && !imgFailed;
+  const hasLogo =
+    !!info.domain && LOGO_DOMAINS.has(info.domain) && !imgFailed;
 
   const size =
     mode === "label"
