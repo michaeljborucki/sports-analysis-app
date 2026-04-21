@@ -1,15 +1,18 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import clsx from "clsx";
 
 import { apiPaths, type Game, type Market, type MarketOutcome, type SettingsResponse } from "@/lib/api";
 import { useVisibleBooks } from "@/lib/use-visible-books";
 import { useLiveFilter } from "@/lib/use-live-filter";
+import { usePinnedMarkets } from "@/lib/use-pinned-markets";
 import { BOOK_ORDER } from "@/lib/books";
 import type { SportKey } from "@/lib/sports";
 import { matchesLiveFilter } from "./live-status-filter";
 import { BookMatrixTable, type MatrixRow } from "./book-matrix-table";
+import { EmptyState } from "./empty-state";
 
 
 /**
@@ -24,9 +27,11 @@ import { BookMatrixTable, type MatrixRow } from "./book-matrix-table";
  * Columns = visible books. Best price in each row is tinted.
  */
 export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }) {
+  const router = useRouter();
   const { visible } = useVisibleBooks();
-  const { value: liveFilter } = useLiveFilter();
+  const { value: liveFilter, setValue: setLiveFilter } = useLiveFilter();
   const { data: settings } = useSWR<SettingsResponse>(apiPaths.settings);
+  const { pins, toggle: togglePin, isPinned } = usePinnedMarkets(sport);
 
   // Apply the global Live / Pre / All filter to the games list first — all
   // downstream logic (tab discovery, book columns, row building) respects it.
@@ -67,10 +72,37 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
     return enabled;
   }, [settings, sport, marketsInData]);
 
+  // Diagnostic: did the user enable ANY prop markets for this sport in
+  // Settings? Used by the empty-state to distinguish "Settings has nothing
+  // enabled" (send them to /settings) from "Settings has markets enabled but
+  // none are in the cache yet" (cache/fetcher issue).
+  const propsEnabledInSettings = useMemo(() => {
+    if (!settings) return false;
+    const sportCfg = settings.sports.find(s => s.key === sport);
+    if (!sportCfg) return false;
+    const propsTier = sportCfg.tiers.find(t => t.name === "player_props");
+    if (!propsTier) return false;
+    return propsTier.markets.some(m => m.enabled);
+  }, [settings, sport]);
+
+  // Split enabledTabs into pinned (in user's pin-order) and unpinned (alpha by
+  // label). Pin entries for markets currently disabled in Settings stay in
+  // localStorage but drop out of `pinnedTabs` here — re-enabling restores them.
+  const { pinnedTabs, unpinnedTabs } = useMemo(() => {
+    const enabledSet = new Set(enabledTabs);
+    const pinnedOrdered = pins.filter(k => enabledSet.has(k));
+    const pinnedSet = new Set(pinnedOrdered);
+    const unpinnedAlpha = enabledTabs
+      .filter(k => !pinnedSet.has(k))
+      .sort((a, b) => formatMarketLabel(a).localeCompare(formatMarketLabel(b)));
+    return { pinnedTabs: pinnedOrdered, unpinnedTabs: unpinnedAlpha };
+  }, [enabledTabs, pins]);
+
   const [activeMarket, setActiveMarket] = useState<string | null>(null);
   const [playerFilter, setPlayerFilter] = useState("");
   const [gameFilter, setGameFilter] = useState<string>("all");
   const [sideMode, setSideMode] = useState<"both" | "over" | "under">("both");
+  const [moreOpen, setMoreOpen] = useState(false);
 
   // Remember the last-used market tab per sport so the props page doesn't
   // reset to market[0] every time the user switches sports or comes back
@@ -78,7 +110,11 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
   // MLB's tab list.
   const activeMarketStorageKey = `props_active_market_${sport}`;
 
-  // Seed active tab: prefer persisted value if still valid, otherwise tab[0].
+  // Seed active tab: prefer persisted value if still valid, otherwise the
+  // first *pinned* enabled tab, otherwise the first enabled tab at all.
+  // Pinning biases the first-open selection toward something the user cares
+  // about, but an explicit last-active still wins even if it's unpinned
+  // (so the user's last context isn't lost when they come back).
   useEffect(() => {
     if (activeMarket && enabledTabs.includes(activeMarket)) return;
     const persisted =
@@ -89,9 +125,13 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
       setActiveMarket(persisted);
       return;
     }
+    if (pinnedTabs.length > 0) {
+      setActiveMarket(pinnedTabs[0]);
+      return;
+    }
     if (enabledTabs.length > 0) setActiveMarket(enabledTabs[0]);
     else setActiveMarket(null);
-  }, [enabledTabs, activeMarket, activeMarketStorageKey]);
+  }, [enabledTabs, pinnedTabs, activeMarket, activeMarketStorageKey]);
 
   // Persist whenever active tab changes (but only after it's been set).
   useEffect(() => {
@@ -100,6 +140,15 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
       window.localStorage.setItem(activeMarketStorageKey, activeMarket);
     }
   }, [activeMarket, activeMarketStorageKey]);
+
+  // Active tab is rendered inline ("transient") if it's enabled but not
+  // currently pinned — the in-between slot between pinned tabs and More.
+  // If active is pinned we skip the inline slot since the pinned tab itself
+  // already shows the active state.
+  const activeIsTransient =
+    activeMarket != null &&
+    enabledTabs.includes(activeMarket) &&
+    !pinnedTabs.includes(activeMarket);
 
   // Books to render as columns: visible set ∩ books that have prices in this
   // market across the filtered games. Ordered by registry priority.
@@ -176,30 +225,93 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Market tabs */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {enabledTabs.length === 0 ? (
-          <span className="text-xs text-text-3">
-            No prop markets enabled in Settings for this sport.
-          </span>
-        ) : (
-          enabledTabs.map(key => (
-            <button
-              key={key}
-              onClick={() => setActiveMarket(key)}
-              className={clsx(
-                "px-3 py-1 rounded-md text-xs font-medium tracking-wide transition-colors",
-                activeMarket === key
-                  ? "bg-bg-2 text-text-1 border border-accent/50"
-                  : "bg-bg-1 text-text-2 hover:text-text-1 border border-border-subtle"
+      {/* Market tabs: pinned tabs + (optional) transient active + More chip.
+          The strip NEVER wraps — a horizontal scroll with a subtle right-edge
+          fade handles the rare "user pinned a ton" case. Unpinned markets
+          hide behind the More popover to keep the default tab set usable. */}
+      {enabledTabs.length > 0 && (
+        <div className="relative">
+          <div className="overflow-x-auto no-scrollbar pr-6">
+            <div className="inline-flex items-center gap-2 min-w-max">
+              {pinnedTabs.map(key => (
+                <MarketTab
+                  key={key}
+                  marketKey={key}
+                  active={activeMarket === key}
+                  pinned
+                  onActivate={() => setActiveMarket(key)}
+                  onTogglePin={() => togglePin(key)}
+                />
+              ))}
+              {activeIsTransient && activeMarket && (
+                <MarketTab
+                  key={`transient-${activeMarket}`}
+                  marketKey={activeMarket}
+                  active
+                  pinned={false}
+                  transient
+                  onActivate={() => { /* already active */ }}
+                  onTogglePin={() => togglePin(activeMarket)}
+                />
               )}
-              title={key}
-            >
-              {formatMarketLabel(key)}
-            </button>
-          ))
-        )}
-      </div>
+              <MoreChip
+                count={unpinnedTabs.length}
+                open={moreOpen}
+                onOpenChange={setMoreOpen}
+                unpinned={unpinnedTabs}
+                activeMarket={activeMarket}
+                onActivate={key => {
+                  setActiveMarket(key);
+                  setMoreOpen(false);
+                }}
+                onTogglePin={togglePin}
+                isPinned={isPinned}
+              />
+            </div>
+          </div>
+          {/* Right-edge fade hints at horizontal overflow without a visible
+              scrollbar. pointer-events-none so it doesn't eat clicks. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute top-0 right-0 h-full w-6 bg-gradient-to-l from-bg-0 to-transparent"
+          />
+        </div>
+      )}
+
+      {/* No-tabs empty state: either Settings has no player_props enabled,
+          or Settings has some enabled but none appear in the cached data
+          yet. Distinguish the two so the copy is actionable. */}
+      {enabledTabs.length === 0 && (
+        <EmptyState
+          title={
+            propsEnabledInSettings
+              ? `No player-prop data cached yet for ${sport.toUpperCase()}`
+              : `No player props enabled for ${sport.toUpperCase()}`
+          }
+          body={
+            propsEnabledInSettings
+              ? "Settings has prop markets enabled, but the cache has no prop outcomes for this sport yet. The fetcher pulls props on a slow tier — it may not have run this cycle."
+              : "The player_props tier for this sport has nothing checked in Settings, so the fetcher isn't pulling any prop markets."
+          }
+          hints={
+            propsEnabledInSettings
+              ? [
+                  { label: "Live filter", hint: `Current filter is "${liveFilter}" — Pre/Live can hide all games if the slate is on the wrong side.` },
+                  { label: "Fetcher tier", hint: "Props sit on the slowest fetcher tier; a fresh cache cycle may not have populated them yet." },
+                  { label: "Book coverage", hint: "If no visible book carries props for this sport, the matrix stays empty even with cached data." },
+                ]
+              : [
+                  { label: "Enable markets", hint: "Open Settings, expand this sport, and check one or more markets under Player Props." },
+                  { label: "Hot-reload", hint: "Saving Settings restarts the fetcher — prop data will appear within a cycle or two." },
+                ]
+          }
+          action={{
+            label: "Open Settings",
+            onClick: () => router.push("/settings"),
+          }}
+          tone={propsEnabledInSettings ? "warning" : "neutral"}
+        />
+      )}
 
       {/* Filter bar */}
       {activeMarket && (
@@ -244,22 +356,302 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
       )}
 
       {/* Matrix */}
-      {activeMarket && (
+      {activeMarket && bookColumns.length === 0 && rawRowCount > 0 && (
+        // Case 4 (pre-empt BookMatrixTable's own books=0 fallback): rows
+        // exist in cache but no visible book carries this market. Likely a
+        // sharp-only market with all sharp books hidden, or visible set
+        // doesn't include any book that prices this prop.
+        <EmptyState
+          title="No visible books carry this market"
+          body={`${formatMarketLabel(activeMarket)} has cached prices, but none of your visible books currently post this market. Toggle a book on in Settings to see prices.`}
+          hints={[
+            { label: "Book visibility", hint: "Your visible-books set filters columns everywhere; turning one on lights up this matrix." },
+            { label: "Sharp coverage", hint: "Mainstream books carry most props; niche markets often require a sharp book or an exchange." },
+          ]}
+          action={{
+            label: "Open Settings",
+            onClick: () => router.push("/settings"),
+          }}
+        />
+      )}
+      {activeMarket && !(bookColumns.length === 0 && rawRowCount > 0) && (
         <BookMatrixTable
           rows={rows}
           books={bookColumns}
           sideMode={sideMode}
           rowLabelHeader="Player"
           emptyMessage={
-            rawRowCount === 0
-              ? `No data for ${formatMarketLabel(activeMarket)} yet.`
-              : playerFilter
-              ? `No players match "${playerFilter}" in ${formatMarketLabel(activeMarket)}.`
-              : `No rows match current filters.`
+            rawRowCount === 0 ? (
+              // Case 2: cache has zero rows for this market tab. Could be
+              // cache age, live-filter killing the slate, or a single-game
+              // filter. Give the user a one-click path to clear the filters
+              // that *they* control.
+              <EmptyState
+                title={`No ${formatMarketLabel(activeMarket)} data yet for the current filters`}
+                body="The tab is enabled and the fetcher is configured for this market, but nothing matches right now. Usually one of the filters below is masking the data."
+                hints={[
+                  {
+                    label: "Live filter",
+                    hint:
+                      liveFilter === "all"
+                        ? `"All" is active — this isn't hiding anything.`
+                        : `Currently "${liveFilter}" — switching to All often reveals a slate on the other side.`,
+                  },
+                  {
+                    label: "Game filter",
+                    hint:
+                      gameFilter === "all"
+                        ? "All games selected — not masking anything."
+                        : "A single game is selected; that game may not have this market posted.",
+                  },
+                  { label: "Cache age", hint: "Props sit on the slowest fetcher tier; a fresh cycle may not have populated them yet." },
+                ]}
+                action={
+                  liveFilter !== "all" || gameFilter !== "all"
+                    ? {
+                        label: "Clear game & live filters",
+                        onClick: () => {
+                          setGameFilter("all");
+                          setLiveFilter("all");
+                        },
+                      }
+                    : undefined
+                }
+                tone="warning"
+              />
+            ) : playerFilter ? (
+              // Case 3: the user typed a player filter that matched nothing.
+              // Single-click clear is the right affordance.
+              <EmptyState
+                title={`No players match "${playerFilter}" in ${formatMarketLabel(activeMarket)}`}
+                body={`The tab has ${rawRowCount} player${rawRowCount === 1 ? "" : "s"} cached, but none match your text filter.`}
+                action={{
+                  label: "Clear filter",
+                  onClick: () => setPlayerFilter(""),
+                }}
+              />
+            ) : (
+              // Fallback: rows=0 but no player filter and rawRowCount>0 —
+              // shouldn't normally happen since rows and rawRowCount move
+              // together without a text filter. Keep terse.
+              "No rows match current filters."
+            )
           }
         />
       )}
     </div>
+  );
+}
+
+
+/**
+ * Single market tab pill. Star icon on the right toggles pin; body click
+ * activates the tab. "Transient" variant (active-but-unpinned) gets a
+ * dashed accent border and italic label — a restrained hint that this
+ * tab isn't in the user's pinned set.
+ */
+function MarketTab({
+  marketKey,
+  active,
+  pinned,
+  transient = false,
+  onActivate,
+  onTogglePin,
+}: {
+  marketKey: string;
+  active: boolean;
+  pinned: boolean;
+  transient?: boolean;
+  onActivate: () => void;
+  onTogglePin: () => void;
+}) {
+  return (
+    <div
+      className={clsx(
+        "inline-flex items-center rounded-md text-xs font-medium tracking-wide transition-colors border",
+        active
+          ? "bg-bg-2 text-text-1"
+          : "bg-bg-1 text-text-2 hover:text-text-1",
+        active && !transient && "border-accent/50",
+        active && transient && "border-accent/40 border-dashed",
+        !active && "border-border-subtle"
+      )}
+      title={marketKey}
+    >
+      <button
+        type="button"
+        onClick={onActivate}
+        className={clsx(
+          "pl-3 pr-1.5 py-1 outline-none",
+          transient && "italic"
+        )}
+      >
+        {formatMarketLabel(marketKey)}
+      </button>
+      <button
+        type="button"
+        onClick={e => {
+          // Pin toggle MUST NOT activate the tab — stop propagation so the
+          // wrapper's click handlers (if any) don't fire.
+          e.stopPropagation();
+          onTogglePin();
+        }}
+        aria-label={pinned ? "Unpin market" : "Pin market"}
+        title={pinned ? "Unpin market" : "Pin market"}
+        className={clsx(
+          "px-1.5 py-1 rounded-r-md transition-colors outline-none",
+          pinned
+            ? "text-accent hover:text-accent/80"
+            : "text-text-3 hover:text-text-1"
+        )}
+      >
+        <StarIcon filled={pinned} />
+      </button>
+    </div>
+  );
+}
+
+
+/**
+ * "More (N)" chip with popover. Lists all unpinned markets alphabetically;
+ * click the body to activate (does NOT auto-pin — user opts in via star),
+ * click the star to toggle pin (popover stays open so the user can
+ * promote several at once). Closes on outside-click + Escape, matching
+ * the BookIncludeDropdown pattern used elsewhere.
+ */
+function MoreChip({
+  count,
+  open,
+  onOpenChange,
+  unpinned,
+  activeMarket,
+  onActivate,
+  onTogglePin,
+  isPinned,
+}: {
+  count: number;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  unpinned: string[];
+  activeMarket: string | null;
+  onActivate: (key: string) => void;
+  onTogglePin: (key: string) => void;
+  isPinned: (key: string) => boolean;
+}) {
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        onOpenChange(false);
+      }
+    };
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onOpenChange(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, [open, onOpenChange]);
+
+  // Nothing to surface — hide the chip entirely to reduce chrome.
+  if (count === 0) return null;
+
+  return (
+    <div className="relative" ref={rootRef}>
+      <button
+        type="button"
+        onClick={() => onOpenChange(!open)}
+        className={clsx(
+          "px-3 py-1 rounded-md text-xs font-medium tracking-wide transition-colors",
+          "bg-bg-1 text-text-2 hover:text-text-1 border border-border-subtle",
+          open && "text-text-1 border-accent/40"
+        )}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        More ({count})
+      </button>
+      {open && (
+        <div
+          className={clsx(
+            "absolute top-full left-0 mt-2 z-20",
+            "w-[260px] max-h-[70vh] overflow-y-auto",
+            "bg-bg-1 border border-border-subtle rounded-md shadow-2xl"
+          )}
+          role="listbox"
+        >
+          <div className="sticky top-0 bg-bg-1 border-b border-border-subtle px-3 py-2 z-10">
+            <span className="text-[11px] text-text-3 uppercase tracking-wider">
+              Unpinned markets
+            </span>
+          </div>
+          <div className="py-1">
+            {unpinned.map(key => {
+              const pinnedNow = isPinned(key);
+              const isActive = activeMarket === key;
+              return (
+                <div
+                  key={key}
+                  className={clsx(
+                    "flex items-center w-full text-xs transition-colors",
+                    isActive ? "bg-bg-2 text-text-1" : "text-text-2 hover:bg-bg-2/50"
+                  )}
+                >
+                  <button
+                    type="button"
+                    onClick={() => onActivate(key)}
+                    className="flex-1 px-3 py-1.5 text-left hover:text-text-1 outline-none"
+                  >
+                    {formatMarketLabel(key)}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation();
+                      onTogglePin(key);
+                    }}
+                    aria-label={pinnedNow ? "Unpin market" : "Pin market"}
+                    title={pinnedNow ? "Unpin market" : "Pin market"}
+                    className={clsx(
+                      "px-2 py-1.5 transition-colors outline-none",
+                      pinnedNow
+                        ? "text-accent hover:text-accent/80"
+                        : "text-text-3 hover:text-text-1"
+                    )}
+                  >
+                    <StarIcon filled={pinnedNow} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+function StarIcon({ filled }: { filled: boolean }) {
+  // 11px star — big enough to hit, small enough to not crowd the label.
+  return (
+    <svg
+      width="11"
+      height="11"
+      viewBox="0 0 16 16"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth="1.3"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M8 1.75l1.93 3.91 4.32.63-3.12 3.04.74 4.3L8 11.6l-3.86 2.03.74-4.3L1.75 6.29l4.32-.63L8 1.75z" />
+    </svg>
   );
 }
 

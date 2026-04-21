@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState, Fragment } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
 
 import type { Game, Market, MarketOutcome } from "@/lib/api";
@@ -17,7 +17,7 @@ import { GameTime } from "./game-time";
 import { BookLogo } from "../book-logo";
 import { useLiveFilter } from "@/lib/use-live-filter";
 import { matchesLiveFilter } from "../live-status-filter";
-import { MarketExpansionPanel } from "./market-expansion-panel";
+import { AltLinesSideSheet } from "./alt-lines-side-sheet";
 
 function findMarket(game: Game, key: string): Market | undefined {
   return game.markets?.find(m => m.market_key === key);
@@ -126,8 +126,22 @@ export function OddsGrid({
     sport.marketGroups.find(mg => mg.mainKey === activeKey) ??
     sport.marketGroups[0];
 
-  const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
+  // Which game's alt-lines sheet is open (null when closed). We store just
+  // the event id and derive the game/market from current props + activeKey,
+  // so switching market tabs with the sheet open transparently updates the
+  // sheet body rather than forcing a close.
+  const [sheetEventId, setSheetEventId] = useState<string | null>(null);
   const { visible } = useVisibleBooks();
+
+  // If the currently-open game disappears from the filtered list (e.g. the
+  // user toggled the live filter) the sheet would dangle with no content —
+  // close it.
+  useEffect(() => {
+    if (sheetEventId == null) return;
+    if (!games.some(g => g.event_id === sheetEventId)) {
+      setSheetEventId(null);
+    }
+  }, [games, sheetEventId]);
 
   // Books present in this dataset, ordered by registry priority.
   const availableBooks = useMemo(() => {
@@ -148,7 +162,7 @@ export function OddsGrid({
   const tabs = availableGroups.map(g => ({ key: g.mainKey, label: g.label }));
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" data-sheet-keep-open>
       <div className="flex items-center gap-4 justify-between">
         <div className="flex items-center gap-4 flex-wrap">
           {tabs.length > 0 && (
@@ -165,7 +179,9 @@ export function OddsGrid({
         </div>
       </div>
 
-      <div className="border border-border-subtle rounded-md overflow-hidden bg-bg-0">
+      <div
+        className="border border-border-subtle rounded-md overflow-hidden bg-bg-0"
+      >
         <table className="w-full text-xs">
           <thead className="bg-bg-1 text-text-2">
             <tr>
@@ -217,7 +233,7 @@ export function OddsGrid({
                 g,
                 activeGroup.display
               );
-              const isExpanded = expandedEventId === g.event_id;
+              const isOpen = sheetEventId === g.event_id;
               return (
                 <Fragment key={g.event_id}>
                   {[topOutcome, bottomOutcome].map((out, idx) => {
@@ -253,14 +269,12 @@ export function OddsGrid({
                           <td
                             rowSpan={2}
                             onClick={() =>
-                              setExpandedEventId(
-                                isExpanded ? null : g.event_id
-                              )
+                              setSheetEventId(isOpen ? null : g.event_id)
                             }
                             className={clsx(
                               "px-3 py-1.5 align-middle whitespace-nowrap",
                               "border-r border-border-subtle/60 cursor-pointer",
-                              isExpanded && "bg-bg-1/50"
+                              isOpen && "bg-bg-1/50"
                             )}
                           >
                             <div className="flex items-center gap-2">
@@ -268,7 +282,7 @@ export function OddsGrid({
                                 aria-hidden
                                 className={clsx(
                                   "text-text-3 text-[10px] transition-transform",
-                                  isExpanded ? "rotate-90" : "rotate-0"
+                                  isOpen ? "rotate-90" : "rotate-0"
                                 )}
                               >
                                 ▶
@@ -348,27 +362,21 @@ export function OddsGrid({
                       </tr>
                     );
                   })}
-                  {isExpanded && (
-                    <tr>
-                      <td
-                        colSpan={4 + books.length}
-                        className="p-0 border-t border-border-subtle"
-                      >
-                        <MarketExpansionPanel
-                          game={g}
-                          sport={sport}
-                          group={activeGroup}
-                          visible={visible}
-                        />
-                      </td>
-                    </tr>
-                  )}
                 </Fragment>
               );
             })}
           </tbody>
         </table>
       </div>
+
+      <AltLinesSideSheet
+        open={sheetEventId != null}
+        onClose={() => setSheetEventId(null)}
+        game={games.find(g => g.event_id === sheetEventId) ?? null}
+        sport={sport}
+        group={activeGroup}
+        visible={visible}
+      />
     </div>
   );
 }

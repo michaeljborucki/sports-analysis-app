@@ -20,15 +20,20 @@ async function postRefresh(url: string) {
 
 
 /**
- * Game-row expansion drawer on the odds grid. Shows a unified book-by-book
- * matrix of mains + alt lines for the active market group, with sub-tabs to
- * switch between Spreads / Totals / Team Totals (driven by Settings).
- * Mainline row gets a MAIN badge; best price per sub-row is tinted.
+ * Alt-lines body for the right-docked side sheet. Shows a unified
+ * book-by-book matrix of mains + alt lines for the active market group,
+ * with sub-tabs to switch between Spreads / Totals / Team Totals (driven by
+ * Settings). Mainline row gets a MAIN badge; best price per sub-row is
+ * tinted.
  *
  * For the moneyline market group (no alts exist by convention), we render a
  * minimal summary — the main grid already shows the best ML; if the user
  * wants per-book ML breakdown we could extend here but for now we'd only
  * duplicate the main grid.
+ *
+ * Rendered inside `<SideSheet>` (see alt-lines-side-sheet.tsx), which owns
+ * the outer chrome (header, close button, scroll container). This component
+ * is pure body content: no side borders, no page-level padding decorations.
  */
 export function MarketExpansionPanel({
   game,
@@ -67,7 +72,7 @@ export function MarketExpansionPanel({
   // Show a subtle notice and the refresh button only.
   if (group.display === "moneyline") {
     return (
-      <div className="p-4 bg-bg-1/40 border-l-2 border-accent/60 flex items-center justify-between">
+      <div className="p-4 flex items-center justify-between">
         <span className="text-[11px] text-text-3">
           No alt lines for moneyline markets. Use the Spread or Total tab for
           per-book line shopping.
@@ -82,7 +87,7 @@ export function MarketExpansionPanel({
   }
 
   return (
-    <div className="p-4 bg-bg-1/40 border-l-2 border-accent/60 flex flex-col gap-3">
+    <div className="p-4 flex flex-col gap-3">
       <div className="flex items-center gap-3 flex-wrap">
         <span className="text-[11px] uppercase tracking-wider text-text-2">
           Mains + alts — book by book

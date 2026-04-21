@@ -1,9 +1,14 @@
 "use client";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
 
 import { BOOKS, BOOK_ORDER, DEFAULT_VISIBLE_BOOKS, type Region } from "@/lib/books";
 import { BookLogo } from "@/components/book-logo";
+
+// localStorage key for the expand/collapse state of the book panel. Kept
+// separate from the selection itself so a collapsed panel doesn't hide
+// pending edits the user made before scrolling away.
+const EXPANDED_STORAGE_KEY = "settings_book_visibility_expanded_v1";
 
 
 const REGIONS: { key: Region; label: string }[] = [
@@ -41,6 +46,22 @@ export function BookVisibilitySettings({
   const shown = value.size;
   const total = BOOK_ORDER.length;
 
+  // Collapsed by default — the 60-book grid takes ~60% of the Settings page
+  // and is rarely the thing the user is editing. Hydrate from localStorage
+  // after mount so SSR doesn't mismatch on the expanded state.
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(EXPANDED_STORAGE_KEY);
+      if (raw === "1") setExpanded(true);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(EXPANDED_STORAGE_KEY, expanded ? "1" : "0");
+    } catch {}
+  }, [expanded]);
+
   function toggle(key: string) {
     const next = new Set(value);
     if (next.has(key)) next.delete(key);
@@ -53,10 +74,32 @@ export function BookVisibilitySettings({
 
   return (
     <div className="border border-border-subtle rounded-md bg-bg-0 overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-3 bg-bg-1 border-b border-border-subtle">
-        <span className="text-sm font-semibold text-text-1">Visible Books</span>
+      <div
+        className={clsx(
+          "flex items-center gap-3 px-4 py-3 bg-bg-1",
+          expanded && "border-b border-border-subtle",
+        )}
+      >
+        <button
+          type="button"
+          onClick={() => setExpanded(v => !v)}
+          className="flex items-center gap-2 text-left hover:text-accent transition-colors"
+          title={expanded ? "Collapse book list" : "Expand book list"}
+          aria-expanded={expanded}
+        >
+          <span
+            aria-hidden
+            className={clsx(
+              "inline-block text-text-3 text-[10px] transition-transform",
+              expanded ? "rotate-90" : "rotate-0",
+            )}
+          >
+            ▶
+          </span>
+          <span className="text-sm font-semibold text-text-1">Visible Books</span>
+        </button>
         <span className="text-[11px] text-text-3 tabular">
-          {shown} / {total} enabled · click Save at the top to persist
+          {shown} / {total} enabled{expanded ? " · click Save at the top to persist" : ""}
         </span>
         <div className="ml-auto flex items-center gap-2 text-xs">
           <button
@@ -82,7 +125,7 @@ export function BookVisibilitySettings({
         </div>
       </div>
 
-      {REGIONS.map(r => {
+      {expanded && REGIONS.map(r => {
         const keys = byRegion[r.key];
         if (keys.length === 0) return null;
         return (

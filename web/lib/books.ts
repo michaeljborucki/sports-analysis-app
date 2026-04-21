@@ -53,7 +53,6 @@ const BOOK_LIST: BookInfo[] = [
   // US exchanges (us_ex region)
   { key: "sporttrade",     name: "Sporttrade",       label: "STR", bg: "#111827", fg: "#22D3EE", region: "US", priority: 40, domain: "sporttrade.com", commission: 0 },
   { key: "prophetx",       name: "Prophet Exchange", label: "PRX", bg: "#0F172A", fg: "#F59E0B", region: "US", priority: 41, domain: "prophetx.co",    commission: 0.02 },
-  { key: "prophetexchange",name: "Prophet Exchange", label: "PRX", bg: "#0F172A", fg: "#F59E0B", region: "US", priority: 41, domain: "prophetx.co",    commission: 0.02 },
   { key: "rebet_exchange", name: "Rebet Exchange",   label: "REX", bg: "#3B82F6", fg: "#FDE047", region: "US", priority: 42, domain: "rebet.app",      commission: 0.02 },
   { key: "novig",          name: "Novig",            label: "NVG", bg: "#0F172A", fg: "#A78BFA", region: "US", priority: 43, domain: "novig.us",       commission: 0 },
 

@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import clsx from "clsx";
 
 import type { MarketOutcome, BookPrice } from "@/lib/api";
@@ -77,7 +77,12 @@ export function BookMatrixTable({
   /** Labels for the O / U marker column (default "O" / "U"; spreads use "A"/"H"). */
   sideLabels?: SideLabels;
   rowLabelHeader?: string;
-  emptyMessage?: string;
+  /**
+   * Accepts a plain string (legacy callers, e.g. alt-lines-matrix) or a
+   * ReactNode so callers can drop in a teaching `<EmptyState>`. Strings are
+   * rendered in the original dim-centered style for backward compatibility.
+   */
+  emptyMessage?: string | ReactNode;
 }) {
   // Precompute best-price-per-row-per-side for tinting. Cheap: N × 2.
   const bestBySide = useMemo(() => {
@@ -92,13 +97,21 @@ export function BookMatrixTable({
   }, [rows]);
 
   if (rows.length === 0 || books.length === 0) {
-    return (
-      <div className="text-center text-text-3 py-16 text-sm">
-        {books.length === 0
-          ? "No books visible — add some in Settings."
-          : emptyMessage}
-      </div>
-    );
+    // Callers may pass either a raw string (legacy) or a ReactNode such as
+    // `<EmptyState …>`. Strings get the original dim-centered treatment so
+    // existing callers like alt-lines-matrix don't regress visually.
+    const content =
+      books.length === 0
+        ? "No books visible — add some in Settings."
+        : emptyMessage;
+    if (typeof content === "string") {
+      return (
+        <div className="text-center text-text-3 py-16 text-sm">
+          {content}
+        </div>
+      );
+    }
+    return <div className="py-10">{content}</div>;
   }
 
   return (

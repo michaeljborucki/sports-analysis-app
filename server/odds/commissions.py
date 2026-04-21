@@ -15,7 +15,6 @@ BOOK_COMMISSION: dict[str, float] = {
     "matchbook": 0.02,
     # US exchanges
     "prophetx": 0.02,
-    "prophetexchange": 0.02,
     "rebet_exchange": 0.02,
     "sporttrade": 0.0,  # spread-based, no commission on winnings
     "novig": 0.0,       # peer-to-peer, no commission
