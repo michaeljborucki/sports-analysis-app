@@ -15,11 +15,8 @@ import { BestCell } from "./best-cell";
 import { CellFlash } from "./cell-flash";
 import { GameTime } from "./game-time";
 import { BookLogo } from "../book-logo";
-import { BookFilter } from "../book-filter";
-import {
-  LiveStatusFilter,
-  type LiveStatus,
-} from "../live-status-filter";
+import { useLiveFilter } from "@/lib/use-live-filter";
+import { matchesLiveFilter } from "../live-status-filter";
 import { MarketExpansionPanel } from "./market-expansion-panel";
 
 function findMarket(game: Game, key: string): Market | undefined {
@@ -96,12 +93,14 @@ export function OddsGrid({
   games: Game[];
   sport: Sport;
 }) {
-  const [liveFilter, setLiveFilter] = useState<LiveStatus>("all");
+  const { value: liveFilter } = useLiveFilter();
+  // Re-evaluate live status against the browser clock rather than trusting
+  // the server-computed `g.is_live` flag — the cache can be minutes stale
+  // (esp. with the Odds API fetcher frozen) and a game that actually kicked
+  // off an hour ago would otherwise still show as "pre".
   const games = useMemo(() => {
     if (liveFilter === "all") return allGames;
-    return allGames.filter(g =>
-      liveFilter === "live" ? g.is_live : !g.is_live
-    );
+    return allGames.filter(g => matchesLiveFilter(g.commence_time, liveFilter));
   }, [allGames, liveFilter]);
 
   // Which market_groups actually have any data in this dataset
@@ -128,7 +127,7 @@ export function OddsGrid({
     sport.marketGroups[0];
 
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
-  const { visible, toggle, setAll } = useVisibleBooks();
+  const { visible } = useVisibleBooks();
 
   // Books present in this dataset, ordered by registry priority.
   const availableBooks = useMemo(() => {
@@ -163,15 +162,6 @@ export function OddsGrid({
             {games.length}
             {games.length !== allGames.length && ` / ${allGames.length}`} games
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <LiveStatusFilter value={liveFilter} onChange={setLiveFilter} />
-          <BookFilter
-            availableBooks={availableBooks}
-            visible={visible}
-            onToggle={toggle}
-            onSetAll={setAll}
-          />
         </div>
       </div>
 
@@ -289,7 +279,7 @@ export function OddsGrid({
                                   {renderTeam(g.home_team, sport)}
                                 </span>
                                 <span className="text-text-3 text-[11px] flex items-center gap-1.5">
-                                  {g.is_live ? (
+                                  {matchesLiveFilter(g.commence_time, "live") ? (
                                     <>
                                       <span className="live-dot" aria-hidden />
                                       <span className="text-price-down font-semibold uppercase tracking-wide">

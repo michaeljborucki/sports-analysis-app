@@ -11,6 +11,10 @@ import {
   type MarketOption,
 } from "@/lib/api";
 import { RefreshButton } from "@/components/refresh-button";
+import { BookVisibilitySettings } from "@/components/book-visibility-settings";
+import { Coral33RefreshButton } from "@/components/coral33-refresh-button";
+import { DEFAULT_VISIBLE_BOOKS } from "@/lib/books";
+import { useVisibleBooks } from "@/lib/use-visible-books";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
@@ -79,9 +83,16 @@ export default function SettingsPage() {
   const [disabledMarkets, setDisabledMarkets] = useState<
     Record<string, Set<string>>
   >({});
+  const [visibleBooks, setVisibleBooks] = useState<Set<string>>(
+    new Set(DEFAULT_VISIBLE_BOOKS)
+  );
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
+
+  // Used post-save to sync localStorage so every other page (which reads via
+  // useVisibleBooks) picks up the new set immediately.
+  const { visible: currentVisible, setAll: setLocalVisible } = useVisibleBooks();
 
   // Seed draft state from server on load or refresh
   useEffect(() => {
@@ -95,6 +106,17 @@ export default function SettingsPage() {
       dm[sport] = new Set(keys);
     }
     setDisabledMarkets(dm);
+    // visible_books: backend source of truth if present, else fall back to the
+    // running client's localStorage-backed set (which on first-ever install
+    // equals DEFAULT_VISIBLE_BOOKS).
+    if (data.visible_books && data.visible_books.length >= 0) {
+      const next = new Set(data.visible_books);
+      setVisibleBooks(next);
+      setLocalVisible([...next]);
+    } else {
+      setVisibleBooks(new Set(currentVisible));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
   const dirty = useMemo(() => {
@@ -114,8 +136,17 @@ export default function SettingsPage() {
       if (srv.size !== draft.size) return true;
       for (const k of srv) if (!draft.has(k)) return true;
     }
+
+    // visible_books dirty check — compare to whatever the server last said
+    // (falling back to the live localStorage state when server has no value).
+    const serverBooks = new Set(
+      data.visible_books ?? [...currentVisible]
+    );
+    if (serverBooks.size !== visibleBooks.size) return true;
+    for (const k of serverBooks) if (!visibleBooks.has(k)) return true;
+
     return false;
-  }, [data, disabledSports, disabledMarkets]);
+  }, [data, disabledSports, disabledMarkets, visibleBooks, currentVisible]);
 
   function toggleSport(key: string) {
     const next = new Set(disabledSports);
@@ -173,6 +204,7 @@ export default function SettingsPage() {
         disabled_markets: Object.fromEntries(
           Object.entries(disabledMarkets).map(([k, v]) => [k, [...v]])
         ),
+        visible_books: [...visibleBooks],
       };
       const res = await fetch(`${API_BASE}${apiPaths.settings}`, {
         method: "POST",
@@ -181,6 +213,9 @@ export default function SettingsPage() {
       });
       if (!res.ok) throw new Error(`${res.status}`);
       const payload = await res.json();
+      // Sync the visible books to localStorage so the rest of the app (odds
+      // grid, arb, EV, etc.) picks them up immediately without a page reload.
+      setLocalVisible([...visibleBooks]);
       setSavedNotice(
         payload.reload_status === "started"
           ? "Saved — fetcher restarted with new settings"
@@ -209,6 +244,10 @@ export default function SettingsPage() {
       dm[sport] = new Set(keys);
     }
     setDisabledMarkets(dm);
+    const serverBooks = data.visible_books;
+    setVisibleBooks(
+      new Set(serverBooks ?? [...currentVisible])
+    );
   }
 
   return (
@@ -222,6 +261,7 @@ export default function SettingsPage() {
           </span>
         </div>
         <div className="flex items-center gap-3">
+          <Coral33RefreshButton />
           {savedNotice && (
             <span className="text-[11px] text-accent tabular">
               {savedNotice}
@@ -260,6 +300,11 @@ export default function SettingsPage() {
       {isLoading && !data && (
         <div className="text-text-2 text-sm">Loading settings…</div>
       )}
+
+      <BookVisibilitySettings
+        value={visibleBooks}
+        onChange={setVisibleBooks}
+      />
 
       {data && (
         <div className="flex flex-col gap-3">

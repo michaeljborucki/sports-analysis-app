@@ -4,15 +4,18 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 
 import { FetcherToggle } from "./fetcher-toggle";
+import { LiveStatusFilter } from "./live-status-filter";
 import { SportContextBar } from "./sport-context-bar";
 import { SECTIONS, sectionByKey, sectionHref } from "@/lib/sections";
 import { useCurrentSport } from "@/lib/use-current-sport";
+import { useLiveFilter } from "@/lib/use-live-filter";
 
 export function NavShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "";
   const firstSegment = pathname.split("/").filter(Boolean)[0];
   const activeSection = sectionByKey(firstSegment);
   const currentSport = useCurrentSport();
+  const { value: liveFilter, setValue: setLiveFilter } = useLiveFilter();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -42,6 +45,7 @@ export function NavShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
           <div className="ml-auto flex items-center gap-3">
+            <LiveStatusFilter value={liveFilter} onChange={setLiveFilter} />
             <FetcherToggle />
           </div>
         </div>

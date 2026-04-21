@@ -6,7 +6,7 @@ import { useIsMounted } from "@/lib/use-is-mounted";
 import { apiPaths, type OddsResponse } from "@/lib/api";
 import { intervals } from "@/lib/swr";
 import { isSportKey, getSport } from "@/lib/sports";
-import { PropsTable } from "@/components/props-table";
+import { PropsMatrix } from "@/components/props-matrix";
 import { StaleIndicator } from "@/components/stale-indicator";
 import { RefreshButton } from "@/components/refresh-button";
 import { OddsGridSkeleton } from "@/components/skeletons";
@@ -54,7 +54,7 @@ export default function PropsPage({
         </div>
       )}
       {isLoading && !data && <OddsGridSkeleton />}
-      {data && <PropsTable games={data.games ?? []} />}
+      {data && <PropsMatrix sport={sport} games={data.games ?? []} />}
     </div>
   );
 }

@@ -10,13 +10,9 @@ import {
 } from "@/lib/api";
 import { formatAmerican } from "@/lib/format";
 import { useVisibleBooks } from "@/lib/use-visible-books";
-import { BookFilter } from "@/components/book-filter";
 import { BookIncludeDropdown } from "@/components/book-include-dropdown";
-import {
-  LiveStatusFilter,
-  matchesLiveFilter,
-  type LiveStatus,
-} from "@/components/live-status-filter";
+import { matchesLiveFilter } from "@/components/live-status-filter";
+import { useLiveFilter } from "@/lib/use-live-filter";
 import { BookLogo } from "@/components/book-logo";
 import { RefreshButton } from "@/components/refresh-button";
 import { BOOK_ORDER } from "@/lib/books";
@@ -95,11 +91,11 @@ function clampStake(n: number): number {
 }
 
 export default function EVPage() {
-  const { visible, toggle, setAll } = useVisibleBooks();
+  const { visible } = useVisibleBooks();
   const [minEv, setMinEv] = useState<number>(2);
   const [maxOdds, setMaxOdds] = useState<number>(800);
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
-  const [liveFilter, setLiveFilter] = useState<LiveStatus>("all");
+  const { value: liveFilter } = useLiveFilter();
   const [pageFilter, setPageFilter] = useState<Set<string>>(new Set());
   const [stake, setStake] = useState<number>(1000);
 
@@ -232,7 +228,6 @@ export default function EVPage() {
               </button>
             ))}
           </div>
-          <LiveStatusFilter value={liveFilter} onChange={setLiveFilter} />
           <BookIncludeDropdown
             label="Offered book"
             availableBooks={allBooksInPlay}
@@ -254,12 +249,6 @@ export default function EVPage() {
               title="Stake used for Kelly $ column (quarter-Kelly). Persisted locally."
             />
           </div>
-          <BookFilter
-            availableBooks={allBooksInPlay.length ? allBooksInPlay : BOOK_ORDER}
-            visible={visible}
-            onToggle={toggle}
-            onSetAll={setAll}
-          />
           <RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />
         </div>
       </header>

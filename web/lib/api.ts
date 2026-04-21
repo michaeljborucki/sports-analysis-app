@@ -50,8 +50,11 @@ export const apiPaths = {
     qs.set("stale_seconds", String(opts.staleSeconds ?? 300));
     return `/api/ev?${qs.toString()}`;
   },
-  dashboard: "/api/dashboard",
+  dashboard: (books: string[] = []) =>
+    `/api/dashboard${books.length ? `?books=${books.join(",")}` : ""}`,
   settings: "/api/settings",
+  coral33Refresh: "/api/coral33/refresh",
+  coral33Status: "/api/coral33/status",
 } as const;
 
 export type ArbResponse = components["schemas"]["ArbResponse"];

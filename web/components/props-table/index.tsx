@@ -5,6 +5,7 @@ import clsx from "clsx";
 import type { Game, Market, MarketOutcome } from "@/lib/api";
 import { formatAmerican } from "@/lib/format";
 import { findAllBest } from "@/lib/consensus";
+import { useVisibleBooks } from "@/lib/use-visible-books";
 import { BookLogo } from "../book-logo";
 
 const PROP_CATEGORIES: {
@@ -75,9 +76,19 @@ function buildPropRows(market: Market | undefined): PropRow[] {
   return rows;
 }
 
-function SideCell({ outcome }: { outcome?: MarketOutcome }) {
+function SideCell({
+  outcome,
+  visible,
+}: {
+  outcome?: MarketOutcome;
+  visible: Set<string>;
+}) {
   if (!outcome) return <span className="text-text-3">—</span>;
-  const tied = findAllBest(outcome.prices);
+  // Only score books the user has visible globally — mirrors the odds grid's
+  // behavior. Consensus across ALL books is still informative, so we keep that
+  // unfiltered (matches the established convention on the odds grid).
+  const visiblePrices = outcome.prices.filter(p => visible.has(p.bookmaker_key));
+  const tied = findAllBest(visiblePrices);
   const best = tied[0];
   const consensus = outcome.consensus_price_american;
   return (
@@ -98,13 +109,14 @@ function SideCell({ outcome }: { outcome?: MarketOutcome }) {
         </span>
       )}
       <span className="text-text-3 text-[10px] tabular">
-        {outcome.prices.length}b
+        {visiblePrices.length}b
       </span>
     </span>
   );
 }
 
 export function PropsTable({ games }: { games: Game[] }) {
+  const { visible } = useVisibleBooks();
   const availableMarkets = useMemo(() => {
     const keys = new Set<string>();
     for (const g of games)
@@ -213,10 +225,10 @@ export function PropsTable({ games }: { games: Game[] }) {
                           {r.point != null ? r.point : "—"}
                         </td>
                         <td className="px-2 py-1.5">
-                          <SideCell outcome={r.over} />
+                          <SideCell outcome={r.over} visible={visible} />
                         </td>
                         <td className="px-2 py-1.5">
-                          <SideCell outcome={r.under} />
+                          <SideCell outcome={r.under} visible={visible} />
                         </td>
                       </tr>
                     ))}

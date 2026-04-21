@@ -4,19 +4,15 @@ import useSWR from "swr";
 
 import { apiPaths, type ArbResponse } from "@/lib/api";
 import { useVisibleBooks } from "@/lib/use-visible-books";
+import { useLiveFilter } from "@/lib/use-live-filter";
 import { ArbitrageTable } from "@/components/arbitrage-table";
-import { BookFilter } from "@/components/book-filter";
 import { BookIncludeDropdown } from "@/components/book-include-dropdown";
-import {
-  LiveStatusFilter,
-  matchesLiveFilter,
-  type LiveStatus,
-} from "@/components/live-status-filter";
+import { matchesLiveFilter } from "@/components/live-status-filter";
 import { RefreshButton } from "@/components/refresh-button";
 import { BOOK_ORDER } from "@/lib/books";
 
 export default function ArbitragePage() {
-  const { visible, toggle, setAll } = useVisibleBooks();
+  const { visible } = useVisibleBooks();
   const booksKey = useMemo(
     () => [...visible].sort().join(","),
     [visible]
@@ -40,7 +36,7 @@ export default function ArbitragePage() {
   // Page-level filter: restrict to opportunities where at least one side
   // uses a selected book. Empty set = no filter.
   const [pageFilter, setPageFilter] = useState<Set<string>>(new Set());
-  const [liveFilter, setLiveFilter] = useState<LiveStatus>("all");
+  const { value: liveFilter } = useLiveFilter();
   const filteredOpps = useMemo(() => {
     let ops = data?.opportunities ?? [];
     if (liveFilter !== "all") {
@@ -70,18 +66,11 @@ export default function ArbitragePage() {
           )}
         </div>
         <div className="flex items-center gap-3">
-          <LiveStatusFilter value={liveFilter} onChange={setLiveFilter} />
           <BookIncludeDropdown
             label="Must include"
             availableBooks={allBooksInPlay}
             selected={pageFilter}
             onChange={setPageFilter}
-          />
-          <BookFilter
-            availableBooks={allBooksInPlay.length ? allBooksInPlay : BOOK_ORDER}
-            visible={visible}
-            onToggle={toggle}
-            onSetAll={setAll}
           />
           <RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />
         </div>

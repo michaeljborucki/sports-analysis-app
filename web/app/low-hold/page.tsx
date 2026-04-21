@@ -10,13 +10,9 @@ import {
 } from "@/lib/api";
 import { formatAmerican } from "@/lib/format";
 import { useVisibleBooks } from "@/lib/use-visible-books";
-import { BookFilter } from "@/components/book-filter";
 import { BookIncludeDropdown } from "@/components/book-include-dropdown";
-import {
-  LiveStatusFilter,
-  matchesLiveFilter,
-  type LiveStatus,
-} from "@/components/live-status-filter";
+import { matchesLiveFilter } from "@/components/live-status-filter";
+import { useLiveFilter } from "@/lib/use-live-filter";
 import { BookLogo } from "@/components/book-logo";
 import { RefreshButton } from "@/components/refresh-button";
 import { BOOK_ORDER } from "@/lib/books";
@@ -56,7 +52,7 @@ function holdColor(pct: number): string {
 }
 
 export default function LowHoldPage() {
-  const { visible, toggle, setAll } = useVisibleBooks();
+  const { visible } = useVisibleBooks();
   const [maxHold, setMaxHold] = useState<number>(1);
 
   const { data, error, isLoading, isValidating, mutate } =
@@ -76,7 +72,7 @@ export default function LowHoldPage() {
   }, [data]);
 
   const [pageFilter, setPageFilter] = useState<Set<string>>(new Set());
-  const [liveFilter, setLiveFilter] = useState<LiveStatus>("all");
+  const { value: liveFilter } = useLiveFilter();
   const filteredOpps = useMemo(() => {
     let ops = data?.opportunities ?? [];
     if (liveFilter !== "all") {
@@ -122,18 +118,11 @@ export default function LowHoldPage() {
               </button>
             ))}
           </div>
-          <LiveStatusFilter value={liveFilter} onChange={setLiveFilter} />
           <BookIncludeDropdown
             label="Must include"
             availableBooks={allBooksInPlay}
             selected={pageFilter}
             onChange={setPageFilter}
-          />
-          <BookFilter
-            availableBooks={allBooksInPlay.length ? allBooksInPlay : BOOK_ORDER}
-            visible={visible}
-            onToggle={toggle}
-            onSetAll={setAll}
           />
           <RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />
         </div>

@@ -8,6 +8,7 @@ import { formatAmerican, formatPct, formatUnits } from "@/lib/format";
 import { BookLogo } from "@/components/book-logo";
 import { RefreshButton } from "@/components/refresh-button";
 import { SPORTS, type SportKey } from "@/lib/sports";
+import { useVisibleBooks } from "@/lib/use-visible-books";
 
 function sportLabel(key: string): string {
   if (key in SPORTS) return SPORTS[key as SportKey].label;
@@ -318,8 +319,12 @@ function SportStatusCards({ sports }: { sports: SportSummary[] }) {
 }
 
 export default function DashboardPage() {
+  const { visible } = useVisibleBooks();
   const { data, error, isLoading, isValidating, mutate } =
-    useSWR<DashboardResponse>(apiPaths.dashboard, { refreshInterval: 30_000 });
+    useSWR<DashboardResponse>(
+      apiPaths.dashboard([...visible].sort()),
+      { refreshInterval: 30_000 }
+    );
 
   return (
     <div className="flex flex-col gap-5">

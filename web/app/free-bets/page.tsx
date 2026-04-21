@@ -10,14 +10,10 @@ import {
 } from "@/lib/api";
 import { formatAmerican } from "@/lib/format";
 import { useVisibleBooks } from "@/lib/use-visible-books";
-import { BookFilter } from "@/components/book-filter";
 import { BookIncludeDropdown } from "@/components/book-include-dropdown";
 import { BookLogo } from "@/components/book-logo";
-import {
-  LiveStatusFilter,
-  matchesLiveFilter,
-  type LiveStatus,
-} from "@/components/live-status-filter";
+import { matchesLiveFilter } from "@/components/live-status-filter";
+import { useLiveFilter } from "@/lib/use-live-filter";
 import { RefreshButton } from "@/components/refresh-button";
 import { BOOK_ORDER } from "@/lib/books";
 import { SPORTS, type SportKey } from "@/lib/sports";
@@ -61,7 +57,7 @@ function conversionColor(pct: number): string {
 }
 
 export default function FreeBetsPage() {
-  const { visible, toggle, setAll } = useVisibleBooks();
+  const { visible } = useVisibleBooks();
   const [minConversion, setMinConversion] = useState<number>(0);
   // Backend min_free_odds stays at +100 (anything below is strictly worse
   // than cash) — the user-facing filter is now conversion-rate-based.
@@ -98,7 +94,7 @@ export default function FreeBetsPage() {
   }, [data]);
 
   const [freeLegFilter, setFreeLegFilter] = useState<Set<string>>(new Set());
-  const [liveFilter, setLiveFilter] = useState<LiveStatus>("all");
+  const { value: liveFilter } = useLiveFilter();
   const filteredOpps = useMemo(() => {
     let ops = data?.opportunities ?? [];
     if (liveFilter !== "all") {
@@ -152,18 +148,11 @@ export default function FreeBetsPage() {
               </button>
             ))}
           </div>
-          <LiveStatusFilter value={liveFilter} onChange={setLiveFilter} />
           <BookIncludeDropdown
             label="Free-bet book"
             availableBooks={freeBookOptions}
             selected={freeLegFilter}
             onChange={setFreeLegFilter}
-          />
-          <BookFilter
-            availableBooks={allBooksInPlay.length ? allBooksInPlay : BOOK_ORDER}
-            visible={visible}
-            onToggle={toggle}
-            onSetAll={setAll}
           />
           <RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />
         </div>
