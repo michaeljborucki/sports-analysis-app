@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
+import { Check, ChevronDown } from "lucide-react";
 
 import { bookInfo } from "@/lib/books";
 import { BookLogo } from "./book-logo";
@@ -75,15 +76,7 @@ export function BookIncludeDropdown({
           {label}
         </span>
         <span className="text-text-1">{summary}</span>
-        <svg width="10" height="10" viewBox="0 0 16 16" fill="none" aria-hidden>
-          <path
-            d="M4 6l4 4 4-4"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <ChevronDown size={10} aria-hidden />
       </button>
       {open && (
         <div
@@ -138,13 +131,13 @@ export function BookIncludeDropdown({
                   >
                     <span
                       className={clsx(
-                        "inline-flex w-3.5 h-3.5 rounded-sm border items-center justify-center text-[9px]",
+                        "inline-flex w-3.5 h-3.5 rounded-sm border items-center justify-center",
                         on
                           ? "bg-accent border-accent text-bg-0"
                           : "border-text-3"
                       )}
                     >
-                      {on && "✓"}
+                      {on && <Check size={10} strokeWidth={3} aria-hidden />}
                     </span>
                     <BookLogo bookKey={key} mode="label" />
                     <span className="truncate">{info.name}</span>

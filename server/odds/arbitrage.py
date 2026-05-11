@@ -1,16 +1,19 @@
 """Arbitrage scanner.
 
-Identifies two-way markets where the sum of implied probabilities across the
-best-priced sides is < 1.0, meaning a risk-free positive-ROI split bet exists.
+Identifies markets where the sum of implied probabilities across the best-
+priced legs is < 1.0, meaning a risk-free positive-ROI split bet exists.
 Prices consumed here are already commission-adjusted by `rows_to_games`; the
 scanner treats them as net effective payouts.
 
-Scope v1: two-way markets only.
-  - h2h
-  - spreads + alternate_spreads   (paired by |point|)
+Coverage:
+  - h2h (2-way for US sports, 3-way for soccer with a "Draw" outcome)
+  - spreads + alternate_spreads   (paired by complementary signed points)
   - totals + alternate_totals     (paired by point)
 
-Three-way markets (soccer draws) and player props are skipped.
+3-way arbs require at least 2 distinct books across the 3 legs — three legs
+at one book is just the book's vig and never positive.
+Player props are skipped (no two-sided pairing across books for individual
+player Over/Under at the same point — handled by the EV scanner instead).
 """
 from __future__ import annotations
 
@@ -117,6 +120,65 @@ def _emit(
     }
 
 
+def _try_three_way(
+    sides: list[dict],
+    books_filter: set[str] | None,
+) -> tuple[list[dict], float] | None:
+    """Same as `_try_pair` but for 3-outcome markets (soccer h2h: home/draw/
+    away). Returns (best_prices_in_input_order, roi_frac) if an arb exists.
+
+    The "different book per leg" rule we apply to 2-way markets is relaxed —
+    for 3-way, requiring 3 distinct books would miss real arbs that need
+    only 2 books (one book offers the longest two sides at +odds, another
+    the third). We require **at least 2 distinct books across the 3 legs**.
+    """
+    bests: list[dict] = []
+    for s in sides:
+        b = _best_visible(s, books_filter)
+        if not b:
+            return None
+        bests.append(b)
+    distinct_books = {b["bookmaker_key"] for b in bests}
+    if len(distinct_books) < 2:
+        return None  # all three legs at one book → just the book's vig
+    total = sum(american_to_implied_prob(b["price_american"]) for b in bests)
+    if total >= 1.0:
+        return None
+    roi = 1.0 / total - 1.0
+    return bests, roi
+
+
+def _emit_three_way(
+    game: dict,
+    market_kind: str,
+    sides: list[dict],
+    bests: list[dict],
+    roi: float,
+) -> dict:
+    imps = [american_to_implied_prob(b["price_american"]) for b in bests]
+    total = sum(imps)
+    return {
+        "sport_key": game.get("sport_key", "mlb"),
+        "event_id": game["event_id"],
+        "home_team": game["home_team"],
+        "away_team": game["away_team"],
+        "commence_time": game["commence_time"],
+        "market_kind": market_kind,
+        "point": None,
+        "roi_pct": roi * 100.0,
+        "sides": [
+            {
+                "outcome_name": s["outcome_name"],
+                "book": b["bookmaker_key"],
+                "price_american": b["price_american"],
+                "point": b.get("point"),
+                "stake_pct": imp / total * 100.0,
+            }
+            for s, b, imp in zip(sides, bests, imps)
+        ],
+    }
+
+
 def scan_game_arbs(
     game: dict, books_filter: set[str] | None = None
 ) -> list[dict]:
@@ -124,12 +186,21 @@ def scan_game_arbs(
 
     # --- H2H ---------------------------------------------------------------
     h2h = _find_market(game, "h2h")
-    if h2h and len(h2h.get("outcomes", [])) == 2:
-        a, b = h2h["outcomes"]
+    h2h_outcomes = h2h.get("outcomes", []) if h2h else []
+    if len(h2h_outcomes) == 2:
+        a, b = h2h_outcomes
         pair = _try_pair(a, b, books_filter)
         if pair:
             best_a, best_b, roi = pair
             out.append(_emit(game, "h2h", None, a, b, best_a, best_b, roi))
+    elif len(h2h_outcomes) == 3:
+        # Soccer-style 3-way (home/draw/away) — order doesn't matter for
+        # the math, but keep input order so the emitted `sides` row stays
+        # consistent across cycles.
+        result = _try_three_way(h2h_outcomes, books_filter)
+        if result is not None:
+            bests, roi = result
+            out.append(_emit_three_way(game, "h2h", h2h_outcomes, bests, roi))
 
     # --- Spreads (main + alt) — pair by complementary signed points -------
     for abs_pt, home_side, away_side in collect_spread_pairs(game):

@@ -66,7 +66,10 @@ def test_sports_endpoint_lists_registered_sports(app):
     assert r.status_code == 200
     keys = {s["key"] for s in r.json()["sports"]}
     # Registry in server/sports.py — update this set when sports are added.
-    assert keys == {"mlb", "tennis", "nba", "nhl", "baseball_ncaa"}
+    assert keys == {
+        "mlb", "tennis", "nba", "wnba", "nhl", "baseball_ncaa", "asian_baseball",
+        "soccer", "ufc", "boxing", "cricket",
+    }
 
 
 def test_openapi_schema_accessible(app):

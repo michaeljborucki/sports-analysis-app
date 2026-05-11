@@ -1,6 +1,7 @@
 "use client";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
+import { ChevronRight } from "lucide-react";
 
 import type { Game, Market, MarketOutcome } from "@/lib/api";
 import { formatAmerican } from "@/lib/format";
@@ -36,7 +37,12 @@ function orderedOutcomes(
   market: Market | undefined,
   game: Game,
   display: DisplayKind
-): [MarketOutcome | undefined, MarketOutcome | undefined] {
+): (MarketOutcome | undefined)[] {
+  // Returns rows in render order. Length is variable:
+  //   - total markets: [Over, Under] — 2 rows
+  //   - 2-way moneyline / spread: [away, home] — 2 rows
+  //   - 3-way moneyline (soccer h2h): [away, draw, home] — 3 rows
+  // Game label cell uses rowSpan={returnedArray.length} to span them.
   if (!market) return [undefined, undefined];
   const best = (candidates: MarketOutcome[]): MarketOutcome | undefined => {
     if (candidates.length === 0) return undefined;
@@ -50,10 +56,30 @@ function orderedOutcomes(
       best(market.outcomes.filter(o => o.outcome_name === "Under")),
     ];
   }
-  return [
-    best(market.outcomes.filter(o => o.outcome_name === game.away_team)),
-    best(market.outcomes.filter(o => o.outcome_name === game.home_team)),
-  ];
+  if (display === "yes_no") {
+    // NRFI / DRP / props that resolve as Yes/No. Two rows, fixed order.
+    return [
+      best(market.outcomes.filter(o => o.outcome_name === "Yes")),
+      best(market.outcomes.filter(o => o.outcome_name === "No")),
+    ];
+  }
+  // For h2h-shaped markets, detect a Draw outcome and slot it between the
+  // away and home rows. Soccer's h2h is the primary case (home/draw/away,
+  // 3-way) but this also supports any future 3-way market that uses the
+  // "Draw" outcome name convention.
+  const drawOutcome = best(
+    market.outcomes.filter(o => o.outcome_name === "Draw"),
+  );
+  const awayOutcome = best(
+    market.outcomes.filter(o => o.outcome_name === game.away_team),
+  );
+  const homeOutcome = best(
+    market.outcomes.filter(o => o.outcome_name === game.home_team),
+  );
+  if (drawOutcome) {
+    return [awayOutcome, drawOutcome, homeOutcome];
+  }
+  return [awayOutcome, homeOutcome];
 }
 
 function sideLabel(
@@ -64,6 +90,7 @@ function sideLabel(
 ): string {
   if (!outcome) return "—";
   if (display === "moneyline") {
+    if (outcome.outcome_name === "Draw") return "Draw";
     return outcome.outcome_name === game.home_team
       ? renderTeam(game.home_team, sport)
       : renderTeam(game.away_team, sport);
@@ -82,6 +109,9 @@ function sideLabel(
     const letter = outcome.outcome_name === "Over" ? "O" : "U";
     const p = outcome.best_price?.point ?? outcome.prices[0]?.point ?? null;
     return p == null ? letter : `${letter} ${p}`;
+  }
+  if (display === "yes_no") {
+    return outcome.outcome_name; // "Yes" or "No"
   }
   return outcome.outcome_name;
 }
@@ -228,16 +258,14 @@ export function OddsGrid({
             )}
             {games.map(g => {
               const m = findMarket(g, activeKey);
-              const [topOutcome, bottomOutcome] = orderedOutcomes(
-                m,
-                g,
-                activeGroup.display
-              );
+              const outcomes = orderedOutcomes(m, g, activeGroup.display);
               const isOpen = sheetEventId === g.event_id;
+              const rowCount = outcomes.length;
               return (
                 <Fragment key={g.event_id}>
-                  {[topOutcome, bottomOutcome].map((out, idx) => {
+                  {outcomes.map((out, idx) => {
                     const isFirst = idx === 0;
+                    const isLast = idx === rowCount - 1;
                     const allPrices = out?.prices ?? [];
                     // Best follows the filter; consensus is server-computed.
                     const visiblePrices = allPrices.filter(p =>
@@ -267,7 +295,7 @@ export function OddsGrid({
                       >
                         {isFirst && (
                           <td
-                            rowSpan={2}
+                            rowSpan={rowCount}
                             onClick={() =>
                               setSheetEventId(isOpen ? null : g.event_id)
                             }
@@ -278,15 +306,14 @@ export function OddsGrid({
                             )}
                           >
                             <div className="flex items-center gap-2">
-                              <span
+                              <ChevronRight
                                 aria-hidden
+                                size={10}
                                 className={clsx(
-                                  "text-text-3 text-[10px] transition-transform",
+                                  "text-text-3 transition-transform",
                                   isOpen ? "rotate-90" : "rotate-0"
                                 )}
-                              >
-                                ▶
-                              </span>
+                              />
                               <div className="flex flex-col gap-0.5">
                                 <span className="text-text-1 font-medium">
                                   {renderTeam(g.away_team, sport)} @{" "}
@@ -311,7 +338,7 @@ export function OddsGrid({
                         <td
                           className={clsx(
                             "px-2 py-1.5 whitespace-nowrap text-text-1",
-                            idx === 1 && "text-text-2"
+                            !isFirst && "text-text-2"
                           )}
                         >
                           {sideLabel(out, g, activeGroup.display, sport)}

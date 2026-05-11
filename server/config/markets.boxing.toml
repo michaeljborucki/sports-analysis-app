@@ -1,0 +1,55 @@
+# Boxing market configuration.
+#
+# The Odds API exposes boxing under the single key `boxing_boxing`. Coverage
+# is similar to MMA: h2h universal, totals (rounds over/under) partial, no
+# alternates, no round-by-round, no props.
+#
+# Coral33 splits boxing into FIVE separate "league" subtypes — each is one
+# distinct fight card:
+#   MATCHUPS       — typically the headline Asian/Japanese card
+#   BOX MATCHU     — secondary card
+#   BOX FIGHTS     — secondary card
+#   BOXING OTHER   — typically ZUFFA Boxing or undercard set
+#   BOXING         — main US-headlined card
+# All five resolve to the same Odds API key; the fetcher iterates them as
+# parallel subtypes and the normalizer emits identical market_keys, so they
+# merge cleanly under one event_id at the cache layer.
+
+[main]
+enabled          = true
+interval_seconds = 300
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets = [
+  "h2h",
+  "totals",
+  "h2h_lay",
+]
+
+[alternates]
+enabled          = false
+interval_seconds = 300
+regions          = []
+markets          = []
+
+[periods]
+enabled          = false
+interval_seconds = 300
+regions          = []
+markets          = []
+
+[player_props]
+enabled             = false
+interval_seconds    = 300
+regions             = []
+games_window_hours  = 6
+markets             = []
+
+[on_demand]
+enabled          = true
+debounce_seconds = 60
+
+[picks]
+include_bet_types = [
+  "moneyline",
+  "total_rounds",
+]

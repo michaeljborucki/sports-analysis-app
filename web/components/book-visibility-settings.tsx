@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
+import { Check, ChevronRight, Eye } from "lucide-react";
 
 import { BOOKS, BOOK_ORDER, DEFAULT_VISIBLE_BOOKS, type Region } from "@/lib/books";
 import { BookLogo } from "@/components/book-logo";
@@ -87,15 +88,15 @@ export function BookVisibilitySettings({
           title={expanded ? "Collapse book list" : "Expand book list"}
           aria-expanded={expanded}
         >
-          <span
+          <ChevronRight
             aria-hidden
+            size={12}
             className={clsx(
-              "inline-block text-text-3 text-[10px] transition-transform",
+              "text-text-3 transition-transform",
               expanded ? "rotate-90" : "rotate-0",
             )}
-          >
-            ▶
-          </span>
+          />
+          <Eye size={14} aria-hidden className="text-text-2" />
           <span className="text-sm font-semibold text-text-1">Visible Books</span>
         </button>
         <span className="text-[11px] text-text-3 tabular">
@@ -154,11 +155,11 @@ export function BookVisibilitySettings({
                   >
                     <span
                       className={clsx(
-                        "inline-flex w-3.5 h-3.5 rounded-sm border items-center justify-center text-[9px] shrink-0",
+                        "inline-flex w-3.5 h-3.5 rounded-sm border items-center justify-center shrink-0",
                         on ? "bg-accent border-accent text-bg-0" : "border-text-3"
                       )}
                     >
-                      {on && "✓"}
+                      {on && <Check size={10} strokeWidth={3} aria-hidden />}
                     </span>
                     <BookLogo bookKey={key} mode="label" />
                     <span className="truncate">{info.name}</span>

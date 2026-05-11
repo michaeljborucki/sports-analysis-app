@@ -469,6 +469,11 @@ export interface components {
              * @enum {string}
              */
             confidence: "normal" | "low";
+            /**
+             * Wager Type — coral33 parlay-eligibility tag.
+             * NULL for every other book.
+             */
+            wager_type?: "straight" | "parlay" | "both" | null;
         };
         /** EVResponse */
         EVResponse: {
@@ -673,7 +678,7 @@ export interface components {
              * @default moneyline
              * @enum {string}
              */
-            display: "moneyline" | "spread" | "total";
+            display: "moneyline" | "spread" | "total" | "yes_no";
         };
         /** MarketOption */
         MarketOption: {

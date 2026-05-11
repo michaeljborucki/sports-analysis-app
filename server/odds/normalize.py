@@ -50,7 +50,7 @@ def normalize_odds_response(
                     encoded_name = _encode_outcome_name(
                         market_key, oc["name"], oc.get("description")
                     )
-                    rows.append({
+                    base_row = {
                         "event_id": event_id,
                         "sport_key": sport_key,
                         "home_team": home,
@@ -62,7 +62,35 @@ def normalize_odds_response(
                         "outcome_point": oc.get("point"),
                         "price_american": int(oc["price"]),
                         "fetched_at": fetched_at,
-                    })
+                    }
+                    rows.append(base_row)
+                    # NRFI bridge: the Odds API doesn't expose `nrfi` as its
+                    # own market — it surfaces the same semantic via
+                    # totals_1st_1_innings at point 0.5 (Over=YRFI, Under=
+                    # NRFI). Coral33 emits the same semantic under
+                    # market_key="nrfi". Synthesize a `nrfi` row here so
+                    # the EV/arb scanner pairs Odds-API book prices with
+                    # Coral33's NRFI line.
+                    if (
+                        market_key in (
+                            "totals_1st_1_innings",
+                            "alternate_totals_1st_1_innings",
+                        )
+                        and oc.get("point") == 0.5
+                    ):
+                        if oc["name"] == "Over":
+                            nrfi_outcome = "Yes"
+                        elif oc["name"] == "Under":
+                            nrfi_outcome = "No"
+                        else:
+                            nrfi_outcome = None
+                        if nrfi_outcome is not None:
+                            rows.append({
+                                **base_row,
+                                "market_key": "nrfi",
+                                "outcome_name": nrfi_outcome,
+                                "outcome_point": 0.0,
+                            })
     return rows
 
 
@@ -105,6 +133,10 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
             "price_american": effective_price,
             "point": r.get("outcome_point"),
             "fetched_at": fetched_at,
+            # Coral33-only: 'straight' / 'parlay' / 'both'. NULL for every
+            # other book — propagated all the way to the EVOpportunity so
+            # the frontend can filter on parlay-eligibility.
+            "wager_type": r.get("wager_type"),
         })
         now_utc = now if now.tzinfo else now.replace(tzinfo=timezone.utc)
         age = max(0, int((now_utc - fetched_at).total_seconds()))

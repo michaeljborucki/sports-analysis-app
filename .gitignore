@@ -24,6 +24,12 @@ out/
 # SQLite cache
 server/cache.db
 server/cache.db-journal
+server/cache.snapshot.db
+server/cache.snapshot.db-journal
+server/cache_snapshot.db
+
+# Runtime mode state (toggled by the cache-mode UI; per-machine)
+server/cache_mode.json
 
 # OS
 .DS_Store

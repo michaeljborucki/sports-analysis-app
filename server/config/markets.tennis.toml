@@ -10,7 +10,7 @@
 
 [main]
 enabled          = true
-interval_seconds = 60
+interval_seconds = 300
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
 markets = [
   "h2h",          # Match winner — widely covered
@@ -22,7 +22,7 @@ markets = [
 # No alternate lines available on The Odds API for tennis.
 [alternates]
 enabled          = false
-interval_seconds = 60
+interval_seconds = 300
 regions          = []
 markets          = []
 
@@ -30,7 +30,7 @@ markets          = []
 # (No set winners, set spreads/totals, correct-set-score, etc.)
 [periods]
 enabled          = false
-interval_seconds = 60
+interval_seconds = 300
 regions          = []
 markets          = []
 
@@ -38,9 +38,9 @@ markets          = []
 # (No player_aces, player_games, player_double_faults, player_sets_won, etc.)
 [player_props]
 enabled             = false
-interval_seconds    = 60
+interval_seconds    = 300
 regions             = []
-games_window_hours  = 3
+games_window_hours  = 6
 markets             = []
 
 [on_demand]

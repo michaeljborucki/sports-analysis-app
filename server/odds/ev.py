@@ -186,6 +186,24 @@ def _buckets(
     return groups
 
 
+def _expect_outcome_count(
+    market_key: str,
+    by_outcome: dict[tuple[str, float | None], dict[str, dict]],
+) -> int:
+    """How many outcomes per bucket should we require to devig together?
+
+    h2h_3_way and explicit 3-way bases → always 3.
+    Soccer h2h returns 3 outcomes (home/draw/away) under the plain `h2h`
+    key — detected by the presence of a "Draw" outcome name.
+    Everything else is 2-way (over/under, two-team h2h, spread pairs).
+    """
+    if _is_three_way(market_key):
+        return 3
+    if any(name == "Draw" for (name, _pt) in by_outcome.keys()):
+        return 3
+    return 2
+
+
 def _pinnacle_fair(
     by_outcome: dict[tuple[str, float | None], dict[str, dict]],
     market_key: str,
@@ -194,8 +212,8 @@ def _pinnacle_fair(
 ) -> dict[tuple[str, float | None], float] | None:
     """Devig Pinnacle's prices. Returns {outcome_key -> fair_prob} or None if
     Pinnacle isn't fully present for this market's grouping."""
-    three_way = _is_three_way(market_key)
-    expect_n = 3 if three_way else 2
+    expect_n = _expect_outcome_count(market_key, by_outcome)
+    three_way = expect_n == 3
     buckets = _buckets(market_key, list(by_outcome.keys()))
 
     probs: dict[tuple[str, float | None], float] = {}
@@ -236,8 +254,8 @@ def _consensus_fair(
     ({outcome_key -> fair_prob}, anchor_book_count) or None if insufficient
     data. Falls back from sharp-only to all-books when <2 sharp books cover
     the market."""
-    three_way = _is_three_way(market_key)
-    expect_n = 3 if three_way else 2
+    expect_n = _expect_outcome_count(market_key, by_outcome)
+    three_way = expect_n == 3
     buckets = _buckets(market_key, list(by_outcome.keys()))
 
     def _gather(books_set: frozenset[str] | set[str] | None):
@@ -428,6 +446,7 @@ def _two_way_pair_ev_rows(
                 "offered_age_s": int(_age_seconds(price, now)),
                 "also_in_arb": also_in_arb,
                 "confidence": confidence,
+                "wager_type": price.get("wager_type"),
             })
     return ops
 
@@ -495,15 +514,13 @@ def scan_game_ev(
         handled_markets.add(alt_mk)
 
     # --- Generic path for h2h, team_totals, player props, and any period
-    # variants of those. 3-way markets (h2h_3_way and period variants) are
-    # dropped — they only apply to sports with a possible draw (soccer),
-    # which isn't currently in scope. Even for MLB period 3-ways (inning
-    # ties), the product doesn't want them surfaced as EV.
+    # variants of those. Now also handles 3-way markets — soccer h2h
+    # (home/draw/away) goes through here, and `_pinnacle_fair` /
+    # `_consensus_fair` infer expect_n=3 dynamically when a "Draw" outcome
+    # is present (or when the key is in THREE_WAY_BASES).
     for market in game.get("markets") or []:
         market_key = market.get("market_key")
         if not market_key or market_key in handled_markets:
-            continue
-        if _is_three_way(market_key):
             continue
 
         by_outcome = _collect_market_outcomes(market)
@@ -577,6 +594,7 @@ def scan_game_ev(
                     "offered_age_s": int(_age_seconds(price, now)),
                     "also_in_arb": also_in_arb,
                     "confidence": confidence,
+                    "wager_type": price.get("wager_type"),
                 })
     return ops
 
@@ -601,10 +619,16 @@ def scan_all_ev(
     stale_seconds: float = 60.0,
     arb_keys: set[tuple] | None = None,
     max_results: int | None = None,
+    sort: str = "desc",
 ) -> list[dict]:
     """Entry point used by the API layer. Expects `games` to be the output
     of `rows_to_games` (so prices are already commission-adjusted).
-    Returns opportunities sorted by ev_pct descending."""
+
+    sort='desc' (default): best +EV first — use for finding plays to take.
+    sort='asc': worst first — use with min_ev_pct < 0 to surface fade
+                candidates (the cap would otherwise always prefer positives).
+    sort='bidir': half most-positive, half most-negative — use when the
+                user wants both tails in one response."""
     sharp = SHARP_BOOKS if sharp_books is None else frozenset(sharp_books)
     ops: list[dict] = []
     for g in games:
@@ -617,7 +641,28 @@ def scan_all_ev(
             stale_seconds=stale_seconds,
             arb_keys=arb_keys,
         ))
-    ops.sort(key=lambda o: (-o["ev_pct"], o["commence_time"]))
+    if sort == "asc":
+        ops.sort(key=lambda o: (o["ev_pct"], o["commence_time"]))
+    elif sort == "bidir" and max_results is not None:
+        # Half the cap from the top, half from the bottom.
+        ops.sort(key=lambda o: (-o["ev_pct"], o["commence_time"]))
+        half = max(1, max_results // 2)
+        top = ops[:half]
+        bottom = ops[-half:][::-1]  # reverse so worst-first
+        # Dedupe in case the two halves overlap on a small dataset.
+        seen = set()
+        merged: list[dict] = []
+        for o in top + bottom:
+            key = id(o)
+            if key in seen:
+                continue
+            seen.add(key)
+            merged.append(o)
+        ops = merged
+        # Skip the max_results cap below — we've already sized.
+        return ops
+    else:
+        ops.sort(key=lambda o: (-o["ev_pct"], o["commence_time"]))
     if max_results is not None and len(ops) > max_results:
         ops = ops[:max_results]
     return ops

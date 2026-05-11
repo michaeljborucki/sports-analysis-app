@@ -39,17 +39,33 @@ def _filter_prices(
 def _best_conversion_for_direction(
     free_side: dict,
     hedge_side: dict,
-    books_filter: set[str] | None,
+    hedge_books_filter: set[str] | None,
+    free_bet_books_filter: set[str] | None,
     min_free_odds: int,
 ) -> tuple[dict, dict, float] | None:
     """For one direction (free_side as the free-bet leg, hedge_side as the
     hedge), find the (book_free, book_hedge) combo with book_free != book_hedge
-    that maximizes conversion."""
+    that maximizes conversion.
+
+    `free_bet_books_filter` restricts only the free-bet leg — use this to
+    enforce "the promo is at coral33 so coral33 MUST be the free leg."
+    `hedge_books_filter` is the universe of books usable for the hedge (your
+    other funded accounts).
+    """
+    # Free leg: restrict to user's promo-book set (if any). Respect the
+    # overall hedge universe too — otherwise we'd suggest a free bet at a
+    # book the user can't even see in the grid.
+    free_candidate_books = free_bet_books_filter
+    if free_candidate_books is not None and hedge_books_filter is not None:
+        free_candidate_books = free_candidate_books & hedge_books_filter
+    elif free_candidate_books is None:
+        free_candidate_books = hedge_books_filter
+
     free_prices = [
-        p for p in _filter_prices(free_side, books_filter)
+        p for p in _filter_prices(free_side, free_candidate_books)
         if p["price_american"] >= min_free_odds
     ]
-    hedge_prices = _filter_prices(hedge_side, books_filter)
+    hedge_prices = _filter_prices(hedge_side, hedge_books_filter)
     if not free_prices or not hedge_prices:
         return None
 
@@ -69,17 +85,18 @@ def _best_conversion_for_direction(
 def _pair_best_free_bet(
     side_a: dict,
     side_b: dict,
-    books_filter: set[str] | None,
+    hedge_books_filter: set[str] | None,
+    free_bet_books_filter: set[str] | None,
     min_free_odds: int,
 ) -> tuple[dict, dict, dict, dict, float] | None:
     """Try both directions (A or B as the free-bet leg); return the best
     combination. Returns (free_outcome, free_price, hedge_outcome, hedge_price,
     conversion_rate) or None."""
     a_as_free = _best_conversion_for_direction(
-        side_a, side_b, books_filter, min_free_odds
+        side_a, side_b, hedge_books_filter, free_bet_books_filter, min_free_odds
     )
     b_as_free = _best_conversion_for_direction(
-        side_b, side_a, books_filter, min_free_odds
+        side_b, side_a, hedge_books_filter, free_bet_books_filter, min_free_odds
     )
 
     best: tuple[dict, dict, dict, dict, float] | None = None
@@ -134,7 +151,8 @@ def _emit(
 
 def scan_game_free_bets(
     game: dict,
-    books_filter: set[str] | None,
+    hedge_books_filter: set[str] | None,
+    free_bet_books_filter: set[str] | None,
     min_free_odds: int,
 ) -> list[dict]:
     out: list[dict] = []
@@ -143,7 +161,9 @@ def scan_game_free_bets(
     h2h = _find_market(game, "h2h")
     if h2h and len(h2h.get("outcomes", [])) == 2:
         a, b = h2h["outcomes"]
-        pair = _pair_best_free_bet(a, b, books_filter, min_free_odds)
+        pair = _pair_best_free_bet(
+            a, b, hedge_books_filter, free_bet_books_filter, min_free_odds
+        )
         if pair:
             fo, fp, ho, hp, conv = pair
             out.append(_emit(game, "h2h", None, fo, fp, ho, hp, conv))
@@ -151,7 +171,8 @@ def scan_game_free_bets(
     # Spreads — pair by complementary signed points (main + alt merged)
     for abs_pt, home_side, away_side in collect_spread_pairs(game):
         pair = _pair_best_free_bet(
-            home_side, away_side, books_filter, min_free_odds
+            home_side, away_side,
+            hedge_books_filter, free_bet_books_filter, min_free_odds,
         )
         if pair:
             fo, fp, ho, hp, conv = pair
@@ -160,7 +181,8 @@ def scan_game_free_bets(
     # Totals — pair Over and Under at same point (main + alt merged)
     for pt, over_side, under_side in collect_total_pairs(game):
         pair = _pair_best_free_bet(
-            over_side, under_side, books_filter, min_free_odds
+            over_side, under_side,
+            hedge_books_filter, free_bet_books_filter, min_free_odds,
         )
         if pair:
             fo, fp, ho, hp, conv = pair
@@ -171,12 +193,24 @@ def scan_game_free_bets(
 
 def scan_all_free_bets(
     games: list[dict],
-    books_filter: set[str] | None = None,
+    hedge_books_filter: set[str] | None = None,
+    free_bet_books_filter: set[str] | None = None,
     min_free_odds: int = 100,
 ) -> list[dict]:
-    """Returns free-bet conversion opportunities sorted by conversion desc."""
+    """Returns free-bet conversion opportunities sorted by conversion desc.
+
+    hedge_books_filter: universe of books the user can hedge at (funded
+        accounts). Default None = any book.
+    free_bet_books_filter: books the user has promo credit at; the free-bet
+        leg will ALWAYS land at one of these. Default None = use the hedge
+        universe (no promo-specific restriction).
+    """
     ops: list[dict] = []
     for g in games:
-        ops.extend(scan_game_free_bets(g, books_filter, min_free_odds))
+        ops.extend(
+            scan_game_free_bets(
+                g, hedge_books_filter, free_bet_books_filter, min_free_odds
+            )
+        )
     ops.sort(key=lambda o: -o["conversion_pct"])
     return ops

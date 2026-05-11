@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import clsx from "clsx";
+import { EyeOff, FilterX, Inbox, MoreHorizontal, SearchX, Star } from "lucide-react";
 
 import { apiPaths, type Game, type Market, type MarketOutcome, type SettingsResponse } from "@/lib/api";
 import { useVisibleBooks } from "@/lib/use-visible-books";
@@ -283,6 +284,7 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
           yet. Distinguish the two so the copy is actionable. */}
       {enabledTabs.length === 0 && (
         <EmptyState
+          icon={<Inbox size={28} />}
           title={
             propsEnabledInSettings
               ? `No player-prop data cached yet for ${sport.toUpperCase()}`
@@ -362,6 +364,7 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
         // sharp-only market with all sharp books hidden, or visible set
         // doesn't include any book that prices this prop.
         <EmptyState
+          icon={<EyeOff size={28} />}
           title="No visible books carry this market"
           body={`${formatMarketLabel(activeMarket)} has cached prices, but none of your visible books currently post this market. Toggle a book on in Settings to see prices.`}
           hints={[
@@ -387,6 +390,7 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
               // filter. Give the user a one-click path to clear the filters
               // that *they* control.
               <EmptyState
+                icon={<FilterX size={28} />}
                 title={`No ${formatMarketLabel(activeMarket)} data yet for the current filters`}
                 body="The tab is enabled and the fetcher is configured for this market, but nothing matches right now. Usually one of the filters below is masking the data."
                 hints={[
@@ -423,6 +427,7 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
               // Case 3: the user typed a player filter that matched nothing.
               // Single-click clear is the right affordance.
               <EmptyState
+                icon={<SearchX size={28} />}
                 title={`No players match "${playerFilter}" in ${formatMarketLabel(activeMarket)}`}
                 body={`The tab has ${rawRowCount} player${rawRowCount === 1 ? "" : "s"} cached, but none match your text filter.`}
                 action={{
@@ -505,7 +510,12 @@ function MarketTab({
             : "text-text-3 hover:text-text-1"
         )}
       >
-        <StarIcon filled={pinned} />
+        <Star
+          size={11}
+          aria-hidden
+          strokeWidth={1.6}
+          fill={pinned ? "currentColor" : "none"}
+        />
       </button>
     </div>
   );
@@ -567,13 +577,14 @@ function MoreChip({
         type="button"
         onClick={() => onOpenChange(!open)}
         className={clsx(
-          "px-3 py-1 rounded-md text-xs font-medium tracking-wide transition-colors",
+          "inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium tracking-wide transition-colors",
           "bg-bg-1 text-text-2 hover:text-text-1 border border-border-subtle",
           open && "text-text-1 border-accent/40"
         )}
         aria-haspopup="listbox"
         aria-expanded={open}
       >
+        <MoreHorizontal size={10} aria-hidden />
         More ({count})
       </button>
       {open && (
@@ -624,7 +635,12 @@ function MoreChip({
                         : "text-text-3 hover:text-text-1"
                     )}
                   >
-                    <StarIcon filled={pinnedNow} />
+                    <Star
+                      size={11}
+                      aria-hidden
+                      strokeWidth={1.6}
+                      fill={pinnedNow ? "currentColor" : "none"}
+                    />
                   </button>
                 </div>
               );
@@ -633,25 +649,6 @@ function MoreChip({
         </div>
       )}
     </div>
-  );
-}
-
-
-function StarIcon({ filled }: { filled: boolean }) {
-  // 11px star — big enough to hit, small enough to not crowd the label.
-  return (
-    <svg
-      width="11"
-      height="11"
-      viewBox="0 0 16 16"
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth="1.3"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M8 1.75l1.93 3.91 4.32.63-3.12 3.04.74 4.3L8 11.6l-3.86 2.03.74-4.3L1.75 6.29l4.32-.63L8 1.75z" />
-    </svg>
   );
 }
 

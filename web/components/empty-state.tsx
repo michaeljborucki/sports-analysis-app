@@ -60,7 +60,13 @@ export function EmptyState({
     >
       {icon && (
         <div
-          className="flex h-7 w-7 items-center justify-center text-text-3"
+          className={clsx(
+            "flex h-7 w-7 items-center justify-center",
+            // currentColor flows through to the lucide icon; warning tone picks
+            // up the amber accent already used on the border, so the glyph
+            // reinforces the diagnostic rather than fighting it.
+            tone === "warning" ? "text-flash/70" : "text-text-3"
+          )}
           aria-hidden="true"
         >
           {icon}

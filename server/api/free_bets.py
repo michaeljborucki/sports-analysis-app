@@ -10,6 +10,7 @@ from ..odds.cache import OddsCache
 from ..odds.free_bet import scan_all_free_bets
 from ..odds.market_config import is_prop_market
 from ..odds.normalize import rows_to_games
+from ..util import TTLCache
 
 
 class FreeBetLeg(BaseModel):
@@ -41,16 +42,33 @@ class FreeBetResponse(BaseModel):
 
 def build_router(cache: OddsCache) -> APIRouter:
     router = APIRouter()
+    memo = TTLCache(ttl_seconds=20.0)
 
     @router.get("/api/free-bets", response_model=FreeBetResponse)
     async def get_free_bets(
         books: str = "",
+        free_bet_books: str = "",
         min_free_odds: int = 100,
         max_results: int = 150,
     ) -> FreeBetResponse:
-        books_set: set[str] | None = None
+        """books = hedge-leg universe (your funded accounts).
+        free_bet_books = books where you have a promo credit — the free leg
+        is locked to one of these. Omit to treat any visible book as a
+        potential promo leg."""
+        cache_key = (
+            "free_bets", str(cache.path), books, free_bet_books,
+            min_free_odds, max_results,
+        )
+        hit = memo.get(cache_key)
+        if hit is not None:
+            return hit
+
+        hedge_set: set[str] | None = None
         if books.strip():
-            books_set = {b for b in books.split(",") if b}
+            hedge_set = {b for b in books.split(",") if b}
+        free_bet_set: set[str] | None = None
+        if free_bet_books.strip():
+            free_bet_set = {b for b in free_bet_books.split(",") if b}
 
         now = datetime.now(timezone.utc)
         rows = [
@@ -58,14 +76,19 @@ def build_router(cache: OddsCache) -> APIRouter:
         ]
         games = rows_to_games(rows, now=now)
         ops = scan_all_free_bets(
-            games, books_filter=books_set, min_free_odds=min_free_odds
+            games,
+            hedge_books_filter=hedge_set,
+            free_bet_books_filter=free_bet_set,
+            min_free_odds=min_free_odds,
         )
         ops = ops[:max_results]
 
-        return FreeBetResponse(
+        response = FreeBetResponse(
             opportunities=[FreeBetOpportunity.model_validate(o) for o in ops],
             scanned_at=now,
             min_free_odds=min_free_odds,
         )
+        memo.set(cache_key, response)
+        return response
 
     return router

@@ -7,7 +7,7 @@
 
 [main]
 enabled          = true
-interval_seconds = 60
+interval_seconds = 300
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
 markets = [
   "h2h",
@@ -17,7 +17,7 @@ markets = [
 
 [alternates]
 enabled          = true
-interval_seconds = 60
+interval_seconds = 300
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
 markets = [
   "alternate_spreads",
@@ -29,7 +29,7 @@ markets = [
 
 [periods]
 enabled          = true
-interval_seconds = 60
+interval_seconds = 300
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
 markets = [
   "h2h_1st_5_innings",
@@ -47,9 +47,9 @@ markets = [
 # College sports generally don't offer player props; tier disabled by default.
 [player_props]
 enabled             = false
-interval_seconds    = 60
+interval_seconds    = 300
 regions             = []
-games_window_hours  = 3
+games_window_hours  = 6
 markets             = []
 
 [on_demand]

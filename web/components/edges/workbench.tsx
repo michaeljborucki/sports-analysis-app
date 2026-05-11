@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import clsx from "clsx";
 
 import { BookLogo } from "@/components/book-logo";
@@ -13,13 +13,17 @@ import {
   computeWorkbenchMath,
   type RoundIncrement,
 } from "@/lib/stake-calc";
+import {
+  setBankroll as persistBankrollPref,
+  setKellyFrac as persistKellyFracPref,
+  setRounding as persistRoundingPref,
+  useEdgesPrefs,
+} from "@/lib/use-edges-prefs";
 import { getBookDeeplink } from "@/lib/book-deeplinks";
 import { bookInfo } from "@/lib/books";
 import { SPORTS, type SportKey } from "@/lib/sports";
 
-const BANKROLL_KEY = "bankroll";
-const KELLY_FRAC_KEY = "edges-kelly-frac";
-const ROUND_KEY = "edges-round";
+import { EdgeSparkline } from "./edge-sparkline";
 
 const ROUND_OPTIONS: RoundIncrement[] = [1, 5, 25, 100];
 
@@ -42,9 +46,9 @@ function sportLabel(key: string): string {
  *   op    — the row being expanded.
  *   stake — user's current stake input (persisted on the page).
  *
- * State not passed in (bankroll, Kelly fraction, round increment) is
- * managed locally with localStorage — these are true personal defaults
- * that should survive reloads and aren't part of a bookmarkable URL.
+ * Bankroll, Kelly fraction, and round increment live in the shared
+ * useEdgesPrefs store so the row-level STAKE column reflects the same
+ * Kelly math instantly when the user edits these sliders here.
  */
 export function Workbench({
   op,
@@ -53,47 +57,16 @@ export function Workbench({
   op: EdgeOpportunity;
   stake: number;
 }) {
-  const [bankroll, setBankroll] = useState<number>(1000);
-  const [kellyFrac, setKellyFrac] = useState<number>(0.25);
-  const [rounding, setRounding] = useState<RoundIncrement>(5);
-
-  useEffect(() => {
-    try {
-      const br = window.localStorage.getItem(BANKROLL_KEY);
-      if (br) {
-        const n = Number(br);
-        if (Number.isFinite(n) && n > 0) setBankroll(clamp(n, 10, 10_000_000));
-      }
-      const kf = window.localStorage.getItem(KELLY_FRAC_KEY);
-      if (kf) {
-        const n = Number(kf);
-        if (Number.isFinite(n) && n > 0 && n <= 1) setKellyFrac(n);
-      }
-      const r = window.localStorage.getItem(ROUND_KEY);
-      if (r) {
-        const n = Number(r);
-        if (n === 1 || n === 5 || n === 25 || n === 100) setRounding(n);
-      }
-    } catch {}
-  }, []);
+  const { bankroll, kellyFrac, rounding } = useEdgesPrefs();
 
   const persistBankroll = useCallback((v: number) => {
-    setBankroll(v);
-    try {
-      window.localStorage.setItem(BANKROLL_KEY, String(v));
-    } catch {}
+    persistBankrollPref(clamp(v, 10, 10_000_000));
   }, []);
   const persistKelly = useCallback((v: number) => {
-    setKellyFrac(v);
-    try {
-      window.localStorage.setItem(KELLY_FRAC_KEY, String(v));
-    } catch {}
+    persistKellyFracPref(clamp(v, 0.01, 1));
   }, []);
   const persistRound = useCallback((v: RoundIncrement) => {
-    setRounding(v);
-    try {
-      window.localStorage.setItem(ROUND_KEY, String(v));
-    } catch {}
+    persistRoundingPref(v);
   }, []);
 
   const math = computeWorkbenchMath(op, {
@@ -118,6 +91,17 @@ export function Workbench({
         `EV ${op.edge_pct >= 0 ? "+" : ""}${op.edge_pct.toFixed(2)}%`,
       );
       parts.push(`Fair ${formatAmerican(op.raw.fair_price_american)}`);
+    } else if (op.mode === "profit_boost") {
+      parts.push(
+        `Conv ${op.raw.conversion_pct.toFixed(2)}% @ ${op.raw.boost_pct}% boost`,
+      );
+      parts.push(
+        `Boost ${formatAmerican(op.raw.boost_leg.original_price_american)} → ${formatAmerican(op.raw.boost_leg.boosted_price_american)} on ${op.raw.boost_leg.book}`,
+      );
+      parts.push(
+        `Hedge ${formatAmerican(op.raw.hedge_leg.price_american)} on ${op.raw.hedge_leg.book}`,
+      );
+      parts.push(`Hold ${op.raw.hold_pct >= 0 ? "+" : ""}${op.raw.hold_pct.toFixed(2)}%`);
     } else if (op.mode === "arb") {
       parts.push(`ROI +${op.raw.roi_pct.toFixed(2)}%`);
     } else if (op.mode === "low_hold") {
@@ -389,6 +373,29 @@ export function Workbench({
               </div>
             </>
           )}
+
+          {/* Larger sparkline — the table row already shows a 40×12 version;
+              here we give the workbench more real-estate so the user can
+              eyeball micro-trends before firing. Placeholder synthetic data
+              until a time-series endpoint lands. */}
+          <div className="flex items-center justify-between pt-1 border-t border-border-subtle">
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase tracking-wider text-text-3">
+                Edge over 15m
+              </span>
+              <span className="text-[10px] text-text-3/70">
+                Placeholder — live feed coming
+              </span>
+            </div>
+            <EdgeSparkline
+              seedKey={`${op.event_id}|${op.market_kind}|${op.point ?? ""}|${op.mode}`}
+              currentEdge={op.edge_pct}
+              width={120}
+              height={32}
+              samples={24}
+              ariaLabel="Edge trend over the last 15 minutes"
+            />
+          </div>
 
           <div className="flex flex-wrap gap-1 pt-1">
             {op.also_in_arb && op.mode !== "arb" && (

@@ -40,8 +40,10 @@ def _try_low_hold_pair(
     imp_a = american_to_implied_prob(best_a["price_american"])
     imp_b = american_to_implied_prob(best_b["price_american"])
     total = imp_a + imp_b
-    if total <= 1.0:
-        return None  # arbitrage territory — belongs on /arbitrage
+    if total < 1.0:
+        return None  # strict arbitrage territory — belongs on /arbitrage
+    # total == 1.0 → 0% hold (perfectly fair line). Inclusive here so the
+    # low-hold page surfaces it as the cleanest possible no-vig pair.
     hold = _hold_pct(imp_a, imp_b)
     if hold > max_hold_pct:
         return None

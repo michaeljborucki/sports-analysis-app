@@ -1,0 +1,97 @@
+# WNBA (basketball_wnba) market configuration.
+#
+# Coverage probe (2026-05-09): Odds API exposes the full NBA-style market
+# tree for WNBA, with 37 books on the marquee event. Coral33's catalog is
+# narrower — game-line + 1H + Q1 only, no alts / props / GPROPS. So WNBA
+# cross-shop with C33 lives in those three tiers; alts and props are
+# Odds-API-only here (same pattern as UFC/Boxing).
+#
+# QUOTA WARNING: full periods + props × 5 regions × 5min cadence on a
+# 6-game slate runs ~3M quota/day. Drop a tier in here if the budget
+# tightens.
+
+[main]
+enabled          = true
+interval_seconds = 300
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets          = ["h2h", "spreads", "totals"]
+
+[alternates]
+enabled          = true
+interval_seconds = 300
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets = [
+  "alternate_spreads",
+  "alternate_totals",
+  "team_totals",
+  "alternate_team_totals",
+  "h2h_lay",                  # exchange-only (Betfair/Matchbook/Smarkets)
+]
+
+[periods]
+enabled          = true
+interval_seconds = 300
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+# Q2/Q3/Q4 + 2H exist on the Odds API but are sparse (3-5 books each on
+# the marquee event). Including them anyway — incremental quota cost is
+# minor and the data lights up the per-quarter view when books post it.
+markets = [
+  "h2h_h1", "spreads_h1", "totals_h1",
+  "h2h_h2", "spreads_h2", "totals_h2",
+  "h2h_q1", "spreads_q1", "totals_q1",
+  "h2h_q2", "spreads_q2", "totals_q2",
+  "h2h_q3", "spreads_q3", "totals_q3",
+  "h2h_q4", "spreads_q4", "totals_q4",
+  "alternate_spreads_h1", "alternate_totals_h1",
+  "alternate_spreads_q1", "alternate_totals_q1",
+]
+
+[player_props]
+enabled             = true
+interval_seconds    = 300
+regions             = ["us", "us2", "us_ex", "eu", "uk"]
+games_window_hours  = 6
+# Probed coverage on 2026-05-09: blocks/steals/turnovers/field_goals do
+# NOT come back for WNBA (unlike NBA). Skip them — re-add if Odds API
+# expands later.
+markets = [
+  "player_points",
+  "player_rebounds",
+  "player_assists",
+  "player_threes",
+  "player_points_rebounds_assists",
+  "player_double_double",
+  "player_triple_double",
+  "player_first_basket",
+  # Alternates (per-stat ladders)
+  "player_points_alternate",
+  "player_rebounds_alternate",
+  "player_assists_alternate",
+  "player_threes_alternate",
+]
+
+[on_demand]
+enabled          = true
+debounce_seconds = 60
+
+# Picks filter — bet types surfaced on /picks/wnba once a wnba-agents
+# directory exists. Until then picks endpoint returns no_picks_today.
+[picks]
+include_bet_types = [
+  "moneyline",
+  "spread",
+  "total",
+  "team_total_home",
+  "team_total_away",
+  "first_half_ml",
+  "first_half_spread",
+  "first_half_total",
+  "first_quarter_ml",
+  "first_quarter_spread",
+  "first_quarter_total",
+  "player_points",
+  "player_rebounds",
+  "player_assists",
+  "player_threes",
+  "player_points_rebounds_assists",
+]

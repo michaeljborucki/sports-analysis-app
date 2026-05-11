@@ -2,6 +2,7 @@
 import useSWR from "swr";
 import { useState } from "react";
 import clsx from "clsx";
+import { Zap } from "lucide-react";
 
 import { apiPaths, fetchJson, type FetcherStatus } from "@/lib/api";
 
@@ -52,6 +53,12 @@ export function FetcherToggle() {
           running ? "bg-price-up live-dot" : "bg-text-3"
         )}
         style={running ? undefined : { boxShadow: "none" }}
+      />
+      <Zap
+        size={12}
+        aria-hidden
+        fill={running ? "currentColor" : "none"}
+        strokeWidth={1.8}
       />
       Fetcher {running ? "ON" : "OFF"}
     </button>

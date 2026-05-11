@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import clsx from "clsx";
+import { Check, Cog, Eye, Save } from "lucide-react";
 
 import {
   apiPaths,
@@ -13,6 +14,7 @@ import {
 import { RefreshButton } from "@/components/refresh-button";
 import { BookVisibilitySettings } from "@/components/book-visibility-settings";
 import { Coral33RefreshButton } from "@/components/coral33-refresh-button";
+import { DensityToggle } from "@/components/density-toggle";
 import { DEFAULT_VISIBLE_BOOKS } from "@/lib/books";
 import { useVisibleBooks } from "@/lib/use-visible-books";
 
@@ -69,7 +71,13 @@ function TriCheckbox({ state }: { state: "on" | "off" | "mixed" }) {
         state === "off" && "border-text-3"
       )}
     >
-      {state === "on" ? "✓" : state === "mixed" ? "–" : ""}
+      {state === "on" ? (
+        <Check size={10} strokeWidth={3} aria-hidden />
+      ) : state === "mixed" ? (
+        "–"
+      ) : (
+        ""
+      )}
     </span>
   );
 }
@@ -254,7 +262,10 @@ export default function SettingsPage() {
     <div className="flex flex-col gap-4">
       <header className="flex items-end justify-between gap-4 flex-wrap">
         <div className="flex items-baseline gap-4">
-          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+          <h1 className="inline-flex items-center gap-2 text-2xl font-bold tracking-tight">
+            <Cog size={20} aria-hidden className="text-text-2" />
+            Settings
+          </h1>
           <span className="text-xs text-text-3 tabular max-w-xl">
             Toggle sports and markets off to skip them in the fetcher. Saves
             hot-reload the running fetcher — no backend restart needed.
@@ -279,7 +290,7 @@ export default function SettingsPage() {
             onClick={save}
             disabled={!dirty || saving}
             className={clsx(
-              "h-8 px-4 rounded-md text-xs font-medium border transition-colors tracking-wide",
+              "inline-flex items-center gap-1.5 h-8 px-4 rounded-md text-xs font-medium border transition-colors tracking-wide",
               dirty
                 ? "bg-accent/15 border-accent/50 text-accent hover:bg-accent/20"
                 : "bg-transparent border-border-subtle/50 text-text-3/60 cursor-default opacity-60",
@@ -291,6 +302,7 @@ export default function SettingsPage() {
                 : "Nothing to save — toggle a sport, market, tier, or visible book to enable."
             }
           >
+            {dirty && !saving && <Save size={12} aria-hidden />}
             {saving ? "Saving…" : dirty ? "Save changes" : "Nothing to save"}
           </button>
           <RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />
@@ -305,6 +317,16 @@ export default function SettingsPage() {
       {isLoading && !data && (
         <div className="text-text-2 text-sm">Loading settings…</div>
       )}
+
+      {/* Display preferences — density toggle writes the html[data-density]
+          attribute so the density CSS vars (--row-h, --row-pad-*) cascade
+          across every table. Persisted in localStorage (density_v1). */}
+      <section className="border border-border-subtle rounded-md bg-bg-0 px-4 py-3">
+        <h2 className="text-xs uppercase tracking-wider text-text-3 font-semibold mb-2">
+          Display preferences
+        </h2>
+        <DensityToggle />
+      </section>
 
       <BookVisibilitySettings
         value={visibleBooks}

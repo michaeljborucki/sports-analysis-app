@@ -133,6 +133,53 @@ export function freeBetConvert(
   };
 }
 
+// ─────────────────────── Per-row stake (matches table) ──────────
+
+/**
+ * Return the same raw $ amount that `StakeCell` renders for this row.
+ * Used by the Edges page's `minStake` filter so that "≥ $X" matches what
+ * the user sees in the column.
+ *
+ * Mode contract — must stay in lockstep with `StakeCell` in
+ * `components/edges/edges-table.tsx`:
+ *   arb / low_hold → same `stake` for every row (the global "Stake" input)
+ *   ev             → Kelly stake from bankroll × fair-prob × Kelly fraction
+ *   free_bet       → hedge stake = round((stake / 100) × hedge_per_100)
+ */
+export function computeRowStakeDollars(
+  op: EdgeOpportunity,
+  cfg: {
+    bankroll: number;
+    kellyFrac: number;
+    rounding: RoundIncrement;
+    /** "Stake" / "Free face" global input from the page filter row. */
+    stake: number;
+  },
+): number {
+  if (op.mode === "arb" || op.mode === "low_hold") return cfg.stake;
+  if (op.mode === "ev") {
+    return kellyStake(
+      cfg.bankroll,
+      op.raw.offered_price_american,
+      op.raw.fair_probability,
+      cfg.kellyFrac,
+      cfg.rounding,
+    ).stake;
+  }
+  if (op.mode === "profit_boost") {
+    // Total stake = boost stake + hedge stake. The "stake" input the user
+    // configures is the BOOSTED-LEG cash stake; hedge is sized to lock
+    // equal profit.
+    const hedge = roundStake(
+      (cfg.stake / 100) * op.raw.hedge_stake_per_100_boost,
+      cfg.rounding,
+    );
+    return cfg.stake + hedge;
+  }
+  // free_bet
+  return roundStake((cfg.stake / 100) * op.raw.hedge_stake_per_100, cfg.rounding);
+}
+
 // ─────────────────────── Mode-aware facade ───────────────────────
 
 export interface WorkbenchConfig {
@@ -190,6 +237,26 @@ export function computeWorkbenchMath(
           leg.role === "offered"
             ? `$${k.stake.toLocaleString()}`
             : "(fair)",
+      })),
+    };
+  }
+  if (op.mode === "profit_boost") {
+    // The user configures `cfg.stake` as the boost-leg cash stake. Hedge
+    // sizes to lock equal profit on either outcome.
+    const hedgeStake = roundStake(
+      (cfg.stake / 100) * op.raw.hedge_stake_per_100_boost,
+      cfg.rounding,
+    );
+    const total = cfg.stake + hedgeStake;
+    const profit = total * (op.raw.conversion_pct / 100);
+    return {
+      primary_stake_label: `$${total.toLocaleString()}`,
+      profit_label: `+$${profit.toFixed(2)} guaranteed (${op.raw.conversion_pct.toFixed(2)}% conversion @ ${op.raw.boost_pct}% boost)`,
+      legs: op.legs.map(leg => ({
+        stake_label:
+          leg.role === "offered"
+            ? `$${cfg.stake.toLocaleString()} boost`
+            : `$${hedgeStake.toLocaleString()} hedge`,
       })),
     };
   }

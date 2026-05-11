@@ -9,7 +9,9 @@ import { RefreshCw } from "lucide-react";
  *   const { mutate, isValidating } = useSWR(...);
  *   <RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />
  *
- * While `isValidating` is true the button is disabled and the icon spins.
+ * Always cache-only — re-reads whatever the backend has cached without
+ * triggering a live API pull. Background fetchers (Odds API, coral33)
+ * keep the cache fresh on their own polling cadence.
  */
 export function RefreshButton({
   onRefresh,
@@ -24,6 +26,7 @@ export function RefreshButton({
       onClick={onRefresh}
       disabled={isValidating}
       aria-label="Refresh"
+      title="Re-read the cache"
       className={clsx(
         "inline-flex items-center gap-2 h-8 px-3 rounded-md text-xs font-medium",
         "bg-bg-1 border border-border-subtle text-text-2 hover:text-text-1",

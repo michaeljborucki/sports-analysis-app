@@ -22,6 +22,22 @@ subtypes_main = ["NBA"]
 subtypes_alt  = ["NBA ALT LINE"]
 subtypes_prop = ["NBAPLAYERPRO"]
 periods = ["Game", "1st Half", "2nd Half", "1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter"]
+# NBA GPROPS ("score first", "10 pts first", "15 pts first" etc.) — 2-way
+# team-level game props with MoneyLine1/2.
+[[sports.nba.extras]]
+subtype = "NBA GPROPS"
+kind    = "game_props"
+
+[sports.wnba]
+sport_type    = "BASKETBALL"
+# Probed 2026-05-09: only `WNBA` (game/1st Half/1st Quarter) is in the
+# coral33 catalog. ALT LINE / PLAYERPRO / GPROPS / SERIES / ADJ SERI all
+# returned 0 lines. Cross-shop with Odds API on these three periods.
+subtypes_main = ["WNBA"]
+subtypes_alt  = []
+subtypes_prop = []
+periods = ["Game", "1st Half", "1st Quarter"]
+
 
 [sports.nhl]
 sport_type    = "HOCKEY"
@@ -29,6 +45,11 @@ subtypes_main = ["NHL"]
 subtypes_alt  = ["HOCKEY ALTER"]
 subtypes_prop = ["NHL GAME PRO"]
 periods = ["Game", "1st Period", "2nd Period", "3rd Period"]
+# NHL REG TIME — regulation-only spread + total (teams end with "(Reg Time)").
+# Emits spreads_reg_time / totals_reg_time market keys.
+[[sports.nhl.extras]]
+subtype = "NHL REG TIME"
+kind    = "reg_time"
 
 [sports.mlb]
 sport_type    = "BASEBALL"
@@ -36,6 +57,18 @@ subtypes_main = ["MLB"]
 subtypes_alt  = ["MLB ALT LINE"]
 subtypes_prop = ["BASEPLAPROP"]
 periods = ["Game", "1st 5 Innings"]
+# H-R-E — combined hits+runs+errors total (teams suffixed " H+R+E").
+# TEAMSCOR 1ST — 2-way ML, which team scores first (suffix " score first").
+# SCORE IN 1ST — Yes/No, does either team score in the 1st inning.
+[[sports.mlb.extras]]
+subtype = "H-R-E"
+kind    = "hre"
+[[sports.mlb.extras]]
+subtype = "TEAMSCOR 1ST"
+kind    = "team_score_first"
+[[sports.mlb.extras]]
+subtype = "SCORE IN 1ST"
+kind    = "score_first_inning"
 
 [sports.baseball_ncaa]
 sport_type    = "BASEBALL"
@@ -43,22 +76,282 @@ subtypes_main = ["NCAABASEBALL"]
 subtypes_alt  = []                      # not offered by coral33 for NCAA
 periods = ["Game"]
 
+[sports.asian_baseball]
+sport_type    = "BASEBALL"
+# coral33's WBC subtype (display "Asian Baseball") bundles NPB + KBO in one
+# feed. Teams come through with full names ("Yomiuri Giants", "NC Dinos")
+# that largely match Odds API conventions — aliases added as needed below.
+subtypes_main = ["WBC"]
+subtypes_alt  = []
+periods = ["Game"]
+
+[sports.soccer]
+sport_type    = "SOCCER"
+# Curated top-tier league set. Extend the `subtypes_main` list when you want
+# finer coverage — each subtype is one extra coral33 call per cycle.
+# Subtype literals come from the coral33 Get_SportsLeagues catalog probe
+# (some are truncated; spaces are LITERAL, not URL-escaped).
+subtypes_main = [
+  "ENG PREM",       # English Premier League
+  "SPA LA LIGA",    # Spain La Liga
+  "ITA SER A",      # Italy Serie A
+  "GER BUNDE",      # Germany Bundesliga
+  "FRE LIGUE1",     # France Ligue 1
+  "UEFA CH LEA",    # UEFA Champions League
+  "USA MLS",        # USA MLS
+  "MEX - PR DIV",   # Mexico Primera Division (Liga MX)
+  "BRA - SER A",    # Brazil Serie A
+  "JAP J LEA",      # Japan J-League (also carries other Asian leagues per catalog)
+  "ARG PRI DIV",    # Argentina Primera Division
+  "WORLD CUP",      # FIFA World Cup / qualifiers (catch-all when hot)
+]
+subtypes_alt  = []   # no soccer alt subtypes in catalog
+periods = ["Game"]
+
+
 [sports.tennis]
 sport_type    = "TENNIS"
-subtypes_main = []                      # no live ATP/WTA match subtypes in
-                                        # current catalog — populate
-                                        # dynamically during tournaments
+# `ATP MATCHU` is the LITERAL sportSubType coral33 emits (truncated at 10
+# chars in their catalog — confirmed via Get_SportsLeagues probe). Full-
+# length `WTA MATCHUPS` is the sibling. Each returns two lines per match:
+# a bare-name line (carries h2h + set-level totals — only h2h is kept),
+# and a " Games"-suffixed line (carries game-level spread + total — maps
+# to Odds API's `spreads` / `totals` tennis keys).
+subtypes_main = ["ATP MATCHU", "WTA MATCHUPS"]
+subtypes_alt  = []                      # no tennis alt subtypes in catalog
+periods = ["Game"]
+
+
+[sports.ufc]
+sport_type    = "MARTIAL ARTS"
+# Two UFC subtypes — main PPV cards + Fight Night events. Both are h2h
+# primarily; UFC2 (Fight Night) sometimes has rounds-totals. Confirmed
+# via probe 2026-05-01: Sean Strickland vs Khamzat Chimaev (UFC 328),
+# Kody Steele vs Dom Mar Fan (Fight Night), etc.
+subtypes_main = ["MMA - UFC", "MMA - UFC2"]
+subtypes_alt  = []                      # no MMA alts in catalog
+periods = ["Game"]
+
+
+[sports.boxing]
+sport_type    = "BOXING"
+# Five separate "card" subtypes — coral33 lists each headline boxing card
+# as its own league key. They all map to the same Odds API key
+# (boxing_boxing) and resolve to distinct event_ids at match time. Probe
+# confirmed all five active 2026-05-01.
+subtypes_main = [
+  "MATCHUPS",       # Asian/Japanese headline (Tokyo Dome)
+  "BOX MATCHU",     # secondary card (Aleem vs Leo)
+  "BOX FIGHTS",     # secondary card (Dubois vs Wardley)
+  "BOXING OTHER",   # ZUFFA Boxing / undercard set
+  "BOXING",         # main US-headlined card (Munguia, Benavidez)
+]
 subtypes_alt  = []
 periods = ["Game"]
 
 
+[sports.cricket]
+sport_type    = "CRICKET"
+# Two subtypes — IPL (mislabeled "ICCINTERCUP") + International T20.
+# h2h-only on both sides (Odds API does NOT expose cricket totals).
+# Probe confirmed 2026-05-01: Chennai Super Kings vs Mumbai Indians (IPL),
+# Bangladesh vs New Zealand (International T20).
+subtypes_main = ["ICCINTERCUP", "TWENTY20INTE"]
+subtypes_alt  = []
+periods = ["Game"]
+
+
+# ─── Team aliases ────────────────────────────────────────────────────
+# Short-form → full canonical (Odds API) name, keyed by lowercase-normalized
+# alias (punctuation stripped). Applied in both directions by the matcher,
+# so "suns" on the coral33 side and "phoenix suns" on the Odds API side both
+# resolve to the same key.
+#
+# Primary motivation: coral33's *_ALT_LINE subtypes return short team names
+# like "Suns Alt Line" → strips to "Suns" → must alias to "Phoenix Suns".
+# Without this mapping every alt-tier row was dropped as an orphan.
+
 [team_aliases.nba]
-# Empty — populate as orphan-rate monitoring surfaces mismatches.
+hawks           = "atlanta hawks"
+celtics         = "boston celtics"
+nets            = "brooklyn nets"
+hornets         = "charlotte hornets"
+bulls           = "chicago bulls"
+cavaliers       = "cleveland cavaliers"
+cavs            = "cleveland cavaliers"
+mavericks       = "dallas mavericks"
+mavs            = "dallas mavericks"
+nuggets         = "denver nuggets"
+pistons         = "detroit pistons"
+warriors        = "golden state warriors"
+rockets         = "houston rockets"
+pacers          = "indiana pacers"
+clippers        = "los angeles clippers"
+lakers          = "los angeles lakers"
+grizzlies       = "memphis grizzlies"
+heat            = "miami heat"
+bucks           = "milwaukee bucks"
+timberwolves    = "minnesota timberwolves"
+wolves          = "minnesota timberwolves"
+pelicans        = "new orleans pelicans"
+knicks          = "new york knicks"
+thunder         = "oklahoma city thunder"
+magic           = "orlando magic"
+"76ers"           = "philadelphia 76ers"
+sixers          = "philadelphia 76ers"
+suns            = "phoenix suns"
+"trail blazers"   = "portland trail blazers"
+blazers         = "portland trail blazers"
+kings           = "sacramento kings"
+spurs           = "san antonio spurs"
+raptors         = "toronto raptors"
+jazz            = "utah jazz"
+wizards         = "washington wizards"
 
 [team_aliases.nhl]
+ducks           = "anaheim ducks"
+coyotes         = "arizona coyotes"
+mammoth         = "utah mammoth"
+"utah hc"         = "utah mammoth"
+bruins          = "boston bruins"
+sabres          = "buffalo sabres"
+flames          = "calgary flames"
+hurricanes      = "carolina hurricanes"
+canes           = "carolina hurricanes"
+blackhawks      = "chicago blackhawks"
+avalanche       = "colorado avalanche"
+avs             = "colorado avalanche"
+"blue jackets"    = "columbus blue jackets"
+stars           = "dallas stars"
+"red wings"       = "detroit red wings"
+oilers          = "edmonton oilers"
+panthers        = "florida panthers"
+kings           = "los angeles kings"     # NHL context — distinct from NBA "kings" alias (Sacramento) via per-sport scoping
+"la kings"        = "los angeles kings"
+wild            = "minnesota wild"
+canadiens       = "montréal canadiens"
+habs            = "montréal canadiens"
+canucks         = "vancouver canucks"
+predators       = "nashville predators"
+preds           = "nashville predators"
+devils          = "new jersey devils"
+islanders       = "new york islanders"
+isles           = "new york islanders"
+rangers         = "new york rangers"       # NHL context — distinct from MLB Texas Rangers via per-sport scoping
+senators        = "ottawa senators"
+sens            = "ottawa senators"
+flyers          = "philadelphia flyers"
+penguins        = "pittsburgh penguins"
+pens            = "pittsburgh penguins"
+sharks          = "san jose sharks"
+kraken          = "seattle kraken"
+lightning       = "tampa bay lightning"
+bolts           = "tampa bay lightning"
+"maple leafs"     = "toronto maple leafs"
+leafs           = "toronto maple leafs"
+"golden knights"  = "vegas golden knights"
+capitals        = "washington capitals"
+caps            = "washington capitals"
+jets            = "winnipeg jets"
 
 [team_aliases.mlb]
+diamondbacks    = "arizona diamondbacks"
+dbacks          = "arizona diamondbacks"
+"d backs"         = "arizona diamondbacks"
+braves          = "atlanta braves"
+orioles         = "baltimore orioles"
+os              = "baltimore orioles"
+"red sox"         = "boston red sox"
+cubs            = "chicago cubs"
+"white sox"       = "chicago white sox"
+reds            = "cincinnati reds"
+guardians       = "cleveland guardians"
+rockies         = "colorado rockies"
+tigers          = "detroit tigers"
+astros          = "houston astros"
+royals          = "kansas city royals"
+angels          = "los angeles angels"
+"la angels"       = "los angeles angels"
+dodgers         = "los angeles dodgers"
+"la dodgers"      = "los angeles dodgers"
+marlins         = "miami marlins"
+brewers         = "milwaukee brewers"
+twins           = "minnesota twins"
+mets            = "new york mets"
+yankees         = "new york yankees"
+athletics       = "athletics"               # identity — they really are just "Athletics" now
+phillies        = "philadelphia phillies"
+pirates         = "pittsburgh pirates"
+padres          = "san diego padres"
+giants          = "san francisco giants"
+mariners        = "seattle mariners"
+cardinals       = "st louis cardinals"
+cards           = "st louis cardinals"
+rays            = "tampa bay rays"
+rangers         = "texas rangers"           # MLB context — distinct from NHL "rangers" alias (NY Rangers) via per-sport scoping
+"texas rangers"   = "texas rangers"
+"blue jays"       = "toronto blue jays"
+jays            = "toronto blue jays"
+nationals       = "washington nationals"
+nats            = "washington nationals"
+
+[team_aliases.asian_baseball]
+# coral33 uses short forms (no region prefix); Odds API uses the full
+# "{region} {mascot}" canonical. Normalization lowercases + strips
+# punctuation, so e.g. "Hokkaido Nippon-Ham Fighters" → "hokkaido nippon
+# ham fighters" — the alias keys below are in that normalized form.
+# NPB (Nippon Professional Baseball, 12 teams):
+"yakult swallows"         = "tokyo yakult swallows"
+"nippon ham fighters"     = "hokkaido nippon ham fighters"
+"yokohama baystars"       = "yokohama dena baystars"
+"hiroshima carp"          = "hiroshima toyo carp"
+"seibu lions"             = "saitama seibu lions"
+"softbank hawks"          = "fukuoka softbank hawks"
+"rakuten eagles"          = "tohoku rakuten golden eagles"
+"lotte marines"           = "chiba lotte marines"
+# Remaining NPB identity-match (no region prefix in canonical):
+#   chunichi dragons, hanshin tigers, orix buffaloes, yomiuri giants
+# KBO (Korean Baseball Organization, 10 teams):
+"kt wiz suwon"            = "kt wiz"         # coral suffixes city
+# Remaining KBO identity-match:
+#   doosan bears, hanwha eagles, kia tigers, kiwoom heroes, lg twins,
+#   lotte giants, nc dinos, samsung lions, ssg landers
+
+[team_aliases.soccer]
+# Soccer team naming is a mess — Odds API tends toward full club names
+# ("Manchester City"), coral33 sometimes shortens ("Kasimpasa"). Add
+# aliases when orphan logs surface a specific miss.
 
 [team_aliases.baseball_ncaa]
+# coral33 sends bare school names ("Duke", "North Carolina"); Odds API
+# uses school+mascot ("Duke Blue Devils", "North Carolina Tar Heels").
+#
+# The event matcher's word-prefix fallback (event_matcher.py) handles the
+# "{school}" ↔ "{school} {mascot…}" mapping algorithmically for all 300+
+# D-I programs without a maintained list. Entries below exist only to:
+#   a) DISAMBIGUATE bare names that prefix-match multiple candidates
+#      (e.g., "Miami" → Miami FL vs Miami OH; pick the one you care about)
+#   b) OVERRIDE the prefix heuristic when Odds API uses a non-obvious
+#      canonical form (e.g., abbreviations, punctuation)
+# Add entries only when orphan logs surface a real mismatch.
 
 [team_aliases.tennis]
+
+[team_aliases.ufc]
+# UFC fighter names are typically identical across coral33 and Odds API
+# (full first + last). Add aliases here only when orphan logs surface a
+# real mismatch (nicknames, accent variants, etc.).
+
+[team_aliases.boxing]
+# Same as UFC — fighter names usually identity-match.
+
+[team_aliases.cricket]
+# IPL franchise names are largely canonical across providers. Add aliases
+# only when orphans surface (e.g., short form like "RCB" vs "Royal
+# Challengers Bangalore").
+
+[team_aliases.wnba]
+# All 4 visible games on the 2026-05-09 probe matched canonical Odds API
+# names (Atlanta Dream, Minnesota Lynx, Chicago Sky, Portland Fire).
+# Add aliases reactively as orphan logs surface short forms during the
+# season — e.g. "Liberty" → "new york liberty".

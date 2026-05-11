@@ -1,0 +1,23 @@
+# Soccer market configuration (pre-match only).
+#
+# `h2h` for soccer is 3-way (home/draw/away). Odds API uses the `h2h` key
+# for both 2-way (US sports) and 3-way (soccer) moneylines depending on the
+# sport — the response simply carries three outcomes instead of two.
+#
+# QUOTA: ~12 curated leagues × 3 markets × 5 regions per cycle. 180s tick
+# interval keeps this below 10 req/min. Extend the league set in sports.py
+# if you care about finer league coverage; each added league is one extra
+# request per cycle.
+
+[main]
+enabled          = true
+interval_seconds = 300
+regions          = ["us", "us2", "us_ex", "uk", "eu"]
+markets = [
+  "h2h",
+  "spreads",
+  "totals",
+]
+
+# No alternates / periods / player_props for soccer pre-match — coral33
+# doesn't offer them in catalog and Odds API soccer alt coverage is thin.

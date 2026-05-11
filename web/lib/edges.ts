@@ -16,15 +16,17 @@ import type {
   EVOpportunity,
   FreeBetOpportunity,
   LowHoldOpportunity,
+  ProfitBoostOpportunity,
 } from "@/lib/api";
 
-export type EdgeMode = "arb" | "low_hold" | "ev" | "free_bet";
+export type EdgeMode = "arb" | "low_hold" | "ev" | "free_bet" | "profit_boost";
 
 export const EDGE_MODES: readonly EdgeMode[] = [
   "arb",
   "low_hold",
   "ev",
   "free_bet",
+  "profit_boost",
 ] as const;
 
 export const MODE_LABEL: Record<EdgeMode, string> = {
@@ -32,6 +34,7 @@ export const MODE_LABEL: Record<EdgeMode, string> = {
   low_hold: "LH",
   ev: "EV",
   free_bet: "FB",
+  profit_boost: "PB",
 };
 
 export const MODE_LONG_LABEL: Record<EdgeMode, string> = {
@@ -39,6 +42,7 @@ export const MODE_LONG_LABEL: Record<EdgeMode, string> = {
   low_hold: "Low Hold",
   ev: "+EV",
   free_bet: "Free Bet",
+  profit_boost: "Profit Boost",
 };
 
 /** One priced leg — one or two per opportunity. */
@@ -100,7 +104,8 @@ export type EdgeOpportunity =
   | (EdgeBase & { mode: "arb"; raw: ArbOpportunity })
   | (EdgeBase & { mode: "low_hold"; raw: LowHoldOpportunity })
   | (EdgeBase & { mode: "ev"; raw: EVOpportunity })
-  | (EdgeBase & { mode: "free_bet"; raw: FreeBetOpportunity });
+  | (EdgeBase & { mode: "free_bet"; raw: FreeBetOpportunity })
+  | (EdgeBase & { mode: "profit_boost"; raw: ProfitBoostOpportunity });
 
 // ───────────────────────── merge functions ─────────────────────────
 
@@ -261,8 +266,52 @@ export function fromFreeBet(
   };
 }
 
+export function fromProfitBoost(
+  op: ProfitBoostOpportunity,
+  idx: number,
+): EdgeOpportunity {
+  // Two-leg conversion shape, mirroring free_bet. Boost leg is "offered"
+  // (price shown is the post-boost American line), hedge leg is "hedge".
+  const legs: EdgeLeg[] = [
+    {
+      book: op.boost_leg.book,
+      outcome_name: op.boost_leg.outcome_name,
+      price_american: op.boost_leg.boosted_price_american,
+      point: op.boost_leg.point,
+      role: "offered",
+    },
+    {
+      book: op.hedge_leg.book,
+      outcome_name: op.hedge_leg.outcome_name,
+      price_american: op.hedge_leg.price_american,
+      point: op.hedge_leg.point,
+      role: "hedge",
+    },
+  ];
+  return {
+    mode: "profit_boost",
+    raw: op,
+    row_key: `pb_${op.event_id}_${op.market_kind}_${op.point ?? "na"}_${op.boost_leg.book}+${op.hedge_leg.book}_${idx}`,
+    sport_key: op.sport_key,
+    event_id: op.event_id,
+    home_team: op.home_team,
+    away_team: op.away_team,
+    commence_time: op.commence_time,
+    market_kind: op.market_kind,
+    point: op.point,
+    // Conversion % = unified edge metric. Higher = more locked-in profit.
+    edge_pct: op.conversion_pct,
+    legs,
+    row_age_s: 0,
+    stale: false,
+    also_in_arb: false,
+    suspicious: false,
+    anchor: null,
+  };
+}
+
 /**
- * Merge the four scanner payloads into one list. Each input is
+ * Merge the five scanner payloads into one list. Each input is
  * optional — the page can partially render while some SWR keys are
  * still loading.
  */
@@ -271,12 +320,14 @@ export function mergeEdges(parts: {
   lowHold?: LowHoldOpportunity[];
   ev?: EVOpportunity[];
   freeBet?: FreeBetOpportunity[];
+  profitBoost?: ProfitBoostOpportunity[];
 }): EdgeOpportunity[] {
   const out: EdgeOpportunity[] = [];
   parts.arb?.forEach((op, i) => out.push(fromArb(op, i)));
   parts.lowHold?.forEach((op, i) => out.push(fromLowHold(op, i)));
   parts.ev?.forEach((op, i) => out.push(fromEv(op, i)));
   parts.freeBet?.forEach((op, i) => out.push(fromFreeBet(op, i)));
+  parts.profitBoost?.forEach((op, i) => out.push(fromProfitBoost(op, i)));
   return out;
 }
 
@@ -296,44 +347,205 @@ export function formatEdgePct(op: EdgeOpportunity): string {
       return `${op.raw.ev_pct >= 0 ? "+" : ""}${op.raw.ev_pct.toFixed(2)}%`;
     case "free_bet":
       return `${op.raw.conversion_pct.toFixed(1)}%`;
+    case "profit_boost":
+      // Conversion % is the locked-in profit fraction. Always positive
+      // for emitted rows (negative-conversion pairs are filtered out).
+      return `${op.raw.conversion_pct.toFixed(2)}%`;
   }
+}
+
+/** Decompose a market_key into (family, alt-flag, period suffix label).
+ * `spreads_h1`           → { family: "spreads", alt: false, period: " H1" }
+ * `alternate_totals_q3`  → { family: "totals", alt: true,  period: " Q3" }
+ * `h2h_1st_5_innings`    → { family: "h2h", alt: false, period: " F5" }
+ * `team_totals`          → { family: "team_totals", alt: false, period: "" }
+ */
+function parseMarketKind(mk: string): {
+  family: "h2h" | "spreads" | "totals" | "team_totals" | null;
+  alt: boolean;
+  period: string;
+} {
+  // Map period suffix tokens (longest first to avoid `_h1` matching inside
+  // `_1st_5_innings`).
+  const periodMap: ReadonlyArray<readonly [RegExp, string]> = [
+    [/_1st_5_innings$/, " F5"],
+    [/_(h[12])$/, ""],   // value filled below
+    [/_(q[1-4])$/, ""],
+    [/_(p[1-3])$/, ""],
+  ];
+  let period = "";
+  let base = mk;
+  for (const [re, fixed] of periodMap) {
+    const m = base.match(re);
+    if (!m) continue;
+    period = fixed || ` ${m[1].toUpperCase()}`;
+    base = base.slice(0, -m[0].length);
+    break;
+  }
+  let alt = false;
+  if (base.startsWith("alternate_")) {
+    alt = true;
+    base = base.slice("alternate_".length);
+  }
+  let family: "h2h" | "spreads" | "totals" | "team_totals" | null = null;
+  if (base === "h2h" || base === "h2h_3_way") family = "h2h";
+  else if (base === "spreads") family = "spreads";
+  else if (base === "totals") family = "totals";
+  else if (base === "team_totals") family = "team_totals";
+  return { family, alt, period };
 }
 
 /** Short market label with period annotations. */
 export function marketLabel(op: EdgeOpportunity): string {
   const mk = op.market_kind;
-  if (mk === "h2h" || mk === "h2h_3_way") return "Moneyline";
-  if (mk === "totals") return op.point != null ? `Total ${op.point}` : "Total";
-  if (mk === "alternate_totals")
-    return op.point != null ? `Alt Total ${op.point}` : "Alt Total";
-  if (mk === "spreads")
-    return op.point != null ? `Spread ±${Math.abs(op.point)}` : "Spread";
-  if (mk === "alternate_spreads")
-    return op.point != null ? `Alt Spread ±${Math.abs(op.point)}` : "Alt Spread";
-  if (mk === "team_totals")
-    return op.point != null ? `Team Total ${op.point}` : "Team Total";
-  if (mk === "alternate_team_totals")
-    return op.point != null ? `Alt Team Total ${op.point}` : "Alt Team Total";
-  if (/_h[12]$/.test(mk)) return mk.replace(/_h([12])$/, " (H$1)");
-  if (/_q[1-4]$/.test(mk)) return mk.replace(/_q([1-4])$/, " (Q$1)");
-  if (/_p[1-3]$/.test(mk)) return mk.replace(/_p([1-3])$/, " (P$1)");
-  if (/_1st_5_innings$/.test(mk)) return mk.replace(/_1st_5_innings$/, " (F5)");
+  const { family, alt, period } = parseMarketKind(mk);
+  if (family === "h2h") return `Moneyline${period}`;
+  if (family === "totals") {
+    const head = `${alt ? "Alt Total" : "Total"}${period}`;
+    return op.point != null ? `${head} ${op.point}` : head;
+  }
+  if (family === "spreads") {
+    const head = `${alt ? "Alt Spread" : "Spread"}${period}`;
+    return op.point != null ? `${head} ±${Math.abs(op.point)}` : head;
+  }
+  if (family === "team_totals") {
+    const head = `${alt ? "Alt Team Total" : "Team Total"}${period}`;
+    return op.point != null ? `${head} ${op.point}` : head;
+  }
+  // Player props (player_*, batter_*, pitcher_*): pretty-print the
+  // category. The line itself isn't included here — each outcome carries
+  // its own number, so the side label is the right place for it
+  // (see formatOutcomeLabel).
+  if (isPlayerPropMarket(mk)) {
+    return formatPlayerPropLabel(mk);
+  }
+  // Unknown market — surface the raw key so it's at least debuggable.
   return mk;
 }
 
-/** Side-column label for single-leg modes (EV, FB offered leg). */
+function formatPlayerPropLabel(marketKey: string): string {
+  let mk = marketKey;
+  let altPrefix = "";
+  if (mk.endsWith("_alternate")) {
+    altPrefix = "Alt ";
+    mk = mk.slice(0, -"_alternate".length);
+  }
+  // Standard combos get terse labels so the market column doesn't blow
+  // out the table width on long stat names.
+  const combos: Record<string, string> = {
+    // NBA / WNBA / NHL combos
+    player_points_rebounds_assists: "Player PRA",
+    player_points_rebounds: "Player PR",
+    player_points_assists: "Player PA",
+    player_rebounds_assists: "Player RA",
+    player_double_double: "Player Double Double",
+    player_triple_double: "Player Triple Double",
+    player_first_basket: "Player First Basket",
+    // MLB combos
+    batter_hits_runs_rbis: "Batter HRRBI",
+    batter_first_home_run: "Batter First HR",
+    pitcher_record_a_win: "Pitcher Win",
+  };
+  if (mk in combos) {
+    return `${altPrefix}${combos[mk]}`;
+  }
+  // Generic: "<role>_<noun>" → "Role Noun"
+  //   "player_points"        → "Player Points"
+  //   "batter_total_bases"   → "Batter Total Bases"
+  //   "pitcher_strikeouts"   → "Pitcher Strikeouts"
+  const titled = mk.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+  return `${altPrefix}${titled}`;
+}
+
+/**
+ * Player-prop market-key prefixes across all sports we cover. Each book
+ * groups player-level props under one of these:
+ *
+ *   player_*   — NBA, WNBA, NHL, soccer, future NFL/NCAAF
+ *   batter_*   — MLB / NCAA Baseball / Asian Baseball / Mexican Baseball
+ *   pitcher_*  — same baseball family
+ *
+ * Outcome names follow `<Player Name> Over` / `<Player Name> Under` (or
+ * `<Player Name> Yes` / `<Player Name> No` for binary props like
+ * batter_first_home_run). Each player has their own line, so the line
+ * lives at the outcome level — `marketLabel` can't carry it.
+ *
+ * Add to this list when a new prop prefix appears (e.g. `goalie_`,
+ * `quarterback_`); `formatOutcomeLabel` and `marketLabel` both consult it.
+ */
+const PLAYER_PROP_PREFIXES: readonly string[] = [
+  "player_",
+  "batter_",
+  "pitcher_",
+];
+
+function isPlayerPropMarket(marketKind: string): boolean {
+  return PLAYER_PROP_PREFIXES.some(p => marketKind.startsWith(p));
+}
+
+/**
+ * Format an outcome label for any market shape, gluing together the
+ * `outcome_name` (e.g., team name, "Over"/"Under", "Player Name Over") and
+ * the row-level `point` (e.g., -4.5, 215.5, 29.5) so the user always sees
+ * exactly what line they're betting on.
+ *
+ *   spreads      → "Boston Celtics +4.5"  (signed)
+ *   player props → "Victor Wembanyama Over 29.5"  (per-player line, never
+ *                  in marketLabel since each player has their own number)
+ *   team_totals  → "Atlanta Hawks Over 110.5"  (team-specific line, also
+ *                   not in marketLabel because each team has their own)
+ *   alternate_*  → underlying base treatment (alts already have point in
+ *                   the marketLabel ladder, but per-row clarity helps)
+ *   else         → just `outcome_name`  (point either lives in marketLabel
+ *                  or doesn't apply to the bet shape)
+ */
+export function formatOutcomeLabel(
+  outcomeName: string,
+  marketKind: string,
+  point: number | null | undefined,
+): string {
+  if (point == null) return outcomeName;
+  // Player props (player_*, batter_*, pitcher_*): point is per-outcome
+  // (each player has their own line) and marketLabel doesn't include it,
+  // so the side label MUST.
+  if (isPlayerPropMarket(marketKind)) {
+    return `${outcomeName} ${point}`;
+  }
+  const { family } = parseMarketKind(marketKind);
+  // Spreads: signed point bound to the outcome's team.
+  if (family === "spreads") {
+    const sign = point > 0 ? "+" : "";
+    return `${outcomeName} ${sign}${point}`;
+  }
+  // Team totals: per-team line, marketLabel can't carry both teams' lines.
+  if (family === "team_totals") {
+    return `${outcomeName} ${point}`;
+  }
+  // Game totals / h2h / unknown: marketLabel already carries the line
+  // (or the bet shape has no line) — return outcome unchanged.
+  return outcomeName;
+}
+
+/** Side-column label for single-leg modes (EV, FB offered leg).
+ * Composes via `formatOutcomeLabel` so all market shapes get consistent
+ * line treatment — spreads sign-prefixed, player props point-suffixed. */
 export function sideLabel(op: EdgeOpportunity): string {
   if (op.mode === "ev") {
-    if (op.market_kind === "spreads" || op.market_kind === "alternate_spreads") {
-      const sign = op.point != null && op.point > 0 ? "+" : "";
-      return op.point != null
-        ? `${op.raw.outcome_name} ${sign}${op.point}`
-        : op.raw.outcome_name;
-    }
-    return op.raw.outcome_name;
+    return formatOutcomeLabel(op.raw.outcome_name, op.market_kind, op.point);
   }
-  if (op.mode === "free_bet") return op.raw.free_leg.outcome_name;
-  return op.legs[0]?.outcome_name ?? "";
+  if (op.mode === "free_bet") {
+    return formatOutcomeLabel(
+      op.raw.free_leg.outcome_name, op.market_kind, op.raw.free_leg.point,
+    );
+  }
+  if (op.mode === "profit_boost") {
+    return formatOutcomeLabel(
+      op.raw.boost_leg.outcome_name, op.market_kind, op.raw.boost_leg.point,
+    );
+  }
+  const first = op.legs[0];
+  if (!first) return "";
+  return formatOutcomeLabel(first.outcome_name, op.market_kind, first.point);
 }
 
 /** Time-to-commence label. Returns "LIVE" if commence_time is past. */
@@ -363,11 +575,13 @@ export function edgeColor(op: EdgeOpportunity): string {
     if (c >= 60) return "text-flash";
     return "text-text-2";
   }
-  // arb / ev — both positive-is-good %
+  // arb / ev — both positive-is-good %. Negative EV (fade candidates)
+  // gets a red tint so the sign is visually obvious in dense tables.
   const pct = op.edge_pct;
   if (pct >= 5) return "text-price-up";
   if (pct >= 2) return "text-accent";
   if (pct >= 1) return "text-flash";
+  if (pct < 0) return "text-price-down";
   return "text-text-2";
 }
 

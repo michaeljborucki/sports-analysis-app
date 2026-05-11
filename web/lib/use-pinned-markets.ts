@@ -27,6 +27,12 @@ const DEFAULT_PINS: Record<SportKey, string[]> = {
     "player_assists",
     "player_threes",
   ],
+  wnba: [
+    "player_points",
+    "player_rebounds",
+    "player_assists",
+    "player_threes",
+  ],
   mlb: [
     "pitcher_strikeouts",
     "batter_hits",
@@ -50,6 +56,13 @@ const DEFAULT_PINS: Record<SportKey, string[]> = {
   ],
   // Tennis has no player-prop tier — nothing to pin.
   tennis: [],
+  // Asian baseball + soccer: no player-prop tiers in our config yet.
+  asian_baseball: [],
+  soccer: [],
+  // UFC / Boxing / Cricket: no player-prop tiers exposed by Odds API.
+  ufc: [],
+  boxing: [],
+  cricket: [],
 };
 
 function storageKey(sport: SportKey): string {

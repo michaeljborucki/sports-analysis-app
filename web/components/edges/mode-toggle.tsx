@@ -26,6 +26,12 @@ const MODE_STYLES: Record<EdgeMode, { on: string; off: string }> = {
     on: "bg-flash/15 text-flash border-flash/50",
     off: "text-text-2 border-border-subtle hover:text-flash",
   },
+  profit_boost: {
+    // Reuse the +EV violet — profit boost IS a +EV scan with a price
+    // transform, so visually grouping them keeps the cognitive load down.
+    on: "bg-violet-accent/15 text-violet-accent border-violet-accent/50",
+    off: "text-text-2 border-border-subtle hover:text-violet-accent",
+  },
 };
 
 /**

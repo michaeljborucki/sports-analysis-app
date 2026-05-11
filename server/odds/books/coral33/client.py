@@ -232,16 +232,23 @@ class Coral33Client:
         sport_type: str,
         sport_sub_type: str,
         period: str = "Game",
+        wager_type: str = "Straight",
     ) -> dict:
         """Fetch odds for a (sportType, sportSubType, period) tuple. Returns
-        the raw response; caller inspects CaptchaRequired + Lines."""
+        the raw response; caller inspects CaptchaRequired + Lines.
+
+        `wager_type` mirrors the Straight / Parlay tabs in coral33's web UI.
+        Most lines appear in both, but some markets are straight-only (e.g.
+        certain in-game derivatives) and a small number are parlay-only.
+        Caller pulls both and dedupes to derive a parlay-eligibility tag.
+        """
         params = {
             "sportType": sport_type,
             "sportSubType": sport_sub_type,
             "period": period,
             "hourFilter": "0",
             "propDescription": "Game",
-            "wagerType": "Straight",
+            "wagerType": wager_type,
             "keyword": "",
             "correlationID": "",
             "periodNumber": "0",
@@ -271,5 +278,7 @@ _OP_PATHS = {
     "getCommunicationMessages": "Customer/getCommunicationMessages",
     "putPreference":        "Customer/putPreference",
     "Pending":              "Report/Pending",
+    "getWagersByFigureDate": "Report/getWagersByFigureDate",
+    "getDailyFiguresByCustomer": "Report/getDailyFiguresByCustomer",
     "authenticateCustomer": "System/authenticateCustomer",
 }

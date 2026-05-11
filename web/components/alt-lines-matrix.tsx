@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import clsx from "clsx";
+import { ChevronsUpDown } from "lucide-react";
 
 import { apiPaths, type Game, type Market, type MarketOutcome, type SettingsResponse } from "@/lib/api";
 import { BOOK_ORDER } from "@/lib/books";
@@ -176,13 +177,14 @@ export function AltLinesMatrix({
         {(hiddenCount > 0 || expanded) && (
           <button
             onClick={() => setExpanded(v => !v)}
-            className="text-[11px] px-2 h-7 rounded-md border border-border-subtle text-text-2 hover:text-text-1 hover:border-accent/50 transition-colors tracking-wide"
+            className="inline-flex items-center gap-1 text-[11px] px-2 h-7 rounded-md border border-border-subtle text-text-2 hover:text-text-1 hover:border-accent/50 transition-colors tracking-wide"
             title={
               expanded
                 ? `Collapse back to ±${COLLAPSE_WINDOW} alts around each main line`
                 : `${hiddenCount} more alt line${hiddenCount === 1 ? "" : "s"} hidden`
             }
           >
+            <ChevronsUpDown size={10} aria-hidden />
             {expanded ? "Collapse" : `Show all (${rows.length})`}
           </button>
         )}
@@ -275,45 +277,54 @@ function buildSpreadRows(
   alt: Market | undefined,
   visible: Set<string>
 ): { rows: MatrixRow[]; books: string[] } {
-  // Main-line |point| set drives the MAIN badge
-  const mainAbs = new Set<number>();
+  // Bucket by SIGNED home-point, not |point|. Books offer both orientations
+  // for alt-spreads on near-pickem games (e.g. "Hurricanes -1.5" vs
+  // "Hurricanes +1.5" both priced separately), and the prior |point|
+  // bucketing collapsed those into one broken row showing same-sign prices
+  // on both teams. With signed-home bucketing, a home outcome at point P
+  // pairs with the away outcome at point -P — always complementary.
+  //
+  // Main-row detection: track the signed home-point from the main market;
+  // one line per game so it's always a single entry.
+  const mainSigned = new Set<number>();
   for (const o of main?.outcomes ?? []) {
+    if (o.outcome_name !== game.home_team) continue;
     const p = pointOf(o);
-    if (p != null) mainAbs.add(Math.abs(p));
+    if (p != null) mainSigned.add(round1(p));
   }
+
   const all = [...(main?.outcomes ?? []), ...(alt?.outcomes ?? [])];
-  // Group by |point|; pick one representative signed point per grouping (use
-  // the home team's point — negative if home favored).
-  const byAbs = new Map<
+  const byHomeSigned = new Map<
     number,
-    { away?: MarketOutcome; home?: MarketOutcome; homePoint?: number }
+    { home?: MarketOutcome; away?: MarketOutcome }
   >();
   for (const o of all) {
     const p = pointOf(o);
     if (p == null) continue;
-    const abs = round1(Math.abs(p));
-    const bucket = byAbs.get(abs) ?? {};
-    if (o.outcome_name === game.home_team) {
-      bucket.home = o;
-      bucket.homePoint = p;
-    } else if (o.outcome_name === game.away_team) {
-      bucket.away = o;
-      if (bucket.homePoint === undefined) bucket.homePoint = -p;
-    }
-    byAbs.set(abs, bucket);
+    const rp = round1(p);
+    const isHome = o.outcome_name === game.home_team;
+    const isAway = o.outcome_name === game.away_team;
+    if (!isHome && !isAway) continue;
+    // Home-at-P lives in bucket P; away-at-Q pairs with home-at-(-Q) so it
+    // lives in bucket -Q. The two naturally collide only for true pairs.
+    const key = isHome ? rp : round1(-rp);
+    const bucket = byHomeSigned.get(key) ?? {};
+    if (isHome) bucket.home = o;
+    else bucket.away = o;
+    byHomeSigned.set(key, bucket);
   }
-  const rows: MatrixRow[] = [...byAbs.entries()]
-    .sort(([, a], [, b]) => (a.homePoint ?? 0) - (b.homePoint ?? 0))
-    .map(([absPoint, { away, home, homePoint }]) => {
-      const signed = homePoint ?? absPoint;
+
+  const rows: MatrixRow[] = [...byHomeSigned.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([signed, { home, away }]) => {
       const label = signed > 0 ? `+${signed}` : `${signed}`;
       return {
-        key: `s-${absPoint}`,
+        key: `s-${signed}`,
         label,
         sublabel: `${renderTeam(game.home_team, sport)} line`,
         over: away,   // left column = away team
         under: home,  // right column = home team
-        isMain: mainAbs.has(absPoint),
+        isMain: mainSigned.has(signed),
       };
     });
   return { rows, books: visibleBooksFromMarkets([main, alt], visible) };

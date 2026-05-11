@@ -1,0 +1,57 @@
+# UFC / MMA market configuration.
+#
+# The Odds API exposes UFC under the single key `mma_mixed_martial_arts`.
+# Coverage is limited: h2h (fight winner) is universal, totals (rounds
+# over/under) are on a subset of major books, and there are NO alternate
+# lines, NO round-by-round markets, and NO fighter props on The Odds API.
+#
+# Coral33 splits UFC into TWO subtypes which we both fetch:
+#   MMA - UFC   — main PPV cards (UFC 328 etc.)
+#   MMA - UFC2  — Fight Night events
+# Both are h2h primarily; some Fight Night fights also carry rounds totals
+# (Over/Under 2.5 rounds), which map to the same `totals` market_key.
+
+[main]
+enabled          = true
+interval_seconds = 300
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets = [
+  "h2h",          # Fight winner — universal
+  "totals",       # Rounds total over/under — partial book coverage
+  "h2h_lay",      # Exchange lay (Betfair/Matchbook/Smarkets)
+]
+
+# No alternate lines available on The Odds API for MMA.
+[alternates]
+enabled          = false
+interval_seconds = 300
+regions          = []
+markets          = []
+
+# No round-by-round / per-round markets on The Odds API for MMA.
+[periods]
+enabled          = false
+interval_seconds = 300
+regions          = []
+markets          = []
+
+# No fighter props on The Odds API for MMA.
+[player_props]
+enabled             = false
+interval_seconds    = 300
+regions             = []
+games_window_hours  = 6
+markets             = []
+
+[on_demand]
+enabled          = true
+debounce_seconds = 60
+
+# Picks filter — which bet types surface on /picks/ufc.
+# UFC agent (if/when we build one) is expected to write moneyline picks
+# and rounds-total picks; both flow through here.
+[picks]
+include_bet_types = [
+  "moneyline",
+  "total_rounds",
+]

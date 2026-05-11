@@ -26,6 +26,15 @@ PERIOD_SUFFIX: dict[str, str] = {
 
 
 @dataclass
+class Coral33ExtraSubtype:
+    """One entry under `[[sports.<x>.extras]]` — a coral33 subtype that
+    doesn't fit the main/alt/prop taxonomy and needs a specific normalizer
+    branch. `kind` selects the emission strategy in normalizer.py."""
+    subtype: str
+    kind: str   # "reg_time" | "hre" | "team_score_first" | "score_first_inning" | "game_props"
+
+
+@dataclass
 class Coral33SportConfig:
     sport_key: str              # our sport key (mlb, nba, nhl, tennis, baseball_ncaa)
     sport_type: str             # coral33 sportType (BASKETBALL, HOCKEY, BASEBALL, TENNIS)
@@ -33,6 +42,7 @@ class Coral33SportConfig:
     subtypes_alt: list[str] = field(default_factory=list)     # e.g. ["NBA+ALT+LINE"]
     subtypes_prop: list[str] = field(default_factory=list)    # deferred
     periods: list[str] = field(default_factory=lambda: ["Game"])
+    extras: list[Coral33ExtraSubtype] = field(default_factory=list)
 
     @property
     def main_period_calls(self) -> list[tuple[str, str, str]]:
@@ -50,6 +60,11 @@ class Coral33SportConfig:
     @property
     def prop_calls(self) -> list[tuple[str, str, str]]:
         return [(self.sport_type, sst, "Game") for sst in self.subtypes_prop]
+
+    @property
+    def extra_calls(self) -> list[tuple[str, str, str, str]]:
+        """Tuples of (sportType, sportSubType, period, kind)."""
+        return [(self.sport_type, e.subtype, "Game", e.kind) for e in self.extras]
 
 
 # Coral33 "Team2ID" (stat name) → our cache market_key. Sport-scoped because
@@ -95,6 +110,11 @@ def load_coral33_config(path: Path) -> Coral33Config:
         raw = tomllib.load(f)
     sports: dict[str, Coral33SportConfig] = {}
     for key, cfg in (raw.get("sports") or {}).items():
+        extras_raw = cfg.get("extras") or []
+        extras = [
+            Coral33ExtraSubtype(subtype=e["subtype"], kind=e["kind"])
+            for e in extras_raw
+        ]
         sports[key] = Coral33SportConfig(
             sport_key=key,
             sport_type=cfg["sport_type"],
@@ -102,6 +122,7 @@ def load_coral33_config(path: Path) -> Coral33Config:
             subtypes_alt=list(cfg.get("subtypes_alt") or []),
             subtypes_prop=list(cfg.get("subtypes_prop") or []),
             periods=list(cfg.get("periods") or ["Game"]),
+            extras=extras,
         )
     aliases_raw = raw.get("team_aliases") or {}
     team_aliases: dict[str, dict[str, str]] = {}

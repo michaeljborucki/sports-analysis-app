@@ -13,7 +13,7 @@ class MarketGroupModel(BaseModel):
     label: str
     main_key: str
     alt_key: str | None = None
-    display: Literal["moneyline", "spread", "total"] = "moneyline"
+    display: Literal["moneyline", "spread", "total", "yes_no"] = "moneyline"
 
 
 class SportModel(BaseModel):

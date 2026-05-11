@@ -2,6 +2,7 @@
 import { useState } from "react";
 import clsx from "clsx";
 import useSWRMutation from "swr/mutation";
+import { RefreshCw } from "lucide-react";
 
 import type { Game } from "@/lib/api";
 import { refreshEventUrl } from "@/lib/api";
@@ -67,15 +68,16 @@ export function MarketExpansionPanel({
     }
   }
 
-  // Moneyline has no alt ladder — the main grid already surfaces the best
-  // ML; an expansion panel showing one row × many books is redundant here.
-  // Show a subtle notice and the refresh button only.
-  if (group.display === "moneyline") {
+  // Moneyline + yes/no markets have no alt ladder — the main grid already
+  // surfaces the best price; an expansion panel showing one row × many books
+  // is redundant. Show a subtle notice and the refresh button only.
+  if (group.display === "moneyline" || group.display === "yes_no") {
     return (
       <div className="p-4 flex items-center justify-between">
         <span className="text-[11px] text-text-3">
-          No alt lines for moneyline markets. Use the Spread or Total tab for
-          per-book line shopping.
+          {group.display === "yes_no"
+            ? "Yes/No markets have no alt ladder."
+            : "No alt lines for moneyline markets. Use the Spread or Total tab for per-book line shopping."}
         </span>
         <RefreshButton
           onClick={handleRefresh}
@@ -131,22 +133,11 @@ function RefreshButton({
           busy && "opacity-60 cursor-wait"
         )}
       >
-        <svg
-          width="10"
-          height="10"
-          viewBox="0 0 16 16"
-          fill="none"
-          className={clsx(busy && "animate-spin")}
+        <RefreshCw
+          size={12}
           aria-hidden
-        >
-          <path
-            d="M3 8a5 5 0 0 1 8.5-3.5l1-1M13 8a5 5 0 0 1-8.5 3.5l-1 1M11.5 4.5v-3h3M4.5 11.5v3h-3"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+          className={clsx(busy && "animate-spin")}
+        />
         Refresh this game
       </button>
     </div>

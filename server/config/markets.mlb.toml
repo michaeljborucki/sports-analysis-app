@@ -11,13 +11,13 @@
 
 [main]
 enabled          = true
-interval_seconds = 60
+interval_seconds = 300
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
 markets          = ["h2h", "spreads", "totals"]
 
 [alternates]
 enabled          = true
-interval_seconds = 60
+interval_seconds = 300
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
 markets = [
   "alternate_spreads",
@@ -29,7 +29,7 @@ markets = [
 
 [periods]
 enabled          = true
-interval_seconds = 60
+interval_seconds = 300
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
 # Every window (1st 1 / 3 / 5 / 7 innings) × every market type.
 markets = [
@@ -61,9 +61,9 @@ markets = [
 
 [player_props]
 enabled             = true
-interval_seconds    = 60
+interval_seconds    = 300
 regions             = ["us", "us2", "us_ex", "eu", "uk"]
-games_window_hours  = 3
+games_window_hours  = 6
 markets = [
   # --- Batter standard lines ---
   "batter_home_runs",

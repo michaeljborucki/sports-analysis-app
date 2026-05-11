@@ -4,7 +4,7 @@
 # h2h_3_way is per-event only — moved to [alternates]. Odds API returns 422
 # if requested here.
 enabled          = true
-interval_seconds = 60
+interval_seconds = 300
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
 markets = [
   "h2h",          # moneyline incl. OT/SO
@@ -14,7 +14,7 @@ markets = [
 
 [alternates]
 enabled          = true
-interval_seconds = 60
+interval_seconds = 300
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
 markets = [
   "h2h_3_way",    # regulation-time result (per-event only)
@@ -28,7 +28,7 @@ markets = [
 # "first_innings" tier used as period markets (NHL has 3 periods: p1/p2/p3).
 [periods]
 enabled          = true
-interval_seconds = 60
+interval_seconds = 300
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
 markets = [
   # Moneyline by period
@@ -47,9 +47,9 @@ markets = [
 
 [player_props]
 enabled             = true
-interval_seconds    = 60
+interval_seconds    = 300
 regions             = ["us", "us2", "us_ex", "eu", "uk"]
-games_window_hours  = 3
+games_window_hours  = 6
 markets = [
   # Skater props
   "player_points",

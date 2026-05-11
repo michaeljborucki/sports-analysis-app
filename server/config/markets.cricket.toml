@@ -1,0 +1,52 @@
+# Cricket market configuration.
+#
+# Two Odds API keys resolve into this single sport — the fetcher pulls each
+# per cycle and merges results:
+#   cricket_ipl                   — Indian Premier League (T20 league)
+#   cricket_international_t20     — generic international T20
+#
+# Cricket on The Odds API is h2h-only — no spreads, no totals (over/under
+# total runs are NOT exposed on this provider), no alternates, no props.
+# Coral33 mirrors this: the two cricket subtypes both return h2h-only rows.
+#
+# Coral33's cricket subtypes (literal server names):
+#   ICCINTERCUP    — display "Indian Premier League" (the bind name is a
+#                    historical mislabel; the games are the real IPL)
+#   TWENTY20INTE   — display "Cricket Games" (international T20s)
+
+[main]
+enabled          = true
+interval_seconds = 300
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets = [
+  "h2h",
+  "h2h_lay",
+]
+
+[alternates]
+enabled          = false
+interval_seconds = 300
+regions          = []
+markets          = []
+
+[periods]
+enabled          = false
+interval_seconds = 300
+regions          = []
+markets          = []
+
+[player_props]
+enabled             = false
+interval_seconds    = 300
+regions             = []
+games_window_hours  = 6
+markets             = []
+
+[on_demand]
+enabled          = true
+debounce_seconds = 60
+
+[picks]
+include_bet_types = [
+  "moneyline",
+]

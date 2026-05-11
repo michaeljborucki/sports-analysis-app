@@ -7,7 +7,7 @@
 # Game-level endpoint only accepts featured markets. h2h_3_way / outrights
 # belong in [alternates] (per-event) — Odds API rejects them here with 422.
 enabled          = true
-interval_seconds = 60
+interval_seconds = 300
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
 markets = [
   "h2h",
@@ -17,7 +17,7 @@ markets = [
 
 [alternates]
 enabled          = true
-interval_seconds = 60
+interval_seconds = 300
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
 markets = [
   "h2h_3_way",     # per-event only
@@ -31,7 +31,7 @@ markets = [
 # "first_innings" tier renamed semantically to period markets (Q1–Q4, H1/H2).
 [periods]
 enabled          = true
-interval_seconds = 60
+interval_seconds = 300
 regions          = ["us", "us2", "us_ex", "eu", "uk"]
 markets = [
   # Moneyline by period
@@ -59,9 +59,9 @@ markets = [
 
 [player_props]
 enabled             = true
-interval_seconds    = 60
+interval_seconds    = 300
 regions             = ["us", "us2", "us_ex", "eu", "uk"]
-games_window_hours  = 3
+games_window_hours  = 6
 markets = [
   # Core scoring / box score
   "player_points",

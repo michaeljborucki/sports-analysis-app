@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS odds_snapshot (
   outcome_point  REAL NOT NULL DEFAULT 0.0,
   price_american INTEGER NOT NULL,
   fetched_at     TEXT NOT NULL,
+  wager_type     TEXT,
   PRIMARY KEY (event_id, bookmaker_key, market_key, outcome_name, outcome_point)
 );
 
@@ -39,6 +40,9 @@ CREATE TABLE IF NOT EXISTS fetcher_status (
 _MIGRATIONS = [
     # 0.2: add sport_key column (defaulted to 'mlb' for existing rows)
     "ALTER TABLE odds_snapshot ADD COLUMN sport_key TEXT NOT NULL DEFAULT 'mlb'",
+    # 0.3: per-row coral33 wager-type tag — "straight", "parlay", "both", or
+    # NULL for non-coral33 rows (the column is meaningless for Odds API books).
+    "ALTER TABLE odds_snapshot ADD COLUMN wager_type TEXT",
 ]
 
 
@@ -82,6 +86,7 @@ class OddsCache:
                 "commence_time": ct.isoformat() if isinstance(ct, datetime) else ct,
                 "fetched_at": fa.isoformat() if isinstance(fa, datetime) else fa,
                 "outcome_point": 0.0 if point is None else float(point),
+                "wager_type": r.get("wager_type"),
             })
         with self._conn() as c:
             c.executemany(
@@ -89,11 +94,11 @@ class OddsCache:
                 INSERT INTO odds_snapshot
                   (event_id, sport_key, home_team, away_team, commence_time,
                    bookmaker_key, market_key, outcome_name, outcome_point,
-                   price_american, fetched_at)
+                   price_american, fetched_at, wager_type)
                 VALUES
                   (:event_id, :sport_key, :home_team, :away_team, :commence_time,
                    :bookmaker_key, :market_key, :outcome_name, :outcome_point,
-                   :price_american, :fetched_at)
+                   :price_american, :fetched_at, :wager_type)
                 ON CONFLICT(event_id, bookmaker_key, market_key, outcome_name, outcome_point)
                 DO UPDATE SET
                    price_american = excluded.price_american,
@@ -101,7 +106,8 @@ class OddsCache:
                    commence_time  = excluded.commence_time,
                    home_team      = excluded.home_team,
                    away_team      = excluded.away_team,
-                   sport_key      = excluded.sport_key
+                   sport_key      = excluded.sport_key,
+                   wager_type     = excluded.wager_type
                 """,
                 prepared,
             )
@@ -171,6 +177,30 @@ class OddsCache:
             cur = c.execute(
                 "DELETE FROM odds_snapshot WHERE bookmaker_key = ? AND commence_time <= ?",
                 (bookmaker_key, cutoff),
+            )
+            return cur.rowcount
+
+    def purge_stale_rows(self, now: datetime, max_age_seconds: int = 600) -> int:
+        """Delete rows whose `fetched_at` is older than `max_age_seconds`.
+
+        UPSERTs only touch rows the fetcher re-sees on each cycle — any row
+        for a (event, book, market, outcome, point) tuple that the book
+        STOPPED offering stays in the DB with a frozen `fetched_at` until a
+        sweep like this clears it. Without this, the UI shows "coral33 still
+        has this line at +350" for hours after coral actually dropped it.
+
+        Default 600s (10 min) = 2× the Odds API poll interval (300s). A
+        single missed / timed-out / rate-limited poll cycle has one full
+        cycle of grace before its rows get purged. Coral33's 240s cycle
+        fits inside this easily. Tight alignment with poll cadence also
+        means the cache shows roughly "everything the book posted within
+        the last two polls" — no older, no younger.
+        """
+        cutoff = (now - timedelta(seconds=max_age_seconds)).isoformat()
+        with self._conn() as c:
+            cur = c.execute(
+                "DELETE FROM odds_snapshot WHERE fetched_at < ?",
+                (cutoff,),
             )
             return cur.rowcount
 

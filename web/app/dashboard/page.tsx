@@ -1,388 +1,294 @@
 "use client";
-import Link from "next/link";
 import useSWR from "swr";
-import clsx from "clsx";
+import { useMemo } from "react";
 
-import { apiPaths, type DashboardResponse, type ArbOpportunity, type Pick, type Game, type SportSummary } from "@/lib/api";
-import { formatAmerican, formatPct, formatUnits } from "@/lib/format";
-import { BookLogo } from "@/components/book-logo";
+import {
+  apiPaths,
+  type ArbOpportunity,
+  type DashboardResponse,
+  type EVOpportunity,
+  type EVResponse,
+} from "@/lib/api";
 import { RefreshButton } from "@/components/refresh-button";
 import { FreshnessChip } from "@/components/freshness-chip";
-import { SPORTS, type SportKey } from "@/lib/sports";
 import { useVisibleBooks } from "@/lib/use-visible-books";
 
-function sportLabel(key: string): string {
-  if (key in SPORTS) return SPORTS[key as SportKey].label;
-  return key.toUpperCase();
-}
+import { EdgeVolumeChart } from "@/components/dashboard/edge-volume-chart";
+import { SportRail } from "@/components/dashboard/sport-rail";
+import { SystemStats } from "@/components/dashboard/system-stats";
+import { StartingSoonCard } from "@/components/dashboard/starting-soon-card";
+import { TopPicksCard } from "@/components/dashboard/top-picks-card";
+import {
+  TopEdgeCard,
+  type TopEdgeData,
+} from "@/components/dashboard/top-edge-card";
 
-function roiColor(pct: number): string {
-  if (pct >= 2) return "text-price-up";
-  if (pct >= 1) return "text-accent";
-  if (pct >= 0.5) return "text-flash";
-  return "text-text-2";
-}
+/**
+ * Dashboard — the first screen on every app open.
+ *
+ * ## Content hierarchy (5 tiers)
+ *   Tier 1 (hero)         Edge-volume 24h stacked chart — the "how the day
+ *                         is going" signal, answers "is there action?"
+ *   Tier 2 (primary)      Top Arb + Top +EV — the single best opportunity
+ *                         right now in each mode; links to /edges.
+ *   Tier 3 (rail)         Horizontal sport status chip strip — "where should
+ *                         I look?" routing surface.
+ *   Tier 4 (detail)       Starting Soon + Top Picks — the two other things a
+ *                         user might scan in the first 10s.
+ *   Tier 5 (footer)       System stats — quota, fetcher, cache. Reference
+ *                         numbers, not hero metrics.
+ *
+ * ## Grid
+ * Desktop uses `grid-template-areas` so the geometry reads left-to-right.
+ * Tablet collapses to two-col with the hero full-width. Mobile stacks.
+ */
 
-function arbMarketLabel(op: ArbOpportunity): string {
-  if (op.market_kind === "h2h") return "Moneyline";
-  if (op.market_kind === "totals") return op.point != null ? `Total ${op.point}` : "Total";
-  if (op.market_kind === "spreads") return op.point != null ? `Spread ±${op.point}` : "Spread";
-  return op.market_kind;
-}
+// Grid area names — centralized so the grid-template-areas string below is
+// legible and typo-safe.
+const AREA = {
+  hero: "hero",
+  arb: "arb",
+  ev: "ev",
+  rail: "rail",
+  starting: "starting",
+  picks: "picks",
+  footer: "footer",
+} as const;
 
-function commenceLabel(iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  const diffH = (d.getTime() - now.getTime()) / 3_600_000;
-  if (diffH < 0) return "LIVE";
-  if (diffH < 1) return `${Math.round(diffH * 60)}m`;
-  if (diffH < 24) return `${Math.round(diffH)}h`;
-  return d.toLocaleDateString([], { month: "short", day: "numeric" });
+const GRID_CSS = `
+.dashboard-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "hero"
+    "arb"
+    "ev"
+    "rail"
+    "starting"
+    "picks"
+    "footer";
 }
-
-function MetricCard({
-  label,
-  value,
-  sub,
-  tone = "neutral",
-}: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  tone?: "neutral" | "positive" | "warning";
-}) {
-  return (
-    <div className="border border-border-subtle rounded-md bg-bg-1 px-4 py-3 flex flex-col gap-0.5">
-      <span className="text-[10px] uppercase tracking-wider text-text-3">
-        {label}
-      </span>
-      <span
-        className={clsx(
-          "text-2xl font-bold tabular",
-          tone === "positive" && "text-price-up",
-          tone === "warning" && "text-flash",
-          tone === "neutral" && "text-text-1"
-        )}
-      >
-        {value}
-      </span>
-      {sub && <span className="text-[11px] text-text-3 tabular">{sub}</span>}
-    </div>
-  );
+@media (min-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "hero hero"
+      "arb ev"
+      "rail rail"
+      "starting picks"
+      "footer footer";
+  }
 }
-
-function MetricsStrip({ data }: { data: DashboardResponse }) {
-  const totalGames = data.sports.reduce((sum, s) => sum + s.upcoming_games, 0);
-  const totalPicks = data.sports.reduce((sum, s) => sum + s.picks_today, 0);
-  const quotaRemaining = data.fetcher.requests_remaining;
-  const quotaUsed = data.fetcher.requests_used;
-  // Derive the plan total from used+remaining — the Odds API tier varies
-  // per account (we've seen 500, 100k, 5M), so hardcoding a denominator
-  // gave nonsense percentages like "4570% remaining".
-  const quotaTotal =
-    quotaRemaining != null && quotaUsed != null
-      ? quotaRemaining + quotaUsed
-      : null;
-  const quotaPct =
-    quotaRemaining != null && quotaTotal && quotaTotal > 0
-      ? Math.round((quotaRemaining / quotaTotal) * 100)
-      : null;
-
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-      <MetricCard
-        label="Games Today"
-        value={totalGames}
-        sub={data.sports
-          .map(s => `${s.label} ${s.upcoming_games}`)
-          .join(" · ")}
-      />
-      <MetricCard
-        label="Agent Picks"
-        value={totalPicks}
-        sub={data.sports
-          .map(s => `${s.label} ${s.picks_today}`)
-          .join(" · ")}
-      />
-      <MetricCard
-        label="Arbs"
-        value={data.top_arbs.length}
-        sub={
-          data.top_arbs[0]
-            ? `top +${data.top_arbs[0].roi_pct.toFixed(2)}%`
-            : "none detected"
-        }
-        tone={data.top_arbs.length > 0 ? "positive" : "neutral"}
-      />
-      <MetricCard
-        label="Starting ≤ 3h"
-        value={data.upcoming_games.length}
-        sub={data.upcoming_games[0] ? commenceLabel(data.upcoming_games[0].commence_time) + " next" : "nothing soon"}
-      />
-      <MetricCard
-        label="API Quota"
-        value={quotaRemaining != null ? quotaRemaining.toLocaleString() : "—"}
-        sub={quotaPct != null ? `${quotaPct}% remaining` : undefined}
-        tone={quotaPct != null && quotaPct < 20 ? "warning" : "neutral"}
-      />
-    </div>
-  );
+@media (min-width: 1280px) {
+  /* Hero spans 6/10 of the top two rows; the right-side pair of top-edge
+     cards stack in the remaining 4/10. Rail, detail, and footer each span
+     the full width. Hero has a 320px min-height floor so the chart isn't
+     cramped on short viewports. */
+  .dashboard-grid {
+    grid-template-columns: 3fr 3fr 2fr 2fr;
+    grid-template-rows: minmax(160px, auto) minmax(160px, auto) auto auto auto;
+    grid-template-areas:
+      "hero hero arb arb"
+      "hero hero ev ev"
+      "rail rail rail rail"
+      "starting starting picks picks"
+      "footer footer footer footer";
+  }
 }
-
-function TopArbsCard({ arbs }: { arbs: ArbOpportunity[] }) {
-  return (
-    <div className="border border-border-subtle rounded-md bg-bg-0 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 bg-bg-1 border-b border-border-subtle">
-        <span className="text-[11px] uppercase tracking-wider text-text-2">
-          Top arbs
-        </span>
-        <Link
-          href="/arbitrage"
-          className="text-[11px] text-accent hover:underline"
-        >
-          See all →
-        </Link>
-      </div>
-      {arbs.length === 0 ? (
-        <div className="text-center py-8 text-text-3 text-sm">
-          No arbitrage opportunities right now.
-        </div>
-      ) : (
-        <table className="w-full text-xs">
-          <tbody>
-            {arbs.map((op, i) => {
-              const a = op.sides[0];
-              const b = op.sides[1];
-              return (
-                <tr
-                  key={`${op.event_id}-${i}`}
-                  className="border-t border-border-subtle hover:bg-bg-1/40"
-                >
-                  <td className="px-3 py-2 w-[70px]">
-                    <span className={clsx("tabular font-semibold", roiColor(op.roi_pct))}>
-                      +{op.roi_pct.toFixed(2)}%
-                    </span>
-                  </td>
-                  <td className="px-2 py-2 text-text-2 text-[11px] uppercase tracking-wide w-[60px]">
-                    {sportLabel(op.sport_key)}
-                  </td>
-                  <td className="px-2 py-2 text-text-1 text-[11px] whitespace-nowrap">
-                    {op.away_team} @ {op.home_team}
-                  </td>
-                  <td className="px-2 py-2 text-text-3 text-[11px]">
-                    {arbMarketLabel(op)}
-                  </td>
-                  <td className="px-2 py-2">
-                    <div className="flex items-center gap-1.5">
-                      <BookLogo bookKey={a.book} mode="label" />
-                      <span className="text-text-3 text-[10px]">/</span>
-                      <BookLogo bookKey={b.book} mode="label" />
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
+.dashboard-hero {
+  min-height: 320px;
 }
-
-function StartingSoonCard({ games }: { games: Game[] }) {
-  return (
-    <div className="border border-border-subtle rounded-md bg-bg-0 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 bg-bg-1 border-b border-border-subtle">
-        <span className="text-[11px] uppercase tracking-wider text-text-2">
-          Starting soon
-        </span>
-        <span className="text-[11px] text-text-3">next 3h</span>
-      </div>
-      {games.length === 0 ? (
-        <div className="text-center py-8 text-text-3 text-sm">
-          Nothing starts in the next 3 hours.
-        </div>
-      ) : (
-        <table className="w-full text-xs">
-          <tbody>
-            {games.map(g => (
-              <tr
-                key={g.event_id}
-                className="border-t border-border-subtle hover:bg-bg-1/40"
-              >
-                <td className="px-3 py-2 text-text-2 text-[11px] uppercase tracking-wide w-[60px]">
-                  {sportLabel(g.sport_key ?? "mlb")}
-                </td>
-                <td className="px-2 py-2 text-text-1 whitespace-nowrap">
-                  {g.away_team} @ {g.home_team}
-                </td>
-                <td className="px-2 py-2 text-right text-accent tabular text-[11px]">
-                  {commenceLabel(g.commence_time)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
-}
-
-function TopPicksCard({ picks }: { picks: Pick[] }) {
-  return (
-    <div className="border border-border-subtle rounded-md bg-bg-0 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 bg-bg-1 border-b border-border-subtle">
-        <span className="text-[11px] uppercase tracking-wider text-text-2">
-          Top picks by edge
-        </span>
-        <span className="text-[11px] text-text-3">cross-sport</span>
-      </div>
-      {picks.length === 0 ? (
-        <div className="text-center py-8 text-text-3 text-sm">
-          No picks from any agent today.
-        </div>
-      ) : (
-        <table className="w-full text-xs">
-          <thead className="bg-bg-1/40 text-text-2">
-            <tr>
-              <th className="text-left px-3 py-1.5 font-medium uppercase tracking-wide text-[10px] w-[50px]">Sport</th>
-              <th className="text-left px-2 py-1.5 font-medium uppercase tracking-wide text-[10px]">Game</th>
-              <th className="text-left px-2 py-1.5 font-medium uppercase tracking-wide text-[10px]">Pick</th>
-              <th className="text-right px-2 py-1.5 font-medium uppercase tracking-wide text-[10px] w-[55px]">Odds</th>
-              <th className="text-right px-2 py-1.5 font-medium uppercase tracking-wide text-[10px] w-[60px]">Edge</th>
-              <th className="text-right px-2 py-1.5 font-medium uppercase tracking-wide text-[10px] w-[55px]">Stake</th>
-            </tr>
-          </thead>
-          <tbody>
-            {picks.map(p => (
-              <tr
-                key={p.id}
-                className="border-t border-border-subtle hover:bg-bg-1/40"
-              >
-                <td className="px-3 py-1.5 text-text-2 text-[11px] uppercase tracking-wide">
-                  {sportLabel(p.sport_key ?? "mlb")}
-                </td>
-                <td className="px-2 py-1.5 text-text-1">{p.game_label}</td>
-                <td className="px-2 py-1.5 text-text-2">{p.market_label}</td>
-                <td className="px-2 py-1.5 text-right tabular">
-                  {formatAmerican(p.odds_american)}
-                </td>
-                <td className="px-2 py-1.5 text-right tabular font-semibold text-price-up">
-                  {formatPct(p.edge_pct, true)}
-                </td>
-                <td className="px-2 py-1.5 text-right tabular text-accent font-semibold">
-                  {formatUnits(p.stake_units)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
-}
-
-function SportStatusCards({ sports }: { sports: SportSummary[] }) {
-  return (
-    <div className="flex flex-col gap-2">
-      {sports.map(s => (
-        <Link
-          key={s.key}
-          href={`/odds/${s.key}`}
-          className="group border border-border-subtle rounded-md bg-bg-1 px-4 py-3 hover:border-accent/50 transition-colors"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-text-1 group-hover:text-accent">
-              {s.label}
-            </span>
-            <span className="text-[10px] uppercase tracking-wider text-text-3 group-hover:text-accent">
-              Open →
-            </span>
-          </div>
-          <div className="mt-2 flex gap-4 text-[11px] text-text-3 tabular">
-            <span>
-              <span className="text-text-1 font-semibold">
-                {s.upcoming_games}
-              </span>{" "}
-              games
-            </span>
-            <span>
-              <span className="text-text-1 font-semibold">
-                {s.picks_today}
-              </span>{" "}
-              picks
-            </span>
-            {s.starting_in_3h > 0 && (
-              <span className="text-accent">
-                <span className="font-semibold">{s.starting_in_3h}</span> soon
-              </span>
-            )}
-            {s.bet_card_date && (
-              <span className="ml-auto text-text-3">
-                card {s.bet_card_date}
-              </span>
-            )}
-          </div>
-        </Link>
-      ))}
-    </div>
-  );
-}
+`;
 
 export default function DashboardPage() {
   const { visible } = useVisibleBooks();
-  const { data, error, isLoading, isValidating, mutate } =
-    useSWR<DashboardResponse>(
-      apiPaths.dashboard([...visible].sort()),
-      { refreshInterval: 30_000 }
+  const booksKey = useMemo(() => [...visible].sort(), [visible]);
+
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate,
+  } = useSWR<DashboardResponse>(apiPaths.dashboard(booksKey), {
+    refreshInterval: 30_000,
+  });
+
+  // Top +EV isn't in the dashboard response shape, so we fetch /api/ev
+  // alongside and pick the best result. Same books list + same cadence.
+  const { data: evData, mutate: evMutate, isValidating: evValidating } =
+    useSWR<EVResponse>(
+      apiPaths.ev(booksKey, { minEv: 1, maxLongshotOdds: 800 }),
+      { refreshInterval: 30_000 },
     );
+
+  const topArb: TopEdgeData | null = useMemo(
+    () => (data?.top_arbs[0] ? arbToTopEdge(data.top_arbs[0]) : null),
+    [data?.top_arbs],
+  );
+  const topEv: TopEdgeData | null = useMemo(
+    () =>
+      evData?.opportunities[0] ? evToTopEdge(evData.opportunities[0]) : null,
+    [evData?.opportunities],
+  );
+
+  const refreshAll = () => {
+    mutate();
+    evMutate();
+  };
 
   return (
     <div className="flex flex-col gap-5">
       <header className="flex items-end justify-between gap-4">
         <div className="flex items-baseline gap-4">
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <span className="text-xs text-text-3 tabular">
+          <h1 className="text-[28px] leading-[30px] font-semibold tracking-tight text-text-1">
+            Dashboard
+          </h1>
+          <span className="text-xs text-text-3 tabular hidden sm:inline">
             everything that matters right now
           </span>
         </div>
         <div className="flex items-center gap-3">
           <FreshnessChip />
-          <RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />
+          <RefreshButton
+            onRefresh={refreshAll}
+            isValidating={isValidating || evValidating} />
         </div>
       </header>
 
       {error && (
-        <div className="text-price-down text-sm">
+        <div className="rounded-md border border-price-down/40 bg-price-down/10 px-4 py-3 text-price-down text-sm">
           Backend unreachable. Is the FastAPI server running on :8000?
         </div>
       )}
       {isLoading && !data && (
-        <div className="text-text-2 text-sm">Loading dashboard…</div>
+        <div className="rounded-md border border-border-subtle bg-bg-1 px-4 py-12 text-center text-text-2 text-sm">
+          Loading dashboard…
+        </div>
       )}
+
       {data && (
-        <>
-          <MetricsStrip data={data} />
+        <div className="dashboard-grid">
+          {/* Tier 1: hero */}
+          <section
+            className="dashboard-hero relative rounded-md border border-border-subtle bg-bg-2 p-4 overflow-hidden"
+            style={{ gridArea: AREA.hero }}
+          >
+            {/* Subtle 1px gradient top edge — marks this card as "elevated"
+                without the loud glow of a full accent border. */}
+            <div
+              className="pointer-events-none absolute inset-x-0 top-0 h-px"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, var(--accent-60), transparent)",
+              }}
+              aria-hidden
+            />
+            <EdgeVolumeChart />
+          </section>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-7">
-              <TopArbsCard arbs={data.top_arbs} />
-            </div>
-            <div className="lg:col-span-5">
-              <StartingSoonCard games={data.upcoming_games} />
-            </div>
-          </div>
+          {/* Tier 2: top arb */}
+          <section style={{ gridArea: AREA.arb }}>
+            <TopEdgeCard
+              mode="arb"
+              data={topArb}
+              onRefresh={refreshAll}
+              isValidating={isValidating}
+            />
+          </section>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-8">
-              <TopPicksCard picks={data.top_picks} />
-            </div>
-            <div className="lg:col-span-4">
-              <SportStatusCards sports={data.sports} />
-            </div>
-          </div>
-        </>
+          {/* Tier 2: top EV */}
+          <section style={{ gridArea: AREA.ev }}>
+            <TopEdgeCard
+              mode="ev"
+              data={topEv}
+              onRefresh={refreshAll}
+              isValidating={evValidating}
+            />
+          </section>
+
+          {/* Tier 3: sport rail */}
+          <section style={{ gridArea: AREA.rail }}>
+            <SportRail sports={data.sports} />
+          </section>
+
+          {/* Tier 4: starting soon */}
+          <section style={{ gridArea: AREA.starting }}>
+            <StartingSoonCard
+              games={data.upcoming_games}
+              onRefresh={refreshAll}
+            />
+          </section>
+
+          {/* Tier 4: top picks */}
+          <section style={{ gridArea: AREA.picks }}>
+            <TopPicksCard picks={data.top_picks} onRefresh={refreshAll} />
+          </section>
+
+          {/* Tier 5: system footer */}
+          <section style={{ gridArea: AREA.footer }}>
+            <SystemStats data={data} />
+          </section>
+        </div>
       )}
+
+      {/* Grid geometry lives in a plain <style> tag (no styled-jsx) so this
+          renders identically in client/server. Tailwind v4 doesn't have a
+          clean arbitrary-value syntax for grid-template-areas, so we drop
+          to hand-written CSS with named areas for readability. */}
+      <style dangerouslySetInnerHTML={{ __html: GRID_CSS }} />
     </div>
   );
 }
+
+// ──────────────── adapters: api shapes → TopEdgeData ────────────────
+
+function arbToTopEdge(op: ArbOpportunity): TopEdgeData {
+  const a = op.sides[0];
+  const b = op.sides[1];
+  return {
+    sport_key: op.sport_key,
+    home_team: op.home_team,
+    away_team: op.away_team,
+    headline_pct: op.roi_pct,
+    market_label: arbMarketLabel(op.market_kind, op.point ?? null),
+    books: [a?.book ?? "?", b?.book],
+  };
+}
+
+function evToTopEdge(op: EVOpportunity): TopEdgeData {
+  return {
+    sport_key: op.sport_key,
+    home_team: op.home_team,
+    away_team: op.away_team,
+    headline_pct: op.ev_pct,
+    market_label: evMarketLabel(op),
+    books: [op.book],
+  };
+}
+
+function arbMarketLabel(
+  kind: ArbOpportunity["market_kind"],
+  point: number | null,
+): string {
+  if (kind === "h2h") return "Moneyline";
+  if (kind === "totals") return point != null ? `Total ${point}` : "Total";
+  if (kind === "spreads") return point != null ? `Spread ±${point}` : "Spread";
+  return kind;
+}
+
+function evMarketLabel(op: EVOpportunity): string {
+  const k = op.market_kind;
+  if (k === "h2h") return `ML · ${op.outcome_name}`;
+  if (k === "totals")
+    return op.point != null
+      ? `${op.outcome_name} ${op.point}`
+      : `Total · ${op.outcome_name}`;
+  if (k === "spreads")
+    return op.point != null
+      ? `${op.outcome_name} ${op.point > 0 ? "+" : ""}${op.point}`
+      : `Spread · ${op.outcome_name}`;
+  return `${k} · ${op.outcome_name}`;
+}
+

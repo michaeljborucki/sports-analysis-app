@@ -5,6 +5,7 @@ import clsx from "clsx";
 import type { MarketOutcome, BookPrice } from "@/lib/api";
 import { formatAmerican } from "@/lib/format";
 import { BookLogo } from "./book-logo";
+import { AnimatedPrice } from "./animated-price";
 
 
 export interface MatrixRow {
@@ -30,6 +31,26 @@ export interface SideLabels {
 
 
 const DEFAULT_SIDE_LABELS: SideLabels = { over: "O", under: "U" };
+
+// Shared inline styles for cells that should respect the global density
+// mode. Wave 1 owns the vars themselves; we consume them here so rows
+// shrink/grow in lockstep with the Settings density toggle.
+const CELL_PAD_STYLE: React.CSSProperties = {
+  paddingInline: "var(--row-pad-x)",
+  paddingBlock: "var(--row-pad-y)",
+};
+// Header cells get the same paddings so column widths don't jump when the
+// user switches density mode.
+const HEADER_PAD_STYLE: React.CSSProperties = {
+  paddingInline: "var(--row-pad-x)",
+  paddingBlock: "var(--row-pad-y)",
+};
+// Price cells still need their per-book min-width control, which we keep
+// as a class on the <td>. Only the paddings migrate to vars.
+const PRICE_PAD_STYLE: React.CSSProperties = {
+  paddingInline: "calc(var(--row-pad-x) * 0.66)",
+  paddingBlock: "var(--row-pad-y)",
+};
 
 
 function bestAmerican(prices: BookPrice[]): number | null {
@@ -61,6 +82,13 @@ function priceForBook(outcome: MarketOutcome | undefined, book: string): number 
  *
  * Sticky first column and sticky header row, so horizontal scrolling with
  * 20+ books stays oriented.
+ *
+ * Row chrome (Wave 2):
+ *   - Row paddings flex with `html[data-density]` via the --row-pad-* vars.
+ *   - Hover lifts the row with a subtle bg tint plus a 2px left accent
+ *     indicator. The indicator is rendered via `box-shadow: inset 2px 0 0`
+ *     so it doesn't shift the row layout.
+ *   - `prefers-reduced-motion` strips the transition timing.
  */
 export function BookMatrixTable({
   rows,
@@ -120,18 +148,25 @@ export function BookMatrixTable({
         <table className="text-xs border-collapse">
           <thead className="bg-bg-1 text-text-2">
             <tr>
-              <th className="sticky left-0 z-20 bg-bg-1 text-left px-3 py-2 font-medium uppercase tracking-wide text-[11px] min-w-[180px] border-r border-border-subtle">
+              <th
+                className="sticky left-0 z-20 bg-bg-1 text-left font-medium uppercase tracking-wide text-[11px] min-w-[180px] border-r border-border-subtle"
+                style={HEADER_PAD_STYLE}
+              >
                 {rowLabelHeader}
               </th>
               {sideMode !== "over" && sideMode !== "under" && (
-                <th className="sticky left-[180px] z-20 bg-bg-1 text-center px-2 py-2 font-medium uppercase tracking-wide text-[11px] w-[32px] border-r border-border-subtle">
+                <th
+                  className="sticky left-[180px] z-20 bg-bg-1 text-center font-medium uppercase tracking-wide text-[11px] w-[32px] border-r border-border-subtle"
+                  style={HEADER_PAD_STYLE}
+                >
                   {/* Side column header (O/U) */}
                 </th>
               )}
               {books.map(book => (
                 <th
                   key={book}
-                  className="px-2 py-2 font-medium uppercase tracking-wide text-[11px] min-w-[80px]"
+                  className="font-medium uppercase tracking-wide text-[11px] min-w-[80px]"
+                  style={HEADER_PAD_STYLE}
                 >
                   <BookLogo bookKey={book} mode="label" />
                 </th>
@@ -187,18 +222,23 @@ function MatrixRowView({
           <tr
             key={`${row.key}-${side}`}
             className={clsx(
-              "border-t border-border-subtle hover:bg-bg-1/40",
+              "group/matrixrow border-t border-border-subtle",
+              "motion-safe:transition-colors motion-safe:duration-150",
+              "hover:bg-bg-1/60",
               isFirst ? "border-t-2 border-border-subtle" : "",
-              rowBgClass
+              rowBgClass,
             )}
           >
             {isFirst && (
               <td
                 rowSpan={sides.length}
                 className={clsx(
-                  "sticky left-0 z-10 px-3 py-2 align-middle border-r border-border-subtle whitespace-nowrap",
-                  labelBgClass
+                  "sticky left-0 z-10 align-middle border-r border-border-subtle whitespace-nowrap",
+                  "motion-safe:transition-shadow motion-safe:duration-150",
+                  "group-hover/matrixrow:[box-shadow:inset_2px_0_0_var(--accent-60)]",
+                  labelBgClass,
                 )}
+                style={CELL_PAD_STYLE}
               >
                 <div className="flex items-center gap-1.5">
                   {row.isMain && (
@@ -228,9 +268,10 @@ function MatrixRowView({
             {sideMode === "both" && (
               <td
                 className={clsx(
-                  "sticky left-[180px] z-10 text-center px-2 py-1.5 text-[10px] uppercase tracking-wider text-text-3 border-r border-border-subtle",
-                  labelBgClass
+                  "sticky left-[180px] z-10 text-center text-[10px] uppercase tracking-wider text-text-3 border-r border-border-subtle",
+                  labelBgClass,
                 )}
+                style={CELL_PAD_STYLE}
               >
                 {side === "Over" ? sideLabels.over : sideLabels.under}
               </td>
@@ -242,11 +283,16 @@ function MatrixRowView({
                 <td
                   key={book}
                   className={clsx(
-                    "px-2 py-1.5 text-center tabular",
-                    isBest ? "text-price-up font-semibold" : "text-text-2"
+                    "text-center tabular",
+                    isBest ? "text-price-up font-semibold" : "text-text-2",
                   )}
+                  style={PRICE_PAD_STYLE}
                 >
-                  {price != null ? formatAmerican(price) : (
+                  {price != null ? (
+                    <AnimatedPrice value={price}>
+                      {formatAmerican(price)}
+                    </AnimatedPrice>
+                  ) : (
                     <span className="text-text-3">—</span>
                   )}
                 </td>

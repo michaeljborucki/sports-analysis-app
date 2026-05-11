@@ -118,21 +118,40 @@ class FetcherRegistry:
         if not enabled:
             return {"status": "no_tiers_enabled"}
 
+        # ODDS_POLL_INTERVAL env overrides the main-tier cadence across every
+        # sport. Per-event tiers (alternates / periods / player_props) keep
+        # their TOML defaults — they iterate dozens of events sequentially
+        # and can't keep up at sub-5-min cadence without overlapping. The
+        # freshness chip in the UI reads `last_fetch_at`, which is only
+        # stamped on main-tier completion, so this knob is what actually
+        # controls how fresh the chip looks.
+        main_override = (
+            self.config.odds_poll_interval
+            if self.config.odds_poll_interval
+            and self.config.odds_poll_interval > 0
+            else None
+        )
+
         now = datetime.now(timezone.utc)
+        scheduled: list[tuple[Sport, TierConfig, int]] = []
         for sport, tier in enabled:
+            interval = tier.interval_seconds
+            if tier.name == "main" and main_override:
+                interval = main_override
             self.scheduler.add_job(
                 self._tier_runner(sport, tier),
                 trigger="interval",
-                seconds=tier.interval_seconds,
+                seconds=interval,
                 next_run_time=now,
                 id=f"{sport.key}:{tier.name}",
                 replace_existing=True,
                 max_instances=1,
             )
+            scheduled.append((sport, tier, interval))
         if not self.scheduler.running:
             self.scheduler.start()
         self._running = True
-        labels = [f"{sp.key}:{t.name}@{t.interval_seconds}s" for sp, t in enabled]
+        labels = [f"{sp.key}:{t.name}@{i}s" for sp, t, i in scheduled]
         logger.info("Fetcher started: %s", ", ".join(labels))
         return {
             "status": "started",
@@ -156,6 +175,36 @@ class FetcherRegistry:
             self.scheduler.shutdown(wait=False)
         except Exception:
             pass
+
+    # ---------- Ad-hoc refresh ----------
+
+    def refresh_all_now(self) -> dict:
+        """Fire every enabled tier once, in parallel, right now — independent
+        of the scheduled cadence. Fire-and-forget: returns a summary dict
+        immediately while the tasks run in the background. Used by the UI
+        refresh button so the user can force a pull without waiting for the
+        next 5-minute tick.
+
+        Safe to call while scheduled jobs are active — each tier runner
+        writes via UPSERT, so concurrent pulls only cost a duplicate request
+        at worst, they never corrupt the cache.
+        """
+        enabled = self.all_enabled_tiers()
+        if not enabled:
+            return {"status": "no_tiers_enabled", "triggered": []}
+        if not self.config.odds_api_key:
+            return {"status": "no_api_key", "triggered": []}
+        triggered: list[str] = []
+        for sport, tier in enabled:
+            runner = self._tier_runner(sport, tier)
+            # create_task schedules on the running event loop; returns
+            # before the task actually executes. The task completes or
+            # errors in the background; errors are already logged inside
+            # each tier runner.
+            asyncio.create_task(runner())
+            triggered.append(f"{sport.key}:{tier.name}")
+        logger.info("refresh_all_now: triggered %d tiers", len(triggered))
+        return {"status": "triggered", "triggered": triggered}
 
     # ---------- Tier runners ----------
 
@@ -214,13 +263,22 @@ class FetcherRegistry:
                 logger.warning("main %s key %s: %s", sport.key, api_key, e)
                 self._last_error[f"{sport.key}:main"] = str(e)
         self.cache.purge_finished_games(now=now)
-        if last_rate:
-            self.cache.set_status(
-                last_fetch_at=now,
-                requests_used=last_rate.get("requests_used"),
-                requests_remaining=last_rate.get("requests_remaining"),
-                last_error=None,
-            )
+        # Row-level TTL — clears rows whose book stopped posting (UPSERT
+        # alone never removes them). Runs piggy-backed on each main-tier
+        # cycle so it's frequent without a separate scheduler.
+        stale = self.cache.purge_stale_rows(now=now)
+        if stale:
+            logger.info("purged %d stale rows (fetched_at older than TTL)", stale)
+        # Stamp freshness regardless of whether the API returned rate-limit
+        # headers — without this, the UI's "stale Nm" chip drifts arbitrarily
+        # far when the API drops headers (cached responses, edge errors, etc.)
+        # even though tiers are completing successfully.
+        self.cache.set_status(
+            last_fetch_at=now,
+            requests_used=last_rate.get("requests_used") if last_rate else None,
+            requests_remaining=last_rate.get("requests_remaining") if last_rate else None,
+            last_error=None,
+        )
         logger.info("main %s: %d rows across %d sport keys", sport.key, total, len(keys))
 
     async def _run_per_event(self, sport: Sport, tier: TierConfig) -> None:
@@ -261,11 +319,14 @@ class FetcherRegistry:
                     "%s:%s event %s: %s", sport.key, tier.name, ev["event_id"], e
                 )
                 self._last_error[f"{sport.key}:{tier.name}"] = str(e)
-        if last_rate:
-            self.cache.set_status(
-                requests_used=last_rate.get("requests_used"),
-                requests_remaining=last_rate.get("requests_remaining"),
-            )
+        # Always stamp freshness — see _run_main note. last_rate may be
+        # empty if the API skipped rate headers; we still want the chip to
+        # know rows just landed.
+        self.cache.set_status(
+            last_fetch_at=datetime.now(timezone.utc),
+            requests_used=last_rate.get("requests_used") if last_rate else None,
+            requests_remaining=last_rate.get("requests_remaining") if last_rate else None,
+        )
         logger.info(
             "%s:%s: %d rows across %d events",
             sport.key, tier.name, total, len(events),
@@ -305,11 +366,12 @@ class FetcherRegistry:
                         total += len(rows)
             except Exception:
                 logger.exception("props event error: %s", ev["event_id"])
-        if last_rate:
-            self.cache.set_status(
-                requests_used=last_rate.get("requests_used"),
-                requests_remaining=last_rate.get("requests_remaining"),
-            )
+        # Always stamp freshness — see _run_main note.
+        self.cache.set_status(
+            last_fetch_at=datetime.now(timezone.utc),
+            requests_used=last_rate.get("requests_used") if last_rate else None,
+            requests_remaining=last_rate.get("requests_remaining") if last_rate else None,
+        )
         logger.info(
             "%s:props: %d rows across %d events in %dh window",
             sport.key, total, len(events), window,
