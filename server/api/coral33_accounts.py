@@ -162,19 +162,36 @@ def build_router(scraper: AccountsScraper) -> APIRouter:
     async def get_history(
         weeks: int = Query(default=12, ge=1, le=52),
         force: bool = Query(default=False),
+        force_wager_log: bool = Query(
+            default=False,
+            description=(
+                "Re-run the one-time wager-log backfill. Default behavior "
+                "reads from the persisted JSON cache (no API cost). Set "
+                "true to refresh the cache from Coral33."
+            ),
+        ),
     ) -> HistoryRollupModel:
+        from datetime import date as _date
+        from ..odds.books.coral33.wager_log import compute_pending_by_date
+
         history = await scraper.get_history(weeks_back=weeks, force=force)
         creds_by_id = {c.customer_id: c for c in scraper.credentials}
-        # Live pending-balance lookup from the current snapshot. Used to
-        # populate the latest (today's) history point's `pending` field —
-        # historical days stay at 0 since Coral33 doesn't expose EOD
-        # pending balance through getDailyFiguresByCustomer.
+
+        # Live pending-balance lookup from the current snapshot — overlays
+        # onto today's HistoryPoint regardless of wager-log status, so the
+        # rightmost bar is always accurate even before the backfill runs.
         current = scraper.cached()
-        pending_by_cid: dict[str, float] = {
+        live_pending_by_cid: dict[str, float] = {
             s.customer_id: s.pending_wager_balance
             for s in current.snapshots
             if s.error is None
         }
+
+        # Historical pending — derived once per account from the persisted
+        # wager log. The log covers the last ~2 weeks (DEFAULT_BACKFILL_
+        # WEEKS); points older than that stay at 0.
+        wager_log = await scraper.get_wager_log(force=force_wager_log)
+
         accounts: list[AccountHistoryModel] = []
         for cid, points in history.items():
             cred = creds_by_id.get(cid)
@@ -182,11 +199,26 @@ def build_router(scraper: AccountsScraper) -> APIRouter:
                 HistoryPointModel.model_validate(p, from_attributes=True)
                 for p in points
             ]
-            # Overlay current pending balance onto the latest point only.
-            # If history is empty we have nothing to overlay.
+
+            # Compute per-date historical pending for this account.
+            log = wager_log.get(cid) or []
+            if log and point_models:
+                dates = [_date.fromisoformat(p.date) for p in point_models]
+                pending_by_date = compute_pending_by_date(log, dates)
+                for p in point_models:
+                    p.pending = pending_by_date.get(p.date, 0.0)
+
+            # Overlay live pending onto today's point regardless — the
+            # wager-log compute gives EOD-yesterday-ish for today (since
+            # any wager open right now hasn't settled by EOD today either,
+            # the values typically agree), but the live snapshot is more
+            # authoritative for the rightmost bar.
             if point_models:
                 latest = point_models[-1]
-                latest.pending = pending_by_cid.get(cid, 0.0)
+                latest.pending = live_pending_by_cid.get(
+                    cid, latest.pending,
+                )
+
             accounts.append(AccountHistoryModel(
                 customer_id=cid,
                 label=(cred.label if cred and cred.label else cid),

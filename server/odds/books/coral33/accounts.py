@@ -476,6 +476,12 @@ class AccountsScraper:
         # History cache: {customer_id: (refreshed_at_iso, weeks, points)}
         self._history: dict[str, tuple[str, int, list[HistoryPoint]]] = {}
         self._history_lock = asyncio.Lock()
+        # Wager-log cache: {customer_id: (refreshed_at_iso, weeks, wagers)}.
+        # Used to reconstruct historical pending balance per day. Settled
+        # wagers are immutable so this cache is reused aggressively —
+        # callers pass force=True only when they want a full re-pull.
+        self._wager_log: dict[str, tuple[str, int, list]] = {}
+        self._wager_log_lock = asyncio.Lock()
 
     @property
     def credentials(self) -> list[AccountCredential]:
@@ -556,4 +562,64 @@ class AccountsScraper:
                 cred.customer_id: self._history[cred.customer_id][2]
                 for cred in self._creds
                 if cred.customer_id in self._history
+            }
+
+    async def get_wager_log(
+        self, weeks_back: int | None = None, force: bool = False,
+    ) -> dict[str, list]:
+        """Return the persisted wager log per account. Per the design
+        constraint, the live API backfill runs ONCE per account — on
+        first call when no JSON file exists, or when `force=True`. After
+        that, every call reads from the on-disk JSON.
+
+        Imported lazily to keep the module-level import of `accounts.py`
+        out of the wager_log → accounts cycle.
+        """
+        from .wager_log import (
+            DEFAULT_BACKFILL_WEEKS,
+            fetch_account_wager_log,
+            load_wager_log,
+            save_wager_log,
+        )
+        if weeks_back is None:
+            weeks_back = DEFAULT_BACKFILL_WEEKS
+
+        async with self._wager_log_lock:
+            need_fetch: list[AccountCredential] = []
+            for cred in self._creds:
+                if force:
+                    need_fetch.append(cred)
+                    continue
+                cached = self._wager_log.get(cred.customer_id)
+                if cached:
+                    continue  # already in-memory for this process
+                disk = load_wager_log(cred.customer_id)
+                if disk is not None:
+                    # Promote to in-memory cache; no API hit.
+                    self._wager_log[cred.customer_id] = (
+                        datetime.now(timezone.utc).isoformat(),
+                        weeks_back,
+                        disk,
+                    )
+                    continue
+                need_fetch.append(cred)
+
+            if need_fetch:
+                logger.info(
+                    "coral33 wager_log: backfilling %d account(s) × %d weeks",
+                    len(need_fetch), weeks_back,
+                )
+                results = await asyncio.gather(
+                    *(fetch_account_wager_log(c, weeks_back) for c in need_fetch),
+                    return_exceptions=False,
+                )
+                stamp = datetime.now(timezone.utc).isoformat()
+                for cred, wagers in zip(need_fetch, results):
+                    self._wager_log[cred.customer_id] = (stamp, weeks_back, wagers)
+                    save_wager_log(cred.customer_id, wagers, weeks_back)
+
+            return {
+                cred.customer_id: self._wager_log[cred.customer_id][2]
+                for cred in self._creds
+                if cred.customer_id in self._wager_log
             }

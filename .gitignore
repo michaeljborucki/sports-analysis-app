@@ -31,6 +31,9 @@ server/cache_snapshot.db
 # Runtime mode state (toggled by the cache-mode UI; per-machine)
 server/cache_mode.json
 
+# Persisted wager log (one-time Coral33 backfill, contains bet detail)
+server/data/
+
 # OS
 .DS_Store
 

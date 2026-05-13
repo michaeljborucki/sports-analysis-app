@@ -858,8 +858,20 @@ function PnLChart({ history }: { history: HistoryRollup }) {
   const innerW = W - padL - padR;
   const innerH = H - padT - padB;
 
-  const xAt = (i: number) =>
+  // Line mode (split) needs fence-post positioning so the polyline spans
+  // the inner-area corners exactly. Bar mode (total) needs slot-centered
+  // positioning so each day owns an equal-width column inside innerW with
+  // no half-cut bars at the left/right edges. Hover detection mirrors
+  // each mode's positioning so the cursor's bar matches the readout.
+  const xAtLine = (i: number) =>
     padL + (numPoints <= 1 ? innerW / 2 : (i / (numPoints - 1)) * innerW);
+  const slotW = numPoints > 0 ? innerW / numPoints : innerW;
+  const xAtBar = (i: number) =>
+    padL + (i + 0.5) * slotW;
+  // Unified accessor — bar mode uses slot centers, line mode uses fence
+  // posts. Used by the hover crosshair + the X-axis labels so they align
+  // with whatever's actually rendered.
+  const xAt = mode === "total" ? xAtBar : xAtLine;
   const yAt = (v: number) =>
     padT + ((yHi - v) / (yHi - yLo)) * innerH;
 
@@ -969,8 +981,19 @@ function PnLChart({ history }: { history: HistoryRollup }) {
             setHoverIdx(null);
             return;
           }
+          // Bar mode is slot-based — divide the inner width into N slots
+          // and the cursor's slot is its index. floor() gives the slot
+          // containing the cursor; clamping covers the right-edge case
+          // where x == padL + innerW falls into a non-existent slot N.
+          //
+          // Line mode is fence-post — the cursor's nearest data point is
+          // the one whose xAtLine(i) is closest to x, which is what
+          // round(t * (N-1)) gives.
           const t = (x - padL) / innerW;
-          const idx = Math.round(t * (numPoints - 1));
+          const idx =
+            mode === "total"
+              ? Math.floor(t * numPoints)
+              : Math.round(t * (numPoints - 1));
           setHoverIdx(Math.max(0, Math.min(numPoints - 1, idx)));
         }}
       >
@@ -1091,8 +1114,22 @@ function PnLChart({ history }: { history: HistoryRollup }) {
           })
         )}
 
-        {/* Hover crosshair + dots (split mode only — total mode hover
-            highlight is built into the bar opacity above) */}
+        {/* Hover crosshair. In split mode it's a dashed vertical line +
+            a dot on each line. In total mode it's a faint highlight box
+            spanning the hovered bar's slot — so the cursor visibly maps
+            to a specific bar even when the opacity diff is hard to see
+            at 7px bar widths. */}
+        {hoverX != null && hoverIdx != null && mode === "total" && (
+          <rect
+            x={xAtBar(hoverIdx) - slotW / 2}
+            y={padT}
+            width={slotW}
+            height={innerH}
+            fill="var(--color-text-1)"
+            opacity={0.06}
+            pointerEvents="none"
+          />
+        )}
         {hoverX != null && hoverIdx != null && mode === "split" && (
           <>
             <line
