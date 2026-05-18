@@ -5,15 +5,58 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 
-# Kalshi series_ticker → (our sport_key, our market_key). Only h2h ("game
-# winner") for Phase 1; Phase 2 will add spread / total / team_total /
-# period / NRFI / F5 series tickers (all carry their own series prefixes
-# like KXMLBSPREAD, KXMLBTOTAL, etc.).
+# Kalshi series_ticker → (our sport_key, our market_key).
+#
+# Phase 1 added the h2h game-winner series. Phase 2 (this file) adds all
+# verified Phase 2 series: spreads, totals, team_totals, period winners,
+# period spreads/totals, MLB RFI, MLB F5 winner + spread + total.
+#
+# Each entry below was probed against the live /markets endpoint on
+# 2026-05-12 with >0 open markets. Series that turned up empty at probe
+# time are intentionally OMITTED (see `# (empty, skipped)` comments) so the
+# fetcher doesn't poll dead series every 15s. Re-add reactively once the
+# relevant sport's season returns markets.
 SERIES_TO_SPORT_MARKET: dict[str, tuple[str, str]] = {
-    "KXMLBGAME":  ("mlb",  "h2h"),
-    "KXNBAGAME":  ("nba",  "h2h"),
-    "KXNHLGAME":  ("nhl",  "h2h"),
-    "KXWNBAGAME": ("wnba", "h2h"),
+    # ─── MLB ────────────────────────────────────────────────────────────
+    "KXMLBGAME":      ("mlb", "h2h"),
+    "KXMLBSPREAD":    ("mlb", "alternate_spreads"),
+    "KXMLBTOTAL":     ("mlb", "alternate_totals"),
+    "KXMLBTEAMTOTAL": ("mlb", "alternate_team_totals"),
+    "KXMLBRFI":       ("mlb", "nrfi"),
+    "KXMLBF5":        ("mlb", "h2h_3_way_1st_5_innings"),
+    "KXMLBF5SPREAD":  ("mlb", "alternate_spreads_1st_5_innings"),
+    "KXMLBF5TOTAL":   ("mlb", "alternate_totals_1st_5_innings"),
+
+    # ─── NBA ────────────────────────────────────────────────────────────
+    "KXNBAGAME":      ("nba", "h2h"),
+    "KXNBASPREAD":    ("nba", "alternate_spreads"),
+    "KXNBATOTAL":     ("nba", "alternate_totals"),
+    "KXNBATEAMTOTAL": ("nba", "alternate_team_totals"),
+    "KXNBA1HWINNER":  ("nba", "h2h_h1"),
+    "KXNBA2HWINNER":  ("nba", "h2h_h2"),
+    "KXNBA1HSPREAD":  ("nba", "alternate_spreads_h1"),
+    "KXNBA2HSPREAD":  ("nba", "alternate_spreads_h2"),
+    "KXNBA1HTOTAL":   ("nba", "alternate_totals_h1"),
+    "KXNBA2HTOTAL":   ("nba", "alternate_totals_h2"),
+    # KXNBA1QWINNER / KXNBA2QWINNER / KXNBA3QWINNER / KXNBA4QWINNER → empty
+    # KXNBA1QSPREAD / KXNBA1QTOTAL                                   → empty
+    # (Re-add when NBA in-season; quarter markets seed closer to game time)
+
+    # ─── NHL ────────────────────────────────────────────────────────────
+    "KXNHLGAME":      ("nhl", "h2h"),
+    "KXNHLSPREAD":    ("nhl", "alternate_spreads"),
+    "KXNHLTOTAL":     ("nhl", "alternate_totals"),
+    # KXNHLTEAMTOTAL → empty (Kalshi appears not to offer NHL team totals)
+
+    # ─── WNBA ───────────────────────────────────────────────────────────
+    "KXWNBAGAME":     ("wnba", "h2h"),
+    "KXWNBASPREAD":   ("wnba", "alternate_spreads"),
+    "KXWNBATOTAL":    ("wnba", "alternate_totals"),
+    "KXWNBA1HWINNER": ("wnba", "h2h_h1"),
+    "KXWNBA1HSPREAD": ("wnba", "alternate_spreads_h1"),
+    "KXWNBA1HTOTAL":  ("wnba", "alternate_totals_h1"),
+    # KXWNBATEAMTOTAL                           → empty
+    # KXWNBA2HWINNER / KXWNBA2HSPREAD / KXWNBA2HTOTAL → empty
 }
 
 
@@ -171,9 +214,12 @@ TEAM_CODE_TO_CANONICAL: dict[str, dict[str, str]] = {
 
 @dataclass
 class KalshiSportConfig:
-    """One sport block in kalshi.toml. Phase 1 only uses `series_main`; the
-    other slots are stubbed so Phase 2 can extend without re-shaping the
-    config schema."""
+    """One sport block in kalshi.toml.
+
+    Phase 2 adds `series_f5_winner` as a distinct slot (it doesn't fit cleanly
+    in series_period — F5 winner is sport-specific to MLB and emits to
+    `h2h_3_way_1st_5_innings`, not a quarter/half market key).
+    """
     sport_key: str
     series_main: list[str] = field(default_factory=list)
     series_spread: list[str] = field(default_factory=list)
@@ -181,6 +227,7 @@ class KalshiSportConfig:
     series_team_total: list[str] = field(default_factory=list)
     series_period: list[str] = field(default_factory=list)
     series_rfi: list[str] = field(default_factory=list)
+    series_f5_winner: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -204,6 +251,7 @@ def load_kalshi_config(path: Path) -> KalshiConfig:
             series_team_total=list(cfg.get("series_team_total") or []),
             series_period=list(cfg.get("series_period") or []),
             series_rfi=list(cfg.get("series_rfi") or []),
+            series_f5_winner=list(cfg.get("series_f5_winner") or []),
         )
     aliases_raw = raw.get("team_aliases") or {}
     team_aliases: dict[str, dict[str, str]] = {}

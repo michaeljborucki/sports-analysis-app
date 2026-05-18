@@ -3,41 +3,58 @@
 # Kalshi's public REST (no auth, no key) exposes one /markets endpoint
 # keyed by `series_ticker`. We poll one series per sport per cycle.
 #
-# Phase 1: h2h only (`series_main`). The empty series_* lists are stub
-# hooks for Phase 2 (spreads, totals, team_totals, periods, NRFI / F5).
+# Phase 1: h2h only (`series_main`).
+# Phase 2: spreads, totals, team_totals, periods, NRFI, F5 winner +
+#          F5 spread/total. Only series with >0 live open markets at probe
+#          time on 2026-05-12 are enabled.
 #
-# Probed live 2026-05-12 — series tickers confirmed active:
-#   KXMLBGAME, KXNBAGAME, KXNHLGAME, KXWNBAGAME
+# Per-cycle call counts (sequential within sport, parallel across sports):
+#   MLB  : 8 calls (main + spread + total + teamtotal + rfi + f5 + f5_spread + f5_total)
+#   NBA  : 9 calls (main + spread + total + teamtotal + 1H/2H winner + 1H/2H spread + 1H/2H total)
+#   NHL  : 3 calls (main + spread + total)
+#   WNBA : 6 calls (main + spread + total + 1H winner/spread/total)
+#   ─────
+#   Total: 26 calls per 15s cycle ≈ 1.7 req/s — well under any rate limit.
+#
+# Probed empty on 2026-05-12 (re-add when in-season):
+#   KXNBA1QWINNER / 2Q / 3Q / 4Q / 1QSPREAD / 1QTOTAL
+#   KXNHLTEAMTOTAL  (Kalshi appears not to offer this)
+#   KXWNBATEAMTOTAL / KXWNBA2HWINNER / KXWNBA2HSPREAD / KXWNBA2HTOTAL
 
 [sports.mlb]
 series_main       = ["KXMLBGAME"]
-# Phase 2 stubs — populate when those series tickers are confirmed live:
-series_spread     = []
-series_total      = []
-series_team_total = []
-series_period     = []
-series_rfi        = []
+# F5 spread/total are routed via the normalizer's market_key dispatch —
+# KXMLBF5SPREAD maps to `alternate_spreads_1st_5_innings` in
+# SERIES_TO_SPORT_MARKET, so it can live alongside KXMLBSPREAD here.
+series_spread     = ["KXMLBSPREAD", "KXMLBF5SPREAD"]
+series_total      = ["KXMLBTOTAL", "KXMLBF5TOTAL"]
+series_team_total = ["KXMLBTEAMTOTAL"]
+series_period     = []   # MLB has no 1H/Q markets — F5 markets are 1st-5-innings, not "halves"
+series_rfi        = ["KXMLBRFI"]
+# MLB F5 3-way winner (Tie/Team1/Team2) — distinct from F5 spread/total
+# because it writes to `h2h_3_way_1st_5_innings` via the f5_winner path.
+series_f5_winner  = ["KXMLBF5"]
 
 [sports.nba]
 series_main       = ["KXNBAGAME"]
-series_spread     = []
-series_total      = []
-series_team_total = []
-series_period     = []
+series_spread     = ["KXNBASPREAD", "KXNBA1HSPREAD", "KXNBA2HSPREAD"]
+series_total      = ["KXNBATOTAL", "KXNBA1HTOTAL", "KXNBA2HTOTAL"]
+series_team_total = ["KXNBATEAMTOTAL"]
+series_period     = ["KXNBA1HWINNER", "KXNBA2HWINNER"]   # → h2h_h1 / h2h_h2
 
 [sports.nhl]
 series_main       = ["KXNHLGAME"]
-series_spread     = []
-series_total      = []
-series_team_total = []
+series_spread     = ["KXNHLSPREAD"]
+series_total      = ["KXNHLTOTAL"]
+series_team_total = []   # KXNHLTEAMTOTAL had 0 markets (probed 2026-05-12)
 series_period     = []
 
 [sports.wnba]
 series_main       = ["KXWNBAGAME"]
-series_spread     = []
-series_total      = []
-series_team_total = []
-series_period     = []
+series_spread     = ["KXWNBASPREAD", "KXWNBA1HSPREAD"]
+series_total      = ["KXWNBATOTAL", "KXWNBA1HTOTAL"]
+series_team_total = []   # KXWNBATEAMTOTAL had 0 markets (probed 2026-05-12)
+series_period     = ["KXWNBA1HWINNER"]   # 2H empty as of probe
 
 
 # ─── Team aliases ────────────────────────────────────────────────────

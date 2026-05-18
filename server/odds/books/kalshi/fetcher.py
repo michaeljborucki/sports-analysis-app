@@ -12,7 +12,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from ...cache import OddsCache
 from .client import KalshiAPIError, KalshiClient
 from .event_matcher import KalshiEventMatcher
-from .mapping import KalshiConfig, load_kalshi_config
+from .mapping import KalshiConfig, KalshiSportConfig, load_kalshi_config
 from .normalizer import normalize_markets
 
 
@@ -28,6 +28,27 @@ CYCLE_JITTER   = int(os.environ.get("KALSHI_CYCLE_JITTER", "3"))
 # Per-sport startup stagger so we don't fire all 4 sport jobs in the same
 # wallclock second on boot.
 _STARTUP_STAGGER = (0, max(2, min(15, CYCLE_INTERVAL)))
+
+
+def _all_series_for_sport(sc: KalshiSportConfig) -> list[str]:
+    """Concatenate every series-list slot for a sport into a single ordered
+    list (de-duplicated; order = main, spread, total, team_total, period,
+    rfi, f5_winner). The fetcher loops this list per cycle, calling the
+    normalizer per-series — dispatching to the right per-market handler
+    via SERIES_TO_SPORT_MARKET.
+    """
+    out: list[str] = []
+    seen: set[str] = set()
+    for chunk in (
+        sc.series_main, sc.series_spread, sc.series_total,
+        sc.series_team_total, sc.series_period, sc.series_rfi,
+        sc.series_f5_winner,
+    ):
+        for s in chunk:
+            if s and s not in seen:
+                seen.add(s)
+                out.append(s)
+    return out
 
 
 class KalshiFetcher:
@@ -88,7 +109,11 @@ class KalshiFetcher:
         now = datetime.now(timezone.utc)
         scheduled: list[str] = []
         for sport_key, sc in cfg.sports.items():
-            if not sc.series_main:
+            # A sport is "configured" if it has at least one series in any
+            # of the per-market-type slots. Phase 1 required series_main;
+            # Phase 2 may legitimately have empty series_main (off-season)
+            # while still having alt-line series populated.
+            if not _all_series_for_sport(sc):
                 continue
             first_fire = now + timedelta(seconds=random.uniform(*_STARTUP_STAGGER))
             self.scheduler.add_job(
@@ -164,7 +189,10 @@ class KalshiFetcher:
     async def _run_sport_cycle(self, sport_key: str) -> None:
         cfg = self._load_config()
         sport_cfg = cfg.sports.get(sport_key)
-        if sport_cfg is None or not sport_cfg.series_main:
+        if sport_cfg is None:
+            return
+        all_series = _all_series_for_sport(sport_cfg)
+        if not all_series:
             return
 
         now = datetime.now(timezone.utc)
@@ -179,10 +207,9 @@ class KalshiFetcher:
         matcher = self._matcher()
         total_rows = 0
 
-        # Phase 1: only series_main (the h2h game-winner series). Phase 2
-        # will iterate the other series_* slots and dispatch in the
-        # normalizer.
-        all_series = list(sport_cfg.series_main)
+        # Phase 2: iterate ALL series slots (main + spread + total +
+        # team_total + period + rfi + f5_winner). The normalizer dispatches
+        # on market_key resolved from SERIES_TO_SPORT_MARKET.
         for series_ticker in all_series:
             markets = await self._safe_list_markets(series_ticker, sport_key)
             if markets is None:
