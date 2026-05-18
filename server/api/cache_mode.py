@@ -16,6 +16,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from ..odds.books.coral33.fetcher import Coral33Fetcher
+from ..odds.books.kalshi.fetcher import KalshiFetcher
 from ..odds.cache import OddsCache
 from ..odds.cache_mode import CacheMode, CacheModeStore
 from ..odds.fetcher import FetcherRegistry
@@ -70,6 +71,7 @@ def build_router(
     clv_scheduler=None,
     clv_capture_tick=None,
     wager_log_refresh_tick=None,
+    kalshi_fetcher: KalshiFetcher | None = None,
 ) -> APIRouter:
     router = APIRouter()
 
@@ -80,6 +82,8 @@ def build_router(
             cache.path = live_path
             fetcher.start_all()
             coral33_fetcher.start_all()
+            if kalshi_fetcher is not None:
+                kalshi_fetcher.start_all()
             # CLV capture follows the same gate as the fetchers — it only
             # makes sense to devig a live cache (LATEST/SNAPSHOT are
             # frozen). Without this, flipping LATEST→LIVE at runtime
@@ -113,10 +117,12 @@ def build_router(
                     max_instances=1,
                 )
         else:
-            # LATEST or SNAPSHOT — stop both fetchers so nothing writes to the
+            # LATEST or SNAPSHOT — stop fetchers so nothing writes to the
             # cache underneath us.
             fetcher.stop_all()
             coral33_fetcher.stop_all()
+            if kalshi_fetcher is not None:
+                kalshi_fetcher.stop_all()
             cache.path = snapshot_path if mode == CacheMode.SNAPSHOT else live_path
             if clv_scheduler is not None:
                 for job_id in ("clv_capture", "wager_log_refresh"):
@@ -177,6 +183,8 @@ def build_router(
         if was_live:
             fetcher.stop_all()
             coral33_fetcher.stop_all()
+            if kalshi_fetcher is not None:
+                kalshi_fetcher.stop_all()
         try:
             if snapshot_path.exists():
                 snapshot_path.unlink()
@@ -189,6 +197,8 @@ def build_router(
             if was_live:
                 fetcher.start_all()
                 coral33_fetcher.start_all()
+                if kalshi_fetcher is not None:
+                    kalshi_fetcher.start_all()
         rows, _newest = _inspect_db(snapshot_path)
         return CacheSnapshotResponse(
             status="captured",

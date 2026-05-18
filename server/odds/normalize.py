@@ -4,6 +4,14 @@ from datetime import datetime, timezone
 from typing import Iterable
 
 
+# Bookmaker keys whose rows we DO NOT want to ingest from the Odds API —
+# we own these books via a direct fetcher and the Odds API copy is staler.
+# Currently:
+#   - "kalshi": Odds API quotes are 2-5 minutes stale; the direct
+#     kalshi_fetcher polls every 15s.
+_EXCLUDE_BOOKMAKERS: frozenset[str] = frozenset({"kalshi"})
+
+
 def _encode_outcome_name(market_key: str, name: str, description: str | None) -> str:
     """Player props come back as (name='Over', description='Drew Rasmussen').
     Encode both into a single outcome_name so the cache PK stays stable
@@ -44,6 +52,11 @@ def normalize_odds_response(
         commence = datetime.fromisoformat(game["commence_time"].replace("Z", "+00:00"))
         for bm in game.get("bookmakers", []):
             bk = bm["key"]
+            # Direct-fetcher books: drop Odds API rows so the direct
+            # fetcher's fresher quotes own the (event, market, outcome)
+            # cache slot exclusively.
+            if bk in _EXCLUDE_BOOKMAKERS:
+                continue
             for mk in bm.get("markets", []):
                 market_key = mk["key"]
                 for oc in mk.get("outcomes", []):

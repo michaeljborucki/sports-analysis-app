@@ -1,0 +1,59 @@
+# Kalshi direct-API integration — series ticker → sport mapping.
+#
+# Kalshi's public REST (no auth, no key) exposes one /markets endpoint
+# keyed by `series_ticker`. We poll one series per sport per cycle.
+#
+# Phase 1: h2h only (`series_main`). The empty series_* lists are stub
+# hooks for Phase 2 (spreads, totals, team_totals, periods, NRFI / F5).
+#
+# Probed live 2026-05-12 — series tickers confirmed active:
+#   KXMLBGAME, KXNBAGAME, KXNHLGAME, KXWNBAGAME
+
+[sports.mlb]
+series_main       = ["KXMLBGAME"]
+# Phase 2 stubs — populate when those series tickers are confirmed live:
+series_spread     = []
+series_total      = []
+series_team_total = []
+series_period     = []
+series_rfi        = []
+
+[sports.nba]
+series_main       = ["KXNBAGAME"]
+series_spread     = []
+series_total      = []
+series_team_total = []
+series_period     = []
+
+[sports.nhl]
+series_main       = ["KXNHLGAME"]
+series_spread     = []
+series_total      = []
+series_team_total = []
+series_period     = []
+
+[sports.wnba]
+series_main       = ["KXWNBAGAME"]
+series_spread     = []
+series_total      = []
+series_team_total = []
+series_period     = []
+
+
+# ─── Team aliases ────────────────────────────────────────────────────
+# Lowercase + punctuation-stripped form → canonical (Odds API) team name.
+# The primary path is TEAM_CODE_TO_CANONICAL (in mapping.py) which maps
+# directly off ticker suffixes — these aliases only kick in if the
+# normalizer ever needs to match on `yes_sub_title` directly (it currently
+# doesn't, but the hook is here for Phase 2 markets that don't carry a
+# team-code suffix, e.g. team-total markets keyed on player names).
+
+[team_aliases.mlb]
+# Kalshi short-form sub_titles that aren't already covered by the
+# Odds-API canonical name. Add reactively as orphan logs surface.
+
+[team_aliases.nba]
+
+[team_aliases.nhl]
+
+[team_aliases.wnba]

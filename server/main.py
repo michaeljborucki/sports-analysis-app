@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import Config
 from .odds.books.coral33 import Coral33Fetcher
 from .odds.books.coral33.accounts import AccountsScraper
+from .odds.books.kalshi import KalshiFetcher
 from .odds.cache import OddsCache
 from .odds.cache_mode import CacheMode, CacheModeStore
 from .odds.client import OddsAPIClient
@@ -63,6 +64,14 @@ def create_app() -> FastAPI:
         password=config.coral33_password,
         cache=cache,
         config_path=_Path(__file__).parent / "config" / "coral33.toml",
+    )
+    # Kalshi direct-API fetcher — replaces Odds API's `kalshi` rows
+    # (which are 2-5min stale) with a ~15s direct poll. No auth, no key.
+    # Lifecycle parallels coral33_fetcher: start in LIVE, stop in
+    # LATEST/SNAPSHOT, shut down on app exit.
+    kalshi_fetcher = KalshiFetcher(
+        cache=cache,
+        config_path=_Path(__file__).parent / "config" / "kalshi.toml",
     )
     # Multi-account roll-up scraper (Accounts page). Reads CORAL33_ACCOUNTS
     # env (JSON list) or falls back to the single-account env pair. The
@@ -139,6 +148,12 @@ def create_app() -> FastAPI:
             else:
                 logging.info("coral33 fetcher disabled (CORAL33_ENABLED=false)")
 
+            # Kalshi has no credentials / no env-gate — its read endpoints
+            # are public and free. Always start in LIVE mode so the
+            # direct-fetched kalshi rows are fresh while Odds API's
+            # 5-min-stale kalshi rows are suppressed in normalize.py.
+            kalshi_fetcher.start_all()
+
             # CLV capture only runs in LIVE — there's no point devigging
             # the frozen SNAPSHOT cache (would just freeze a single
             # closing-line snapshot to whatever the snapshot file says).
@@ -180,6 +195,7 @@ def create_app() -> FastAPI:
         except Exception:
             logging.exception("CLV scheduler shutdown failed")
         coral33_fetcher.shutdown()
+        kalshi_fetcher.shutdown()
         fetcher.shutdown()
         # Release the persistent Odds API HTTP/2 connection pool so the
         # shutdown banner doesn't pollute logs with "unclosed AsyncClient".
@@ -211,6 +227,7 @@ def create_app() -> FastAPI:
     from .api.profit_boost import build_router as profit_boost_router
     from .api.coral33_ctl import build_router as coral33_ctl_router
     from .api.coral33_accounts import build_router as coral33_accounts_router
+    from .api.kalshi_ctl import build_router as kalshi_ctl_router
     from .api.cache_mode import build_router as cache_mode_router
     from .api.settings import build_router as settings_router
 
@@ -232,6 +249,7 @@ def create_app() -> FastAPI:
     app.include_router(
         coral33_accounts_router(accounts_scraper, cache=cache, odds_client=client)
     )
+    app.include_router(kalshi_ctl_router(kalshi_fetcher))
     app.include_router(
         cache_mode_router(
             mode_store, cache, live_cache_path, snapshot_cache_path,
@@ -239,6 +257,7 @@ def create_app() -> FastAPI:
             clv_scheduler=clv_scheduler,
             clv_capture_tick=_capture_tick,
             wager_log_refresh_tick=_wager_log_refresh_tick,
+            kalshi_fetcher=kalshi_fetcher,
         )
     )
     app.include_router(settings_router(settings_store, fetcher, sports))
