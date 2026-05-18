@@ -50,11 +50,16 @@ const BOOK_LIST: BookInfo[] = [
   { key: "lowvig",       name: "LowVig",       label: "LV",   bg: "#111827", fg: "#F5A524", region: "US", priority: 34, domain: "lowvig.ag" },
   { key: "betanysports", name: "BetAnySports", label: "BAS",  bg: "#0EA5E9", fg: "#FFFFFF", region: "US", priority: 35, domain: "betanysports.eu" },
 
-  // US exchanges (us_ex region)
+  // US exchanges (us_ex region) — includes both peer-to-peer
+  // exchanges (sporttrade/prophetx/rebet/novig) and prediction
+  // markets (kalshi/polymarket) which the Odds API groups under the
+  // same us_ex region key.
   { key: "sporttrade",     name: "Sporttrade",       label: "STR", bg: "#111827", fg: "#22D3EE", region: "US", priority: 40, domain: "sporttrade.com", commission: 0 },
   { key: "prophetx",       name: "Prophet Exchange", label: "PRX", bg: "#0F172A", fg: "#F59E0B", region: "US", priority: 41, domain: "prophetx.co",    commission: 0.02 },
   { key: "rebet_exchange", name: "Rebet Exchange",   label: "REX", bg: "#3B82F6", fg: "#FDE047", region: "US", priority: 42, domain: "rebet.app",      commission: 0.02 },
   { key: "novig",          name: "Novig",            label: "NVG", bg: "#0F172A", fg: "#A78BFA", region: "US", priority: 43, domain: "novig.us",       commission: 0 },
+  { key: "kalshi",         name: "Kalshi",           label: "KAL", bg: "#0F172A", fg: "#00D6A9", region: "US", priority: 44, domain: "kalshi.com",     commission: 0 },
+  { key: "polymarket",     name: "Polymarket",       label: "POLY",bg: "#1652F0", fg: "#FFFFFF", region: "US", priority: 45, domain: "polymarket.com", commission: 0 },
 
   // Pinnacle (sharp)
   { key: "pinnacle",     name: "Pinnacle",     label: "PIN",  bg: "#0A1F44", fg: "#FBBF24", region: "EU", priority: 20, domain: "pinnacle.com" },

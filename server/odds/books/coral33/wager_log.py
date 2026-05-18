@@ -69,6 +69,14 @@ _WAGER_LOG_DIR = (
 DEFAULT_BACKFILL_WEEKS = 2
 
 
+# Schema version for the persisted JSON files. Bump when WagerLogEntry
+# fields change so older files trigger an automatic re-backfill (the
+# loader returns None on mismatch, which the scraper treats as a cache
+# miss). v2 added wager_type / total_picks / per-leg market detail used
+# by the /bets endpoint and the bets-history sub-tab.
+WAGER_LOG_SCHEMA_VERSION = 2
+
+
 # Coral33's server timestamps are in America/Denver (MDT/MST). Same fix
 # we applied in the line normalizer — reuse here for wager timestamps.
 try:
@@ -80,20 +88,49 @@ except Exception:
 
 @dataclass(frozen=True)
 class WagerLogEntry:
-    """One wager pulled from getWagersByFigureDate.
+    """One TICKET pulled from getWagersByFigureDate.
 
-    `settled_at` is None when the wager is still open (WagerStatus == 'O').
-    `amount_wagered` is in DOLLARS (the raw response is in cents — we
-    convert here so the historical-pending sum is in dollars consistently
-    with HistoryPoint.balance / .pending).
+    Coral33's response carries one row per LEG, so a 3-leg parlay arrives
+    as 3 rows sharing TicketNumber + WagerNumber. We collapse to one
+    entry per ticket by keeping only the head leg (lowest PlayNumber) —
+    its market detail (team, line, odds) represents the ticket on the
+    bet-history view. The ticket-level fields (amount_wagered, to_win,
+    status) cover the whole bet regardless of leg count.
+
+    `settled_at` is None when the wager is still open. Money fields are
+    in DOLLARS (raw response is cents — converted here so consumers
+    don't have to remember).
     """
+    # ── Ticket-level identity ──────────────────────────────────────────
     customer_id: str
     ticket_number: int
-    accepted_at: datetime          # placement time, UTC
-    settled_at: datetime | None    # None if still open; else figure-date midnight UTC
-    amount_wagered: float          # dollars
-    wager_status: str              # 'O' open | 'W' won | 'L' lost | 'P' push
+    accepted_at: datetime
+    settled_at: datetime | None
+    wager_status: str               # 'O' open | 'W' won | 'L' lost | 'P' push | 'X' (rare; cancelled/void)
+    wager_type: str                 # 'S' straight | 'P' parlay | 'T' teaser | 'I' if-bet | 'R' round-robin | 'M' money-line single
+    total_picks: int                # 1 for straight, N for parlay/teaser
+
+    # ── Ticket-level money ─────────────────────────────────────────────
+    amount_wagered: float           # ticket stake (NOT per-leg share)
+    to_win_amount: float            # ticket payout if all legs win
+    amount_won: float               # actual realized winnings (0 if open or lost)
+    amount_lost: float              # actual realized losses (0 if open or won)
     is_free_play: bool
+
+    # ── Head-leg market detail ─────────────────────────────────────────
+    # First-leg only per user request; for parlays the other legs are
+    # discarded at parse time. These map directly to Coral33's per-row
+    # fields on the head leg.
+    sport_type: str | None          # e.g. 'Basketball'
+    sport_sub_type: str | None      # e.g. 'NBA'
+    period: str | None              # e.g. 'Game', '1st Half'
+    team1_id: str | None            # away team (coral convention)
+    team2_id: str | None            # home team (coral convention)
+    chosen_team_id: str | None      # which side the bettor took
+    description: str | None         # raw market description string
+    final_money: int | None         # American odds at acceptance
+    adj_spread: float | None        # signed spread (for spread bets)
+    adj_total_points: float | None  # over/under line (for totals bets)
 
 
 def _parse_wager_datetime(s: str | None) -> datetime | None:
@@ -143,8 +180,36 @@ def _to_dollars(cents) -> float:
         return 0.0
 
 
+def _str_or_none(v) -> str | None:
+    if v is None:
+        return None
+    s = str(v).strip()
+    return s or None
+
+
+def _float_or_none(v) -> float | None:
+    if v is None or v == "":
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _int_or_none(v) -> int | None:
+    if v is None or v == "":
+        return None
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return None
+
+
 def _parse_wager(row: dict, customer_id: str) -> WagerLogEntry | None:
-    """Decode one row from the getWagersByFigureDate response."""
+    """Decode one row from the getWagersByFigureDate response into a
+    ticket-level WagerLogEntry. Returns None when the row can't be
+    identified as a wager. For parlays this is one row per LEG; the
+    caller deduplicates by ticket_number and keeps the head leg only."""
     try:
         ticket = int(row.get("TicketNumber") or 0)
     except (TypeError, ValueError):
@@ -165,15 +230,35 @@ def _parse_wager(row: dict, customer_id: str) -> WagerLogEntry | None:
         # in past-day pending sums.
         if settled is None:
             settled = accepted
+    wager_type = (row.get("WagerType") or "").strip().upper() or "S"
+    try:
+        total_picks = int(row.get("TotalPicks") or 1)
+    except (TypeError, ValueError):
+        total_picks = 1
     is_fp = (row.get("FreePlayFlag") or "").upper() == "Y"
     return WagerLogEntry(
         customer_id=customer_id,
         ticket_number=ticket,
         accepted_at=accepted,
         settled_at=settled,
-        amount_wagered=_to_dollars(row.get("AmountWagered")),
         wager_status=status,
+        wager_type=wager_type,
+        total_picks=total_picks,
+        amount_wagered=_to_dollars(row.get("AmountWagered")),
+        to_win_amount=_to_dollars(row.get("ToWinAmount")),
+        amount_won=_to_dollars(row.get("AmountWon")),
+        amount_lost=_to_dollars(row.get("AmountLost")),
         is_free_play=is_fp,
+        sport_type=_str_or_none(row.get("SportType")),
+        sport_sub_type=_str_or_none(row.get("SportSubType")),
+        period=_str_or_none(row.get("PeriodDescription")),
+        team1_id=_str_or_none(row.get("Team1ID")),
+        team2_id=_str_or_none(row.get("Team2ID")),
+        chosen_team_id=_str_or_none(row.get("ChosenTeamID")),
+        description=_str_or_none(row.get("Description")),
+        final_money=_int_or_none(row.get("FinalMoney")),
+        adj_spread=_float_or_none(row.get("AdjSpread")),
+        adj_total_points=_float_or_none(row.get("AdjTotalPoints")),
     )
 
 
@@ -193,6 +278,7 @@ def save_wager_log(
     _WAGER_LOG_DIR.mkdir(parents=True, exist_ok=True)
     path = _path_for(customer_id)
     payload = {
+        "schema_version": WAGER_LOG_SCHEMA_VERSION,
         "customer_id": customer_id,
         "weeks_back": weeks_back,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
@@ -214,8 +300,9 @@ def save_wager_log(
 
 def load_wager_log(customer_id: str) -> list[WagerLogEntry] | None:
     """Read the persisted wager log for a customer. Returns None if no
-    backfill has happened yet (caller should fetch). Returns [] if the
-    backfill ran but found no wagers."""
+    backfill has happened yet OR if the file is from an older schema
+    version (the scraper treats both as a cache miss and re-fetches).
+    Returns [] if the backfill ran but found no wagers."""
     path = _path_for(customer_id)
     if not path.exists():
         return None
@@ -223,6 +310,16 @@ def load_wager_log(customer_id: str) -> list[WagerLogEntry] | None:
         payload = json.loads(path.read_text())
     except (json.JSONDecodeError, OSError) as e:
         logger.warning("wager_log: bad cache file %s: %s", path, e)
+        return None
+    # Schema-version gate — older v1 files are missing wager_type /
+    # total_picks / market-detail fields, so we trigger a re-backfill
+    # instead of trying to read them with .get(... default).
+    if payload.get("schema_version") != WAGER_LOG_SCHEMA_VERSION:
+        logger.info(
+            "wager_log: schema mismatch for %s (have v%s, need v%s) — "
+            "will re-backfill",
+            customer_id, payload.get("schema_version"), WAGER_LOG_SCHEMA_VERSION,
+        )
         return None
     out: list[WagerLogEntry] = []
     for w in payload.get("wagers") or []:
@@ -237,9 +334,24 @@ def load_wager_log(customer_id: str) -> list[WagerLogEntry] | None:
                 ticket_number=int(w["ticket_number"]),
                 accepted_at=accepted,
                 settled_at=settled,
-                amount_wagered=float(w["amount_wagered"]),
                 wager_status=w.get("wager_status", "O"),
+                wager_type=w.get("wager_type", "S"),
+                total_picks=int(w.get("total_picks", 1)),
+                amount_wagered=float(w["amount_wagered"]),
+                to_win_amount=float(w.get("to_win_amount", 0.0)),
+                amount_won=float(w.get("amount_won", 0.0)),
+                amount_lost=float(w.get("amount_lost", 0.0)),
                 is_free_play=bool(w.get("is_free_play", False)),
+                sport_type=w.get("sport_type"),
+                sport_sub_type=w.get("sport_sub_type"),
+                period=w.get("period"),
+                team1_id=w.get("team1_id"),
+                team2_id=w.get("team2_id"),
+                chosen_team_id=w.get("chosen_team_id"),
+                description=w.get("description"),
+                final_money=w.get("final_money"),
+                adj_spread=w.get("adj_spread"),
+                adj_total_points=w.get("adj_total_points"),
             ))
         except (KeyError, ValueError, TypeError) as e:
             logger.warning("wager_log: skipping malformed entry: %s", e)
@@ -273,7 +385,30 @@ async def fetch_account_wager_log(
         return []
 
     today = datetime.now(timezone.utc).date()
-    by_ticket: dict[int, WagerLogEntry] = {}
+
+    # Coral33's response carries one row per LEG. For parlays/teasers a
+    # single ticket arrives as N rows sharing TicketNumber. We collapse
+    # to one WagerLogEntry per ticket by picking the LOWEST PlayNumber's
+    # row as the "head leg" — its market detail (team, line, odds)
+    # represents the ticket on the bet-history view, per the product
+    # requirement that parlays only show their first leg.
+    # `head_row` maps ticket → (lowest_play_number_seen, raw_row).
+    head_row: dict[int, tuple[int, dict]] = {}
+
+    def _consider(row: dict) -> None:
+        try:
+            ticket = int(row.get("TicketNumber") or 0)
+        except (TypeError, ValueError):
+            return
+        if ticket <= 0:
+            return
+        try:
+            play = int(row.get("PlayNumber") or 1)
+        except (TypeError, ValueError):
+            play = 1
+        existing = head_row.get(ticket)
+        if existing is None or play < existing[0]:
+            head_row[ticket] = (play, row)
 
     # Iterate per-week (0 = current, 1 = last, ...). Within each week try
     # 7 figure dates spanning that week's date range. coral33 ignores
@@ -304,15 +439,15 @@ async def fetch_account_wager_log(
             if not isinstance(infos, list):
                 continue
             for row in infos:
-                wager = _parse_wager(row, cred.customer_id)
-                if wager is None:
-                    continue
-                # Dedupe by ticket — open wagers come back on every day's
-                # call, and the same graded wager can appear on adjacent
-                # figure dates depending on coral's grouping.
-                by_ticket[wager.ticket_number] = wager
+                _consider(row)
 
-    return list(by_ticket.values())
+    # Build entries from the head-leg-per-ticket map.
+    out: list[WagerLogEntry] = []
+    for _ticket, (_play, row) in head_row.items():
+        wager = _parse_wager(row, cred.customer_id)
+        if wager is not None:
+            out.append(wager)
+    return out
 
 
 def compute_pending_by_date(

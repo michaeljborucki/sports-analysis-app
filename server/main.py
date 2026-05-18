@@ -12,6 +12,7 @@ from .odds.books.coral33.accounts import AccountsScraper
 from .odds.cache import OddsCache
 from .odds.cache_mode import CacheMode, CacheModeStore
 from .odds.client import OddsAPIClient
+from .odds.clv_capture import capture_closing_lines
 from .odds.fetcher import FetcherRegistry
 from .picks.reader import PicksReader
 from .sports import all_sports
@@ -64,8 +65,10 @@ def create_app() -> FastAPI:
         config_path=_Path(__file__).parent / "config" / "coral33.toml",
     )
     # Multi-account roll-up scraper (Accounts page). Reads CORAL33_ACCOUNTS
-    # env (JSON list) or falls back to the single-account env pair.
-    accounts_scraper = AccountsScraper()
+    # env (JSON list) or falls back to the single-account env pair. The
+    # cache reference lets the scraper persist balance_snapshots on every
+    # refresh, populating the daily-chart's pending overlay automatically.
+    accounts_scraper = AccountsScraper(cache=cache)
 
     from .odds.market_config import MarketConfig
     picks_readers: dict[str, PicksReader] = {}
@@ -82,6 +85,37 @@ def create_app() -> FastAPI:
             agent_key=sp.agent_dir.parent.name,
             include_bet_types=include,
         )
+
+    # Closing-line capture scheduler. Runs every 60s in LIVE mode and
+    # walks events whose commence_time is in T-15..T-5; each pass devigs
+    # the sharp-book consensus from odds_snapshot and writes one
+    # closing_lines row per outcome. The job is idempotent on the PK, so
+    # re-captures within the window overwrite with the latest fair line.
+    from apscheduler.schedulers.asyncio import AsyncIOScheduler
+    from datetime import datetime as _dt, timezone as _tz
+    clv_scheduler = AsyncIOScheduler()
+
+    def _capture_tick():
+        try:
+            n = capture_closing_lines(cache)
+            if n:
+                # Also purge old closing lines once per cycle. Cheap on a
+                # small table and keeps the file from growing unboundedly.
+                cache.purge_old_closing_lines(_dt.now(_tz.utc))
+        except Exception:
+            logging.exception("CLV capture tick failed")
+
+    async def _wager_log_refresh_tick():
+        """Re-pull the wager log so newly-placed bets appear without the
+        user having to hit ?force_wager_log=true. Coral33's wager-log
+        endpoint costs ~14 calls per account per refresh; 8 accounts ×
+        30-min cadence = 224 calls/hour, well under their rate limit.
+        Settled wagers are immutable so re-pulling is cheap on the
+        persistence side (JSON overwrite)."""
+        try:
+            await accounts_scraper.get_wager_log(force=True)
+        except Exception:
+            logging.exception("wager-log refresh tick failed")
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -104,6 +138,35 @@ def create_app() -> FastAPI:
                     logging.warning("CORAL33_ENABLED=true but credentials missing — skipping")
             else:
                 logging.info("coral33 fetcher disabled (CORAL33_ENABLED=false)")
+
+            # CLV capture only runs in LIVE — there's no point devigging
+            # the frozen SNAPSHOT cache (would just freeze a single
+            # closing-line snapshot to whatever the snapshot file says).
+            clv_scheduler.add_job(
+                _capture_tick,
+                trigger="interval",
+                seconds=60,
+                id="clv_capture",
+                replace_existing=True,
+                max_instances=1,
+            )
+            # Wager-log auto-refresh — also LIVE-only since it hits
+            # Coral33's API. Without this, the /bets endpoint serves
+            # whatever was on disk from the last manual force-refresh,
+            # which goes stale within hours of new bet placement.
+            clv_scheduler.add_job(
+                _wager_log_refresh_tick,
+                trigger="interval",
+                minutes=30,
+                id="wager_log_refresh",
+                replace_existing=True,
+                max_instances=1,
+            )
+            clv_scheduler.start()
+            logging.info(
+                "CLV capture (60s) + wager-log refresh (30min) "
+                "schedulers started"
+            )
         else:
             logging.info(
                 "cache_mode=%s — fetchers stopped, serving %s",
@@ -111,8 +174,19 @@ def create_app() -> FastAPI:
             )
 
         yield
+        try:
+            if clv_scheduler.running:
+                clv_scheduler.shutdown(wait=False)
+        except Exception:
+            logging.exception("CLV scheduler shutdown failed")
         coral33_fetcher.shutdown()
         fetcher.shutdown()
+        # Release the persistent Odds API HTTP/2 connection pool so the
+        # shutdown banner doesn't pollute logs with "unclosed AsyncClient".
+        try:
+            await client.aclose()
+        except Exception:
+            logging.exception("OddsAPIClient.aclose failed during shutdown")
 
     app = FastAPI(title="Betting Site API", lifespan=lifespan)
     app.add_middleware(
@@ -155,11 +229,16 @@ def create_app() -> FastAPI:
     app.include_router(ev_router(cache))
     app.include_router(profit_boost_router(cache))
     app.include_router(coral33_ctl_router(coral33_fetcher))
-    app.include_router(coral33_accounts_router(accounts_scraper))
+    app.include_router(
+        coral33_accounts_router(accounts_scraper, cache=cache, odds_client=client)
+    )
     app.include_router(
         cache_mode_router(
             mode_store, cache, live_cache_path, snapshot_cache_path,
             fetcher, coral33_fetcher,
+            clv_scheduler=clv_scheduler,
+            clv_capture_tick=_capture_tick,
+            wager_log_refresh_tick=_wager_log_refresh_tick,
         )
     )
     app.include_router(settings_router(settings_store, fetcher, sports))

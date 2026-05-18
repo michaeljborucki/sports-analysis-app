@@ -12,6 +12,8 @@ show a spinner.
 """
 from __future__ import annotations
 
+from datetime import datetime
+
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
@@ -137,7 +139,53 @@ class HistoryRollupModel(BaseModel):
     accounts: list[AccountHistoryModel]
 
 
-def build_router(scraper: AccountsScraper) -> APIRouter:
+class BetEntryModel(BaseModel):
+    """One ticket on the bet-history table. Parlays/teasers are flattened
+    to a single row representing the HEAD leg per the product spec —
+    `total_picks` tells the UI to render a "PARLAY ×N" chip."""
+    customer_id: str
+    account_label: str
+    ticket_number: int
+    accepted_at: datetime
+    settled_at: datetime | None = None
+    wager_status: str
+    wager_type: str
+    total_picks: int
+
+    amount_wagered: float
+    to_win_amount: float
+    amount_won: float
+    amount_lost: float
+    is_free_play: bool
+
+    # Head-leg market detail
+    sport_type: str | None = None
+    sport_sub_type: str | None = None
+    period: str | None = None
+    team1_id: str | None = None
+    team2_id: str | None = None
+    chosen_team_id: str | None = None
+    description: str | None = None
+    final_money: int | None = None
+    adj_spread: float | None = None
+    adj_total_points: float | None = None
+
+    # CLV placeholder — populated once we wire closing-line snapshots.
+    # Null means "not yet computed" rather than "no edge".
+    clv_pct: float | None = None
+
+
+class BetsResponse(BaseModel):
+    bets: list[BetEntryModel]
+    total_count: int
+    backfill_weeks: int
+
+
+def build_router(
+    scraper: AccountsScraper,
+    cache=None,
+    odds_client=None,
+) -> APIRouter:
     router = APIRouter()
 
     @router.get("/api/coral33/accounts", response_model=AccountsRollupModel)
@@ -208,6 +256,20 @@ def build_router(scraper: AccountsScraper) -> APIRouter:
                 for p in point_models:
                     p.pending = pending_by_date.get(p.date, 0.0)
 
+            # Overlay imported balance snapshots — last-write-wins per
+            # local date. This fills pending for dates OUTSIDE the wager-
+            # log's 2-week window (where the wager-log compute returns
+            # 0). For dates within the window, the snapshot value
+            # overrides the wager-log value since the snapshot is a
+            # direct measurement from Coral33 itself (no derivation).
+            if cache is not None:
+                snap_by_date = cache.latest_balance_snapshot_per_date(cid)
+                if snap_by_date and point_models:
+                    for p in point_models:
+                        s = snap_by_date.get(p.date)
+                        if s is not None:
+                            p.pending = float(s["pending"])
+
             # Overlay live pending onto today's point regardless — the
             # wager-log compute gives EOD-yesterday-ish for today (since
             # any wager open right now hasn't settled by EOD today either,
@@ -225,5 +287,153 @@ def build_router(scraper: AccountsScraper) -> APIRouter:
                 points=point_models,
             ))
         return HistoryRollupModel(weeks=weeks, accounts=accounts)
+
+    @router.get(
+        "/api/coral33/accounts/bets",
+        response_model=BetsResponse,
+    )
+    async def get_bets(
+        status: str = Query(
+            default="any",
+            description="any | open | settled (graded W/L/P/X)",
+        ),
+        force_wager_log: bool = Query(default=False),
+    ) -> BetsResponse:
+        """Flat bet-history across all accounts, one row per ticket.
+
+        Backed by the same wager-log cache that powers historical
+        pending. Parlays/teasers are collapsed to their head leg before
+        persistence, so this endpoint trivially returns one row per
+        ticket.
+
+        Sorted by accepted_at descending (newest first). Filters apply
+        in-memory — the dataset is small (~hundreds of tickets across
+        the 2-week window).
+        """
+        from ..odds.books.coral33.wager_log import DEFAULT_BACKFILL_WEEKS
+        from ..odds.clv import get_coral33_config, lookup_clv
+
+        creds_by_id = {c.customer_id: c for c in scraper.credentials}
+        log_by_cid = await scraper.get_wager_log(force=force_wager_log)
+
+        # CLV is computed on every request rather than persisted with the
+        # wager log. That way newly captured closing lines show up
+        # immediately and we don't need a schema bump to add a column to
+        # the persisted JSON. The lookup is cheap (single SQLite query
+        # per wager), and the dataset is small (~hundreds of bets).
+        config_pair = get_coral33_config() if cache is not None else None
+
+        all_bets: list[BetEntryModel] = []
+        for cid, wagers in log_by_cid.items():
+            cred = creds_by_id.get(cid)
+            label = (cred.label if cred and cred.label else cid)
+            for w in wagers:
+                clv_pct: float | None = None
+                if cache is not None and config_pair is not None:
+                    config, reverse = config_pair
+                    try:
+                        result = lookup_clv(w, cache, config, reverse)
+                    except Exception:
+                        # Defensive — CLV failures must never break the
+                        # bets endpoint. Log + null-out for this wager.
+                        import logging
+                        logging.getLogger(__name__).exception(
+                            "CLV lookup failed for ticket %s",
+                            w.ticket_number,
+                        )
+                        result = None
+                    if result is not None:
+                        # clv_pct is stored as a fraction (e.g. 0.025 for
+                        # 2.5% over the close). UI multiplies by 100.
+                        clv_pct = result.clv_pct * 100.0
+                all_bets.append(BetEntryModel(
+                    customer_id=cid,
+                    account_label=label,
+                    ticket_number=w.ticket_number,
+                    accepted_at=w.accepted_at,
+                    settled_at=w.settled_at,
+                    wager_status=w.wager_status,
+                    wager_type=w.wager_type,
+                    total_picks=w.total_picks,
+                    amount_wagered=w.amount_wagered,
+                    to_win_amount=w.to_win_amount,
+                    amount_won=w.amount_won,
+                    amount_lost=w.amount_lost,
+                    is_free_play=w.is_free_play,
+                    sport_type=w.sport_type,
+                    sport_sub_type=w.sport_sub_type,
+                    period=w.period,
+                    team1_id=w.team1_id,
+                    team2_id=w.team2_id,
+                    chosen_team_id=w.chosen_team_id,
+                    description=w.description,
+                    final_money=w.final_money,
+                    adj_spread=w.adj_spread,
+                    adj_total_points=w.adj_total_points,
+                    clv_pct=clv_pct,
+                ))
+
+        status_norm = status.lower().strip() if status else "any"
+        if status_norm == "open":
+            all_bets = [b for b in all_bets if b.wager_status == "O"]
+        elif status_norm == "settled":
+            all_bets = [b for b in all_bets if b.wager_status != "O"]
+        all_bets.sort(key=lambda b: b.accepted_at, reverse=True)
+
+        return BetsResponse(
+            bets=all_bets,
+            total_count=len(all_bets),
+            backfill_weeks=DEFAULT_BACKFILL_WEEKS,
+        )
+
+    @router.post("/api/coral33/accounts/clv-backfill")
+    async def clv_backfill(
+        dry_run: bool = Query(default=True, description="Estimate cost without spending credits"),
+        include_props: bool = Query(default=False, description="Fetch player-prop markets too (≈2× cost)"),
+        max_credits: int | None = Query(default=None, description="Cap total credits consumed; abort once reached"),
+    ) -> dict:
+        """One-shot historical CLV backfill.
+
+        Walks the persisted wager log, finds entries that don't yet
+        have a closing line, discovers their Odds API event_ids via the
+        historical events endpoint, and fetches per-event archived odds
+        ~7 minutes before commence. Devigs and writes to closing_lines.
+
+        Default `dry_run=True` performs event discovery and reports the
+        match counts + estimated cost without spending credits on
+        per-event fetches. Re-run with `dry_run=false` to execute.
+
+        Idempotent — already-covered wagers are skipped, partial runs
+        can resume.
+        """
+        if cache is None or odds_client is None:
+            return {
+                "status": "unavailable",
+                "reason": (
+                    "CLV backfill requires both the OddsCache and the "
+                    "OddsAPIClient — wire them through build_router()."
+                ),
+            }
+        from ..odds.clv import get_coral33_config
+        from ..odds.clv_backfill import backfill_clv
+
+        config, _ = get_coral33_config()
+        # Union all accounts' wager logs.
+        log_by_cid = await scraper.get_wager_log(force=False)
+        wagers = [w for ws in log_by_cid.values() for w in ws]
+
+        stats = await backfill_clv(
+            wagers=wagers,
+            cache=cache,
+            client=odds_client,
+            config=config,
+            include_props=include_props,
+            dry_run=dry_run,
+            max_credits=max_credits,
+        )
+        result = stats.as_dict()
+        result["dry_run"] = dry_run
+        result["include_props"] = include_props
+        return result
 
     return router

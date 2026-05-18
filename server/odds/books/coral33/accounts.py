@@ -468,11 +468,16 @@ class AccountsScraper:
     serialized by an asyncio.Lock so concurrent refresh requests collapse
     to one pull."""
 
-    def __init__(self) -> None:
+    def __init__(self, cache=None) -> None:
         self._lock = asyncio.Lock()
         self._creds = load_account_credentials()
         self._cached: AccountsRollup | None = None
         self._refreshing = False
+        # Optional OddsCache reference — when provided, every successful
+        # refresh writes a balance_snapshots row per account. Makes the
+        # daily-chart "pending overlay" self-populating; no need to run
+        # the external balance-dump script anymore.
+        self._cache = cache
         # History cache: {customer_id: (refreshed_at_iso, weeks, points)}
         self._history: dict[str, tuple[str, int, list[HistoryPoint]]] = {}
         self._history_lock = asyncio.Lock()
@@ -525,6 +530,34 @@ class AccountsScraper:
                     "coral33 accounts refresh: %d accounts in %.1fs",
                     len(snapshots), time.time() - t0,
                 )
+                # Persist a balance-snapshot row per account so the
+                # daily-chart pending overlay accumulates indefinitely
+                # without external scripts. Best-effort: any DB error
+                # logs and continues — we don't want a write failure
+                # to drop a successful refresh.
+                if self._cache is not None:
+                    try:
+                        now = datetime.now(timezone.utc)
+                        rows = [
+                            {
+                                "customer_id": s.customer_id,
+                                "captured_at": now.isoformat(),
+                                "local_date": now.date().isoformat(),
+                                "current_balance": float(s.current_balance),
+                                "pending": float(s.pending_wager_balance),
+                                "available": float(s.available_balance),
+                                "free_play": float(s.free_play_balance),
+                                "source": "scraper_refresh",
+                            }
+                            for s in self._cached.snapshots
+                            if s.error is None
+                        ]
+                        if rows:
+                            self._cache.upsert_balance_snapshots(rows)
+                    except Exception:
+                        logger.exception(
+                            "balance_snapshots upsert failed (continuing)"
+                        )
             finally:
                 self._refreshing = False
         return self.cached()

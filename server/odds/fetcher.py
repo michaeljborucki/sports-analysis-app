@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import time
 from datetime import datetime, timezone
 from typing import Callable
@@ -18,6 +19,20 @@ from .normalize import normalize_odds_response
 
 
 logger = logging.getLogger(__name__)
+
+
+# Bound on simultaneous per-event Odds API requests within one tier run.
+# Set ODDS_API_CONCURRENCY=1 to fall back to pre-2026-05-12 serial behavior.
+#
+# Default 4 is calibrated to stay under the Odds API's per-second freq
+# limit. Empirically 8 triggers 429 EXCEEDED_FREQ_LIMIT on MLB-sized
+# slates — the persistent HTTP/2 client completes 8 requests in well
+# under a second, exceeding the plan's req/sec ceiling. The client adds
+# a 429-aware retry with backoff so transient bursts don't drop events,
+# but the steady-state target is "comfortably under the limit." Raise
+# this if your plan tier supports more (Odds API publishes per-tier
+# req/sec caps on their pricing page).
+ODDS_API_CONCURRENCY = max(1, int(os.environ.get("ODDS_API_CONCURRENCY", "4")))
 
 
 class FetcherRegistry:
@@ -288,37 +303,60 @@ class FetcherRegistry:
         if not events:
             return
         now = datetime.now(timezone.utc)
-        total = 0
-        last_rate: dict = {}
-        for ev in events:
-            api_key = self._event_sport_map.get(ev["event_id"])
+        # Resolve fallback API key once (vs once per event in the old loop).
+        resolved_fallback = await self._resolve_keys(sport)
+
+        # Per-event fetch: returns (rows_appended_count, rate_info). Wrapped
+        # in a semaphore so we cap simultaneous in-flight Odds API requests.
+        sem = asyncio.Semaphore(ODDS_API_CONCURRENCY)
+
+        async def fetch_one(ev: dict) -> tuple[int, dict]:
+            event_id = ev["event_id"]
+            api_key = self._event_sport_map.get(event_id)
             if not api_key:
-                # Fallback to the first resolved key. Works for single-key
-                # sports (MLB). For tennis, this may 404; skip if so.
-                resolved = await self._resolve_keys(sport)
-                if not resolved:
-                    continue
-                api_key = resolved[0]
-            try:
-                data, rate = await self.client.fetch_event_markets(
-                    sport_key=api_key,
-                    event_id=ev["event_id"],
-                    markets=tier.markets,
-                    regions=tier.regions,
-                )
-                last_rate = rate or last_rate
-                if data:
-                    rows = normalize_odds_response(
-                        data, fetched_at=now, sport_key=sport.key
+                if not resolved_fallback:
+                    return 0, {}
+                api_key = resolved_fallback[0]
+            async with sem:
+                try:
+                    data, rate = await self.client.fetch_event_markets(
+                        sport_key=api_key,
+                        event_id=event_id,
+                        markets=tier.markets,
+                        regions=tier.regions,
                     )
-                    if rows:
-                        self.cache.upsert(rows)
-                        total += len(rows)
-            except OddsAPIError as e:
-                logger.warning(
-                    "%s:%s event %s: %s", sport.key, tier.name, ev["event_id"], e
-                )
-                self._last_error[f"{sport.key}:{tier.name}"] = str(e)
+                except OddsAPIError as e:
+                    logger.warning(
+                        "%s:%s event %s: %s",
+                        sport.key, tier.name, event_id, e,
+                    )
+                    self._last_error[f"{sport.key}:{tier.name}"] = str(e)
+                    return 0, {}
+            if not data:
+                return 0, rate or {}
+            rows = normalize_odds_response(
+                data, fetched_at=now, sport_key=sport.key
+            )
+            if not rows:
+                return 0, rate or {}
+            # Cache upsert is sqlite + GIL-bound; safe to call from the
+            # task body since it's a fast synchronous operation. Keeping
+            # it inside the task means rows land as each event resolves
+            # rather than buffering until the whole batch completes.
+            self.cache.upsert(rows)
+            return len(rows), rate or {}
+
+        results = await asyncio.gather(
+            *(fetch_one(ev) for ev in events), return_exceptions=False,
+        )
+        total = sum(r[0] for r in results)
+        # last_rate: pick the most recent rate-info dict (any non-empty one
+        # is fine since they reflect the same plan-tier counters).
+        last_rate: dict = {}
+        for _, r in reversed(results):
+            if r:
+                last_rate = r
+                break
         # Always stamp freshness — see _run_main note. last_rate may be
         # empty if the API skipped rate headers; we still want the chip to
         # know rows just landed.
@@ -340,32 +378,50 @@ class FetcherRegistry:
         if not events:
             return
         now = datetime.now(timezone.utc)
-        total = 0
-        last_rate: dict = {}
-        for ev in events:
-            api_key = self._event_sport_map.get(ev["event_id"])
+        resolved_fallback = await self._resolve_keys(sport)
+
+        # Same parallelism pattern as _run_per_event — props payloads are
+        # the largest of any tier (a 12-market call on a big NBA slate can
+        # be 100 KB+), so concurrency here has the biggest wall-clock impact.
+        sem = asyncio.Semaphore(ODDS_API_CONCURRENCY)
+
+        async def fetch_one(ev: dict) -> tuple[int, dict]:
+            event_id = ev["event_id"]
+            api_key = self._event_sport_map.get(event_id)
             if not api_key:
-                resolved = await self._resolve_keys(sport)
-                if not resolved:
-                    continue
-                api_key = resolved[0]
-            try:
-                data, rate = await self.client.fetch_event_markets(
-                    sport_key=api_key,
-                    event_id=ev["event_id"],
-                    markets=tier.markets,
-                    regions=tier.regions,
-                )
-                last_rate = rate or last_rate
-                if data:
-                    rows = normalize_odds_response(
-                        data, fetched_at=now, sport_key=sport.key
+                if not resolved_fallback:
+                    return 0, {}
+                api_key = resolved_fallback[0]
+            async with sem:
+                try:
+                    data, rate = await self.client.fetch_event_markets(
+                        sport_key=api_key,
+                        event_id=event_id,
+                        markets=tier.markets,
+                        regions=tier.regions,
                     )
-                    if rows:
-                        self.cache.upsert(rows)
-                        total += len(rows)
-            except Exception:
-                logger.exception("props event error: %s", ev["event_id"])
+                except Exception:
+                    logger.exception("props event error: %s", event_id)
+                    return 0, {}
+            if not data:
+                return 0, rate or {}
+            rows = normalize_odds_response(
+                data, fetched_at=now, sport_key=sport.key
+            )
+            if not rows:
+                return 0, rate or {}
+            self.cache.upsert(rows)
+            return len(rows), rate or {}
+
+        results = await asyncio.gather(
+            *(fetch_one(ev) for ev in events), return_exceptions=False,
+        )
+        total = sum(r[0] for r in results)
+        last_rate: dict = {}
+        for _, r in reversed(results):
+            if r:
+                last_rate = r
+                break
         # Always stamp freshness — see _run_main note.
         self.cache.set_status(
             last_fetch_at=datetime.now(timezone.utc),

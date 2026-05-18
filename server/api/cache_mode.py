@@ -67,21 +67,63 @@ def build_router(
     snapshot_path: Path,
     fetcher: FetcherRegistry,
     coral33_fetcher: Coral33Fetcher,
+    clv_scheduler=None,
+    clv_capture_tick=None,
+    wager_log_refresh_tick=None,
 ) -> APIRouter:
     router = APIRouter()
 
     def _apply_mode(mode: CacheMode) -> None:
-        """Apply mode side-effects: fetcher state + cache path."""
+        """Apply mode side-effects: fetcher state + cache path + CLV
+        capture scheduler + wager-log refresh scheduler."""
         if mode == CacheMode.LIVE:
             cache.path = live_path
             fetcher.start_all()
             coral33_fetcher.start_all()
+            # CLV capture follows the same gate as the fetchers — it only
+            # makes sense to devig a live cache (LATEST/SNAPSHOT are
+            # frozen). Without this, flipping LATEST→LIVE at runtime
+            # would leave the scheduler off until the next restart.
+            if clv_scheduler is not None and clv_capture_tick is not None:
+                if not clv_scheduler.running:
+                    clv_scheduler.start()
+                clv_scheduler.add_job(
+                    clv_capture_tick,
+                    trigger="interval",
+                    seconds=60,
+                    id="clv_capture",
+                    replace_existing=True,
+                    max_instances=1,
+                )
+            # Wager-log refresh — same gate (must be LIVE to hit
+            # Coral33's API). 30-min cadence keeps newly-placed bets
+            # surfacing on /accounts within a sensible window.
+            if (
+                clv_scheduler is not None
+                and wager_log_refresh_tick is not None
+            ):
+                if not clv_scheduler.running:
+                    clv_scheduler.start()
+                clv_scheduler.add_job(
+                    wager_log_refresh_tick,
+                    trigger="interval",
+                    minutes=30,
+                    id="wager_log_refresh",
+                    replace_existing=True,
+                    max_instances=1,
+                )
         else:
             # LATEST or SNAPSHOT — stop both fetchers so nothing writes to the
             # cache underneath us.
             fetcher.stop_all()
             coral33_fetcher.stop_all()
             cache.path = snapshot_path if mode == CacheMode.SNAPSHOT else live_path
+            if clv_scheduler is not None:
+                for job_id in ("clv_capture", "wager_log_refresh"):
+                    try:
+                        clv_scheduler.remove_job(job_id)
+                    except Exception:
+                        pass  # job didn't exist; nothing to remove
 
     @router.get("/api/cache-mode", response_model=CacheModeStatus)
     async def get_mode() -> CacheModeStatus:

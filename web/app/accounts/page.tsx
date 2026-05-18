@@ -113,6 +113,42 @@ interface HistoryRollup {
   accounts: AccountHistory[];
 }
 
+interface BetEntry {
+  customer_id: string;
+  account_label: string;
+  ticket_number: number;
+  accepted_at: string;
+  settled_at: string | null;
+  wager_status: string;     // 'O' | 'W' | 'L' | 'P' | 'X' | other coral codes
+  wager_type: string;       // 'S'|'P'|'T'|'M'|'L'|'E'|'R'|...
+  total_picks: number;      // 1 for straight, N for parlay (head leg shown)
+  amount_wagered: number;
+  to_win_amount: number;
+  amount_won: number;
+  amount_lost: number;
+  is_free_play: boolean;
+  sport_type: string | null;
+  sport_sub_type: string | null;
+  period: string | null;
+  team1_id: string | null;
+  team2_id: string | null;
+  chosen_team_id: string | null;
+  description: string | null;
+  final_money: number | null;
+  adj_spread: number | null;
+  adj_total_points: number | null;
+  // CLV — null until the closing-line snapshot pipeline is wired.
+  clv_pct: number | null;
+}
+
+interface BetsResponse {
+  bets: BetEntry[];
+  total_count: number;
+  backfill_weeks: number;
+}
+
+type BetsTab = "balance" | "bets";
+
 function fmtUsd(n: number, opts?: { compact?: boolean }): string {
   const sign = n < 0 ? "-" : "";
   if (opts?.compact && Math.abs(n) >= 1000) {
@@ -170,9 +206,20 @@ export default function AccountsPage() {
   );
   const [busy, setBusy] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [tab, setTab] = useState<BetsTab>("balance");
 
   const { data: history } = useSWR<HistoryRollup>(
     "/api/coral33/accounts/history?weeks=12",
+    fetchJson,
+    { refreshInterval: 5 * 60_000 },
+  );
+
+  // Bets fetch is gated on the tab — switching to Bets triggers the
+  // initial load; switching away pauses revalidation. The endpoint is
+  // cheap (reads from the persisted wager-log JSONs), but there's no
+  // need to poll it when the tab isn't visible.
+  const { data: betsData } = useSWR<BetsResponse>(
+    tab === "bets" ? "/api/coral33/accounts/bets" : null,
     fetchJson,
     { refreshInterval: 5 * 60_000 },
   );
@@ -304,6 +351,35 @@ export default function AccountsPage() {
             />
           </section>
 
+          {/* Sub-tab nav: Balance (chart + per-account table) vs Bets
+              (flat ticket history across all accounts). State is local
+              to the page — switching tabs doesn't change the URL since
+              the same data populates both views from the same wager-log
+              cache. */}
+          <div
+            role="tablist"
+            aria-label="Accounts view"
+            className="inline-flex h-8 rounded-md border border-border-subtle bg-bg-1 p-0.5 text-[11px] font-medium uppercase tracking-wider"
+          >
+            <ChartModeButton
+              active={tab === "balance"}
+              onClick={() => setTab("balance")}
+              label="Balance"
+            />
+            <ChartModeButton
+              active={tab === "bets"}
+              onClick={() => setTab("bets")}
+              label={`Bets${
+                betsData?.total_count ? ` · ${betsData.total_count}` : ""
+              }`}
+            />
+          </div>
+
+          {tab === "bets" ? (
+            <BetsTable bets={betsData?.bets} weeks={betsData?.backfill_weeks} />
+          ) : (
+            <>
+
           {/* Cumulative P&L chart */}
           {history && history.accounts.length > 0 && (
             <PnLChart history={history} />
@@ -350,6 +426,8 @@ export default function AccountsPage() {
               </tbody>
             </table>
           </section>
+            </>
+          )}
         </>
       )}
     </div>
@@ -1230,5 +1308,297 @@ function ChartModeButton({
     >
       {label}
     </button>
+  );
+}
+
+
+// ─────────────────────────── Bets table ─────────────────────────────
+
+type BetStatusFilter = "any" | "open" | "settled";
+
+// Map Coral33 wager-status codes → human-readable label + tone. Values
+// not in this map render as the raw code (so unexpected statuses still
+// surface rather than silently dropping into "settled").
+const STATUS_LABEL: Record<string, { label: string; tone: "open" | "win" | "loss" | "push" | "void" }> = {
+  O: { label: "Open",   tone: "open" },
+  W: { label: "Won",    tone: "win" },
+  L: { label: "Lost",   tone: "loss" },
+  P: { label: "Push",   tone: "push" },
+  X: { label: "Void",   tone: "void" },
+};
+
+// Coral33 wager-type codes → display chip. S = straight (no chip; the
+// default), everything else gets a small label.
+const WAGER_TYPE_LABEL: Record<string, string> = {
+  S: "",         // straight — no chip
+  M: "",         // money-line single — same as straight visually
+  P: "Parlay",
+  T: "Teaser",
+  R: "RR",       // round-robin
+  I: "If-Bet",
+  L: "Live",     // observed coral code; treat as live single
+  E: "Event",    // observed coral code; treat as event/special
+};
+
+function formatBetPick(b: BetEntry): string {
+  // Compose the chosen-side + line into one column. Spread bets get the
+  // signed point glued to the team; total bets get O/U + the line; ML
+  // and miscellany fall back to just the chosen-team or the raw
+  // description.
+  const team = b.chosen_team_id || b.description || "—";
+  if (b.adj_spread != null && b.adj_spread !== 0) {
+    const sign = b.adj_spread > 0 ? "+" : "";
+    return `${team} ${sign}${b.adj_spread}`;
+  }
+  if (b.adj_total_points != null && b.adj_total_points !== 0) {
+    // Chosen team for totals is often "Over <line>" or "Under <line>" —
+    // use the line directly.
+    return `${team} ${b.adj_total_points}`;
+  }
+  return team;
+}
+
+function formatBetMatchup(b: BetEntry): string {
+  if (!b.team1_id && !b.team2_id) return b.description || "—";
+  return `${b.team1_id ?? "?"} @ ${b.team2_id ?? "?"}`;
+}
+
+function formatAmericanOdds2(n: number | null): string {
+  if (n == null) return "—";
+  return n > 0 ? `+${n}` : String(n);
+}
+
+function fmtBetDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function BetsTable({
+  bets,
+  weeks,
+}: {
+  bets: BetEntry[] | undefined;
+  weeks: number | undefined;
+}) {
+  const [statusFilter, setStatusFilter] = useState<BetStatusFilter>("any");
+
+  // Client-side status filter — the API also supports `?status=`, but
+  // filtering in-memory makes toggling instant (no refetch).
+  const filtered = useMemo(() => {
+    if (!bets) return undefined;
+    if (statusFilter === "open")
+      return bets.filter(b => b.wager_status === "O");
+    if (statusFilter === "settled")
+      return bets.filter(b => b.wager_status !== "O");
+    return bets;
+  }, [bets, statusFilter]);
+
+  if (!bets) {
+    return (
+      <section className="border border-border-subtle rounded-md bg-bg-0 p-4 text-text-3 text-xs">
+        Loading bet history…
+      </section>
+    );
+  }
+
+  return (
+    <section className="flex flex-col gap-2">
+      {/* Filter row + meta */}
+      <div className="flex items-center justify-between gap-3 flex-wrap text-[11px]">
+        <div className="flex items-center gap-2">
+          <span className="text-text-3 uppercase tracking-wider">Status</span>
+          <div
+            role="tablist"
+            aria-label="Status filter"
+            className="inline-flex h-7 rounded-md border border-border-subtle bg-bg-1 p-0.5 font-medium uppercase tracking-wider"
+          >
+            <ChartModeButton
+              active={statusFilter === "any"}
+              onClick={() => setStatusFilter("any")}
+              label="Any"
+            />
+            <ChartModeButton
+              active={statusFilter === "open"}
+              onClick={() => setStatusFilter("open")}
+              label="Open"
+            />
+            <ChartModeButton
+              active={statusFilter === "settled"}
+              onClick={() => setStatusFilter("settled")}
+              label="Settled"
+            />
+          </div>
+        </div>
+        <div className="text-text-3 tabular">
+          {filtered ? filtered.length : 0} of {bets.length} bets
+          {weeks != null && (
+            <span className="text-text-3"> · last {weeks}w</span>
+          )}
+        </div>
+      </div>
+
+      <div className="border border-border-subtle rounded-md bg-bg-0 overflow-hidden">
+        <table className="w-full text-xs">
+          <thead className="bg-bg-1 text-text-2">
+            <tr>
+              <th className="text-left px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
+                Placed
+              </th>
+              <th className="text-left px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
+                Account
+              </th>
+              <th className="text-left px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
+                Sport
+              </th>
+              <th className="text-left px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
+                Matchup
+              </th>
+              <th className="text-left px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
+                Bet
+              </th>
+              <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
+                Price
+              </th>
+              <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
+                Stake
+              </th>
+              <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
+                To Win
+              </th>
+              <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
+                Result
+              </th>
+              <th
+                className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px] text-text-3"
+                title="Closing-line value — coming soon (requires closing-line snapshots)"
+              >
+                CLV
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered && filtered.length === 0 ? (
+              <tr>
+                <td colSpan={10} className="px-3 py-6 text-center text-text-3">
+                  No bets match this filter.
+                </td>
+              </tr>
+            ) : (
+              filtered?.map(b => (
+                <BetRow key={`${b.customer_id}-${b.ticket_number}`} b={b} />
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function BetRow({ b }: { b: BetEntry }) {
+  const status = STATUS_LABEL[b.wager_status] ?? {
+    label: b.wager_status,
+    tone: "void" as const,
+  };
+  const wagerTypeChip =
+    WAGER_TYPE_LABEL[b.wager_type] !== undefined
+      ? WAGER_TYPE_LABEL[b.wager_type]
+      : b.wager_type;
+  const showParlayCount = b.total_picks > 1;
+
+  // Net P&L on the result column. Open bets show "—"; pushes show $0;
+  // wins show the won amount, losses the negated stake.
+  const net = (() => {
+    if (b.wager_status === "O") return null;
+    if (b.wager_status === "W") return b.amount_won;
+    if (b.wager_status === "L") return -b.amount_lost;
+    return 0; // push / void
+  })();
+
+  return (
+    <tr className="border-t border-border-subtle hover:bg-bg-1">
+      <td className="px-2 py-1.5 align-middle whitespace-nowrap text-text-2">
+        {fmtBetDate(b.accepted_at)}
+      </td>
+      <td className="px-2 py-1.5 align-middle whitespace-nowrap text-text-1">
+        {b.account_label}
+      </td>
+      <td className="px-2 py-1.5 align-middle whitespace-nowrap text-text-2">
+        {b.sport_sub_type ?? b.sport_type ?? "—"}
+      </td>
+      <td className="px-2 py-1.5 align-middle text-text-2 truncate max-w-[260px]">
+        <span title={formatBetMatchup(b)}>{formatBetMatchup(b)}</span>
+      </td>
+      <td className="px-2 py-1.5 align-middle text-text-1">
+        <span className="inline-flex items-center gap-1.5">
+          {wagerTypeChip && (
+            <span
+              className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-accent bg-accent/10"
+              title={
+                showParlayCount
+                  ? `${wagerTypeChip} of ${b.total_picks} legs — head leg shown`
+                  : wagerTypeChip
+              }
+            >
+              {wagerTypeChip}
+              {showParlayCount ? ` ×${b.total_picks}` : ""}
+            </span>
+          )}
+          {b.is_free_play && (
+            <span className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-flash bg-flash/15">
+              FREE
+            </span>
+          )}
+          <span>{formatBetPick(b)}</span>
+        </span>
+      </td>
+      <td className="px-2 py-1.5 align-middle text-right tabular text-text-1">
+        {formatAmericanOdds2(b.final_money)}
+      </td>
+      <td className="px-2 py-1.5 align-middle text-right tabular text-text-2">
+        {fmtUsd(b.amount_wagered)}
+      </td>
+      <td className="px-2 py-1.5 align-middle text-right tabular text-text-3">
+        {fmtUsd(b.to_win_amount)}
+      </td>
+      <td className="px-2 py-1.5 align-middle text-right whitespace-nowrap">
+        <span
+          className={clsx(
+            "inline-flex items-center px-1.5 rounded-sm text-[10px] font-semibold tracking-wider",
+            status.tone === "open" && "text-text-2 bg-bg-2",
+            status.tone === "win" && "text-price-up bg-price-up/15",
+            status.tone === "loss" && "text-price-down bg-price-down/15",
+            status.tone === "push" && "text-text-2 bg-bg-2",
+            status.tone === "void" && "text-text-3 bg-bg-2",
+          )}
+        >
+          {status.label}
+        </span>
+        {net != null && (
+          <span
+            className={clsx(
+              "tabular ml-1.5",
+              net > 0 && "text-price-up",
+              net < 0 && "text-price-down",
+              net === 0 && "text-text-3",
+            )}
+          >
+            {net > 0 ? "+" : ""}{fmtUsd(Math.abs(net))}
+          </span>
+        )}
+      </td>
+      <td
+        className="px-2 py-1.5 align-middle text-right tabular text-text-3"
+        title="Closing-line value — placeholder until the closing-line snapshot pipeline lands"
+      >
+        {b.clv_pct == null ? "—" : `${b.clv_pct.toFixed(2)}%`}
+      </td>
+    </tr>
   );
 }
