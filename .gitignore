@@ -18,6 +18,11 @@ out/
 .env.local
 *.local
 
+# Secrets — RSA private keys etc. Never commit under any circumstance.
+server/.secrets/
+*.pem
+*.key
+
 # Superpowers scratch
 .superpowers/
 

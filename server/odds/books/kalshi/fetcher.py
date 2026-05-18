@@ -70,10 +70,19 @@ class KalshiFetcher:
         self,
         cache: OddsCache,
         config_path: Path,
+        api_key: str | None = None,
+        private_key_path: Path | None = None,
     ):
         self.cache = cache
         self.config_path = config_path
-        self.client = KalshiClient()
+        # When auth creds are provided, every request is signed — unlocks
+        # higher rate limits and the portfolio endpoints. Unauthed reads
+        # still work without them, so missing creds don't break the
+        # public-data fetch.
+        self.client = KalshiClient(
+            api_key=api_key,
+            private_key_path=private_key_path,
+        )
         self.scheduler = AsyncIOScheduler()
         self._running = False
         self._config: KalshiConfig | None = None

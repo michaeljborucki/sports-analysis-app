@@ -23,6 +23,8 @@ class Config:
     coral33_customer_id: str
     coral33_password: str
     coral33_enabled: bool
+    kalshi_api_key: str
+    kalshi_private_key_path: Path | None
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -46,4 +48,10 @@ class Config:
             coral33_password=os.environ.get("CORAL33_PASSWORD", ""),
             coral33_enabled=os.environ.get("CORAL33_ENABLED", "false").lower()
             not in ("false", "0", "no", "off"),
+            kalshi_api_key=os.environ.get("KALSHI_API_KEY", "").strip(),
+            kalshi_private_key_path=(
+                Path(p).expanduser().resolve()
+                if (p := os.environ.get("KALSHI_PRIVATE_KEY_PATH", "").strip())
+                else None
+            ),
         )

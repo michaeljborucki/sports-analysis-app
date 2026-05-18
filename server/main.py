@@ -66,12 +66,15 @@ def create_app() -> FastAPI:
         config_path=_Path(__file__).parent / "config" / "coral33.toml",
     )
     # Kalshi direct-API fetcher — replaces Odds API's `kalshi` rows
-    # (which are 2-5min stale) with a ~15s direct poll. No auth, no key.
-    # Lifecycle parallels coral33_fetcher: start in LIVE, stop in
-    # LATEST/SNAPSHOT, shut down on app exit.
+    # (which are 2-5min stale) with a ~15s direct poll. Reads are public
+    # so the fetcher works without credentials; when KALSHI_API_KEY and
+    # KALSHI_PRIVATE_KEY_PATH are set, every request is signed (unlocks
+    # higher rate limits + portfolio/position endpoints).
     kalshi_fetcher = KalshiFetcher(
         cache=cache,
         config_path=_Path(__file__).parent / "config" / "kalshi.toml",
+        api_key=config.kalshi_api_key or None,
+        private_key_path=config.kalshi_private_key_path,
     )
     # Multi-account roll-up scraper (Accounts page). Reads CORAL33_ACCOUNTS
     # env (JSON list) or falls back to the single-account env pair. The
