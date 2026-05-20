@@ -1,0 +1,38 @@
+# Polymarket direct-API integration — per-sport slug-prefix mapping.
+#
+# Polymarket discovery: GET gamma-api.polymarket.com/events?tag_slug=sports
+# returns every active sports event globally. We filter locally by
+# `slug_prefix` to bucket events into our sport_keys.
+#
+# Phase 1: NBA / MLB / NHL h2h moneylines only.
+# Phase 2 will add: spreads, totals, team_totals, 3-way soccer h2h,
+# tennis, player props.
+
+[sports.nba]
+slug_prefix = "nba"
+
+[sports.mlb]
+slug_prefix = "mlb"
+
+[sports.nhl]
+slug_prefix = "nhl"
+
+# Phase 2 stubs (commented — uncomment when alt-market normalizers ship):
+#
+# [sports.wnba]      slug_prefix = "wnba"
+# [sports.soccer]    slug_prefix = "epl"     # plus laliga / seriea / etc.
+# [sports.tennis_atp] slug_prefix = "atp"
+# [sports.tennis_wta] slug_prefix = "wta"
+
+
+# ─── Team aliases ────────────────────────────────────────────────────
+# Lowercase + punctuation-stripped form → canonical (Odds API) team name.
+# The primary path is TEAM_CODE_TO_CANONICAL in mapping.py which maps
+# directly off slug team codes. Aliases are reactive — add entries here
+# when orphan logs surface a code/name the code map doesn't recognize.
+
+[team_aliases.nba]
+
+[team_aliases.mlb]
+
+[team_aliases.nhl]

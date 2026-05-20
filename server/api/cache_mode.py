@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 from ..odds.books.coral33.fetcher import Coral33Fetcher
 from ..odds.books.kalshi.fetcher import KalshiFetcher
+from ..odds.books.polymarket.fetcher import PolymarketFetcher
 from ..odds.cache import OddsCache
 from ..odds.cache_mode import CacheMode, CacheModeStore
 from ..odds.fetcher import FetcherRegistry
@@ -72,6 +73,7 @@ def build_router(
     clv_capture_tick=None,
     wager_log_refresh_tick=None,
     kalshi_fetcher: KalshiFetcher | None = None,
+    polymarket_fetcher: PolymarketFetcher | None = None,
 ) -> APIRouter:
     router = APIRouter()
 
@@ -84,6 +86,8 @@ def build_router(
             coral33_fetcher.start_all()
             if kalshi_fetcher is not None:
                 kalshi_fetcher.start_all()
+            if polymarket_fetcher is not None:
+                polymarket_fetcher.start_all()
             # CLV capture follows the same gate as the fetchers — it only
             # makes sense to devig a live cache (LATEST/SNAPSHOT are
             # frozen). Without this, flipping LATEST→LIVE at runtime
@@ -123,6 +127,8 @@ def build_router(
             coral33_fetcher.stop_all()
             if kalshi_fetcher is not None:
                 kalshi_fetcher.stop_all()
+            if polymarket_fetcher is not None:
+                polymarket_fetcher.stop_all()
             cache.path = snapshot_path if mode == CacheMode.SNAPSHOT else live_path
             if clv_scheduler is not None:
                 for job_id in ("clv_capture", "wager_log_refresh"):
@@ -185,6 +191,8 @@ def build_router(
             coral33_fetcher.stop_all()
             if kalshi_fetcher is not None:
                 kalshi_fetcher.stop_all()
+            if polymarket_fetcher is not None:
+                polymarket_fetcher.stop_all()
         try:
             if snapshot_path.exists():
                 snapshot_path.unlink()
@@ -199,6 +207,8 @@ def build_router(
                 coral33_fetcher.start_all()
                 if kalshi_fetcher is not None:
                     kalshi_fetcher.start_all()
+                if polymarket_fetcher is not None:
+                    polymarket_fetcher.start_all()
         rows, _newest = _inspect_db(snapshot_path)
         return CacheSnapshotResponse(
             status="captured",
