@@ -4,9 +4,11 @@
 # returns every active sports event globally. We filter locally by
 # `slug_prefix` to bucket events into our sport_keys.
 #
-# Phase 1: NBA / MLB / NHL h2h moneylines only.
-# Phase 2 will add: spreads, totals, team_totals, 3-way soccer h2h,
-# tennis, player props.
+# Phase 1: NBA / MLB / NHL h2h moneylines.
+# Phase 2 (this commit): adds WNBA + EPL (soccer multi-prefix). Per-sport
+# coverage now includes h2h, spread (alt-line ladder), total (Over/Under
+# ladder), and NBA player_points props. Soccer h2h is 3-way (separate
+# yes/no per outcome). Tennis / esports / period markets deferred.
 
 [sports.nba]
 slug_prefix = "nba"
@@ -17,10 +19,22 @@ slug_prefix = "mlb"
 [sports.nhl]
 slug_prefix = "nhl"
 
-# Phase 2 stubs (commented — uncomment when alt-market normalizers ship):
+# WNBA — same slug shape as NBA. Polymarket hasn't published a regular-
+# season WNBA slate at the time of this commit (probed empty 2026-05-12);
+# mapping is wired so it works the moment events appear.
+[sports.wnba]
+slug_prefix = "wnba"
+
+# Soccer — Polymarket uses LEAGUE-specific prefixes (epl, laliga, seriea,
+# bundesliga, ligue1, mls), not a generic "soccer" prefix. The fetcher
+# filters events with `startswith(any prefix + "-")`. Start with EPL
+# only (the only league with live events at the time of this commit) —
+# others added when they appear.
+[sports.soccer]
+slug_prefixes = ["epl"]
+
+# Phase 2+ stubs (uncomment when normalizers ship):
 #
-# [sports.wnba]      slug_prefix = "wnba"
-# [sports.soccer]    slug_prefix = "epl"     # plus laliga / seriea / etc.
 # [sports.tennis_atp] slug_prefix = "atp"
 # [sports.tennis_wta] slug_prefix = "wta"
 
@@ -36,3 +50,7 @@ slug_prefix = "nhl"
 [team_aliases.mlb]
 
 [team_aliases.nhl]
+
+[team_aliases.wnba]
+
+[team_aliases.soccer]

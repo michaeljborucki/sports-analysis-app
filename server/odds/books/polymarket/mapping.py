@@ -157,6 +157,64 @@ TEAM_CODE_TO_CANONICAL: dict[str, dict[str, str]] = {
         # moved → Utah Mammoth in 2024.
         "ari": "Utah Mammoth",
     },
+    # ─── WNBA ────────────────────────────────────────────────────────────
+    # Canonicals match Odds API + Kalshi WNBA mapping. Codes verified
+    # against Kalshi (uppercase ticker suffixes lowercased) — Polymarket
+    # hasn't published a WNBA slate yet so codes are seeded conservatively.
+    # The 4-char `conn` for Connecticut Sun mirrors Kalshi's CONN code.
+    "wnba": {
+        # Eastern Conference
+        "atl":  "Atlanta Dream",
+        "chi":  "Chicago Sky",
+        "conn": "Connecticut Sun",
+        "ind":  "Indiana Fever",
+        "nyl":  "New York Liberty",
+        "wsh":  "Washington Mystics",
+        "tor":  "Toronto Tempo",
+        # Western Conference
+        "dal":  "Dallas Wings",
+        "gv":   "Golden State Valkyries",
+        "lva":  "Las Vegas Aces",
+        "la":   "Los Angeles Sparks",
+        "min":  "Minnesota Lynx",
+        "phx":  "Phoenix Mercury",
+        "pdx":  "Portland Fire",
+        "sea":  "Seattle Storm",
+    },
+    # ─── Soccer (EPL) ────────────────────────────────────────────────────
+    # Polymarket uses LEAGUE-specific 3-char codes that don't always match
+    # the FIFA/Opta short codes (notably `mac` = Manchester City, not
+    # `mci`). Canonical names match what Odds API populates for the
+    # `soccer_epl` sport rows in our cache — NOT the "FC"-suffixed forms
+    # Polymarket uses in its question text.
+    #
+    # Verified live 2026-05-12 against the active slate.
+    "soccer": {
+        # Codes confirmed via live probe:
+        "ars": "Arsenal",
+        "ast": "Aston Villa",
+        "bre": "Brentford",
+        "bri": "Brighton and Hove Albion",
+        "cry": "Crystal Palace",
+        "lee": "Leeds United",
+        "liv": "Liverpool",
+        "mac": "Manchester City",            # NB: `mac`, not `mci`
+        "mun": "Manchester United",
+        "wes": "West Ham United",
+        # Codes seeded reactively as additional EPL events surface. Add
+        # entries here when orphan logs flag missing codes.
+        "che": "Chelsea",
+        "tot": "Tottenham Hotspur",
+        "new": "Newcastle United",
+        "eve": "Everton",
+        "ful": "Fulham",
+        "nfo": "Nottingham Forest",
+        "wol": "Wolverhampton Wanderers",
+        "bou": "Bournemouth",
+        "bur": "Burnley",
+        "sou": "Southampton",
+        "sun": "Sunderland",
+    },
 }
 
 
@@ -164,12 +222,20 @@ TEAM_CODE_TO_CANONICAL: dict[str, dict[str, str]] = {
 class PolymarketSportConfig:
     """One sport block in polymarket.toml.
 
-    Phase 1: only `slug_prefix` matters (e.g. "nba" → matches slugs
-    starting with `nba-`). Phase 2 will add `tag_slug` for tag-based
-    discovery and per-market-type filter knobs.
+    For sports with a single league (NBA, MLB, NHL, WNBA): one
+    `slug_prefix` (e.g. "nba"). Soccer maps to multiple league-specific
+    prefixes — pass `slug_prefixes` instead. Phase 2 normalizes both
+    forms onto the same list-shaped `slug_prefixes` field.
     """
     sport_key: str
-    slug_prefix: str
+    slug_prefixes: list[str]
+
+    @property
+    def slug_prefix(self) -> str:
+        """Back-compat shim — first prefix. Most call sites only care about
+        the primary prefix (e.g. for logging). Use `slug_prefixes` for
+        actual matching."""
+        return self.slug_prefixes[0] if self.slug_prefixes else self.sport_key
 
 
 @dataclass
@@ -180,14 +246,32 @@ class PolymarketConfig:
 
 def load_polymarket_config(path: Path) -> PolymarketConfig:
     """Load `server/config/polymarket.toml`. Missing sections default to
-    empty so the fetcher starts cleanly even on a half-configured deploy."""
+    empty so the fetcher starts cleanly even on a half-configured deploy.
+
+    Accepts either:
+      [sports.nba]
+      slug_prefix = "nba"
+
+    Or:
+      [sports.soccer]
+      slug_prefixes = ["epl", "laliga", "seriea"]
+
+    The dict form is normalized to a single-element list on load.
+    """
     with path.open("rb") as f:
         raw = tomllib.load(f)
     sports: dict[str, PolymarketSportConfig] = {}
     for key, cfg in (raw.get("sports") or {}).items():
+        # Plural takes precedence; fall back to singular; fall back to key itself.
+        if cfg.get("slug_prefixes"):
+            prefixes = [str(p) for p in cfg["slug_prefixes"] if p]
+        elif cfg.get("slug_prefix"):
+            prefixes = [str(cfg["slug_prefix"])]
+        else:
+            prefixes = [key]
         sports[key] = PolymarketSportConfig(
             sport_key=key,
-            slug_prefix=str(cfg.get("slug_prefix") or key),
+            slug_prefixes=prefixes,
         )
     aliases_raw = raw.get("team_aliases") or {}
     team_aliases: dict[str, dict[str, str]] = {}

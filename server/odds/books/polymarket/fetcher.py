@@ -268,7 +268,7 @@ class PolymarketFetcher:
         rows = normalize_events(
             events,
             sport_key=sport_key,
-            slug_prefix=sport_cfg.slug_prefix,
+            slug_prefixes=sport_cfg.slug_prefixes,
             fetched_at=now,
             match_event=matcher.match,
         )
