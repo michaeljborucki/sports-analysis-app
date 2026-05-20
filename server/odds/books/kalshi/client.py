@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import logging
+import random
 import time
 from pathlib import Path
 from typing import Any, AsyncIterator
@@ -172,12 +174,41 @@ class KalshiClient:
             }
             if cursor:
                 params["cursor"] = cursor
-            try:
-                resp = await client.get("/markets", params=params)
-            except httpx.HTTPError as e:
-                raise KalshiAPIError(
-                    f"kalshi list_markets {series_ticker}: transport: {e}"
-                ) from e
+            # Sign the request when credentials are configured — Kalshi
+            # gives auth'd requests a much higher rate limit on /markets
+            # (the public-anonymous cap throttles us at ~26 calls/cycle
+            # across our Phase 2 series, producing 429s + stale data).
+            # Falls back to unauth on signing failure so a bad key
+            # doesn't take down the fetcher entirely.
+
+            # 429-aware retry: even with auth, transient rate-limit spikes
+            # are common when many series fire in close succession. Retry
+            # 2× with exponential backoff (0.6s, 1.5s) + jitter. Sign
+            # headers per retry — signatures bake in the timestamp.
+            _backoffs = (0.6, 1.5)
+            resp = None
+            for attempt in range(len(_backoffs) + 1):
+                headers = None
+                if self.is_authenticated:
+                    try:
+                        headers = self._sign_headers("GET", self._canonical_path("/markets"))
+                    except KalshiAPIError as e:
+                        logger.warning("kalshi sign failed (continuing unauth): %s", e)
+                try:
+                    resp = await client.get("/markets", params=params, headers=headers)
+                except httpx.HTTPError as e:
+                    raise KalshiAPIError(
+                        f"kalshi list_markets {series_ticker}: transport: {e}"
+                    ) from e
+                if resp.status_code != 429 or attempt == len(_backoffs):
+                    break
+                delay = _backoffs[attempt] + random.random() * 0.25
+                logger.info(
+                    "kalshi 429 %s — retry %d/%d after %.2fs",
+                    series_ticker, attempt + 1, len(_backoffs), delay,
+                )
+                await asyncio.sleep(delay)
+
             if resp.status_code != 200:
                 raise KalshiAPIError(
                     f"kalshi list_markets {series_ticker}: "

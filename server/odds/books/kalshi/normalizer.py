@@ -587,6 +587,12 @@ def _normalize_h2h_like(
                 "outcome_name": outcome_canon,
                 "outcome_point": None,
                 "price_american": american,
+                # WS bookkeeping — ingestor uses _market_ticker to map
+                # ticker updates → cache rows; _ws_side tells it which
+                # side (yes_ask vs no_ask) to read from each ticker msg.
+                # The fields pass through cache.upsert harmlessly.
+                "_market_ticker": market.get("ticker"),
+                "_ws_side": "yes",
             })
 
     if skipped_pair or skipped_quality or skipped_unknown_team or orphans or live:
@@ -807,17 +813,23 @@ def _normalize_two_sided_market(
             "fetched_at": fetched_at,
         }
 
+        # WS bookkeeping — same market_ticker for both sides; ws_side
+        # distinguishes which ask we pull from incoming ticker messages.
+        mt = m.get("ticker")
+
         if kind == "total":
             # Pure Over/Under — no team-side encoding.
             rows.append({
                 **base, "market_key": market_key,
                 "outcome_name": "Over",  "outcome_point": floor_f,
                 "price_american": american_yes,
+                "_market_ticker": mt, "_ws_side": "yes",
             })
             rows.append({
                 **base, "market_key": market_key,
                 "outcome_name": "Under", "outcome_point": floor_f,
                 "price_american": american_no,
+                "_market_ticker": mt, "_ws_side": "no",
             })
             continue
 
@@ -847,11 +859,13 @@ def _normalize_two_sided_market(
                 **base, "market_key": market_key,
                 "outcome_name": yes_canon,   "outcome_point": -floor_f,
                 "price_american": american_yes,
+                "_market_ticker": mt, "_ws_side": "yes",
             })
             rows.append({
                 **base, "market_key": market_key,
                 "outcome_name": other_canon, "outcome_point": floor_f,
                 "price_american": american_no,
+                "_market_ticker": mt, "_ws_side": "no",
             })
         elif kind == "team_total":
             rows.append({
@@ -859,12 +873,14 @@ def _normalize_two_sided_market(
                 "outcome_name": f"{yes_canon} Over",
                 "outcome_point": floor_f,
                 "price_american": american_yes,
+                "_market_ticker": mt, "_ws_side": "yes",
             })
             rows.append({
                 **base, "market_key": market_key,
                 "outcome_name": f"{yes_canon} Under",
                 "outcome_point": floor_f,
                 "price_american": american_no,
+                "_market_ticker": mt, "_ws_side": "no",
             })
         else:
             # Unknown kind — defensive.
@@ -955,15 +971,18 @@ def _normalize_rfi_markets(
             "bookmaker_key": BOOK_KEY,
             "fetched_at": fetched_at,
         }
+        mt = m.get("ticker")
         rows.append({
             **base, "market_key": "nrfi",
             "outcome_name": "Yes", "outcome_point": None,
             "price_american": american_yes,
+            "_market_ticker": mt, "_ws_side": "yes",
         })
         rows.append({
             **base, "market_key": "nrfi",
             "outcome_name": "No",  "outcome_point": None,
             "price_american": american_no,
+            "_market_ticker": mt, "_ws_side": "no",
         })
 
     if skipped_quality or orphans or live:
@@ -1075,6 +1094,8 @@ def _normalize_f5_winner_markets(
             "outcome_point": None,
             "price_american": american,
             "fetched_at": fetched_at,
+            "_market_ticker": m.get("ticker"),
+            "_ws_side": "yes",
         })
 
     if skipped_quality or orphans or live or skipped_unknown:
