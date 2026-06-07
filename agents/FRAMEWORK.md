@@ -157,6 +157,7 @@ This table lists **the baseline module set** the framework assumes. Add your own
 | Notifications | `notify/` | Discord dispatch with dedup |
 | Bet card | `agents/bet_card.py` | Daily mainline summary, dated file |
 | Grader | `agents/results_grader.py` | Apply final-score → W/L/P + profit + CLV |
+| Priority alerts (**universal**) | `agents/universal/priority.py` | Shared, sport-agnostic: sort games soonest-first, analyze in parallel, alert each game the instant it finishes. See [Priority alerts](#priority-alerts-universal-rule). |
 
 ---
 
@@ -344,7 +345,7 @@ Notifications are split across multiple channels (Discord webhooks, Slack channe
 
 | Channel | Content | Cadence | Filter |
 |---|---|---|---|
-| **picks** | New bet alerts (one message per simulation run, batched if many) | After each pipeline run | `bet_type` whitelist + min edge/Kelly |
+| **picks** | New bet alerts, one game at a time as each finishes (see [Priority alerts](#priority-alerts-universal-rule)) | Immediately after each game is analyzed — never batched until the slate is done | `bet_type` whitelist + min edge/Kelly |
 | **grades** | Per-bet W/L/P + profit + CLV (when available) | After each grading run | All graded bets in window |
 | **summary** | Daily totals: bets, profit, ROI, CLV avg | Once per day after grading | All graded bets for that day |
 | **season** | Rolling season totals, broken down by bet type | Once per day after grading | All graded bets season-to-date |
@@ -365,6 +366,31 @@ Config shape (`data/alerts_config.json`):
 Per-channel dedup logs (`data/notifications_sent.json`, `data/grade_notifications_sent.json`, `data/season_notifications_sent.json`) prevent duplicate sends across pipeline re-runs. Each log is keyed per (date, bet) or per (date, summary-type) — re-running the pipeline never spams.
 
 Webhook URLs live in `.env` (`${DISCORD_WEBHOOK_URL}`-style placeholders in the JSON), never in committed config. The `bet_types` whitelist is the alert filter — keep it tight (mainlines only) to avoid drowning the channel in props. Props get logged but not alerted by default; build a separate "props" channel if you want one.
+
+### Priority alerts (universal rule)
+
+**Status: framework-level. Every sport's daily pipeline must follow it.** Shared implementation: `agents/universal/priority.py`.
+
+The naive pipeline analyzes the whole slate, then alerts once at the end. That's wrong for time-sensitive markets: a 10-game slate run at once doesn't surface its first pick until the slowest game finishes, by which point the earliest games have already started and the alert is useless. The rule fixes both halves:
+
+1. **Priority order** — sort games by first pitch / commence_time, **soonest first**, and feed them to a bounded worker pool in that order. The games closest to starting claim a worker first.
+2. **Immediate alerts** — the instant a game's analysis finishes, if it produced any bets, dispatch its alert right then. Never wait for the rest of the slate.
+
+This collapses the old two-phase "screen the whole slate → simulate the whole slate → one batched alert" into a single per-game phase: each game is screened and, only if it clears `SCREEN_EDGE_THRESHOLD`, fully simulated, then alerted — so the expensive ensemble still runs solely on flagged games and **cost is unchanged**.
+
+The universal helper is sport-agnostic — it owns the ordering and the alert-timing; each sport supplies its own per-game work (`process_game`) and alert sender (`send_alert`). Concurrency: games are submitted soonest-first to a thread pool, and results are consumed (and alerts dispatched) on a single thread, so the sport's alert sender never needs to be thread-safe. Per-game alerts lean on the existing `notifications_sent.json` dedup, so an optional end-of-pipeline safety-net sweep can re-call `send_notifications` without ever double-posting.
+
+Wiring (each sport adds the shared `agents/` dir to `sys.path`, since each sport package is its own import root):
+
+```python
+import os, sys
+_AGENTS_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # .../agents
+if _AGENTS_ROOT not in sys.path:
+    sys.path.append(_AGENTS_ROOT)
+from universal.priority import run_priority_pipeline
+```
+
+Reference consumers: `baseball-agents/main.py` and `soccer-agents/main.py` (`daily` command). `tennis-agents` predates the helper but already conforms (it time-sorts flagged matches and alerts per match). A sport can only do the *immediate-alert* half once it has a `notify/` module; until then it should at least process the slate soonest-first so the closest games are analyzed first.
 
 ### Calibration cap
 `apply_calibration(prob, bet_type)` is wired into every edge-detection path (mainlines + props). The current implementation is a hard cap at `SIM_PROB_CAP` (e.g. 0.75) to dampen overconfident model probabilities at the extremes. Replace with isotonic regression once you have ~2 weeks of CLV data per bet type.

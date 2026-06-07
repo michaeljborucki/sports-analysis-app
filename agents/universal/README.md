@@ -38,7 +38,21 @@ from universal.priority import run_priority_pipeline
 ```
 
 Then it hands the rule its own per-game function and alert sender. See
-`baseball-agents/main.py` (the `daily` command) for the reference wiring.
+`baseball-agents/main.py` and `soccer-agents/main.py` (the `daily` command) for
+the reference wiring.
+
+### Adoption status
+
+| Sport | State |
+|---|---|
+| baseball | ✅ wired to `run_priority_pipeline` |
+| soccer | ✅ wired to `run_priority_pipeline` (whole-night slate, sorted by kickoff) |
+| tennis | ✅ already conforms (bespoke: time-sorts flagged matches + per-match alerts) |
+| ncaab, nba, cricket, ufc, esports | ⏳ no `notify/` module yet — adopt the immediate-alert half once alerting exists; process the slate soonest-first in the meantime |
+
+A sport can only do the *immediate-alert* half once it has a `notify/` module.
+Until then it should at least analyze the slate soonest-first so the closest
+games are handled first.
 
 ## Tests
 

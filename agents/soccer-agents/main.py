@@ -1,11 +1,21 @@
 """CLI entrypoint for MiroFish Soccer Prediction Pipeline."""
 import logging
+import os
+import sys
 import time
 import click
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date
 
+# Universal agent rules live in the shared `agents/` directory, one level up from
+# this sport package. Put it on the path to opt into cross-sport behaviors (e.g.
+# priority alerts). See agents/universal/README.md.
+_AGENTS_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _AGENTS_ROOT not in sys.path:
+    sys.path.append(_AGENTS_ROOT)
+
 from config import SCREEN_EDGE_THRESHOLD, GAME_TIMEOUT, ACTIVE_LEAGUES, PARALLEL_GAMES
+from universal.priority import run_priority_pipeline
 
 logger = logging.getLogger("mirofish")
 from scrapers.schedule import get_fixtures
@@ -144,79 +154,114 @@ def daily(game_date, league, no_notify):
     pipeline_start = time.time()
     click.echo(f"\n=== MiroFish Soccer Pipeline - {game_date} ===\n")
 
-    total_bets = 0
-    total_sim_cost = 0.0
-
+    # Step 1: Gather every match across all active leagues into one slate, so the
+    # priority rule can order the *whole* night by kickoff (not per league).
+    click.echo("[1/2] Fetching odds & fixtures...")
+    slate = []
     for lg in leagues:
-        click.echo(f"\n--- {lg} ---\n")
-
-        click.echo(f"[1/3] Fetching {lg} odds & fixtures...")
         odds_list = get_soccer_odds(league=lg)
         if not odds_list:
-            click.echo(f"  No odds/fixtures found for {lg}")
+            click.echo(f"  {lg}: no odds/fixtures found")
             continue
-        click.echo(f"  Found {len(odds_list)} matches with odds")
+        click.echo(f"  {lg}: {len(odds_list)} matches with odds")
+        for odds in odds_list:
+            slate.append({
+                "odds": odds,
+                "lg": lg,
+                "match_key": f"{odds.away}@{odds.home}",
+                "commence_time": odds.commence_time,
+            })
 
-        click.echo(f"[2/3] Screening {len(odds_list)} matches ({PARALLEL_GAMES} parallel)...")
-        screened = []
-        screen_errors = 0
-        with ThreadPoolExecutor(max_workers=PARALLEL_GAMES) as pool:
-            futures = {
-                pool.submit(_screen_match, odds, lg, game_date): odds
-                for odds in odds_list
-            }
-            for future in as_completed(futures):
-                odds = futures[future]
-                match_key = f"{odds.away}@{odds.home}"
-                try:
-                    result = future.result(timeout=GAME_TIMEOUT)
-                except TimeoutError:
-                    click.echo(f"  {match_key}: TIMEOUT ({GAME_TIMEOUT}s)")
-                    screen_errors += 1
-                    continue
-                except Exception as e:
-                    click.echo(f"  {match_key}: ERROR - {e}")
-                    screen_errors += 1
-                    continue
+    if not slate:
+        click.echo("\n=== Done. 0 bets logged. Cost: $0.0000. "
+                   f"Time: {time.time() - pipeline_start:.0f}s ===")
+        return
 
-                if result == _SCREEN_FAILED:
-                    click.echo(f"  {match_key}: screen failed")
-                    screen_errors += 1
-                elif result[3] >= SCREEN_EDGE_THRESHOLD:
-                    click.echo(f"  {match_key}: FLAGGED (max edge {result[3]:.1%})")
-                    screened.append(result)
-                else:
-                    click.echo(f"  {match_key}: no edge ({result[3]:.1%})")
+    # Step 2: Analyze soonest-kickoff first; alert each match the moment it's done.
+    #
+    # Universal "priority alerts" rule (agents/universal/priority.py). Each match
+    # is screened and, only if it clears the edge threshold, fully simulated, then
+    # alerted immediately — matches closest to kickoff never wait behind matches
+    # that start hours later. The expensive ensemble still runs only on flagged
+    # matches, so cost is unchanged.
+    click.echo(f"\n[2/2] Analyzing {len(slate)} matches soonest-first "
+               f"({PARALLEL_GAMES} parallel), alerting per match...")
 
-        click.echo(f"\n[3/3] Full simulation on {len(screened)} flagged matches "
-                   f"({PARALLEL_GAMES} parallel)...")
-        with ThreadPoolExecutor(max_workers=PARALLEL_GAMES) as pool:
-            futures = {
-                pool.submit(_simulate_match, mk, br, md, game_date, lg): mk
-                for mk, br, md, _ in screened
-            }
-            for future in as_completed(futures):
-                mk = futures[future]
-                try:
-                    _, logged, cost = future.result(timeout=GAME_TIMEOUT)
-                except TimeoutError:
-                    click.echo(f"  {mk}: TIMEOUT ({GAME_TIMEOUT}s)")
-                    continue
-                except Exception as e:
-                    click.echo(f"  {mk}: sim ERROR - {e}")
-                    continue
-                total_bets += logged
-                total_sim_cost += cost
+    notify_enabled = not no_notify
+    counts = {"flagged": 0, "no_edge": 0, "screen_failed": 0}
+    totals = {"bets": 0, "cost": 0.0}
 
+    def _process(item):
+        mk = item["match_key"]
+        screen = _screen_match(item["odds"], item["lg"], game_date)
+        if screen == _SCREEN_FAILED:
+            return {"match_key": mk, "status": "screen_failed", "bets": []}
+        _, brief, match_data, max_edge = screen
+        if max_edge < SCREEN_EDGE_THRESHOLD:
+            return {"match_key": mk, "status": "no_edge", "max_edge": max_edge, "bets": []}
+        # _simulate_match logs bets internally and returns how many it logged.
+        _, logged, cost = _simulate_match(mk, brief, match_data, game_date, item["lg"])
+        return {"match_key": mk, "status": "flagged", "max_edge": max_edge,
+                "cost": cost, "bets": list(range(logged))}
+
+    def _report(item, result):
+        mk, status = result["match_key"], result["status"]
+        counts[status] = counts.get(status, 0) + 1
+        if status == "screen_failed":
+            click.echo(f"  {mk}: screen failed")
+        elif status == "no_edge":
+            click.echo(f"  {mk}: no edge ({result['max_edge']:.1%})")
+        else:
+            totals["cost"] += result.get("cost", 0.0)
+            n = len(result["bets"])
+            totals["bets"] += n
+            if n:
+                click.echo(f"  {mk}: FLAGGED ({result['max_edge']:.1%}) → {n} bet(s)")
+            else:
+                click.echo(f"  {mk}: FLAGGED ({result['max_edge']:.1%}), no bets after full sim")
+
+    def _alert(match_key, result):
+        """Dispatch this match's bets the instant it finishes. send_notifications
+        dedups via notifications_sent.json, so calling it per match only sends
+        that match's newly-logged bets."""
+        if not notify_enabled:
+            return
+        try:
+            from notify import send_notifications
+            s = send_notifications(game_date=game_date)
+            if s["bets_new"]:
+                status = (f"sent {s['sent']} Discord msg(s)" if s["discord_enabled"]
+                          else "Discord off")
+                click.echo(f"    Alert: {s['bets_new']} new for {match_key} → {status}")
+        except Exception as e:
+            logger.error("Per-match notify dispatch failed for %s: %s", match_key, e)
+
+    run_priority_pipeline(
+        slate,
+        _process,
+        send_alert=_alert,
+        get_game_key=lambda it: it["match_key"],
+        max_workers=PARALLEL_GAMES,
+        # Per-match budget covers screen + full sim, each bounded by GAME_TIMEOUT.
+        game_timeout=GAME_TIMEOUT * 2,
+        time_field="commence_time",
+        on_complete=_report,
+        on_error=lambda it, exc: click.echo(f"  {it['match_key']}: ERROR - {exc}"),
+    )
+
+    total_bets = totals["bets"]
+    total_sim_cost = totals["cost"]
     elapsed = time.time() - pipeline_start
     click.echo(f"\n=== Done. {total_bets} bets logged. Cost: ${total_sim_cost:.4f}. Time: {elapsed:.0f}s ===")
 
-    if not no_notify and total_bets > 0:
+    # Safety-net sweep: per-match alerts above are the primary path; this catches
+    # any straggler a per-match alert missed. Dedup guarantees no double-send.
+    if notify_enabled and total_bets > 0:
         try:
             from notify import send_notifications
             summary = send_notifications(game_date=game_date)
             if summary["bets_new"]:
-                click.echo(f"  Notifications: {summary['bets_new']} new → "
+                click.echo(f"  Sweep: {summary['bets_new']} new → "
                            f"{'sent ' + str(summary['sent']) if summary['discord_enabled'] else 'Discord off'}")
         except Exception as e:
             logger.error("Notification dispatch failed: %s", e)
