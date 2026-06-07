@@ -68,7 +68,8 @@ SAMPLE_EVENT = {
                 ]},
             ],
         },
-        # A non-Odds-API book must be dropped from the reconstruction.
+        # Directly-fetched books (coral33/polymarket) are genuine lines and
+        # must flow through into the feed alongside the Odds API books.
         {
             "key": "polymarket",
             "markets": [
@@ -102,8 +103,10 @@ def test_round_trip_through_cache(tmp_path):
     assert event["home_team"] == "New York Yankees"
     assert event["away_team"] == "Boston Red Sox"
 
-    # polymarket dropped; only the Odds API book survives.
-    assert [b["key"] for b in event["bookmakers"]] == ["fanduel"]
+    # Every book is included — Odds API books AND directly-fetched ones.
+    assert {b["key"] for b in event["bookmakers"]} == {"fanduel", "polymarket"}
+    pm = _market(event, "polymarket", "h2h")
+    assert {o["name"] for o in pm["outcomes"]} == {"New York Yankees", "Boston Red Sox"}
 
     # h2h carries no point (cache nulls the sentinel for h2h).
     h2h = _market(event, "fanduel", "h2h")

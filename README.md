@@ -39,7 +39,10 @@ GET /api/odds/{sport}/raw   →   { "data": [ ...events... ], "stale_seconds": N
 
 Each event mirrors a direct `/sports/<key>/odds` response (all markets,
 including props; player/team folded back into `description`), so an agent runs
-it through the exact same parsers it uses for a direct pull.
+it through the exact same parsers it uses for a direct pull. The feed carries
+**every** book in the cache — the Odds API books plus the directly-fetched ones
+(coral33, kalshi, polymarket) — so all of them feed the agents' consensus
+devig.
 
 To switch an agent over, set in its `.env`:
 

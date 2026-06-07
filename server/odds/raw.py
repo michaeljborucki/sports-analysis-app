@@ -3,17 +3,12 @@ from __future__ import annotations
 from typing import Iterable
 
 
-# Books the backend fetches directly (NOT through The Odds API) — excluded
-# from the raw feed so its book universe matches what a direct Odds API pull
-# returns. Agents are built around the Odds API book set; surfacing coral33
-# (a scraped sportsbook) or polymarket (a prediction-market exchange) would
-# silently change every agent's consensus devig.
-#
-# `kalshi` is deliberately NOT excluded: it IS a real Odds API book — the
-# backend just serves a fresher direct-fetched copy of it (see
-# normalize._EXCLUDE_BOOKMAKERS), so keeping it preserves the book set the
-# agent used to see from a direct pull.
-_NON_ODDS_API_BOOKS = frozenset({"coral33", "polymarket"})
+# The feed includes EVERY book in the cache — the Odds API books plus the
+# directly-fetched ones (coral33, kalshi, polymarket). coral33 carries genuine
+# sportsbook lines and polymarket is a real open-market price, so both belong
+# in the agents' consensus devig. Their normalizers emit canonical team names
+# (matching what the Odds API emits), so h2h/spread outcomes key correctly
+# through the agents' team-name lookup and contribute to the devig.
 
 
 # Mirror of normalize._encode_outcome_name: player props and team totals are
@@ -49,14 +44,13 @@ def rows_to_odds_api_events(rows: Iterable[dict]) -> list[dict]:
     direct `/sports/<key>/odds` or `/events/<id>/odds` call.
 
     Rows are expected to come from `OddsCache.all_current(sport_key=...)`,
-    which already nulls `outcome_point` for h2h. Synthetic `nrfi` rows and
-    non-Odds-API books are dropped (see `_NON_ODDS_API_BOOKS`).
+    which already nulls `outcome_point` for h2h. Every book is included; only
+    the synthetic `nrfi` bridge market is dropped (agents read NRFI straight
+    off totals_1st_1_innings).
     """
     by_event: dict[str, dict] = {}
     for r in rows:
         bookmaker_key = r["bookmaker_key"]
-        if bookmaker_key in _NON_ODDS_API_BOOKS:
-            continue
         market_key = r["market_key"]
         # `nrfi` is a backend-only bridge market synthesized in normalize.py
         # to pair Odds API totals_1st_1_innings with coral33's NRFI line. It
