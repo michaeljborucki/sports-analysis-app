@@ -32,6 +32,11 @@ WEATHER_API_BASE = "https://api.openweathermap.org/data/2.5"
 ODDS_FEED_BASE_URL = os.getenv("ODDS_FEED_BASE_URL", "").strip().rstrip("/")
 ODDS_FEED_SPORT = os.getenv("ODDS_FEED_SPORT", "mlb").strip()
 ODDS_FEED_TTL_SECONDS = int(os.getenv("ODDS_FEED_TTL_SECONDS", "20"))
+# If the backend's odds are older than this (its fetcher stalled, or the cache
+# is in snapshot/latest mode), ignore the feed and fall back to the live Odds
+# API. Keep it above the backend's poll interval so normal jitter doesn't trip
+# it; set to 0 to disable the staleness guard. Default 15 min.
+ODDS_FEED_MAX_STALE_SECONDS = int(os.getenv("ODDS_FEED_MAX_STALE_SECONDS", "900"))
 
 # Simulation
 KIMI_MODEL = "moonshotai/kimi-k2.5"

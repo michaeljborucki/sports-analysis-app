@@ -3,7 +3,19 @@ from datetime import datetime
 import requests
 
 from config import ODDS_API_KEY, ODDS_API_BASE, ODDS_SPORT_KEY
-from scrapers.odds_feed import FeedUnavailable, feed_enabled, get_feed_events
+from scrapers.odds_feed import (
+    FeedUnavailable,
+    feed_enabled,
+    get_feed_events,
+    warn_missing_markets,
+)
+
+# Markets the NCAAB pipeline pulls from the feed. Used to warn when the backend
+# isn't serving something the agent models.
+_EXPECTED_FEED_MARKETS = {
+    "h2h", "spreads", "totals",
+    "h2h_1st_half", "totals_1st_half", "spreads_1st_half",
+}
 
 
 def american_to_implied_prob(odds: int) -> float:
@@ -90,6 +102,7 @@ def get_ncaab_odds(date: str = None, sport: str = None) -> list[OddsData]:
         try:
             events = get_feed_events()
             print(f"[odds] Using shared feed ({len(events)} events)")
+            warn_missing_markets(events, _EXPECTED_FEED_MARKETS, context="ncaab")
             return _build_ncaab_odds(events)
         except FeedUnavailable as e:
             print(f"[odds] Shared feed unavailable ({e}); falling back to Odds API")

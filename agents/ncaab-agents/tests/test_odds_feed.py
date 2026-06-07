@@ -15,11 +15,18 @@ from scrapers.odds_feed import (
 )
 
 
-def _enable(monkeypatch, base="http://test-backend:8000", sport="ncaab"):
+def _enable(monkeypatch, base="http://test-backend:8000", sport="ncaab", max_stale=900):
     monkeypatch.setattr(feed_mod, "ODDS_FEED_BASE_URL", base)
     monkeypatch.setattr(feed_mod, "ODDS_FEED_SPORT", sport)
     monkeypatch.setattr(feed_mod, "ODDS_FEED_TTL_SECONDS", 20)
+    monkeypatch.setattr(feed_mod, "ODDS_FEED_MAX_STALE_SECONDS", max_stale)
     reset_cache()
+
+
+def _ok_resp(events, stale_seconds=5):
+    resp = MagicMock(status_code=200)
+    resp.json.return_value = {"data": events, "stale_seconds": stale_seconds}
+    return resp
 
 
 def test_feed_disabled_when_sport_unset(monkeypatch):
@@ -60,9 +67,7 @@ def test_feed_connection_error_raises(monkeypatch):
 
 def test_feed_memoized_within_ttl(monkeypatch):
     _enable(monkeypatch)
-    resp = MagicMock(status_code=200)
-    resp.json.return_value = {"data": [{"id": "e1"}]}
-    with patch.object(feed_mod.requests, "get", return_value=resp) as mock_get:
+    with patch.object(feed_mod.requests, "get", return_value=_ok_resp([{"id": "e1"}])) as mock_get:
         get_feed_events()
         get_feed_events()
     assert mock_get.call_count == 1
@@ -70,11 +75,39 @@ def test_feed_memoized_within_ttl(monkeypatch):
 
 def test_get_feed_event_lookup(monkeypatch):
     _enable(monkeypatch)
-    resp = MagicMock(status_code=200)
-    resp.json.return_value = {"data": [{"id": "a"}, {"id": "b"}]}
+    resp = _ok_resp([{"id": "a"}, {"id": "b"}])
     with patch.object(feed_mod.requests, "get", return_value=resp):
         assert get_feed_event("b") == {"id": "b"}
         assert get_feed_event("missing") is None
+
+
+def test_feed_rejects_stale(monkeypatch):
+    _enable(monkeypatch, max_stale=900)
+    with patch.object(feed_mod.requests, "get", return_value=_ok_resp([{"id": "e1"}], stale_seconds=1200)):
+        with pytest.raises(FeedUnavailable):
+            get_feed_events()
+
+
+def test_feed_rejects_never_fetched(monkeypatch):
+    _enable(monkeypatch, max_stale=900)
+    with patch.object(feed_mod.requests, "get", return_value=_ok_resp([{"id": "e1"}], stale_seconds=None)):
+        with pytest.raises(FeedUnavailable):
+            get_feed_events()
+
+
+def test_feed_stale_guard_disabled(monkeypatch):
+    _enable(monkeypatch, max_stale=0)
+    with patch.object(feed_mod.requests, "get", return_value=_ok_resp([{"id": "e1"}], stale_seconds=None)):
+        assert get_feed_events() == [{"id": "e1"}]
+
+
+def test_warn_missing_markets(caplog):
+    from scrapers.odds_feed import warn_missing_markets
+    events = [{"bookmakers": [{"markets": [{"key": "h2h"}, {"key": "totals"}]}]}]
+    with caplog.at_level("WARNING"):
+        missing = warn_missing_markets(events, {"h2h", "totals", "spreads"}, "ncaab")
+    assert missing == ["spreads"]
+    assert "spreads" in caplog.text
 
 
 def _sample_event():

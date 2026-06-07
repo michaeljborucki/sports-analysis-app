@@ -23,7 +23,12 @@ import time
 
 import requests
 
-from config import ODDS_FEED_BASE_URL, ODDS_FEED_SPORT, ODDS_FEED_TTL_SECONDS
+from config import (
+    ODDS_FEED_BASE_URL,
+    ODDS_FEED_MAX_STALE_SECONDS,
+    ODDS_FEED_SPORT,
+    ODDS_FEED_TTL_SECONDS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -76,13 +81,29 @@ def get_feed_events(force: bool = False) -> list[dict]:
     except ValueError as e:
         raise FeedUnavailable(f"feed returned invalid JSON: {e}") from e
 
-    events = payload.get("data", []) if isinstance(payload, dict) else []
+    if not isinstance(payload, dict):
+        raise FeedUnavailable("feed payload was not an object")
+
+    # Staleness guard: a backend that's up but serving frozen/stale odds (cache
+    # in snapshot/latest mode, or the fetcher stalled) still answers 200, so a
+    # hard-failure fallback alone wouldn't catch it. `stale_seconds` is how long
+    # ago the fetcher last completed a cycle; None means it never ran. Reject
+    # anything past the threshold and let the caller fall back to the live API.
+    # Set ODDS_FEED_MAX_STALE_SECONDS=0 to disable; keep it above the backend's
+    # poll interval so normal poll jitter doesn't trip it.
+    stale = payload.get("stale_seconds")
+    if ODDS_FEED_MAX_STALE_SECONDS > 0:
+        if stale is None:
+            raise FeedUnavailable("feed has never been fetched (stale_seconds=None)")
+        if stale > ODDS_FEED_MAX_STALE_SECONDS:
+            raise FeedUnavailable(
+                f"feed is stale ({stale}s > {ODDS_FEED_MAX_STALE_SECONDS}s)"
+            )
+
+    events = payload.get("data", [])
     _cache["events"] = events
     _cache["ts"] = now
-    logger.info(
-        "[odds.feed] %d events from %s (stale=%ss)",
-        len(events), url, payload.get("stale_seconds") if isinstance(payload, dict) else "?",
-    )
+    logger.info("[odds.feed] %d events from %s (stale=%ss)", len(events), url, stale)
     return events
 
 
@@ -92,3 +113,29 @@ def get_feed_event(event_id: str) -> dict | None:
         if event.get("id") == event_id:
             return event
     return None
+
+
+def warn_missing_markets(events: list[dict], expected, context: str) -> list[str]:
+    """Loudly log any expected market entirely absent from the feed.
+
+    The shared feed only carries the markets the backend has enabled (in
+    markets.<sport>.toml + the /settings UI). If the backend has a market the
+    agent models switched off, the agent silently sees zero of it — this warning
+    surfaces that coupling. A market is "present" if it appears in any event;
+    genuinely-not-yet-posted markets will also show up here, so treat it as a
+    heads-up, not an error. Returns the sorted list of missing market keys.
+    """
+    present = {
+        m["key"]
+        for event in events
+        for bk in event.get("bookmakers", [])
+        for m in bk.get("markets", [])
+    }
+    missing = sorted(set(expected) - present)
+    if missing:
+        logger.warning(
+            "[odds.feed:%s] %d expected market(s) absent from shared feed — "
+            "disabled in backend settings or not yet posted: %s",
+            context, len(missing), ", ".join(missing),
+        )
+    return missing

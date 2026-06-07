@@ -3,7 +3,13 @@ from datetime import datetime, timezone
 import requests
 
 from config import ODDS_API_KEY, ODDS_API_BASE, TEAM_NAME_TO_ABBREV
-from scrapers.odds_feed import FeedUnavailable, feed_enabled, get_feed_event, get_feed_events
+from scrapers.odds_feed import (
+    FeedUnavailable,
+    feed_enabled,
+    get_feed_event,
+    get_feed_events,
+    warn_missing_markets,
+)
 
 
 def american_to_implied_prob(odds: int) -> float:
@@ -536,6 +542,28 @@ def get_historical_event_odds(event_id: str,
         return {}, {}
 
 
+# Mirror of simulation.props_edge.PROP_MARKETS. Duplicated here so the feed
+# coverage check doesn't drag the calibration stack (numpy/pandas/sklearn) into
+# lightweight callers like close-capture just to log a warning. test_odds_feed
+# pins this equal to the source list so the two can't drift.
+_PROP_MARKET_KEYS = frozenset({
+    "pitcher_strikeouts", "pitcher_earned_runs", "pitcher_outs", "pitcher_hits_allowed",
+    "batter_total_bases", "batter_rbis", "batter_hits", "batter_runs_scored",
+    "batter_hits_runs_rbis", "batter_strikeouts",
+})
+
+
+def _expected_feed_markets() -> set[str]:
+    """Every market the MLB pipeline pulls from the feed: mainlines + the
+    per-event additional markets + player props. Used to warn when the backend
+    isn't serving something the agent models (e.g. a market toggled off in the
+    betting-site settings)."""
+    expected = {"h2h", "spreads", "totals", "h2h_1st_5_innings", "totals_1st_5_innings"}
+    expected |= set(ADDITIONAL_MARKETS.split(","))
+    expected |= _PROP_MARKET_KEYS
+    return expected
+
+
 def get_mlb_odds(date: str = None, sport: str = None) -> list[OddsData]:
     """Fetch MLB odds for h2h, spreads, totals markets.
 
@@ -547,6 +575,7 @@ def get_mlb_odds(date: str = None, sport: str = None) -> list[OddsData]:
         try:
             events = get_feed_events()
             print(f"[odds] Using shared feed ({len(events)} events)")
+            warn_missing_markets(events, _expected_feed_markets(), context="mlb")
             return _build_odds_data(events, date)
         except FeedUnavailable as e:
             print(f"[odds] Shared feed unavailable ({e}); falling back to Odds API")
