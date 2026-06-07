@@ -46,7 +46,8 @@ def _bet_key(bet: dict) -> str:
 def send_notifications(game_date: str | None = None,
                        force: bool = False,
                        dry_run: bool = False,
-                       config_path: str | None = None) -> dict:
+                       config_path: str | None = None,
+                       game_key: str | None = None) -> dict:
     """Filter today's bets, format, and dispatch to Discord.
 
     Args:
@@ -54,6 +55,11 @@ def send_notifications(game_date: str | None = None,
         force: if True, re-send bets already in the sent log
         dry_run: if True, print messages to stdout instead of sending
         config_path: override default alerts_config.json location
+        game_key: if set, only consider bets for this one game (e.g. "NYY@BOS").
+            Lets the pipeline alert per game the moment it finishes instead of
+            batching the whole slate. The sent-log dedup still spans the day, so
+            a later full-slate call never re-sends what a per-game call already
+            sent.
 
     Returns summary dict {bets_total, bets_filtered, bets_new, sent}.
     """
@@ -67,6 +73,8 @@ def send_notifications(game_date: str | None = None,
 
     df = load_bets()
     day = df[df["date"] == game_date]
+    if game_key is not None:
+        day = day[day["game"] == game_key]
     bets = day.to_dict(orient="records")
 
     filtered = filter_bets(bets, allowed, min_edge=min_edge, min_kelly=min_kelly)

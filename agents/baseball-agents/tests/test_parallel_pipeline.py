@@ -1,6 +1,8 @@
 """Tests for parallel game processing in main.py."""
 from unittest.mock import patch, MagicMock
-from main import _screen_game, _simulate_game, _NO_ODDS, _SCREEN_FAILED
+from main import (
+    _screen_game, _simulate_game, _process_game, _NO_ODDS, _SCREEN_FAILED,
+)
 
 
 def _make_game(away="NYY", home="BOS"):
@@ -96,3 +98,48 @@ def test_simulate_game_handles_failed_sim(mock_sim):
     gk, bets, result = _simulate_game("NYY@BOS", "briefing", game_data, "2026-03-22")
     assert bets == []
     assert result is None
+
+
+# ---------- _process_game (per-game unit for the priority rule) ----------
+
+
+@patch("agents.analyzed_games.mark_analyzed")
+@patch("main._screen_game", return_value=_NO_ODDS)
+def test_process_game_no_odds(mock_screen, mock_mark):
+    out = _process_game(_make_game(), {}, {}, "2026-03-22")
+    assert out == {"game_key": "NYY@BOS", "status": "no_odds", "bets": [], "max_edge": 0.0}
+    mock_mark.assert_called_once_with("2026-03-22", "NYY@BOS", "no_odds")
+
+
+@patch("agents.analyzed_games.mark_analyzed")
+@patch("main._screen_game", return_value=_SCREEN_FAILED)
+def test_process_game_screen_failed(mock_screen, mock_mark):
+    out = _process_game(_make_game(), {}, {}, "2026-03-22")
+    assert out["status"] == "screen_error"
+    assert out["bets"] == []
+    mock_mark.assert_called_once_with("2026-03-22", "NYY@BOS", "screen_error")
+
+
+@patch("agents.analyzed_games.mark_analyzed")
+@patch("main._simulate_game")
+@patch("main._screen_game", return_value=("NYY@BOS", "brief", {"k": "v"}, 0.01))
+def test_process_game_no_edge_skips_simulation(mock_screen, mock_sim, mock_mark):
+    # max_edge 0.01 < SCREEN_EDGE_THRESHOLD (0.03) → no sim, no bets.
+    out = _process_game(_make_game(), {}, {}, "2026-03-22")
+    assert out["status"] == "no_edge"
+    assert out["bets"] == []
+    mock_sim.assert_not_called()
+    mock_mark.assert_called_once_with("2026-03-22", "NYY@BOS", "no_edge")
+
+
+@patch("agents.analyzed_games.mark_analyzed")
+@patch("main._simulate_game", return_value=("NYY@BOS", [{"edge": 0.06}], {"ensemble_meta": {}}))
+@patch("main._screen_game", return_value=("NYY@BOS", "brief", {"k": "v"}, 0.08))
+def test_process_game_flagged_runs_sim_and_returns_bets(mock_screen, mock_sim, mock_mark):
+    out = _process_game(_make_game(), {}, {}, "2026-03-22")
+    assert out["status"] == "flagged"
+    assert out["max_edge"] == 0.08
+    assert out["bets"] == [{"edge": 0.06}]
+    mock_sim.assert_called_once()
+    # Flagged is marked before the expensive sim runs.
+    mock_mark.assert_called_once_with("2026-03-22", "NYY@BOS", "flagged")

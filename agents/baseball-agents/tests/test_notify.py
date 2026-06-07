@@ -366,3 +366,41 @@ def test_dispatch_filters_player_props(mock_env, tmp_path, monkeypatch):
         summary = dispatch.send_notifications(game_date="2026-04-14")
     assert summary["bets_total"] == 2
     assert summary["bets_filtered"] == 1
+
+
+def test_dispatch_game_key_scopes_to_one_game(mock_env, tmp_path, monkeypatch):
+    """Per-game alerts only consider that game's bets, leaving others untouched."""
+    _write_bets_csv(tmp_path, monkeypatch, [
+        _bet(game="ARI@BAL"),
+        _bet(game="NYY@BOS", side="away", odds=120),
+    ])
+    cfg_path = mock_env / "alerts.json"
+    cfg_path.write_text(json.dumps(_enabled_cfg()))
+
+    with patch("notify.dispatch.send_discord", return_value=1):
+        summary = dispatch.send_notifications(game_date="2026-04-14", game_key="ARI@BAL")
+    assert summary["bets_total"] == 1
+    assert summary["bets_filtered"] == 1
+
+
+def test_dispatch_per_game_then_sweep_no_double_send(mock_env, tmp_path, monkeypatch):
+    """A later full-slate sweep never re-sends what a per-game alert already sent."""
+    _write_bets_csv(tmp_path, monkeypatch, [
+        _bet(game="ARI@BAL"),
+        _bet(game="NYY@BOS", side="away", odds=120),
+    ])
+    cfg_path = mock_env / "alerts.json"
+    cfg_path.write_text(json.dumps(_enabled_cfg()))
+
+    # Two per-game alerts fire as each game finishes.
+    with patch("notify.dispatch.send_discord", return_value=1):
+        s1 = dispatch.send_notifications(game_date="2026-04-14", game_key="ARI@BAL")
+        s2 = dispatch.send_notifications(game_date="2026-04-14", game_key="NYY@BOS")
+    assert s1["bets_new"] == 1
+    assert s2["bets_new"] == 1
+
+    # The end-of-pipeline sweep finds nothing new.
+    with patch("notify.dispatch.send_discord") as m:
+        sweep = dispatch.send_notifications(game_date="2026-04-14")
+    m.assert_not_called()
+    assert sweep["bets_new"] == 0
