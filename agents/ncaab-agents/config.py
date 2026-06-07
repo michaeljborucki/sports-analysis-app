@@ -26,6 +26,19 @@ CBBDATA_BASE = "https://www.cbbdata.com/api"
 # Odds API sport key
 ODDS_SPORT_KEY = "basketball_ncaab"
 
+# Shared live-odds feed (the betting-site backend's cache). When
+# ODDS_FEED_BASE_URL *and* ODDS_FEED_SPORT are set, live odds are pulled from
+# the backend's shared database (GET /api/odds/{sport}/raw) instead of hitting
+# The Odds API directly, so the agent and the betting site reuse one live-odds
+# source. ODDS_FEED_SPORT is the backend's app sport key (NOT the Odds API key)
+# and is left empty by default because the backend does not yet register
+# college basketball — set it (e.g. "ncaab") once the backend adds the sport.
+# Any feed failure transparently falls back to the Odds API; historical odds
+# always use the API.
+ODDS_FEED_BASE_URL = os.getenv("ODDS_FEED_BASE_URL", "").strip().rstrip("/")
+ODDS_FEED_SPORT = os.getenv("ODDS_FEED_SPORT", "").strip()
+ODDS_FEED_TTL_SECONDS = int(os.getenv("ODDS_FEED_TTL_SECONDS", "20"))
+
 # Simulation
 KIMI_MODEL = "moonshotai/kimi-k2.5"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"

@@ -52,6 +52,22 @@ def test_odds_endpoint_rejects_unknown_sport(app):
     assert r.status_code == 404
 
 
+def test_raw_odds_endpoint_empty_cache(app):
+    with TestClient(app) as c:
+        r = c.get("/api/odds/mlb/raw")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["data"] == []
+    assert "fetched_at" in body
+    assert "stale_seconds" in body
+
+
+def test_raw_odds_endpoint_rejects_unknown_sport(app):
+    with TestClient(app) as c:
+        r = c.get("/api/odds/notasport/raw")
+    assert r.status_code == 404
+
+
 def test_picks_endpoint_returns_valid_status(app):
     with TestClient(app) as c:
         r = c.get("/api/picks/mlb")
@@ -78,6 +94,7 @@ def test_openapi_schema_accessible(app):
     assert r.status_code == 200
     paths = r.json()["paths"]
     assert "/api/odds/{sport}" in paths
+    assert "/api/odds/{sport}/raw" in paths
     assert "/api/picks/{sport}" in paths
     assert "/api/props/{sport}" in paths
     assert "/api/sports" in paths

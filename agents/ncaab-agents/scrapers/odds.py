@@ -3,6 +3,7 @@ from datetime import datetime
 import requests
 
 from config import ODDS_API_KEY, ODDS_API_BASE, ODDS_SPORT_KEY
+from scrapers.odds_feed import FeedUnavailable, feed_enabled, get_feed_events
 
 
 def american_to_implied_prob(odds: int) -> float:
@@ -79,7 +80,20 @@ def _team_abbrev(full_name: str) -> str:
 
 
 def get_ncaab_odds(date: str = None, sport: str = None) -> list[OddsData]:
-    """Fetch NCAAB odds from The Odds API for h2h, spreads, totals markets."""
+    """Fetch NCAAB odds for h2h, spreads, totals markets.
+
+    Pulls from the shared backend feed when configured (reusing the betting
+    site's live-odds cache, no API spend); otherwise hits The Odds API
+    directly.
+    """
+    if feed_enabled():
+        try:
+            events = get_feed_events()
+            print(f"[odds] Using shared feed ({len(events)} events)")
+            return _build_ncaab_odds(events)
+        except FeedUnavailable as e:
+            print(f"[odds] Shared feed unavailable ({e}); falling back to Odds API")
+
     sport_keys = [sport] if sport else [ODDS_SPORT_KEY]
     markets_options = [
         "h2h,spreads,totals,h2h_1st_half,totals_1st_half,spreads_1st_half",
@@ -113,8 +127,14 @@ def get_ncaab_odds(date: str = None, sport: str = None) -> list[OddsData]:
     remaining = resp.headers.get("x-requests-remaining", "?")
     print(f"[odds] API requests remaining: {remaining}")
 
+    return _build_ncaab_odds(data)
+
+
+def _build_ncaab_odds(events: list[dict]) -> list[OddsData]:
+    """Parse raw Odds API events into consensus OddsData. Shared by the
+    direct-API and shared-feed paths."""
     results = []
-    for event in data:
+    for event in events:
         home_full = event["home_team"]
         away_full = event["away_team"]
         home = _team_abbrev(home_full)

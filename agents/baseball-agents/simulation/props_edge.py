@@ -5,6 +5,7 @@ from config import ODDS_API_KEY, ODDS_API_BASE, EDGE_THRESHOLDS, KELLY_FRACTION
 from calibrate import apply_calibration
 from edge import american_to_implied_prob, american_to_decimal, kelly_criterion, _sized_kelly, _passes_worst_case_filter, apply_bet_filters
 from scrapers.odds import power_devig, _american_to_decimal
+from scrapers.odds_feed import FeedUnavailable, feed_enabled, get_feed_event
 
 logger = logging.getLogger("mirofish.props")
 
@@ -137,11 +138,76 @@ def check_prop_edge(
     return None
 
 
+PROP_MARKET_SET = frozenset(PROP_MARKETS.split(","))
+
+
+def _parse_prop_event(event: dict) -> dict:
+    """Parse one event's bookmakers into per-player best prop lines.
+
+    Returns: {market_key: {player_name: {"line": X, "over_odds": X,
+    "under_odds": X}}}. Only the prop markets in PROP_MARKET_SET are kept (the
+    shared feed carries every cached market, not just the props we asked for).
+    """
+    result: dict = {}
+    for bk in event.get("bookmakers", []):
+        for market in bk.get("markets", []):
+            market_key = market["key"]
+            if market_key not in PROP_MARKET_SET:
+                continue
+            if market_key not in result:
+                result[market_key] = {}
+
+            # Group outcomes by (player, line) to avoid mixing alternate lines
+            player_line_outcomes = {}
+            for outcome in market.get("outcomes", []):
+                desc = outcome.get("description", "")
+                line = outcome.get("point", 0)
+                key = (desc, line)
+                if key not in player_line_outcomes:
+                    player_line_outcomes[key] = {"line": line}
+                if outcome["name"] == "Over":
+                    player_line_outcomes[key]["over_odds"] = outcome["price"]
+                elif outcome["name"] == "Under":
+                    player_line_outcomes[key]["under_odds"] = outcome["price"]
+
+            # Best-line selection: keep best odds per player, same line only
+            for (player_name, line), odds in player_line_outcomes.items():
+                if "over_odds" not in odds or "under_odds" not in odds:
+                    continue
+                existing = result[market_key].get(player_name)
+                if existing is None:
+                    result[market_key][player_name] = odds
+                elif existing["line"] == line:
+                    # Same line: keep best odds per side
+                    if _american_to_decimal(odds["over_odds"]) > _american_to_decimal(existing.get("over_odds", -110)):
+                        existing["over_odds"] = odds["over_odds"]
+                    if _american_to_decimal(odds["under_odds"]) > _american_to_decimal(existing.get("under_odds", -110)):
+                        existing["under_odds"] = odds["under_odds"]
+                else:
+                    # Different line: keep the one with more liquid market (lower vig)
+                    old_vig = american_to_implied_prob(existing["over_odds"]) + american_to_implied_prob(existing["under_odds"])
+                    new_vig = american_to_implied_prob(odds["over_odds"]) + american_to_implied_prob(odds["under_odds"])
+                    if new_vig < old_vig:
+                        result[market_key][player_name] = odds
+
+    return result
+
+
 def get_prop_odds(event_id: str) -> dict:
-    """Fetch player prop odds for a game from The Odds API.
+    """Fetch player prop odds for a game.
+
+    Pulls from the shared backend feed when configured (no API spend),
+    otherwise hits The Odds API per-event endpoint directly.
 
     Returns: {market_key: {player_name: {"line": X, "over_odds": X, "under_odds": X}}}
     """
+    if feed_enabled():
+        try:
+            event = get_feed_event(event_id)
+            return _parse_prop_event(event) if event else {}
+        except FeedUnavailable as e:
+            logger.info("Shared feed unavailable (%s); falling back to Odds API", e)
+
     url = f"{ODDS_API_BASE}/sports/baseball_mlb/events/{event_id}/odds"
     params = {
         "apiKey": ODDS_API_KEY,
@@ -150,56 +216,15 @@ def get_prop_odds(event_id: str) -> dict:
         "oddsFormat": "american",
     }
 
-    result = {}
     try:
         resp = requests.get(url, params=params, timeout=15)
         if resp.status_code != 200:
-            return result
-
-        data = resp.json()
-        for bk in data.get("bookmakers", []):
-            for market in bk.get("markets", []):
-                market_key = market["key"]
-                if market_key not in result:
-                    result[market_key] = {}
-
-                # Group outcomes by (player, line) to avoid mixing alternate lines
-                player_line_outcomes = {}
-                for outcome in market.get("outcomes", []):
-                    desc = outcome.get("description", "")
-                    line = outcome.get("point", 0)
-                    key = (desc, line)
-                    if key not in player_line_outcomes:
-                        player_line_outcomes[key] = {"line": line}
-                    if outcome["name"] == "Over":
-                        player_line_outcomes[key]["over_odds"] = outcome["price"]
-                    elif outcome["name"] == "Under":
-                        player_line_outcomes[key]["under_odds"] = outcome["price"]
-
-                # Best-line selection: keep best odds per player, same line only
-                for (player_name, line), odds in player_line_outcomes.items():
-                    if "over_odds" not in odds or "under_odds" not in odds:
-                        continue
-                    existing = result[market_key].get(player_name)
-                    if existing is None:
-                        result[market_key][player_name] = odds
-                    elif existing["line"] == line:
-                        # Same line: keep best odds per side
-                        if _american_to_decimal(odds["over_odds"]) > _american_to_decimal(existing.get("over_odds", -110)):
-                            existing["over_odds"] = odds["over_odds"]
-                        if _american_to_decimal(odds["under_odds"]) > _american_to_decimal(existing.get("under_odds", -110)):
-                            existing["under_odds"] = odds["under_odds"]
-                    else:
-                        # Different line: keep the one with more liquid market (lower vig)
-                        old_vig = american_to_implied_prob(existing["over_odds"]) + american_to_implied_prob(existing["under_odds"])
-                        new_vig = american_to_implied_prob(odds["over_odds"]) + american_to_implied_prob(odds["under_odds"])
-                        if new_vig < old_vig:
-                            result[market_key][player_name] = odds
-
+            return {}
+        return _parse_prop_event(resp.json())
     except Exception as e:
         logger.error("Props odds fetch failed for %s: %s", event_id, e)
 
-    return result
+    return {}
 
 
 def analyze_all_props(mc_results: dict, prop_odds: dict) -> list[dict]:

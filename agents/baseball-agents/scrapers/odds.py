@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import requests
 
 from config import ODDS_API_KEY, ODDS_API_BASE, TEAM_NAME_TO_ABBREV
+from scrapers.odds_feed import FeedUnavailable, feed_enabled, get_feed_event, get_feed_events
 
 
 def american_to_implied_prob(odds: int) -> float:
@@ -181,12 +182,74 @@ def _parse_additional_markets(od: OddsData, markets: dict) -> None:
                 od.f3_moneyline["away"] = outcome["price"]
 
 
+def _merge_event_markets(event: dict, wanted: set[str] | None = None) -> dict:
+    """Merge one event's bookmakers into best-odds-per-outcome markets.
+
+    Alternate lines are dropped — for each (market, side, player/team) the most
+    common point across books is treated as the primary line and others are
+    skipped. `wanted`, when given, restricts the result to those market keys
+    (used by the shared-feed path, where the event carries every market the
+    backend cached, not just the ones this caller asked for).
+    """
+    # Count how often each (market, side_desc, point) appears across books to
+    # identify the primary line vs alternate lines.
+    line_counts = {}  # (market_key, name, description): {point: count}
+    for bk in event.get("bookmakers", []):
+        for m in bk.get("markets", []):
+            mk = m["key"]
+            if wanted is not None and mk not in wanted:
+                continue
+            for outcome in m.get("outcomes", []):
+                side_key = (mk, outcome.get("name", ""), outcome.get("description", ""))
+                point = outcome.get("point")
+                if point is not None:
+                    line_counts.setdefault(side_key, {})
+                    line_counts[side_key][point] = line_counts[side_key].get(point, 0) + 1
+
+    # For each side, find the most common point (primary line).
+    primary_lines = {sk: max(counts, key=counts.get) for sk, counts in line_counts.items()}
+
+    # Merge best odds per outcome, filtering to primary lines only.
+    merged = {}
+    for bk in event.get("bookmakers", []):
+        for m in bk.get("markets", []):
+            mk = m["key"]
+            if wanted is not None and mk not in wanted:
+                continue
+            if mk not in merged:
+                merged[mk] = {"key": mk, "outcomes": []}
+            existing = {_outcome_key(o): o for o in merged[mk].get("outcomes", [])}
+            for outcome in m.get("outcomes", []):
+                point = outcome.get("point")
+                if point is not None:
+                    side_key = (mk, outcome.get("name", ""), outcome.get("description", ""))
+                    if side_key in primary_lines and point != primary_lines[side_key]:
+                        continue  # Skip alternate lines
+                okey = _outcome_key(outcome)
+                if okey not in existing or _american_to_decimal(outcome["price"]) > _american_to_decimal(existing[okey]["price"]):
+                    existing[okey] = outcome
+            merged[mk]["outcomes"] = list(existing.values())
+    return merged
+
+
 def get_additional_odds(event_id: str, api_requests_remaining: int = 999,
                         markets: str = ADDITIONAL_MARKETS) -> dict:
     """Fetch additional markets via per-event endpoint.
 
-    Returns raw markets dict or empty dict on failure.
+    Returns raw markets dict or empty dict on failure. Pulls from the shared
+    backend feed when configured (free, no API spend), otherwise hits the Odds
+    API per-event endpoint directly.
     """
+    if feed_enabled():
+        try:
+            event = get_feed_event(event_id)
+            if event is None:
+                return {}
+            merged = _merge_event_markets(event, set(markets.split(",")))
+            return merged if merged else {}
+        except FeedUnavailable as e:
+            print(f"[odds] Shared feed unavailable ({e}); falling back to Odds API")
+
     if api_requests_remaining < 100:
         print("[odds] Skipping per-event fetch — API budget low")
         return {}
@@ -203,42 +266,7 @@ def get_additional_odds(event_id: str, api_requests_remaining: int = 999,
         if resp.status_code != 200:
             return {}
         data = resp.json()
-        # Count how often each (market, side_desc, point) appears across books
-        # to identify the primary line vs alternate lines
-        line_counts = {}  # (market_key, name, description): {point: count}
-        for bk in data.get("bookmakers", []):
-            for m in bk.get("markets", []):
-                mk = m["key"]
-                for outcome in m.get("outcomes", []):
-                    side_key = (mk, outcome.get("name", ""), outcome.get("description", ""))
-                    point = outcome.get("point")
-                    if point is not None:
-                        line_counts.setdefault(side_key, {})
-                        line_counts[side_key][point] = line_counts[side_key].get(point, 0) + 1
-
-        # For each side, find the most common point (primary line)
-        primary_lines = {}  # (market_key, name, description) -> point
-        for side_key, counts in line_counts.items():
-            primary_lines[side_key] = max(counts, key=counts.get)
-
-        # Merge best odds per outcome, filtering to primary lines only
-        merged = {}
-        for bk in data.get("bookmakers", []):
-            for m in bk.get("markets", []):
-                mk = m["key"]
-                if mk not in merged:
-                    merged[mk] = {"key": mk, "outcomes": []}
-                existing = {_outcome_key(o): o for o in merged[mk].get("outcomes", [])}
-                for outcome in m.get("outcomes", []):
-                    point = outcome.get("point")
-                    if point is not None:
-                        side_key = (mk, outcome.get("name", ""), outcome.get("description", ""))
-                        if side_key in primary_lines and point != primary_lines[side_key]:
-                            continue  # Skip alternate lines
-                    okey = _outcome_key(outcome)
-                    if okey not in existing or _american_to_decimal(outcome["price"]) > _american_to_decimal(existing[okey]["price"]):
-                        existing[okey] = outcome
-                merged[mk]["outcomes"] = list(existing.values())
+        merged = _merge_event_markets(data)
         return merged if merged else {}
     except Exception as e:
         print(f"[odds] Per-event fetch failed for {event_id}: {e}")
@@ -509,10 +537,20 @@ def get_historical_event_odds(event_id: str,
 
 
 def get_mlb_odds(date: str = None, sport: str = None) -> list[OddsData]:
-    """Fetch MLB odds from The Odds API for h2h, spreads, totals markets.
+    """Fetch MLB odds for h2h, spreads, totals markets.
 
-    Uses regular season odds only.
+    Pulls from the shared backend feed when configured (reusing the betting
+    site's live-odds cache, no API spend); otherwise hits The Odds API
+    directly. Uses regular season odds only.
     """
+    if feed_enabled():
+        try:
+            events = get_feed_events()
+            print(f"[odds] Using shared feed ({len(events)} events)")
+            return _build_odds_data(events, date)
+        except FeedUnavailable as e:
+            print(f"[odds] Shared feed unavailable ({e}); falling back to Odds API")
+
     sport_keys = [sport] if sport else ["baseball_mlb"]
     markets_options = [
         "h2h,spreads,totals,h2h_1st_5_innings,totals_1st_5_innings",
@@ -546,10 +584,17 @@ def get_mlb_odds(date: str = None, sport: str = None) -> list[OddsData]:
     remaining = resp.headers.get("x-requests-remaining", "?")
     print(f"[odds] API requests remaining: {remaining}")
 
+    return _build_odds_data(data, date)
+
+
+def _build_odds_data(events: list[dict], date: str = None) -> list[OddsData]:
+    """Parse raw Odds API events into OddsData: skip started games and filter
+    to the current game day (US/Eastern). Shared by the direct-API and
+    shared-feed paths so both apply identical live-skip and day-filtering."""
     results = []
     now = datetime.now(timezone.utc)
     skipped_live = 0
-    for event in data:
+    for event in events:
         # Skip games that have already started
         commence_time = event.get("commence_time", "")
         if commence_time:

@@ -24,6 +24,37 @@ Open <http://localhost:3000> — redirects to `/odds/mlb`.
 
 `.env` is created from `.env.example`. Required: `ODDS_API_KEY` (mirror from `agents/baseball-agents/.env`). Optional: `BET_CARD_DIR`, `BETS_CSV`, `ODDS_POLL_INTERVAL`.
 
+## Shared live-odds feed (agent reuse)
+
+The backend already polls The Odds API for every enabled sport and stores the
+results in one multi-sport cache (`server/odds/cache.py`). The sibling agent
+pipelines under `agents/` can **reuse that same cache** instead of each
+spending their own Odds API credits on the same games.
+
+The backend exposes the cache in The Odds API's native JSON shape at:
+
+```
+GET /api/odds/{sport}/raw   →   { "data": [ ...events... ], "stale_seconds": N }
+```
+
+Each event mirrors a direct `/sports/<key>/odds` response (all markets,
+including props; player/team folded back into `description`), so an agent runs
+it through the exact same parsers it uses for a direct pull.
+
+To switch an agent over, set in its `.env`:
+
+```bash
+ODDS_FEED_BASE_URL=http://127.0.0.1:8000   # the running backend
+ODDS_FEED_SPORT=mlb                        # backend app sport key (see server/sports.py)
+```
+
+Live odds then come from the shared cache; if the backend is down or doesn't
+yet carry that sport, the agent transparently falls back to a direct Odds API
+pull. Historical odds (closing-line backfill) always use the Odds API. Adding a
+new sport to the shared feed is just registering it in `server/sports.py` +
+`server/config/markets.<sport>.toml`, then pointing the agent's
+`ODDS_FEED_SPORT` at it.
+
 ## Tests
 
 ```bash
