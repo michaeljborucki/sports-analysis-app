@@ -15,7 +15,11 @@ The interesting per-market fields:
                          total:      O/U literals  e.g. '["Over", "Under"]'
                          3way:       Yes/No        e.g. '["Yes", "No"]'
                          player:     Yes/No
-  - `outcomePrices`    : JSON string list of implied probs, parallel to outcomes
+  - `bestAsk` / `bestBid`: top-of-book for the YES (first outcome) token.
+                         Outcome prices are derived as
+                         [bestAsk, 1 - bestBid] — the ASK each side
+                         would pay to BUY. We don't read `outcomePrices`
+                         because Gamma serializes that as the midpoint.
   - `clobTokenIds`     : JSON string list of CLOB asset_ids, parallel to outcomes
                          Each asset_id = one tradeable side. WS-side key.
 
@@ -29,6 +33,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 from datetime import datetime, timezone
 from typing import Callable
 
@@ -56,20 +61,40 @@ MIN_OUTCOME_PROB = 0.01
 MAX_OVERROUND_ALT = 1.15
 
 
-def yes_to_american(p: float) -> int | None:
-    """Convert a YES decimal price (0..1) to American odds.
+POLYMARKET_TAKER_FEE = 0.05
 
-    Polymarket quotes implied probability per outcome directly.
-      - underdog (p < 0.5): +odds = round((1-p)/p * 100)
-      - favorite (p > 0.5): -odds = -round(p/(1-p) * 100)
+
+def yes_to_american(p: float) -> int | None:
+    """Convert a YES decimal price (0..1) to FEE-ADJUSTED American odds.
+
+    Polymarket charges a 5% market-order (taker) fee per contract on the
+    variance term `P * (1-P)`, so the true per-contract cost is
+        cost = P + 0.05 * P * (1-P) = P * (1.05 - 0.05 * P)
+    and realized profit on a winning contract is `1 - cost`. This
+    function returns the American odds *implied by that effective cost*
+    so EV/arb comparisons against bookmakers (whose vig is already
+    embedded in the line) are apples-to-apples. Without the fee
+    adjustment, the scanner surfaces phantom Polymarket edges that
+    vanish at fill time.
+
+    Verified empirically: 100 shares at yes_ask=0.69 → total cost
+    $70.07, fee $1.07 — back-solves to F = 1.07 / (0.69*0.31*100) =
+    0.0500. Second sample at yes_ask=0.58 → fee $1.22 → also 0.0500.
+
+    Rounding is `math.floor` of the raw American value, which for both
+    signs rounds *against the bettor* (favorites one notch more
+    negative, underdogs one notch less positive) — matches the same
+    conservative rounding the Kalshi normalizer uses.
     """
     if p <= 0 or p >= 1:
         return None
-    if p < 0.5:
-        return round((1 - p) / p * 100)
-    if p > 0.5:
-        return -round(p / (1 - p) * 100)
-    return -100
+    cost = p + POLYMARKET_TAKER_FEE * p * (1 - p)
+    profit = 1.0 - cost
+    if profit <= 0:
+        return None
+    if cost > profit:
+        return math.floor(-cost / profit * 100)
+    return math.floor(profit / cost * 100)
 
 
 def _parse_json_array(s) -> list | None:
@@ -151,20 +176,32 @@ def _extract_two_sided(market: dict) -> tuple[list[str], list[float], list[str]]
     """Pull and validate the parallel outcome/price/token arrays from a
     Polymarket market dict. Returns (labels, prices, tokens) or None on
     any structural failure (mismatched lengths, count != 2, malformed
-    prices, etc.)."""
+    prices, etc.).
+
+    Prices are derived from the orderbook tops, NOT from `outcomePrices`
+    (which Gamma exposes as the midpoint between bid and ask). A bettor
+    buys at the ask, so:
+      - outcome[0] (YES side) price = bestAsk
+      - outcome[1] (NO side)  price = 1 - bestBid
+    Complementary because the NO token's ask = 1 - the YES token's bid
+    in an arbitrage-free binary market.
+    """
     outcomes = _parse_json_array(market.get("outcomes"))
-    prices   = _parse_json_array(market.get("outcomePrices"))
     tokens   = _parse_json_array(market.get("clobTokenIds"))
-    if not outcomes or not prices or not tokens:
+    if not outcomes or not tokens:
         return None
-    if not (len(outcomes) == len(prices) == len(tokens) == 2):
+    if not (len(outcomes) == len(tokens) == 2):
         return None
-    parsed_prices: list[float] = []
-    for p in prices:
-        try:
-            parsed_prices.append(float(p))
-        except (TypeError, ValueError):
-            return None
+    try:
+        best_ask = float(market.get("bestAsk"))
+        best_bid = float(market.get("bestBid"))
+    except (TypeError, ValueError):
+        return None
+    if not (0 < best_ask < 1) or not (0 < best_bid < 1):
+        return None
+    if best_ask < best_bid:
+        return None
+    parsed_prices = [best_ask, 1.0 - best_bid]
     return (
         [str(o) for o in outcomes],
         parsed_prices,

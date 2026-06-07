@@ -95,17 +95,25 @@ def test_strip_strike_index_empty():
 
 
 def test_yes_to_american_underdog():
-    # 0.3 → +233 (decimal 3.33 → +233 American)
-    assert yes_to_american(0.3) == 233
+    # 0.3 raw → +233. With 7% taker fee:
+    #   cost   = 0.3 + 0.07 * 0.3 * 0.7 = 0.3147
+    #   profit = 1 - 0.3147 = 0.6853
+    #   American = floor(0.6853 / 0.3147 * 100) = floor(217.76) = +217
+    assert yes_to_american(0.3) == 217
 
 
 def test_yes_to_american_favorite():
-    # 0.7 → -233
-    assert yes_to_american(0.7) == -233
+    # 0.7 raw → -233. With 7% taker fee:
+    #   cost   = 0.7 + 0.07 * 0.7 * 0.3 = 0.7147
+    #   profit = 0.2853
+    #   American = floor(-0.7147 / 0.2853 * 100) = floor(-250.51) = -251
+    assert yes_to_american(0.7) == -251
 
 
 def test_yes_to_american_even_money():
-    assert yes_to_american(0.5) == -100
+    # 0.5 is NOT even money once the fee is in: the bettor pays 51.75¢
+    # to win 48.25¢, which is -108 American.
+    assert yes_to_american(0.5) == -108
 
 
 def test_yes_to_american_edge_cases():
@@ -181,8 +189,8 @@ def test_normalize_totals_emits_over_under_pair():
     assert under["outcome_point"] == 8.5
     assert over["market_key"] == "alternate_totals"
     assert under["market_key"] == "alternate_totals"
-    assert over["price_american"] == 122   # yes 0.45 → +122
-    assert under["price_american"] == -150 # no 0.60 → -150
+    assert over["price_american"] == 113   # yes 0.45 fee-adjusted → +113
+    assert under["price_american"] == -161 # no  0.60 fee-adjusted → -161
 
 
 def test_normalize_spreads_signs_outcome_point_correctly():

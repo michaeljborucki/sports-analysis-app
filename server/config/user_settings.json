@@ -2,7 +2,12 @@
   "disabled_sports": [],
   "disabled_markets": {
     "mlb": [
-      "batter_stolen_bases"
+      "batter_doubles",
+      "batter_first_home_run",
+      "batter_home_runs",
+      "batter_singles",
+      "batter_stolen_bases",
+      "batter_triples"
     ]
   },
   "visible_books": [
@@ -12,9 +17,9 @@
     "coral33",
     "draftkings",
     "espnbet",
-    "fanatics",
     "fanduel",
-    "hardrockbet",
+    "kalshi",
+    "novig",
     "polymarket",
     "prophetexchange",
     "williamhill_us"

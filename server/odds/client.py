@@ -15,12 +15,13 @@ TIMEOUT = 15.0
 # Persistent-client connection pool sizing. The fetcher fans out per-event
 # requests via asyncio.gather + a semaphore; `max_keepalive_connections`
 # governs how many idle TCP sockets we keep around between bursts, and
-# `max_connections` caps simultaneously in-flight. Both are generous
-# enough that the asyncio semaphore (typically 8) is the effective limit;
-# this just prevents the underlying pool from forcing connection teardown
-# between bursts (which would re-add the handshake cost we're eliminating).
-_KEEPALIVE_CONNECTIONS = 20
-_MAX_CONNECTIONS = 40
+# `max_connections` caps simultaneously in-flight. Sized so that several
+# per-event tiers running concurrently (each capped at ODDS_API_CONCURRENCY=4)
+# plus main-tier traffic never queue on socket allocation — head-of-line
+# blocking here was making main-tier cycles slip past their 3-min interval,
+# triggering apscheduler misfires and stale `last_fetch_at` chips.
+_KEEPALIVE_CONNECTIONS = 40
+_MAX_CONNECTIONS = 80
 
 
 class OddsAPIError(Exception):

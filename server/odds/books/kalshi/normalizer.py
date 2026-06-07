@@ -1,11 +1,21 @@
 from __future__ import annotations
 
 import logging
+import math
 import re
 from datetime import datetime, timezone
 from typing import Callable
 
 from .mapping import SERIES_TO_SPORT_MARKET, TEAM_CODE_TO_CANONICAL
+
+
+# Kalshi's market-order (taker) fee, applied per contract as
+# F * price * (1-price). Verified empirically: a 243-contract buy of
+# yes_ask=0.57 returned an estimated cost of $142.68 with a $4.17 fee,
+# back-solving to F = 4.17 / (243 * 0.57 * 0.43) = 0.0700 exactly.
+# Limit orders (makers) pay no fee, but the scanner surfaces actionable
+# prices for an instant-fill bettor — taker pricing is the right default.
+KALSHI_TAKER_FEE = 0.07
 
 
 logger = logging.getLogger(__name__)
@@ -182,22 +192,32 @@ _DATE_ONLY_MATCH_WINDOW_MIN = 12 * 60
 
 
 def yes_to_american(p: float) -> int | None:
-    """Convert a YES decimal price (0..1) to American odds.
+    """Convert a YES decimal price (0..1) to FEE-ADJUSTED American odds.
 
-    Kalshi quotes its YES side as a dollar amount (cents normalized to 0-1
-    when divided by 100). A `0.43` yes_ask means "pay $0.43 to win $1" —
-    i.e. 1/0.43 = 2.326 decimal odds. American conversion:
-      - underdog (p < 0.5): +odds = round((1-p)/p * 100)
-      - favorite (p > 0.5): -odds = -round(p/(1-p) * 100)
-      - p == 0.5: pick a sign (return -100 by convention)
+    Kalshi quotes its YES side as a dollar amount (0.43 = "pay $0.43 to
+    win $1") on the orderbook. A taker also pays a 7% fee on the
+    variance term `P * (1-P)`, so the true per-contract cost is
+        cost = P + 0.07 * P * (1-P) = P * (1.07 - 0.07 * P)
+    and the realized profit on a winning contract is `1 - cost`. This
+    function returns the American odds *implied by that effective cost*,
+    so EV/arb comparisons against bookmakers (whose vig is already in
+    the line) are apples-to-apples. Without the fee adjustment, the
+    scanner surfaces phantom Kalshi edges that vanish at fill time.
+
+    Rounding is `math.floor` of the raw American value, which for both
+    signs rounds *against the bettor* (favorites become one notch more
+    negative, underdogs one notch less positive). Matches the Kalshi
+    consumer app's display convention.
     """
     if p <= 0 or p >= 1:
         return None
-    if p < 0.5:
-        return round((1 - p) / p * 100)
-    if p > 0.5:
-        return -round(p / (1 - p) * 100)
-    return -100
+    cost = p + KALSHI_TAKER_FEE * p * (1 - p)
+    profit = 1.0 - cost
+    if profit <= 0:
+        return None
+    if cost > profit:
+        return math.floor(-cost / profit * 100)
+    return math.floor(profit / cost * 100)
 
 
 def _parse_decimal(s) -> float | None:

@@ -161,6 +161,13 @@ class FetcherRegistry:
                 id=f"{sport.key}:{tier.name}",
                 replace_existing=True,
                 max_instances=1,
+                # Default apscheduler grace is 1s — way too tight when the
+                # event loop is busy with per-event tier HTTP I/O. With 1s
+                # grace, main-tier firings get silently skipped whenever
+                # they slip behind a previous instance, leaving the
+                # `last_fetch_at` chip stale for 10-15 min stretches.
+                # 120s lets the next slot pick up the deferred firing.
+                misfire_grace_time=120,
             )
             scheduled.append((sport, tier, interval))
         if not self.scheduler.running:
