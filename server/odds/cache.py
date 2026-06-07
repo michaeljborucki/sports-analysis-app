@@ -694,7 +694,12 @@ class OddsCache:
     def purge_old_history(self, now: datetime, days: int = 90) -> int:
         """Delete time-series points for games that started more than `days`
         ago. 90 days outlives the 60-day closing_lines window, so any retained
-        move can still be compared against its eventual close."""
+        move can still be compared against its eventual close.
+
+        Note: this is a destructive purge. The archive pipeline
+        (archive.export_and_purge) exports rows to cold storage BEFORE calling
+        delete_history_ids, so prefer that path when long-term retention is
+        wanted; this remains for the no-archive fallback."""
         cutoff = (now - timedelta(days=days)).isoformat()
         with self._conn() as c:
             cur = c.execute(
@@ -702,6 +707,38 @@ class OddsCache:
                 (cutoff,),
             )
             return cur.rowcount
+
+    def history_rows_older_than(self, now: datetime, days: int = 90) -> list[dict]:
+        """All time-series rows for games that started more than `days` ago,
+        with their hot `id`. These are the rows due for cold-storage export;
+        the caller archives them, then passes the ids to delete_history_ids."""
+        cutoff = (now - timedelta(days=days)).isoformat()
+        with self._conn() as c:
+            return [
+                dict(r) for r in c.execute(
+                    "SELECT * FROM odds_history WHERE commence_time < ? "
+                    "ORDER BY commence_time",
+                    (cutoff,),
+                )
+            ]
+
+    def delete_history_ids(self, ids: list[int]) -> int:
+        """Delete specific odds_history rows by id. Chunked so a large export
+        batch stays under SQLite's variable limit. Returns rows removed."""
+        if not ids:
+            return 0
+        removed = 0
+        with self._conn() as c:
+            for i in range(0, len(ids), 500):
+                chunk = ids[i:i + 500]
+                placeholders = ",".join("?" * len(chunk))
+                cur = c.execute(
+                    f"DELETE FROM odds_history WHERE id IN ({placeholders})",
+                    chunk,
+                )
+                removed += cur.rowcount
+        return removed
+
 
     def distinct_events(
         self,

@@ -25,6 +25,9 @@ class Config:
     coral33_enabled: bool
     kalshi_api_key: str
     kalshi_private_key_path: Path | None
+    history_hot_days: int
+    archive_enabled: bool
+    archive_dir: Path
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -54,4 +57,15 @@ class Config:
                 if (p := os.environ.get("KALSHI_PRIVATE_KEY_PATH", "").strip())
                 else None
             ),
+            # Hot-window size for odds_history before rows roll off to the cold
+            # Parquet lake. Rows older than this are exported then purged.
+            history_hot_days=int(os.environ.get("ODDS_HISTORY_HOT_DAYS", "90")),
+            archive_enabled=os.environ.get("ODDS_ARCHIVE_ENABLED", "true").lower()
+            not in ("false", "0", "no", "off"),
+            archive_dir=Path(
+                os.environ.get(
+                    "ODDS_ARCHIVE_DIR",
+                    str(Path(__file__).parent / "archive"),
+                )
+            ).expanduser(),
         )

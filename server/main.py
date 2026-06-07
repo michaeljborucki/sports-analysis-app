@@ -11,6 +11,7 @@ from .odds.books.coral33 import Coral33Fetcher
 from .odds.books.coral33.accounts import AccountsScraper
 from .odds.books.kalshi import KalshiFetcher
 from .odds.books.polymarket import PolymarketFetcher
+from .odds.archive import HistoryArchive, export_and_purge
 from .odds.cache import OddsCache
 from .odds.cache_mode import CacheMode, CacheModeStore
 from .odds.client import OddsAPIClient
@@ -55,6 +56,10 @@ def create_app() -> FastAPI:
     if other_path.exists():
         OddsCache(other_path).init()
     client = OddsAPIClient(api_key=config.odds_api_key)
+    # Cold-storage lake for aged-out odds_history rows (Parquet). The sweep
+    # exports here before purging the hot table, building an indefinitely
+    # retained corpus for long-horizon book analysis.
+    archive = HistoryArchive(config.archive_dir) if config.archive_enabled else None
     sports = all_sports()
     settings_store = UserSettingsStore()
     fetcher = FetcherRegistry(config, sports, cache, client, settings_store)
@@ -127,13 +132,30 @@ def create_app() -> FastAPI:
             logging.exception("CLV capture tick failed")
         # Retention sweep for the odds time-series. Independent of capture
         # output (history is written on every upsert, not at kickoff), so it
-        # runs unconditionally. Single indexed DELETE — cheap at 60s cadence.
+        # runs unconditionally. When archiving is enabled, aged-out rows are
+        # exported to the cold Parquet lake BEFORE being purged from hot —
+        # export-then-delete, so a failure preserves the hot rows for retry.
+        # With archiving off it falls back to a plain destructive purge.
         try:
-            purged = cache.purge_old_history(_dt.now(_tz.utc))
-            if purged:
-                logging.info("purged %d old odds_history points", purged)
+            now_utc = _dt.now(_tz.utc)
+            if archive is not None:
+                res = export_and_purge(
+                    cache, archive, now_utc, hot_days=config.history_hot_days,
+                )
+                if res["exported"]:
+                    logging.info(
+                        "archived %d odds_history points to %d Parquet file(s); "
+                        "purged %d from hot",
+                        res["exported"], res["files_written"], res["purged_hot"],
+                    )
+            else:
+                purged = cache.purge_old_history(
+                    now_utc, days=config.history_hot_days,
+                )
+                if purged:
+                    logging.info("purged %d old odds_history points", purged)
         except Exception:
-            logging.exception("odds_history purge failed")
+            logging.exception("odds_history retention sweep failed")
 
     async def _wager_log_refresh_tick():
         """Re-pull the wager log so newly-placed bets appear without the
@@ -290,7 +312,7 @@ def create_app() -> FastAPI:
         )
     )
     app.include_router(settings_router(settings_store, fetcher, sports))
-    app.include_router(timeseries_router(cache))
+    app.include_router(timeseries_router(cache, archive=archive))
     app.include_router(
         dashboard_router(
             cache, fetcher, picks_readers, sports,

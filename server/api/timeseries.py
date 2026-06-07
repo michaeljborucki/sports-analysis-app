@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
 
+from ..odds.archive import HistoryArchive
 from ..odds.cache import OddsCache
 
 
@@ -24,7 +25,7 @@ def _point_key(p) -> float:
     return round(float(p or 0.0), 4)
 
 
-def build_router(cache: OddsCache) -> APIRouter:
+def build_router(cache: OddsCache, archive: HistoryArchive | None = None) -> APIRouter:
     router = APIRouter()
 
     @router.get("/api/timeseries/events")
@@ -33,9 +34,29 @@ def build_router(cache: OddsCache) -> APIRouter:
             "events": cache.events_with_history(sport_key=sport, limit=limit),
         }
 
+    @router.get("/api/timeseries/archive/stats")
+    async def archive_stats() -> dict:
+        """Inventory of the cold Parquet lake — how much long-term history
+        we've accumulated. Reports disabled when archiving is off."""
+        if archive is None:
+            return {"enabled": False}
+        return {"enabled": True, **archive.stats()}
+
     @router.get("/api/timeseries/event/{event_id}")
-    async def event_history(event_id: str, market_key: str | None = None) -> dict:
+    async def event_history(
+        event_id: str,
+        market_key: str | None = None,
+        include_archive: bool = False,
+    ) -> dict:
         rows = cache.history_for_event(event_id, market_key=market_key)
+        # Optionally fold in cold-storage points for games aged out of the hot
+        # window. On-demand extraction path — scans the lake, so opt-in only.
+        if include_archive and archive is not None:
+            arch_rows = [
+                r for r in archive.read_event(event_id)
+                if market_key is None or r["market_key"] == market_key
+            ]
+            rows = rows + arch_rows
         if not rows:
             raise HTTPException(404, f"no time-series for event '{event_id}'")
 
@@ -50,9 +71,9 @@ def build_router(cache: OddsCache) -> APIRouter:
                 "captured_at": cl["captured_at"],
             }
 
-        # Group: (market, outcome, point) → book → ordered points. rows already
-        # arrive ordered by (market, outcome, point, book, observed_at), so the
-        # point lists come out time-sorted without re-sorting here.
+        # Group: (market, outcome, point) → book → points. Hot rows arrive
+        # time-ordered, but folded-in archive rows are appended unsorted, so
+        # each book's points are explicitly sorted by observed_at below.
         grouped: dict[tuple, dict[str, list[dict]]] = {}
         for r in rows:
             key = (r["market_key"], r["outcome_name"], _point_key(r["outcome_point"]))
@@ -68,7 +89,10 @@ def build_router(cache: OddsCache) -> APIRouter:
                 "outcome_point": point,
                 "close": closes.get((mk, outcome, point)),
                 "series": [
-                    {"bookmaker_key": book, "points": pts}
+                    {
+                        "bookmaker_key": book,
+                        "points": sorted(pts, key=lambda p: p["observed_at"]),
+                    }
                     for book, pts in sorted(by_book.items())
                 ],
             })

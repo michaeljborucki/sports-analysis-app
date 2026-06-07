@@ -33,6 +33,10 @@ server/cache.snapshot.db
 server/cache.snapshot.db-journal
 server/cache_snapshot.db
 
+# Cold-storage Parquet lake for aged-out odds_history (runtime data, grows
+# indefinitely; back up / ship out-of-band, never source-of-truth in git)
+server/archive/
+
 # Runtime mode state (toggled by the cache-mode UI; per-machine)
 server/cache_mode.json
 
