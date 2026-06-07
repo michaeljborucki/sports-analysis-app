@@ -1,0 +1,59 @@
+TENNIS MATCH PREDICTION ANALYSIS
+==============================
+Madrid Open — QF | clay (outdoor)
+Carlos Alcaraz vs Jannik Sinner | Best of 3
+
+BETTING LINES:
+  Moneyline: Carlos Alcaraz -130 / Jannik Sinner 110
+  Game Handicap: Carlos Alcaraz -2.5 (-110) / Jannik Sinner 2.5 (-110)
+  Total Games: 22.5 (Over -110 / Under -110)
+  Implied Win Prob: Carlos Alcaraz 56.5% / Jannik Sinner 43.5%
+
+== PLAYER PROFILES ==
+
+Carlos Alcaraz — Rank #2 | Elo: 2180 (Surface Elo: 2210)
+  Season Record: 22-4 | Surface Record: 10-1
+  Serve: 65% 1st in, 76% 1st won, 55% 2nd won
+  Aces/DF per match: 8/2
+  Return: 42% pts won | Break Point Conv: 45%
+  Hand: R | Backhand: two-handed | Height: 183cm | Age: 22
+  Days Since Last Match: 2
+  Recent Form (Last 10):
+    2026-04-15 Monte Carlo: vs Ruud 6-3 6-4 (clay)
+
+Jannik Sinner — Rank #1 | Elo: 2200 (Surface Elo: 2180)
+  Season Record: 24-3 | Surface Record: 9-2
+  Serve: 63% 1st in, 74% 1st won, 54% 2nd won
+  Aces/DF per match: 7/2
+  Return: 41% pts won | Break Point Conv: 43%
+  Hand: R | Backhand: two-handed | Height: 188cm | Age: 24
+  Days Since Last Match: 3
+  Recent Form (Last 10):
+    2026-04-14 Monte Carlo: vs Zverev 6-4 6-3 (clay)
+
+== HEAD-TO-HEAD ==
+  Overall: 5-4 Sinner
+  On Surface: 3-2 Alcaraz
+
+== CONDITIONS ==
+  Surface: clay (outdoor)
+  Temperature: 22C | Wind: light
+  Altitude: 660m
+  Session: day
+
+== INJURIES / FITNESS ==
+Carlos Alcaraz: None reported
+Jannik Sinner: None reported
+
+== PREDICTION TASK ==
+Analyze this match from multiple expert perspectives and provide predictions for ALL of the following:
+
+1. MATCH WINNER: Win probability for each player. Which side has moneyline value?
+2. GAME HANDICAP (Carlos Alcaraz -2.5): Will the favorite cover the game spread?
+3. TOTAL GAMES (O/U 22.5): Projected total games. Does the serve/return matchup suggest long or short?
+
+For each bet type, provide:
+  - Your probability estimate
+  - Whether the market price offers value
+  - Confidence level (low/medium/high)
+  - Key factors driving the assessment

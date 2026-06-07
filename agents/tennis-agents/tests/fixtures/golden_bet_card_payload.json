@@ -1,0 +1,66 @@
+{
+  "label": "2026-04-20",
+  "total_picks": 3,
+  "total_matches": 2,
+  "record": {
+    "wins": 1,
+    "losses": 1,
+    "pushes": 0,
+    "settled": 2,
+    "pending": 1,
+    "profit_units": -0.1
+  },
+  "picks": [
+    {
+      "date": "2026-04-20",
+      "start_time": "2026-04-20T14:00:00Z",
+      "game": "Carlos Alcaraz vs Jannik Sinner",
+      "player_a": "Carlos Alcaraz",
+      "player_b": "Jannik Sinner",
+      "bet_type": "moneyline",
+      "side": "Carlos Alcaraz",
+      "side_raw": "player_a",
+      "odds": -130,
+      "sim_prob": 0.62,
+      "market_prob": 0.565,
+      "edge": 0.055,
+      "kelly_pct": 0.0096,
+      "result": "W",
+      "profit": 1.0
+    },
+    {
+      "date": "2026-04-20",
+      "start_time": "2026-04-20T14:00:00Z",
+      "game": "Carlos Alcaraz vs Jannik Sinner",
+      "player_a": "Carlos Alcaraz",
+      "player_b": "Jannik Sinner",
+      "bet_type": "total_games",
+      "side": "over 22.5",
+      "side_raw": "over 22.5",
+      "odds": -110,
+      "sim_prob": 0.6,
+      "market_prob": 0.5,
+      "edge": 0.1,
+      "kelly_pct": 0.015,
+      "result": null,
+      "profit": null
+    },
+    {
+      "date": "2026-04-20",
+      "start_time": null,
+      "game": "Iga Swiatek vs Coco Gauff",
+      "player_a": "Iga Swiatek",
+      "player_b": "Coco Gauff",
+      "bet_type": "game_handicap",
+      "side": "Coco Gauff 2.5",
+      "side_raw": "player_b 2.5",
+      "odds": -110,
+      "sim_prob": 0.55,
+      "market_prob": 0.5,
+      "edge": 0.05,
+      "kelly_pct": 0.007,
+      "result": "L",
+      "profit": -1.1
+    }
+  ]
+}

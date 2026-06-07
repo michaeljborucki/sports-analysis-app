@@ -1,0 +1,52 @@
+# --- Secrets / credentials ---
+.env
+.env.*
+!.env.example
+
+# --- Editor / IDE ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.*.sw[a-p]
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- Python caches / build artifacts ---
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+.ipynb_checkpoints/
+
+# --- Virtual environments ---
+venv/
+.venv/
+env/
+ENV/
+
+# --- Claude / tooling state ---
+.claude/
+
+# --- Logs (catch-all + known named) ---
+*.log
+logs/
+coral_scraper.log
+
+# --- Runtime data: ignore everything in data/ by default, allowlist config ---
+# Prevents accidentally committing bets.csv, closing lines, bet cards,
+# model predictions, notifications, or any new data file added in the future.
+data/*
+!data/alerts_config.json
+!data/.gitkeep

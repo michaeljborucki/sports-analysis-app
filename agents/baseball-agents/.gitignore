@@ -1,0 +1,83 @@
+.env
+__pycache__/
+*.pyc
+data/bets.csv
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.worktrees/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Data artifacts (runtime state, backups, caches)
+data/bets.csv.bak*
+data/bets_pre_reset_backup.csv
+data/model_predictions.csv
+data/model_predictions.csv.bak
+data/model_predictions.csv.broken-*
+data/ensemble_cache/
+data/notifications_sent.json
+data/grade_notifications_sent.json
+data/season_notifications_sent.json
+data/unmatched_players.log
+data/bet_card_*.txt
+data/bet_card_*.json
+data/alerts_config.json
+data/manual_picks_tracker.csv
+data/model_weights.json
+data/player_map.json
+data/closing_lines.csv
+data/closing_lines.csv.bak*
+data/analyzed_games.csv
+
+# Claude Code session state
+.claude/scheduled_tasks.lock
+
+# Secrets — defense-in-depth (never commit credentials, even if scoped to a subfolder)
+*.env
+*.env.*
+!*.env.example
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+secrets/
+credentials.json
+*credentials*
+*secret*
+*.token
+.aws/
+.gcp/
+
+# IDE / editor
+.vscode/
+.idea/
+.vs/
+*.swp
+*.swo
+*~
+
+# OS artifacts
+Thumbs.db
+
+# Local databases (often contain real data)
+*.sqlite
+*.sqlite3
+*.db
+
+# Test/coverage artifacts
+.coverage
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/

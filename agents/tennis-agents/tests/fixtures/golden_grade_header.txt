@@ -1,0 +1,5 @@
+**Grades — 2026-04-19**
+_Record: 2-2-0 · -0.10u · ROI -2.2% · CLV avg -1.1% · 1↑ 1↓ 1= · 1 untracked_
+• `moneyline     ` 1-1-0 · +0.00u · CLV +6.2%
+• `total_games   ` 0-1-0 · -1.10u · CLV -9.5%
+• `game_handicap ` 1-0-0 · +1.00u · CLV +0.0%

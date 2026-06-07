@@ -1,0 +1,7 @@
+```
+Carlos Alcaraz vs Jannik Sinner
+----------------------------------------
+  TYPE           | SIDE                 |  ODDS | RESULT |  UNITS |   CLV
+  moneyline      | Carlos Alcaraz       |  -130 | W      |  +1.00 |   +20
+  total_games    | over 22.5            |  -110 | L      |  -1.10 |   -20
+```

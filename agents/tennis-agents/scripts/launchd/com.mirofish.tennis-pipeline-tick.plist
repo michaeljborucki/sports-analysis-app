@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.mirofish.tennis-pipeline-tick</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Library/Frameworks/Python.framework/Versions/3.11/bin/python3</string>
+        <string>-u</string>
+        <string>-m</string>
+        <string>scripts.pipeline_tick</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/mikeborucki/personal_workspace/agents/tennis-agents</string>
+
+    <key>StandardOutPath</key>
+    <string>/Users/mikeborucki/personal_workspace/agents/tennis-agents/logs/pipeline_tick.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/mikeborucki/personal_workspace/agents/tennis-agents/logs/pipeline_tick.log</string>
+
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict><key>Minute</key><integer>0</integer></dict>
+    </array>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/Library/Frameworks/Python.framework/Versions/3.11/bin</string>
+    </dict>
+</dict>
+</plist>

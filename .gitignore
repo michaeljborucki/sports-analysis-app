@@ -47,3 +47,16 @@ server/data/
 # UI audit artifacts written to repo root by Playwright screenshots / snapshots
 /*.png
 /*-snapshot.yml
+
+# Logs (defensive — agent scrapers write coral_scraper.log etc. which can
+# accumulate request URLs, timing data, and potentially auth-relevant noise)
+*.log
+
+# Claude Code / agent worktrees — heavy, redundant clones, never source-of-truth
+.claude/
+**/.worktrees/
+
+# Agents monorepo — these patterns apply to every agents/<name>/ subdir.
+# .env files are the main concern; .env.example placeholders are fine.
+agents/**/.env
+agents/**/.env.local

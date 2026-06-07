@@ -1,0 +1,32 @@
+{
+  "kimi": {
+    "moneyline": 1.0,
+    "map_handicap": 1.0,
+    "total_maps": 1.0
+  },
+  "claude": {
+    "moneyline": 1.0,
+    "map_handicap": 1.0,
+    "total_maps": 1.0
+  },
+  "gpt4o": {
+    "moneyline": 1.0,
+    "map_handicap": 1.0,
+    "total_maps": 1.0
+  },
+  "gemini": {
+    "moneyline": 1.0,
+    "map_handicap": 1.0,
+    "total_maps": 1.0
+  },
+  "deepseek": {
+    "moneyline": 1.0,
+    "map_handicap": 1.0,
+    "total_maps": 1.0
+  },
+  "maverick": {
+    "moneyline": 1.0,
+    "map_handicap": 1.0,
+    "total_maps": 1.0
+  }
+}

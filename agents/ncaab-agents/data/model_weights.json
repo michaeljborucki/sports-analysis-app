@@ -1,0 +1,50 @@
+{
+  "kimi": {
+    "moneyline": 0.9681,
+    "spread": 0.9666,
+    "total": 0.973,
+    "first_half_ml": 1.0,
+    "first_half_total": 1.0,
+    "first_half_spread": 1.0
+  },
+  "claude": {
+    "moneyline": 0.9897,
+    "spread": 0.96,
+    "total": 0.97,
+    "first_half_ml": 1.0,
+    "first_half_total": 1.0,
+    "first_half_spread": 1.0
+  },
+  "gpt4o": {
+    "moneyline": 0.9581,
+    "spread": 1.0266,
+    "total": 1.0089,
+    "first_half_ml": 1.0,
+    "first_half_total": 1.0,
+    "first_half_spread": 1.0
+  },
+  "gemini": {
+    "moneyline": 1.1027,
+    "spread": 0.9972,
+    "total": 0.9857,
+    "first_half_ml": 1.0,
+    "first_half_total": 1.0,
+    "first_half_spread": 1.0
+  },
+  "deepseek": {
+    "moneyline": 0.9629,
+    "spread": 0.988,
+    "total": 1.0069,
+    "first_half_ml": 1.0,
+    "first_half_total": 1.0,
+    "first_half_spread": 1.0
+  },
+  "maverick": {
+    "moneyline": 1.0185,
+    "spread": 1.0615,
+    "total": 1.0554,
+    "first_half_ml": 1.0,
+    "first_half_total": 1.0,
+    "first_half_spread": 1.0
+  }
+}

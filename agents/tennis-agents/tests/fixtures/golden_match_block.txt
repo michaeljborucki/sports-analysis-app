@@ -1,0 +1,7 @@
+```
+Carlos Alcaraz vs Jannik Sinner
+----------------------------------------
+  TYPE           | SIDE                 |  ODDS | MODEL |  EDGE |    BE
+  total_games    | over 22.5            |  -110 | 60.0% | 10.0% |  -145
+  moneyline      | Carlos Alcaraz       |  -130 | 62.0% |  5.5% |  -155
+```

@@ -1,0 +1,13 @@
+{
+  "discord": {
+    "enabled": false,
+    "webhook_url": "${DISCORD_WEBHOOK_URL}"
+  },
+  "bet_types": [
+    "asian_handicap",
+    "total",
+    "btts"
+  ],
+  "min_edge_pct": 0.0,
+  "min_kelly_pct": 0.0
+}

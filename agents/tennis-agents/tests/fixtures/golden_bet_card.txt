@@ -1,0 +1,17 @@
+
+============================================================
+  MIROFISH TENNIS BET CARD — 2026-04-20
+  3 picks across 2 matches
+============================================================
+
+  Carlos Alcaraz vs Jannik Sinner — 8:00 AM MT
+  ----------------------------------------
+    moneyline       | Carlos Alcaraz           | -130 | Edge:  5.5% | Kelly:  0.96% → W
+    total_games     | over 22.5                | -110 | Edge: 10.0% | Kelly:  1.50%
+
+  Iga Swiatek vs Coco Gauff
+  ----------------------------------------
+    game_handicap   | Coco Gauff 2.5           | -110 | Edge:  5.0% | Kelly:  0.70% → L
+
+  Record: 1-1 | Profit: -0.10 units
+============================================================

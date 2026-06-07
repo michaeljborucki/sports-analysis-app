@@ -1,0 +1,321 @@
+date,game,league,bet_type,side,line,close_odds,close_prob_devig,captured_at
+2026-04-18,Sporting Kansas City@Vancouver Whitecaps FC,MLS,asian_handicap,home -4.5,-4.5,-111,0.492131,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sporting Kansas City@Vancouver Whitecaps FC,MLS,asian_handicap,away 4.5,4.5,-118,0.507869,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sporting Kansas City@Vancouver Whitecaps FC,MLS,total,over 5.5,5.5,115,0.415942,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sporting Kansas City@Vancouver Whitecaps FC,MLS,total,under 5.5,5.5,-167,0.584058,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sporting Kansas City@Vancouver Whitecaps FC,MLS,btts,yes,,-136,0.499037,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sporting Kansas City@Vancouver Whitecaps FC,MLS,btts,no,,73,0.500963,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Austin FC@Toronto FC,MLS,asian_handicap,home -0.5,-0.5,-112,0.493279,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Austin FC@Toronto FC,MLS,asian_handicap,away 0.5,0.5,-118,0.506721,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Austin FC@Toronto FC,MLS,total,over 2.5,2.5,-108,0.483246,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Austin FC@Toronto FC,MLS,total,under 2.5,2.5,-123,0.516754,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Austin FC@Toronto FC,MLS,btts,yes,,-136,0.499037,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Austin FC@Toronto FC,MLS,btts,no,,73,0.500963,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New York Red Bulls@CF Montreal,MLS,asian_handicap,home -0.5,-0.5,145,0.368365,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New York Red Bulls@CF Montreal,MLS,asian_handicap,away 0.5,0.5,-196,0.631635,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New York Red Bulls@CF Montreal,MLS,total,over 3.5,3.5,133,0.389921,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New York Red Bulls@CF Montreal,MLS,total,under 3.5,3.5,-179,0.610079,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New York Red Bulls@CF Montreal,MLS,btts,yes,,-112,0.498139,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New York Red Bulls@CF Montreal,MLS,btts,no,,88,0.501861,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Inter Miami CF@Colorado Rapids,MLS,asian_handicap,home 0.5,0.5,-123,0.516754,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Inter Miami CF@Colorado Rapids,MLS,asian_handicap,away -0.5,-0.5,-108,0.483246,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Inter Miami CF@Colorado Rapids,MLS,total,over 3.5,3.5,-106,0.478771,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Inter Miami CF@Colorado Rapids,MLS,total,under 3.5,3.5,-125,0.521229,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Inter Miami CF@Colorado Rapids,MLS,btts,yes,,-286,0.495803,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Inter Miami CF@Colorado Rapids,MLS,btts,no,,34,0.504197,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Nashville SC@Atlanta United FC,MLS,asian_handicap,home 0.5,0.5,-149,0.565621,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Nashville SC@Atlanta United FC,MLS,asian_handicap,away -0.5,-0.5,112,0.434379,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Nashville SC@Atlanta United FC,MLS,total,over 2.5,2.5,-118,0.506721,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Nashville SC@Atlanta United FC,MLS,total,under 2.5,2.5,-112,0.493279,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Nashville SC@Atlanta United FC,MLS,btts,yes,,129,0.500791,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Nashville SC@Atlanta United FC,MLS,btts,no,,-77,0.499209,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Charlotte FC@New York City FC,MLS,btts,yes,,-177,0.498764,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Charlotte FC@New York City FC,MLS,btts,no,,56,0.501236,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Chicago Fire@FC Cincinnati,MLS,btts,yes,,-163,0.499212,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Chicago Fire@FC Cincinnati,MLS,btts,no,,61,0.500788,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Columbus Crew SC@New England Revolution,MLS,asian_handicap,home 0.5,0.5,-189,0.623775,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Columbus Crew SC@New England Revolution,MLS,asian_handicap,away -0.5,-0.5,141,0.376225,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Columbus Crew SC@New England Revolution,MLS,total,over 2.5,2.5,-127,0.52571,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Columbus Crew SC@New England Revolution,MLS,total,under 2.5,2.5,-104,0.47429,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Columbus Crew SC@New England Revolution,MLS,btts,yes,,-155,0.498903,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Columbus Crew SC@New England Revolution,MLS,btts,no,,64,0.501097,2026-04-18T03:48:47.798684+00:00
+2026-04-18,D.C. United@Philadelphia Union,MLS,btts,yes,,123,0.500442,2026-04-18T03:48:47.798684+00:00
+2026-04-18,D.C. United@Philadelphia Union,MLS,btts,no,,-81,0.499558,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Houston Dynamo@Orlando City SC,MLS,btts,yes,,-148,0.498857,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Houston Dynamo@Orlando City SC,MLS,btts,no,,67,0.501143,2026-04-18T03:48:47.798684+00:00
+2026-04-18,LA Galaxy@FC Dallas,MLS,asian_handicap,home -0.5,-0.5,104,0.454543,2026-04-18T03:48:47.798684+00:00
+2026-04-18,LA Galaxy@FC Dallas,MLS,asian_handicap,away 0.5,0.5,-137,0.545457,2026-04-18T03:48:47.798684+00:00
+2026-04-18,LA Galaxy@FC Dallas,MLS,total,over 3.5,3.5,132,0.390765,2026-04-18T03:48:47.798684+00:00
+2026-04-18,LA Galaxy@FC Dallas,MLS,total,under 3.5,3.5,-179,0.609235,2026-04-18T03:48:47.798684+00:00
+2026-04-18,LA Galaxy@FC Dallas,MLS,btts,yes,,-179,0.497811,2026-04-18T03:48:47.798684+00:00
+2026-04-18,LA Galaxy@FC Dallas,MLS,btts,no,,55,0.502189,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Portland Timbers@Minnesota United FC,MLS,asian_handicap,home -0.5,-0.5,-139,0.547378,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Portland Timbers@Minnesota United FC,MLS,asian_handicap,away 0.5,0.5,104,0.452622,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Portland Timbers@Minnesota United FC,MLS,total,over 3.5,3.5,132,0.393787,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Portland Timbers@Minnesota United FC,MLS,total,under 3.5,3.5,-175,0.606213,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Portland Timbers@Minnesota United FC,MLS,btts,yes,,-205,0.497691,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Portland Timbers@Minnesota United FC,MLS,btts,no,,48,0.502309,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Diego FC@Real Salt Lake,MLS,btts,yes,,-198,0.498569,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Diego FC@Real Salt Lake,MLS,btts,no,,50,0.501431,2026-04-18T03:48:47.798684+00:00
+2026-04-18,St. Louis City SC@Seattle Sounders FC,MLS,asian_handicap,home -0.5,-0.5,-149,0.565621,2026-04-18T03:48:47.798684+00:00
+2026-04-18,St. Louis City SC@Seattle Sounders FC,MLS,asian_handicap,away 0.5,0.5,112,0.434379,2026-04-18T03:48:47.798684+00:00
+2026-04-18,St. Louis City SC@Seattle Sounders FC,MLS,total,over 2.5,2.5,-172,0.600423,2026-04-18T03:48:47.798684+00:00
+2026-04-18,St. Louis City SC@Seattle Sounders FC,MLS,total,under 2.5,2.5,128,0.399577,2026-04-18T03:48:47.798684+00:00
+2026-04-18,St. Louis City SC@Seattle Sounders FC,MLS,btts,yes,,162,0.501318,2026-04-18T03:48:47.798684+00:00
+2026-04-18,St. Louis City SC@Seattle Sounders FC,MLS,btts,no,,-61,0.498682,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Jose Earthquakes@Los Angeles FC,MLS,asian_handicap,home -0.5,-0.5,-179,0.610079,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Jose Earthquakes@Los Angeles FC,MLS,asian_handicap,away 0.5,0.5,133,0.389921,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Jose Earthquakes@Los Angeles FC,MLS,total,over 3.5,3.5,118,0.419503,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Jose Earthquakes@Los Angeles FC,MLS,total,under 3.5,3.5,-159,0.580497,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Jose Earthquakes@Los Angeles FC,MLS,btts,yes,,130,0.501418,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Jose Earthquakes@Los Angeles FC,MLS,btts,no,,-76,0.498582,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Charlotte FC@Orlando City SC,MLS,btts,yes,,-156,0.497625,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Charlotte FC@Orlando City SC,MLS,btts,no,,63,0.502375,2026-04-18T03:48:47.798684+00:00
+2026-04-18,LA Galaxy@Columbus Crew SC,MLS,total,over 3.5,3.5,106,0.452206,2026-04-18T03:48:47.798684+00:00
+2026-04-18,LA Galaxy@Columbus Crew SC,MLS,total,under 3.5,3.5,-137,0.547794,2026-04-18T03:48:47.798684+00:00
+2026-04-18,LA Galaxy@Columbus Crew SC,MLS,btts,yes,,-131,0.499417,2026-04-18T03:48:47.798684+00:00
+2026-04-18,LA Galaxy@Columbus Crew SC,MLS,btts,no,,76,0.500583,2026-04-18T03:48:47.798684+00:00
+2026-04-18,D.C. United@New York Red Bulls,MLS,total,over 2.5,2.5,-157,0.580775,2026-04-18T03:48:47.798684+00:00
+2026-04-18,D.C. United@New York Red Bulls,MLS,total,under 2.5,2.5,120,0.419225,2026-04-18T03:48:47.798684+00:00
+2026-04-18,D.C. United@New York Red Bulls,MLS,btts,yes,,126,0.502051,2026-04-18T03:48:47.798684+00:00
+2026-04-18,D.C. United@New York Red Bulls,MLS,btts,no,,-78,0.497949,2026-04-18T03:48:47.798684+00:00
+2026-04-18,FC Cincinnati@New York City FC,MLS,total,over 2.5,2.5,-150,0.569669,2026-04-18T03:48:47.798684+00:00
+2026-04-18,FC Cincinnati@New York City FC,MLS,total,under 2.5,2.5,115,0.430331,2026-04-18T03:48:47.798684+00:00
+2026-04-18,FC Cincinnati@New York City FC,MLS,btts,yes,,-190,0.498292,2026-04-18T03:48:47.798684+00:00
+2026-04-18,FC Cincinnati@New York City FC,MLS,btts,no,,52,0.501708,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Philadelphia Union@Toronto FC,MLS,btts,yes,,-125,0.49835,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Philadelphia Union@Toronto FC,MLS,btts,no,,79,0.50165,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New England Revolution@Atlanta United FC,MLS,total,over 2.5,2.5,-143,0.55798,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New England Revolution@Atlanta United FC,MLS,total,under 2.5,2.5,110,0.44202,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New England Revolution@Atlanta United FC,MLS,btts,yes,,-140,0.499193,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New England Revolution@Atlanta United FC,MLS,btts,no,,71,0.500807,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Minnesota United FC@FC Dallas,MLS,total,over 2.5,2.5,-165,0.592153,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Minnesota United FC@FC Dallas,MLS,total,under 2.5,2.5,125,0.407847,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Minnesota United FC@FC Dallas,MLS,btts,yes,,-167,0.497949,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Minnesota United FC@FC Dallas,MLS,btts,no,,59,0.502051,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Diego FC@Houston Dynamo,MLS,total,over 2.5,2.5,-186,0.616869,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Diego FC@Houston Dynamo,MLS,total,under 2.5,2.5,135,0.383131,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Diego FC@Houston Dynamo,MLS,btts,yes,,-150,0.498635,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Diego FC@Houston Dynamo,MLS,btts,no,,66,0.501365,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Inter Miami CF@Real Salt Lake,MLS,btts,yes,,-205,0.497691,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Inter Miami CF@Real Salt Lake,MLS,btts,no,,48,0.502309,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Austin FC@San Jose Earthquakes,MLS,total,over 2.5,2.5,-157,0.575763,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Austin FC@San Jose Earthquakes,MLS,total,under 2.5,2.5,115,0.424237,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Austin FC@San Jose Earthquakes,MLS,btts,yes,,138,0.502359,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Austin FC@San Jose Earthquakes,MLS,btts,no,,-71,0.497641,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Colorado Rapids@Los Angeles FC,MLS,total,over 3.5,3.5,107,0.440792,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Colorado Rapids@Los Angeles FC,MLS,total,under 3.5,3.5,-148,0.559208,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Colorado Rapids@Los Angeles FC,MLS,btts,yes,,-206,0.498387,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Colorado Rapids@Los Angeles FC,MLS,btts,no,,48,0.501613,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Atlanta United FC@Toronto FC,MLS,asian_handicap,home -0.5,-0.5,-116,0.49779,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Atlanta United FC@Toronto FC,MLS,asian_handicap,away 0.5,0.5,-118,0.50221,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Atlanta United FC@Toronto FC,MLS,total,over 2.5,2.5,-132,0.529586,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Atlanta United FC@Toronto FC,MLS,total,under 2.5,2.5,-105,0.470414,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Atlanta United FC@Toronto FC,MLS,btts,yes,,-125,0.49835,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Atlanta United FC@Toronto FC,MLS,btts,no,,79,0.50165,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New York City FC@CF Montreal,MLS,btts,yes,,-141,0.498243,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New York City FC@CF Montreal,MLS,btts,no,,70,0.501757,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Los Angeles FC@Minnesota United FC,MLS,btts,yes,,-127,0.498757,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Los Angeles FC@Minnesota United FC,MLS,btts,no,,78,0.501243,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Philadelphia Union@Columbus Crew SC,MLS,asian_handicap,home -0.5,-0.5,-159,0.576424,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Philadelphia Union@Columbus Crew SC,MLS,asian_handicap,away 0.5,0.5,114,0.423576,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Philadelphia Union@Columbus Crew SC,MLS,total,over 2.5,2.5,-161,0.579137,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Philadelphia Union@Columbus Crew SC,MLS,total,under 2.5,2.5,115,0.420863,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Philadelphia Union@Columbus Crew SC,MLS,btts,yes,,-105,0.498344,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Philadelphia Union@Columbus Crew SC,MLS,btts,no,,94,0.501656,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Orlando City SC@D.C. United,MLS,asian_handicap,home -0.5,-0.5,105,0.445826,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Orlando City SC@D.C. United,MLS,asian_handicap,away 0.5,0.5,-145,0.554174,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Orlando City SC@D.C. United,MLS,total,over 2.5,2.5,-139,0.543767,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Orlando City SC@D.C. United,MLS,total,under 2.5,2.5,101,0.456233,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Orlando City SC@D.C. United,MLS,btts,yes,,-131,0.497661,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Orlando City SC@D.C. United,MLS,btts,no,,75,0.502339,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New York Red Bulls@FC Cincinnati,MLS,btts,yes,,-163,0.499212,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New York Red Bulls@FC Cincinnati,MLS,btts,no,,61,0.500788,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New England Revolution@Inter Miami CF,MLS,asian_handicap,home -1.5,-1.5,-110,0.481392,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New England Revolution@Inter Miami CF,MLS,asian_handicap,away 1.5,1.5,-127,0.518608,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New England Revolution@Inter Miami CF,MLS,total,over 3.5,3.5,106,0.44284,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New England Revolution@Inter Miami CF,MLS,total,under 3.5,3.5,-147,0.55716,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New England Revolution@Inter Miami CF,MLS,btts,yes,,-218,0.497227,2026-04-18T03:48:47.798684+00:00
+2026-04-18,New England Revolution@Inter Miami CF,MLS,btts,no,,45,0.502773,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Houston Dynamo@Austin FC,MLS,btts,yes,,-116,0.49969,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Houston Dynamo@Austin FC,MLS,btts,no,,86,0.50031,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Charlotte FC@Nashville SC,MLS,btts,yes,,-136,0.499037,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Charlotte FC@Nashville SC,MLS,btts,no,,73,0.500963,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sporting Kansas City@Chicago Fire,MLS,asian_handicap,home -1.5,-1.5,-112,0.487883,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sporting Kansas City@Chicago Fire,MLS,asian_handicap,away 1.5,1.5,-123,0.512117,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sporting Kansas City@Chicago Fire,MLS,total,over 3.5,3.5,103,0.450037,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sporting Kansas City@Chicago Fire,MLS,total,under 3.5,3.5,-143,0.549963,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sporting Kansas City@Chicago Fire,MLS,btts,yes,,-136,0.499037,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sporting Kansas City@Chicago Fire,MLS,btts,no,,73,0.500963,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Jose Earthquakes@St. Louis City SC,MLS,asian_handicap,home -0.5,-0.5,110,0.43213,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Jose Earthquakes@St. Louis City SC,MLS,asian_handicap,away 0.5,0.5,-154,0.56787,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Jose Earthquakes@St. Louis City SC,MLS,total,over 2.5,2.5,-169,0.591607,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Jose Earthquakes@St. Louis City SC,MLS,total,under 2.5,2.5,121,0.408393,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Jose Earthquakes@St. Louis City SC,MLS,btts,yes,,130,0.501418,2026-04-18T03:48:47.798684+00:00
+2026-04-18,San Jose Earthquakes@St. Louis City SC,MLS,btts,no,,-76,0.498582,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Portland Timbers@San Diego FC,MLS,asian_handicap,home -0.5,-0.5,-145,0.553002,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Portland Timbers@San Diego FC,MLS,asian_handicap,away 0.5,0.5,104,0.446998,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Portland Timbers@San Diego FC,MLS,total,over 3.5,3.5,121,0.409991,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Portland Timbers@San Diego FC,MLS,total,under 3.5,3.5,-167,0.590009,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Portland Timbers@San Diego FC,MLS,btts,yes,,-218,0.497227,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Portland Timbers@San Diego FC,MLS,btts,no,,45,0.502773,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Colorado Rapids@Vancouver Whitecaps FC,MLS,asian_handicap,home -1.5,-1.5,-104,0.468213,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Colorado Rapids@Vancouver Whitecaps FC,MLS,asian_handicap,away 1.5,1.5,-133,0.531787,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Colorado Rapids@Vancouver Whitecaps FC,MLS,total,over 3.5,3.5,-102,0.463806,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Colorado Rapids@Vancouver Whitecaps FC,MLS,total,under 3.5,3.5,-135,0.536194,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Colorado Rapids@Vancouver Whitecaps FC,MLS,btts,yes,,-206,0.498387,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Colorado Rapids@Vancouver Whitecaps FC,MLS,btts,no,,48,0.501613,2026-04-18T03:48:47.798684+00:00
+2026-04-18,FC Dallas@Seattle Sounders FC,MLS,asian_handicap,home -0.5,-0.5,-172,0.595865,2026-04-18T03:48:47.798684+00:00
+2026-04-18,FC Dallas@Seattle Sounders FC,MLS,asian_handicap,away 0.5,0.5,123,0.404135,2026-04-18T03:48:47.798684+00:00
+2026-04-18,FC Dallas@Seattle Sounders FC,MLS,total,over 2.5,2.5,-154,0.570031,2026-04-18T03:48:47.798684+00:00
+2026-04-18,FC Dallas@Seattle Sounders FC,MLS,total,under 2.5,2.5,112,0.429969,2026-04-18T03:48:47.798684+00:00
+2026-04-18,FC Dallas@Seattle Sounders FC,MLS,btts,yes,,100,0.501255,2026-04-18T03:48:47.798684+00:00
+2026-04-18,FC Dallas@Seattle Sounders FC,MLS,btts,no,,-99,0.498745,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Real Salt Lake@LA Galaxy,MLS,asian_handicap,home -0.5,-0.5,-108,0.478029,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Real Salt Lake@LA Galaxy,MLS,asian_handicap,away 0.5,0.5,-128,0.521971,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Real Salt Lake@LA Galaxy,MLS,total,over 2.5,2.5,-167,0.589044,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Real Salt Lake@LA Galaxy,MLS,total,under 2.5,2.5,120,0.410956,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Real Salt Lake@LA Galaxy,MLS,btts,yes,,-165,0.498612,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Real Salt Lake@LA Galaxy,MLS,btts,no,,60,0.501388,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sparta Rotterdam@SC Telstar,Eredivisie,btts,yes,,-119,0.498392,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sparta Rotterdam@SC Telstar,Eredivisie,btts,no,,83,0.501608,2026-04-18T03:48:47.798684+00:00
+2026-04-18,AZ Alkmaar@Go Ahead Eagles,Eredivisie,btts,yes,,-175,0.499651,2026-04-18T03:48:47.798684+00:00
+2026-04-18,AZ Alkmaar@Go Ahead Eagles,Eredivisie,btts,no,,57,0.500349,2026-04-18T03:48:47.798684+00:00
+2026-04-18,FC Zwolle@PSV Eindhoven,Eredivisie,btts,yes,,-176,0.497973,2026-04-18T03:48:47.798684+00:00
+2026-04-18,FC Zwolle@PSV Eindhoven,Eredivisie,btts,no,,56,0.502027,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Groningen@Feyenoord,Eredivisie,btts,yes,,-112,0.498139,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Groningen@Feyenoord,Eredivisie,btts,no,,88,0.501861,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Fortuna Sittard@Heerenveen,Eredivisie,total,over 2.5,2.5,-225,0.660128,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Fortuna Sittard@Heerenveen,Eredivisie,total,under 2.5,2.5,160,0.339872,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Fortuna Sittard@Heerenveen,Eredivisie,btts,yes,,-194,0.498488,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Fortuna Sittard@Heerenveen,Eredivisie,btts,no,,51,0.501512,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Ajax@NAC Breda,Eredivisie,btts,yes,,-113,0.499279,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Ajax@NAC Breda,Eredivisie,btts,no,,88,0.500721,2026-04-18T03:48:47.798684+00:00
+2026-04-18,NEC Nijmegen@FC Twente Enschede,Eredivisie,btts,yes,,-181,0.499367,2026-04-18T03:48:47.798684+00:00
+2026-04-18,NEC Nijmegen@FC Twente Enschede,Eredivisie,btts,no,,55,0.500633,2026-04-18T03:48:47.798684+00:00
+2026-04-18,FC Utrecht@Excelsior,Eredivisie,btts,yes,,-120,0.499479,2026-04-18T03:48:47.798684+00:00
+2026-04-18,FC Utrecht@Excelsior,Eredivisie,btts,no,,83,0.500521,2026-04-18T03:48:47.798684+00:00
+2026-04-18,FC Volendam@Heracles Almelo,Eredivisie,btts,yes,,-169,0.499597,2026-04-18T03:48:47.798684+00:00
+2026-04-18,FC Volendam@Heracles Almelo,Eredivisie,btts,no,,59,0.500403,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Parma@Udinese,Serie A,btts,yes,,122,0.501415,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Parma@Udinese,Serie A,btts,no,,-81,0.498585,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Lazio@Napoli,Serie A,btts,yes,,126,0.502051,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Lazio@Napoli,Serie A,btts,no,,-78,0.497949,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Atalanta BC@AS Roma,Serie A,btts,yes,,103,0.501397,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Atalanta BC@AS Roma,Serie A,btts,no,,-96,0.498603,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Torino@Cremonese,Serie A,btts,yes,,-108,0.497791,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Torino@Cremonese,Serie A,btts,no,,91,0.502209,2026-04-18T03:48:47.798684+00:00
+2026-04-18,AC Milan@Hellas Verona,Serie A,btts,yes,,131,0.500517,2026-04-18T03:48:47.798684+00:00
+2026-04-18,AC Milan@Hellas Verona,Serie A,btts,no,,-76,0.499483,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Genoa@Pisa,Serie A,btts,yes,,-103,0.498581,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Genoa@Pisa,Serie A,btts,no,,96,0.501419,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Bologna@Juventus,Serie A,btts,yes,,-104,0.498476,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Bologna@Juventus,Serie A,btts,no,,95,0.501524,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Fiorentina@Lecce,Serie A,btts,yes,,117,0.500665,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Fiorentina@Lecce,Serie A,btts,no,,-85,0.499335,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Cremonese@Napoli,Serie A,btts,yes,,119,0.501484,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Cremonese@Napoli,Serie A,btts,no,,-83,0.498516,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Pisa@Parma,Serie A,btts,yes,,122,0.501415,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Pisa@Parma,Serie A,btts,no,,-81,0.498585,2026-04-18T03:48:47.798684+00:00
+2026-04-18,AS Roma@Bologna,Serie A,btts,yes,,108,0.500788,2026-04-18T03:48:47.798684+00:00
+2026-04-18,AS Roma@Bologna,Serie A,btts,no,,-92,0.499212,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Lecce@Hellas Verona,Serie A,btts,yes,,119,0.501484,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Lecce@Hellas Verona,Serie A,btts,no,,-83,0.498516,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sassuolo@Fiorentina,Serie A,btts,yes,,-108,0.499183,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sassuolo@Fiorentina,Serie A,btts,no,,92,0.500817,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Como@Genoa,Serie A,btts,yes,,-102,0.498661,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Como@Genoa,Serie A,btts,no,,97,0.501339,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Inter Milan@Torino,Serie A,btts,yes,,-121,0.49898,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Inter Milan@Torino,Serie A,btts,no,,82,0.50102,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Juventus@AC Milan,Serie A,btts,yes,,-100,0.498742,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Juventus@AC Milan,Serie A,btts,no,,99,0.501258,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Atalanta BC@Cagliari,Serie A,btts,yes,,-103,0.498581,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Atalanta BC@Cagliari,Serie A,btts,no,,96,0.501419,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Udinese@Lazio,Serie A,btts,yes,,122,0.501415,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Udinese@Lazio,Serie A,btts,no,,-81,0.498585,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Fulham@Brentford,EPL,asian_handicap,home -0.5,-0.5,103,0.455732,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Fulham@Brentford,EPL,asian_handicap,away 0.5,0.5,-137,0.544268,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Fulham@Brentford,EPL,total,over 2.5,2.5,-146,0.560742,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Fulham@Brentford,EPL,total,under 2.5,2.5,110,0.439258,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Fulham@Brentford,EPL,btts,yes,,-133,0.497884,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Fulham@Brentford,EPL,btts,no,,74,0.502116,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Bournemouth@Newcastle United,EPL,asian_handicap,home -0.5,-0.5,102,0.458883,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Bournemouth@Newcastle United,EPL,asian_handicap,away 0.5,0.5,-135,0.541117,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Bournemouth@Newcastle United,EPL,total,over 3.5,3.5,119,0.418513,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Bournemouth@Newcastle United,EPL,total,under 3.5,3.5,-159,0.581487,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Bournemouth@Newcastle United,EPL,btts,yes,,-125,0.49835,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Bournemouth@Newcastle United,EPL,btts,no,,79,0.50165,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Wolverhampton Wanderers@Leeds United,EPL,btts,yes,,-113,0.499279,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Wolverhampton Wanderers@Leeds United,EPL,btts,no,,88,0.500721,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Brighton and Hove Albion@Tottenham Hotspur,EPL,btts,yes,,-122,0.49845,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Brighton and Hove Albion@Tottenham Hotspur,EPL,btts,no,,81,0.50155,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Manchester United@Chelsea,EPL,asian_handicap,home -0.5,-0.5,110,0.438348,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Manchester United@Chelsea,EPL,asian_handicap,away 0.5,0.5,-147,0.561652,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Manchester United@Chelsea,EPL,total,over 3.5,3.5,125,0.406235,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Manchester United@Chelsea,EPL,total,under 3.5,3.5,-167,0.593765,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Manchester United@Chelsea,EPL,btts,yes,,-159,0.498036,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Manchester United@Chelsea,EPL,btts,no,,62,0.501964,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sunderland@Aston Villa,EPL,total,over 2.5,2.5,-110,0.490975,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sunderland@Aston Villa,EPL,total,under 2.5,2.5,-118,0.509025,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sunderland@Aston Villa,EPL,btts,yes,,110,0.501228,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Sunderland@Aston Villa,EPL,btts,no,,-90,0.498772,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Burnley@Nottingham Forest,EPL,total,over 2.5,2.5,-133,0.54272,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Burnley@Nottingham Forest,EPL,total,under 2.5,2.5,105,0.45728,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Burnley@Nottingham Forest,EPL,btts,yes,,-117,0.497753,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Burnley@Nottingham Forest,EPL,btts,no,,84,0.502247,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Liverpool@Everton,EPL,btts,yes,,-117,0.499287,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Liverpool@Everton,EPL,btts,no,,85,0.500713,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Arsenal@Manchester City,EPL,total,over 2.5,2.5,-110,0.490975,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Arsenal@Manchester City,EPL,total,under 2.5,2.5,-118,0.509025,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Arsenal@Manchester City,EPL,btts,yes,,-132,0.498668,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Arsenal@Manchester City,EPL,btts,no,,75,0.501332,2026-04-18T03:48:47.798684+00:00
+2026-04-18,West Ham United@Crystal Palace,EPL,asian_handicap,home -0.5,-0.5,131,0.394642,2026-04-18T03:48:47.798684+00:00
+2026-04-18,West Ham United@Crystal Palace,EPL,asian_handicap,away 0.5,0.5,-175,0.605358,2026-04-18T03:48:47.798684+00:00
+2026-04-18,West Ham United@Crystal Palace,EPL,total,over 2.5,2.5,-117,0.504481,2026-04-18T03:48:47.798684+00:00
+2026-04-18,West Ham United@Crystal Palace,EPL,total,under 2.5,2.5,-113,0.495519,2026-04-18T03:48:47.798684+00:00
+2026-04-18,West Ham United@Crystal Palace,EPL,btts,yes,,-115,0.498574,2026-04-18T03:48:47.798684+00:00
+2026-04-18,West Ham United@Crystal Palace,EPL,btts,no,,86,0.501426,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Chelsea@Brighton and Hove Albion,EPL,asian_handicap,home -0.5,-0.5,137,0.377266,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Chelsea@Brighton and Hove Albion,EPL,asian_handicap,away 0.5,0.5,-192,0.622734,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Chelsea@Brighton and Hove Albion,EPL,total,over 2.5,2.5,-161,0.58016,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Chelsea@Brighton and Hove Albion,EPL,total,under 2.5,2.5,116,0.41984,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Chelsea@Brighton and Hove Albion,EPL,btts,yes,,-127,0.498757,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Chelsea@Brighton and Hove Albion,EPL,btts,no,,78,0.501243,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Leeds United@Bournemouth,EPL,btts,yes,,-118,0.498854,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Leeds United@Bournemouth,EPL,btts,no,,84,0.501146,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Manchester City@Burnley,EPL,asian_handicap,home 1.5,1.5,122,0.406648,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Manchester City@Burnley,EPL,asian_handicap,away -1.5,-1.5,-170,0.593352,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Manchester City@Burnley,EPL,total,over 3.5,3.5,-104,0.468213,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Manchester City@Burnley,EPL,total,under 3.5,3.5,-133,0.531787,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Manchester City@Burnley,EPL,btts,yes,,-115,0.498574,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Manchester City@Burnley,EPL,btts,no,,86,0.501426,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Nottingham Forest@Sunderland,EPL,btts,yes,,118,0.501063,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Nottingham Forest@Sunderland,EPL,btts,no,,-84,0.498937,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Aston Villa@Fulham,EPL,asian_handicap,home 0.5,0.5,-194,0.624915,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Aston Villa@Fulham,EPL,asian_handicap,away -0.5,-0.5,138,0.375085,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Aston Villa@Fulham,EPL,total,over 2.5,2.5,-142,0.549028,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Aston Villa@Fulham,EPL,total,under 2.5,2.5,103,0.450972,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Aston Villa@Fulham,EPL,btts,yes,,-117,0.499287,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Aston Villa@Fulham,EPL,btts,no,,85,0.500713,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Crystal Palace@Liverpool,EPL,asian_handicap,home -1.5,-1.5,124,0.402426,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Crystal Palace@Liverpool,EPL,asian_handicap,away 1.5,1.5,-173,0.597574,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Crystal Palace@Liverpool,EPL,total,over 2.5,2.5,-184,0.612073,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Crystal Palace@Liverpool,EPL,total,under 2.5,2.5,131,0.387927,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Crystal Palace@Liverpool,EPL,btts,yes,,-112,0.498139,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Crystal Palace@Liverpool,EPL,btts,no,,88,0.501861,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Everton@West Ham United,EPL,btts,yes,,-119,0.498392,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Everton@West Ham United,EPL,btts,no,,83,0.501608,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Tottenham Hotspur@Wolverhampton Wanderers,EPL,asian_handicap,home 0.5,0.5,-131,0.528583,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Tottenham Hotspur@Wolverhampton Wanderers,EPL,asian_handicap,away -0.5,-0.5,-105,0.471417,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Tottenham Hotspur@Wolverhampton Wanderers,EPL,total,over 2.5,2.5,-128,0.523151,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Tottenham Hotspur@Wolverhampton Wanderers,EPL,total,under 2.5,2.5,-107,0.476849,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Tottenham Hotspur@Wolverhampton Wanderers,EPL,btts,yes,,-117,0.497753,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Tottenham Hotspur@Wolverhampton Wanderers,EPL,btts,no,,84,0.502247,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Newcastle United@Arsenal,EPL,asian_handicap,home -1.5,-1.5,131,0.387927,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Newcastle United@Arsenal,EPL,asian_handicap,away 1.5,1.5,-184,0.612073,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Newcastle United@Arsenal,EPL,total,over 2.5,2.5,-179,0.60577,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Newcastle United@Arsenal,EPL,total,under 2.5,2.5,128,0.39423,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Newcastle United@Arsenal,EPL,btts,yes,,-117,0.499287,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Newcastle United@Arsenal,EPL,btts,no,,85,0.500713,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Brentford@Manchester United,EPL,btts,yes,,-155,0.498903,2026-04-18T03:48:47.798684+00:00
+2026-04-18,Brentford@Manchester United,EPL,btts,no,,64,0.501097,2026-04-18T03:48:47.798684+00:00
