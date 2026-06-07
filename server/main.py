@@ -125,6 +125,15 @@ def create_app() -> FastAPI:
                 cache.purge_old_closing_lines(_dt.now(_tz.utc))
         except Exception:
             logging.exception("CLV capture tick failed")
+        # Retention sweep for the odds time-series. Independent of capture
+        # output (history is written on every upsert, not at kickoff), so it
+        # runs unconditionally. Single indexed DELETE — cheap at 60s cadence.
+        try:
+            purged = cache.purge_old_history(_dt.now(_tz.utc))
+            if purged:
+                logging.info("purged %d old odds_history points", purged)
+        except Exception:
+            logging.exception("odds_history purge failed")
 
     async def _wager_log_refresh_tick():
         """Re-pull the wager log so newly-placed bets appear without the
@@ -247,6 +256,7 @@ def create_app() -> FastAPI:
     from .api.polymarket_ctl import build_router as polymarket_ctl_router
     from .api.cache_mode import build_router as cache_mode_router
     from .api.settings import build_router as settings_router
+    from .api.timeseries import build_router as timeseries_router
 
     app.include_router(health_router(cache, fetcher))
     app.include_router(odds_router(cache))
@@ -280,6 +290,7 @@ def create_app() -> FastAPI:
         )
     )
     app.include_router(settings_router(settings_store, fetcher, sports))
+    app.include_router(timeseries_router(cache))
     app.include_router(
         dashboard_router(
             cache, fetcher, picks_readers, sports,

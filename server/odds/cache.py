@@ -86,7 +86,66 @@ CREATE TABLE IF NOT EXISTS balance_snapshots (
 
 CREATE INDEX IF NOT EXISTS idx_balance_snap_date
   ON balance_snapshots(customer_id, local_date);
+
+-- Time-series of odds movement. Unlike odds_snapshot (which UPSERTs, so it
+-- only ever holds each book's CURRENT price), this table is APPEND-ON-CHANGE:
+-- a new row is written only when a book's price for a given outcome differs
+-- from the last value we recorded. That delta-encoding makes it a compact,
+-- lossless record of "when did each book move, and to what price" — the
+-- substrate for book-sharpness analysis (who moves first, who reaches the
+-- closing number soonest, closing-line value per book).
+--
+-- Scope is intentionally narrow: only CORE markets (h2h / spreads / totals /
+-- team_totals / nrfi and their period variants — see _CORE_HISTORY_BASE_MARKETS).
+-- Player props and alternate_* ladders are excluded; line-movement sharpness
+-- lives on the main line, and those would balloon the table with noise.
+--
+-- Retention: purged 90 days after commence_time (purge_old_history), which
+-- comfortably outlives the 60-day closing_lines window so a move can always
+-- be compared against its eventual close.
+CREATE TABLE IF NOT EXISTS odds_history (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id       TEXT NOT NULL,
+  sport_key      TEXT NOT NULL,
+  home_team      TEXT NOT NULL,
+  away_team      TEXT NOT NULL,
+  commence_time  TEXT NOT NULL,
+  bookmaker_key  TEXT NOT NULL,
+  market_key     TEXT NOT NULL,
+  outcome_name   TEXT NOT NULL,
+  outcome_point  REAL NOT NULL DEFAULT 0.0,
+  price_american INTEGER NOT NULL,
+  observed_at    TEXT NOT NULL
+);
+
+-- Composite index serving the per-outcome "latest recorded price" lookup the
+-- delta-capture does on every upsert (leading equality cols + observed_at for
+-- the ORDER BY ... LIMIT 1), and the per-event timeline read.
+CREATE INDEX IF NOT EXISTS idx_hist_key ON odds_history(
+  event_id, bookmaker_key, market_key, outcome_name, outcome_point, observed_at
+);
+CREATE INDEX IF NOT EXISTS idx_hist_commence ON odds_history(commence_time);
+CREATE INDEX IF NOT EXISTS idx_hist_book ON odds_history(sport_key, bookmaker_key);
 """
+
+
+# Base markets retained in odds_history. A market qualifies if its
+# period-suffix-stripped base (via ev._base_market: h2h_h1 → h2h,
+# spreads_q1 → spreads, totals_1st_5_innings → totals, …) is in this set.
+# Player props (player_*/pitcher_*/batter_*) and alternate_* ladders fall
+# through and are NOT recorded.
+_CORE_HISTORY_BASE_MARKETS = frozenset({
+    "h2h", "h2h_3_way",
+    "spreads", "totals",
+    "team_totals", "nrfi",
+})
+
+
+def _is_core_history_market(market_key: str) -> bool:
+    """True if `market_key` is a main-line market we time-series. Lazy-imports
+    _base_market so cache.py stays import-light and free of any cycle."""
+    from .ev import _base_market
+    return _base_market(market_key) in _CORE_HISTORY_BASE_MARKETS
 
 
 # Schema migrations applied after CREATE IF NOT EXISTS. Each entry is a SQL
@@ -148,6 +207,10 @@ class OddsCache:
                 "wager_type": r.get("wager_type"),
             })
         with self._conn() as c:
+            # Record the time-series delta BEFORE the snapshot UPSERT. Order
+            # is independent (different table), but keeping it first makes the
+            # intent clear: capture the move, then refresh the current value.
+            self._record_history(c, prepared)
             c.executemany(
                 """
                 INSERT INTO odds_snapshot
@@ -170,6 +233,47 @@ class OddsCache:
                 """,
                 prepared,
             )
+
+    def _record_history(self, conn: sqlite3.Connection, prepared: list[dict]) -> None:
+        """Append an odds_history row for each core-market price that CHANGED.
+
+        Delta-encoding via a guarded INSERT…SELECT: the row is written only
+        when the incoming price differs from the most recent recorded price
+        for the same (event, book, market, outcome, point). `:price IS NOT
+        (subquery)` covers both cases in one shot — a NULL subquery (no prior
+        row) is "not equal", and an equal latest price short-circuits the
+        insert. Uses idx_hist_key for the latest-price lookup.
+
+        Shares `prepared` with the snapshot upsert, so observed_at == the
+        row's fetched_at and outcome_point is already the 0.0-sentinel-coerced
+        float (matching how it's stored), keeping the equality check exact.
+        """
+        rows = [r for r in prepared if _is_core_history_market(r["market_key"])]
+        if not rows:
+            return
+        conn.executemany(
+            """
+            INSERT INTO odds_history
+              (event_id, sport_key, home_team, away_team, commence_time,
+               bookmaker_key, market_key, outcome_name, outcome_point,
+               price_american, observed_at)
+            SELECT
+              :event_id, :sport_key, :home_team, :away_team, :commence_time,
+              :bookmaker_key, :market_key, :outcome_name, :outcome_point,
+              :price_american, :fetched_at
+            WHERE :price_american IS NOT (
+              SELECT price_american FROM odds_history
+              WHERE event_id = :event_id
+                AND bookmaker_key = :bookmaker_key
+                AND market_key = :market_key
+                AND outcome_name = :outcome_name
+                AND outcome_point = :outcome_point
+              ORDER BY observed_at DESC
+              LIMIT 1
+            )
+            """,
+            rows,
+        )
 
     def all_current(self, sport_key: str | None = None) -> list[dict]:
         """All cached rows, optionally filtered to a single sport."""
@@ -534,6 +638,70 @@ class OddsCache:
                     (event_id,),
                 )
             ]
+
+    # ─────────────────────── Odds time-series ─────────────────────────
+
+    def history_for_event(
+        self,
+        event_id: str,
+        market_key: str | None = None,
+    ) -> list[dict]:
+        """All recorded price-change points for one event, ordered so a
+        consumer can walk each (market, outcome, book) trajectory in time
+        order. Optionally narrowed to a single market_key."""
+        q = (
+            "SELECT bookmaker_key, market_key, outcome_name, outcome_point, "
+            "price_american, observed_at FROM odds_history WHERE event_id = ?"
+        )
+        args: list = [event_id]
+        if market_key:
+            q += " AND market_key = ?"
+            args.append(market_key)
+        q += (
+            " ORDER BY market_key, outcome_name, outcome_point, "
+            "bookmaker_key, observed_at"
+        )
+        with self._conn() as c:
+            return [dict(r) for r in c.execute(q, args)]
+
+    def events_with_history(
+        self,
+        sport_key: str | None = None,
+        limit: int = 200,
+    ) -> list[dict]:
+        """Distinct events that have time-series data, newest first. Each row
+        carries enough metadata (teams, commence, point count, last update)
+        to populate an event picker without a second query."""
+        q = """
+            SELECT event_id,
+                   MAX(sport_key)     AS sport_key,
+                   MAX(home_team)     AS home_team,
+                   MAX(away_team)     AS away_team,
+                   MAX(commence_time) AS commence_time,
+                   COUNT(*)           AS point_count,
+                   MAX(observed_at)   AS last_observed_at
+            FROM odds_history
+        """
+        args: list = []
+        if sport_key:
+            q += " WHERE sport_key = ?"
+            args.append(sport_key)
+        q += " GROUP BY event_id ORDER BY commence_time DESC LIMIT ?"
+        args.append(limit)
+        with self._conn() as c:
+            return [dict(r) for r in c.execute(q, args)]
+
+    def purge_old_history(self, now: datetime, days: int = 90) -> int:
+        """Delete time-series points for games that started more than `days`
+        ago. 90 days outlives the 60-day closing_lines window, so any retained
+        move can still be compared against its eventual close."""
+        cutoff = (now - timedelta(days=days)).isoformat()
+        with self._conn() as c:
+            cur = c.execute(
+                "DELETE FROM odds_history WHERE commence_time < ?",
+                (cutoff,),
+            )
+            return cur.rowcount
 
     def distinct_events(
         self,
