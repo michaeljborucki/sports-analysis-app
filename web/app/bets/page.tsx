@@ -7,6 +7,7 @@ import { RollupTiles } from "./_components/RollupTiles";
 import { CLVChart } from "./_components/CLVChart";
 import { Filters, type BetFilters } from "./_components/Filters";
 import { Breakdowns } from "./_components/Breakdowns";
+import { BetTable } from "./_components/BetTable";
 
 export default function BetsPage() {
   const [filters, setFilters] = useState<BetFilters>({
@@ -30,6 +31,7 @@ export default function BetsPage() {
       <CLVChart bets={betsResp?.bets} />
       <Breakdowns data={rollups} />
       <Filters value={filters} onChange={setFilters} />
+      <BetTable bets={betsResp?.bets} />
     </div>
   );
 }
