@@ -7,12 +7,13 @@ Open work from the 2026-06-21 audit pass (backend perf + odds-matching + competi
 > - `ed61f0d` — cache-version memo key on EV / arb / low-hold scanners (~5× speedup on memo hits)
 > - `f2e6d83` — player-prop name canonicalization across all 4 books
 > - `1e51a30` — **#9** request coalescing on all 5 scanner endpoints (5 concurrent requests = 1 underlying scan)
+> - `6bb2f9c` — **#8** SSE push to the frontend (UI re-renders sub-second on Kalshi/Polymarket WS price changes; replaces 5–15s SWR polling)
 
 ---
 
 ## Tier 1 — medium-effort, high-leverage (a few days each)
 
-- [ ] **#8 SSE push to the frontend instead of SWR polling.** FastAPI `StreamingResponse` + in-process `asyncio.Queue` of dirty `(event_id, market_key)` keys. Sub-second UI updates with zero new infra. Single-user single-machine, no Redis needed. **~2 days.**
+- [x] ~~**#8 SSE push to the frontend instead of SWR polling.**~~ **Shipped in `6bb2f9c`.** Dumb-tick payload + 100ms debounce + 15s heartbeat. One `useLiveUpdates` hook in `SwrProvider` calls `mutate(() => true)` on every backend tick — every SWR-backed page gets push-driven freshness with zero per-page wiring. Verified live: 2 subscribers active on Edges page, ticks fire on every cache upsert.
 - [x] ~~**#9 Request coalescing on EV / arb endpoints.**~~ **Shipped in `1e51a30`.** Custom 30-LOC helper (`server/odds/coalesce.py`) wraps memo + in-flight registry. Wired into all 5 scanner endpoints (arb, EV, low-hold, free-bets, profit-boost). 12 new tests including a concurrent integration test that proves 3 simultaneous HTTP requests trigger exactly 1 scan.
 
 ## Tier 2 — strategic, biggest differentiation
