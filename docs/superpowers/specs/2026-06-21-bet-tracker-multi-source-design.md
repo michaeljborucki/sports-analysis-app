@@ -97,12 +97,12 @@ The existing wager-log JSON files stay as the scrape cache. A new thin function 
 
 ### 2. Kalshi positions + fills
 
-New periodic task started from FastAPI's lifespan (5-minute cadence). Uses the existing authenticated `KalshiAPIClient` (auth path is already implemented in `server/odds/books/kalshi/client.py`; only the portfolio call is new).
+New periodic task started from FastAPI's lifespan (5-minute cadence; follows the same lifespan-task pattern as the existing closing-line capture in `server/odds/clv_capture.py`). Uses the existing authenticated `KalshiClient` — both `get_portfolio_positions()` and `get_portfolio_fills()` are already implemented in `server/odds/books/kalshi/client.py`. The new work is the sync layer that consumes those methods and writes to the `bets` table.
 
 - Hits `/portfolio/fills?after_ts=<last_seen>` incrementally
 - For each fill, resolves the event via `kalshi/event_matcher.py` (used today for market-data matching) → populates `sport_key`, `event_id`, `home_team`, `away_team`
 - Translates fill price → American odds, fill price × contracts → stake
-- Kalshi taker fee already exists in `server/odds/commissions.py`; netted into `settled_amount` on settlement
+- Kalshi taker fee constant already exists at `server/odds/books/kalshi/normalizer.py:KALSHI_TAKER_FEE = 0.07` along with its fee-adjustment formula (`p + KALSHI_TAKER_FEE * p * (1 - p)`). The sync path applies the same formula at settlement time so `settled_amount` is net of fee. No new fee table needed.
 - `external_id = fill_id`
 
 If `KALSHI_API_KEY` / `KALSHI_PRIVATE_KEY_PATH` are absent from env, the task no-ops at boot with a single warning log. Settings UI surfaces a "Not configured" state.
@@ -111,9 +111,11 @@ If `KALSHI_API_KEY` / `KALSHI_PRIVATE_KEY_PATH` are absent from env, the task no
 
 Same shape as Kalshi: 5-minute lifespan task. Uses the public `data-api.polymarket.com/trades?user=0xADDR` endpoint (no auth — positions are tied to the wallet address). Wallet address read from `user_settings.json`.
 
-- Each trade → one bet row. `external_id = trade_hash` (on-chain tx hash + index).
+The exact `/trades` response shape is documented at https://docs.polymarket.com/developers/CLOB/trades; the sync layer expects a list of `{trade_id, market, outcome, side, price, size, timestamp, fee_rate_bps}`-shaped entries. A fixture file captured during implementation pins the contract for tests.
+
+- Each trade → one bet row. `external_id = trade_id` (Polymarket-issued trade identifier; falls back to on-chain tx hash + log index when absent).
 - Resolves event via `polymarket/event_matcher.py`.
-- Polymarket gas + spread already handled in `commissions.py`; netted into `settled_amount`.
+- Polymarket taker fee constant lives at `server/odds/books/polymarket/normalizer.py:POLYMARKET_TAKER_FEE = 0.05`. The sync path applies it at settlement time so `settled_amount` is net of fee. The taker fee already captures bid/ask spread cost in Polymarket's model; gas is a withdrawal-time cost (not per-trade) and is intentionally not modelled at the bet level.
 - Same no-op behavior if wallet is unconfigured.
 
 ### 4. CSV import
@@ -211,7 +213,7 @@ Layout: rollup tiles + CLV trend chart on top, filter bar, full bet history tabl
 
 - "Import CSV" header button opens a drawer with file picker + a "Download template" link. After upload, shows the accepted/rejected summary inline.
 - Tile values are SSE-aware via the existing `useLiveUpdates` hook (rollups revalidate on tick — at the new 1Hz cadence post-#8-fix).
-- Chart bins by day; uses `recharts` (already in `package.json` for the dashboard).
+- Chart bins by day. **New dependency**: `recharts` to be added to `web/package.json` (no chart library is currently installed; SWR + framer-motion + react-table are the dominant deps today). Chosen over visx/chart.js for the React-idiomatic component model and small bundle hit; revisit if bundle size becomes a concern.
 - Breakdown sub-tiles (by book / by sport / by market) sit below the chart on wide viewports; collapse below the chart on narrow ones.
 - `/accounts` keeps its balance summary + pending-wager list. A link in the header points to `/bets`.
 
