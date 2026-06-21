@@ -229,6 +229,31 @@ def create_app() -> FastAPI:
                 replace_existing=True, max_instances=1,
             )
 
+            # Kalshi orderbook depth poll — pulls top-of-book size for
+            # registered sports markets so the arb scanner can clamp
+            # stake recommendations to fillable depth. 60s cadence.
+            async def _kalshi_orderbook_tick():
+                try:
+                    if not kalshi_fetcher.client.is_authenticated:
+                        return
+                    from .odds.books.kalshi.orderbook_poller import poll_kalshi_orderbooks
+                    if kalshi_fetcher._ingestor is None:
+                        return
+                    await poll_kalshi_orderbooks(
+                        client=kalshi_fetcher.client,
+                        ingestor=kalshi_fetcher._ingestor,
+                        cache=cache,
+                    )
+                except Exception:
+                    logging.exception("kalshi orderbook poll tick failed")
+
+            clv_scheduler.add_job(
+                _kalshi_orderbook_tick,
+                trigger="interval", seconds=60,
+                id="kalshi_orderbook_poll",
+                replace_existing=True, max_instances=1,
+            )
+
             # Polymarket trade sync — wallet-keyed, no auth needed.
             # Wallet address is read directly from user_settings.json under
             # `polymarket_wallet_address`. Not yet in the UserSettings
@@ -264,7 +289,8 @@ def create_app() -> FastAPI:
             clv_scheduler.start()
             logging.info(
                 "CLV capture (60s) + wager-log refresh (30min) "
-                "+ kalshi/polymarket portfolio sync (5min) schedulers started"
+                "+ kalshi/polymarket portfolio sync (5min) "
+                "+ kalshi orderbook depth poll (60s) schedulers started"
             )
         else:
             logging.info(
