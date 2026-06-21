@@ -76,3 +76,18 @@ def test_fixture_loads_and_parses():
     for side in ("yes", "no"):
         result = max_stake_for_side(data, ws_side=side)
         assert result is None or result > 0
+
+
+def test_live_format_decimal_dollar_strings():
+    """Live Kalshi API returns prices as decimal-dollar strings
+    ("0.4500") not integer cents — verify we handle both formats."""
+    from server.odds.books.kalshi.orderbook_depth import max_stake_for_side
+    live_shape = {
+        "orderbook": {
+            "yes": [["0.0900", "12289.00"], ["0.4500", "50.00"]],
+            "no":  [["0.0900", "1000.00"], ["0.5800", "80.00"]],
+        }
+    }
+    # Best NO bid = 0.58 × 80 → yes_ask = 0.42, size = 80 → $33.60
+    result = max_stake_for_side(live_shape, ws_side="yes")
+    assert result == pytest.approx(33.60, abs=0.01)

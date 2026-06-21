@@ -28,15 +28,23 @@ def _highest_price_entry(entries: Iterable) -> tuple[int, float] | None:
     if entries is None:
         return None
     for raw in entries:
+        # Kalshi's live orderbook endpoint returns prices as decimal-
+        # dollar strings ("0.4500") with sizes as float strings
+        # ("12289.00"). Older docs and some test fixtures use integer
+        # cents ([45, 100]). Accept both: float→cents, ints stay ints.
         try:
             if isinstance(raw, dict):
-                p = int(raw.get("price"))
-                s = float(raw.get("size"))
+                price_raw = raw.get("price")
+                size_raw = raw.get("size")
             else:
-                p = int(raw[0])
-                s = float(raw[1])
+                price_raw = raw[0]
+                size_raw = raw[1]
+            price_f = float(price_raw)
+            s = float(size_raw)
         except (TypeError, ValueError, IndexError, KeyError):
             continue
+        # Detect units: live API uses 0..1 dollars; fixtures use 1..99 cents.
+        p = int(round(price_f * 100)) if price_f < 1.0 else int(round(price_f))
         if not (0 < p < 100):
             continue
         if s <= 0:
