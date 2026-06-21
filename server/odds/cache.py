@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS odds_snapshot (
   price_american INTEGER NOT NULL,
   fetched_at     TEXT NOT NULL,
   wager_type     TEXT,
+  max_stake_dollars REAL,
   PRIMARY KEY (event_id, bookmaker_key, market_key, outcome_name, outcome_point)
 );
 
@@ -137,6 +138,10 @@ _MIGRATIONS = [
     # without these columns the migration backfills them.
     "ALTER TABLE closing_lines ADD COLUMN home_team TEXT NOT NULL DEFAULT ''",
     "ALTER TABLE closing_lines ADD COLUMN away_team TEXT NOT NULL DEFAULT ''",
+    # 0.5: per-row top-of-book depth in dollars. NULL for sportsbook
+    # rows (no depth data) and pre-migration rows; populated by the
+    # Polymarket WS ingest path and the Kalshi orderbook poller.
+    "ALTER TABLE odds_snapshot ADD COLUMN max_stake_dollars REAL",
 ]
 
 
@@ -233,6 +238,7 @@ class OddsCache:
                 "fetched_at": fa.isoformat() if isinstance(fa, datetime) else fa,
                 "outcome_point": 0.0 if point is None else float(point),
                 "wager_type": r.get("wager_type"),
+                "max_stake_dollars": r.get("max_stake_dollars"),
             })
         if not prepared:
             # No-op input — don't churn the version counter and pointlessly
@@ -244,11 +250,11 @@ class OddsCache:
                 INSERT INTO odds_snapshot
                   (event_id, sport_key, home_team, away_team, commence_time,
                    bookmaker_key, market_key, outcome_name, outcome_point,
-                   price_american, fetched_at, wager_type)
+                   price_american, fetched_at, wager_type, max_stake_dollars)
                 VALUES
                   (:event_id, :sport_key, :home_team, :away_team, :commence_time,
                    :bookmaker_key, :market_key, :outcome_name, :outcome_point,
-                   :price_american, :fetched_at, :wager_type)
+                   :price_american, :fetched_at, :wager_type, :max_stake_dollars)
                 ON CONFLICT(event_id, bookmaker_key, market_key, outcome_name, outcome_point)
                 DO UPDATE SET
                    price_american = excluded.price_american,
@@ -257,7 +263,8 @@ class OddsCache:
                    home_team      = excluded.home_team,
                    away_team      = excluded.away_team,
                    sport_key      = excluded.sport_key,
-                   wager_type     = excluded.wager_type
+                   wager_type     = excluded.wager_type,
+                   max_stake_dollars = COALESCE(excluded.max_stake_dollars, max_stake_dollars)
                 """,
                 prepared,
             )

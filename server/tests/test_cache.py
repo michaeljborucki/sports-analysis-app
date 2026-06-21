@@ -173,3 +173,76 @@ def test_bets_indexes_created(tmp_path):
     with cache._conn() as c:
         names = {r[0] for r in c.execute("SELECT name FROM sqlite_master WHERE type='index'")}
     assert {"idx_bets_accepted", "idx_bets_event", "idx_bets_book", "idx_bets_status"}.issubset(names)
+
+
+def test_max_stake_dollars_column_exists(tmp_path):
+    from server.odds.cache import OddsCache
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    with cache._conn() as c:
+        cols = {r[1] for r in c.execute("PRAGMA table_info(odds_snapshot)")}
+    assert "max_stake_dollars" in cols
+
+
+def test_upsert_persists_max_stake_dollars(tmp_path):
+    from datetime import datetime, timezone
+    from server.odds.cache import OddsCache
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    now = datetime.now(timezone.utc)
+    cache.upsert([{
+        "event_id": "ev1", "sport_key": "nba",
+        "home_team": "BOS", "away_team": "MIA",
+        "commence_time": now,
+        "bookmaker_key": "polymarket",
+        "market_key": "h2h", "outcome_name": "BOS",
+        "outcome_point": None,
+        "price_american": -145, "fetched_at": now,
+        "max_stake_dollars": 234.50,
+    }])
+    rows = cache.all_current()
+    assert len(rows) == 1
+    assert rows[0]["max_stake_dollars"] == 234.50
+
+
+def test_upsert_without_max_stake_dollars_is_null(tmp_path):
+    from datetime import datetime, timezone
+    from server.odds.cache import OddsCache
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    now = datetime.now(timezone.utc)
+    cache.upsert([{
+        "event_id": "ev1", "sport_key": "nba",
+        "home_team": "BOS", "away_team": "MIA",
+        "commence_time": now,
+        "bookmaker_key": "draftkings",
+        "market_key": "h2h", "outcome_name": "BOS",
+        "outcome_point": None,
+        "price_american": -145, "fetched_at": now,
+    }])
+    rows = cache.all_current()
+    assert rows[0]["max_stake_dollars"] is None
+
+
+def test_price_change_preserves_max_stake_via_coalesce(tmp_path):
+    """A book event sets size; a follow-up upsert with max_stake=None
+    must preserve the prior non-null value (COALESCE in DO UPDATE SET)."""
+    from datetime import datetime, timezone
+    from server.odds.cache import OddsCache
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    now = datetime.now(timezone.utc)
+    base = {
+        "event_id": "ev1", "sport_key": "nba",
+        "home_team": "BOS", "away_team": "MIA",
+        "commence_time": now,
+        "bookmaker_key": "polymarket",
+        "market_key": "h2h", "outcome_name": "BOS",
+        "outcome_point": None,
+        "fetched_at": now,
+    }
+    cache.upsert([{**base, "price_american": -150, "max_stake_dollars": 100.0}])
+    cache.upsert([{**base, "price_american": -148}])  # no max_stake_dollars
+    rows = cache.all_current()
+    assert rows[0]["price_american"] == -148
+    assert rows[0]["max_stake_dollars"] == 100.0  # preserved
