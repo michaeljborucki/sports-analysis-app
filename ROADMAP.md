@@ -36,9 +36,9 @@ Source: parallel odds-matching audit run on 2026-06-21.
 
 ## Tier 4 — backend audit findings (not in original synthesis)
 
-- [ ] **A5** `_resolved_keys` / `_event_sport_map` never TTL. Cached for process lifetime; stale during tournament rotations. Fix: re-resolve every 24h. **Medium.**
-- [ ] **A6** `rows_to_games` does O(prices²) per outcome for best-price search. Small win on 100+ event slates. Fix: pre-build a price lookup dict. **Low.**
-- [ ] **A8** `distinct_events` could push the `commence_time` time filter into SQL instead of Python. **Low.**
+- [x] ~~**A5** `_resolved_keys` / `_event_sport_map` never TTL.~~ **Shipped 2026-06-21.** 24h TTL on `_resolved_keys` with refresh-failure preservation (transient errors don't blank out previously-good cached keys; timestamp stays put so next caller retries). First-time failure still falls back to static keys to avoid retry-storms. Logs key-set changes on refresh. `_event_sport_map` was lumped in by the audit but it's a memory-growth concern (never goes stale), deferred separately.
+- [x] ~~**A6** `rows_to_games` does O(prices²) per outcome for best-price search.~~ **Shipped 2026-06-21.** New `best_price_dict` helper in `best_odds.py`; `rows_to_games` does one `max()` over the dicts directly, eliminating the redundant linear scan to recover the original dict from a tuple match.
+- [x] ~~**A8** `distinct_events` could push the `commence_time` time filter into SQL instead of Python.~~ **Shipped 2026-06-21.** SQL pushdown via `HAVING MAX(commence_time) BETWEEN ? AND ?` — preserves per-event MAX semantics (rows for one event can disagree on commence_time; HAVING filters on the aggregate, matching the previous Python-filter behavior bit-for-bit). Adds a `now` kwarg for testability.
 
 ## Tier 5 — storage / realtime architecture
 
