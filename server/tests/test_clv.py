@@ -287,3 +287,54 @@ def test_unknown_sport_returns_none(in_memory_cache: OddsCache):
         chosen_team_id="Gryffindor", final_money=-110,
     )
     assert wager_to_market_lookup(wager, in_memory_cache, config, reverse) is None
+
+
+def test_lookup_clv_for_bet_returns_clv_when_event_resolved(tmp_path):
+    from server.odds.cache import OddsCache
+    from server.odds.clv import lookup_clv_for_bet
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    cache.upsert_closing_lines([{
+        "event_id": "ev1", "sport_key": "mlb",
+        "home_team": "LAD", "away_team": "SF",
+        "market_key": "h2h", "outcome_name": "LAD", "outcome_point": 0.0,
+        "close_odds": -120, "close_prob_devig": 0.545,
+        "commence_time": "2026-06-19T19:00:00+00:00",
+        "captured_at":    "2026-06-19T18:53:00+00:00",
+        "source_books": "pinnacle",
+    }])
+    bet = {
+        "event_id": "ev1", "market_key": "h2h",
+        "outcome_name": "LAD", "outcome_point": 0.0,
+        "odds_american": -145,
+    }
+    result = lookup_clv_for_bet(bet, cache)
+    assert result is not None
+    assert result.close_odds == -120
+    assert result.clv_pct < 0
+
+
+def test_lookup_clv_for_bet_returns_none_when_event_missing(tmp_path):
+    from server.odds.cache import OddsCache
+    from server.odds.clv import lookup_clv_for_bet
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    bet = {
+        "event_id": None, "market_key": "h2h",
+        "outcome_name": "LAD", "outcome_point": 0.0,
+        "odds_american": -145,
+    }
+    assert lookup_clv_for_bet(bet, cache) is None
+
+
+def test_lookup_clv_for_bet_returns_none_when_no_closing_line(tmp_path):
+    from server.odds.cache import OddsCache
+    from server.odds.clv import lookup_clv_for_bet
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    bet = {
+        "event_id": "ev_nonexistent", "market_key": "h2h",
+        "outcome_name": "LAD", "outcome_point": 0.0,
+        "odds_american": -145,
+    }
+    assert lookup_clv_for_bet(bet, cache) is None

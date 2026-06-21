@@ -624,3 +624,39 @@ def get_coral33_config(
     reverse = build_subtype_to_sport_key(config)
     _CORAL_CONFIG_CACHE = (config, reverse)
     return _CORAL_CONFIG_CACHE
+
+
+def lookup_clv_for_bet(bet: dict, cache: OddsCache) -> CLVResult | None:
+    """Compute CLV for a unified bet row.
+
+    Requires the bet to carry a resolved outcome address:
+      event_id + market_key + outcome_name + outcome_point.
+    These are populated by each source's sync path using that book's
+    `event_matcher.py`. CSV imports without an `event` match leave
+    event_id=None and skip CLV — that's expected.
+
+    Returns None when:
+      - Any address field is missing
+      - No closing line was captured for that outcome
+      - bet.odds_american is None
+    """
+    if (
+        bet.get("event_id") is None
+        or bet.get("market_key") is None
+        or bet.get("outcome_name") is None
+        or bet.get("odds_american") is None
+    ):
+        return None
+    close_row = cache.find_closing_line(
+        event_id=bet["event_id"],
+        market_key=bet["market_key"],
+        outcome_name=bet["outcome_name"],
+        outcome_point=float(bet.get("outcome_point") or 0.0),
+    )
+    if close_row is None:
+        return None
+    try:
+        close_odds = int(close_row["close_odds"])
+    except (KeyError, ValueError, TypeError):
+        return None
+    return compute_clv(int(bet["odds_american"]), close_odds)
