@@ -136,6 +136,17 @@ class OddsCache:
     def _bump_version(self) -> None:
         # GIL makes this atomic in CPython. Documented for clarity.
         self._version += 1
+        # Notify the SSE event broadcaster that cache state changed.
+        # Sync flag-set — safe to call from any context (no running
+        # event loop required, no awaits). The flush_loop coalesces
+        # bursts of bumps into one outbound tick per 100ms window.
+        # Lazy import keeps `cache.py` standalone for tests that
+        # instantiate OddsCache without the rest of the server stack.
+        try:
+            from . import events as _events
+            _events.mark_dirty()
+        except Exception:  # pragma: no cover — never let SSE break upserts
+            pass
 
     def _conn(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.path, detect_types=sqlite3.PARSE_DECLTYPES)

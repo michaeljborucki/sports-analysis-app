@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -140,6 +141,15 @@ def create_app() -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        # SSE broadcaster — flush + heartbeat tasks run regardless of
+        # cache mode (heartbeats keep idle connections alive even when
+        # no upserts are happening; the flush loop is a no-op when the
+        # dirty flag stays clear). Started here, cancelled below.
+        import asyncio as _asyncio
+        from .odds import events as _events
+        sse_flush_task = _asyncio.create_task(_events.flush_loop())
+        sse_heartbeat_task = _asyncio.create_task(_events.heartbeat_loop())
+
         # cache_mode is the single source of truth for whether fetchers run.
         # LIVE → both fetchers up. LATEST / SNAPSHOT → both off, serving the
         # frozen snapshot file. The user toggling cache mode in the UI IS the
@@ -204,6 +214,17 @@ def create_app() -> FastAPI:
             )
 
         yield
+        # Cancel SSE background loops first — they don't depend on any
+        # other resource and stopping them lets connected browsers see
+        # a clean close.
+        sse_flush_task.cancel()
+        sse_heartbeat_task.cancel()
+        for t in (sse_flush_task, sse_heartbeat_task):
+            try:
+                await t
+            except (asyncio.CancelledError, BaseException):
+                pass
+
         try:
             if clv_scheduler.running:
                 clv_scheduler.shutdown(wait=False)
@@ -247,7 +268,9 @@ def create_app() -> FastAPI:
     from .api.polymarket_ctl import build_router as polymarket_ctl_router
     from .api.cache_mode import build_router as cache_mode_router
     from .api.settings import build_router as settings_router
+    from .api.stream import build_router as stream_router
 
+    app.include_router(stream_router())
     app.include_router(health_router(cache, fetcher))
     app.include_router(odds_router(cache))
     app.include_router(props_router(cache))
