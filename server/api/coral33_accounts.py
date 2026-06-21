@@ -299,90 +299,94 @@ def build_router(
         ),
         force_wager_log: bool = Query(default=False),
     ) -> BetsResponse:
-        """Flat bet-history across all accounts, one row per ticket.
-
-        Backed by the same wager-log cache that powers historical
-        pending. Parlays/teasers are collapsed to their head leg before
-        persistence, so this endpoint trivially returns one row per
-        ticket.
-
-        Sorted by accepted_at descending (newest first). Filters apply
-        in-memory — the dataset is small (~hundreds of tickets across
-        the 2-week window).
+        """Backward-compat wrapper. Reads from the unified `bets` table
+        (populated by the 30-min wager-log mirror tick) and reshapes
+        into the BetEntryModel contract the existing /accounts UI
+        consumes. The new /bets page reads /api/bets directly.
         """
         from ..odds.books.coral33.wager_log import DEFAULT_BACKFILL_WEEKS
-        from ..odds.clv import get_coral33_config, lookup_clv
+        from ..odds.bets import query_bets
+        from ..odds.clv import lookup_clv_for_bet
 
-        creds_by_id = {c.customer_id: c for c in scraper.credentials}
-        log_by_cid = await scraper.get_wager_log(force=force_wager_log)
+        # Optional force-refresh path: kick the wager log + re-mirror.
+        if force_wager_log and cache is not None:
+            from ..odds.books.coral33.bets_mirror import (
+                mirror_coral33_wager_log_to_bets,
+            )
+            wager_log = await scraper.get_wager_log(force=True)
+            mirror_coral33_wager_log_to_bets(cache, wager_log)
 
-        # CLV is computed on every request rather than persisted with the
-        # wager log. That way newly captured closing lines show up
-        # immediately and we don't need a schema bump to add a column to
-        # the persisted JSON. The lookup is cheap (single SQLite query
-        # per wager), and the dataset is small (~hundreds of bets).
-        config_pair = get_coral33_config() if cache is not None else None
+        if cache is None:
+            return BetsResponse(
+                bets=[], total_count=0,
+                backfill_weeks=DEFAULT_BACKFILL_WEEKS,
+            )
 
-        all_bets: list[BetEntryModel] = []
-        for cid, wagers in log_by_cid.items():
-            cred = creds_by_id.get(cid)
-            label = (cred.label if cred and cred.label else cid)
-            for w in wagers:
-                clv_pct: float | None = None
-                if cache is not None and config_pair is not None:
-                    config, reverse = config_pair
-                    try:
-                        result = lookup_clv(w, cache, config, reverse)
-                    except Exception:
-                        # Defensive — CLV failures must never break the
-                        # bets endpoint. Log + null-out for this wager.
-                        import logging
-                        logging.getLogger(__name__).exception(
-                            "CLV lookup failed for ticket %s",
-                            w.ticket_number,
-                        )
-                        result = None
-                    if result is not None:
-                        # clv_pct is stored as a fraction (e.g. 0.025 for
-                        # 2.5% over the close). UI multiplies by 100.
-                        clv_pct = result.clv_pct * 100.0
-                all_bets.append(BetEntryModel(
-                    customer_id=cid,
-                    account_label=label,
-                    ticket_number=w.ticket_number,
-                    accepted_at=w.accepted_at,
-                    settled_at=w.settled_at,
-                    wager_status=w.wager_status,
-                    wager_type=w.wager_type,
-                    total_picks=w.total_picks,
-                    amount_wagered=w.amount_wagered,
-                    to_win_amount=w.to_win_amount,
-                    amount_won=w.amount_won,
-                    amount_lost=w.amount_lost,
-                    is_free_play=w.is_free_play,
-                    sport_type=w.sport_type,
-                    sport_sub_type=w.sport_sub_type,
-                    period=w.period,
-                    team1_id=w.team1_id,
-                    team2_id=w.team2_id,
-                    chosen_team_id=w.chosen_team_id,
-                    description=w.description,
-                    final_money=w.final_money,
-                    adj_spread=w.adj_spread,
-                    adj_total_points=w.adj_total_points,
-                    clv_pct=clv_pct,
-                ))
-
+        rows = query_bets(cache, book="coral33")
         status_norm = status.lower().strip() if status else "any"
         if status_norm == "open":
-            all_bets = [b for b in all_bets if b.wager_status == "O"]
+            rows = [r for r in rows if r["status"] == "open"]
         elif status_norm == "settled":
-            all_bets = [b for b in all_bets if b.wager_status != "O"]
-        all_bets.sort(key=lambda b: b.accepted_at, reverse=True)
+            rows = [r for r in rows if r["status"] not in ("open", "pending")]
 
+        # Translate normalized status/wager_type back to Coral33 single-
+        # char codes for backward compat with the existing /accounts UI.
+        _STATUS_TO_CODE = {"open": "O", "win": "W", "loss": "L", "push": "P", "void": "X"}
+        _WAGER_TYPE_TO_CODE = {"straight": "S", "parlay": "P", "teaser": "T", "if_bet": "I", "round_robin": "R"}
+
+        creds_by_id = {c.customer_id: c for c in scraper.credentials}
+        out: list[BetEntryModel] = []
+        for r in rows:
+            cid = r.get("customer_id") or ""
+            cred = creds_by_id.get(cid)
+            label = (cred.label if cred and cred.label else cid) if cid else "Coral33"
+            clv_pct: float | None = None
+            try:
+                res = lookup_clv_for_bet(r, cache)
+                if res is not None:
+                    clv_pct = round(res.clv_pct * 100.0, 2)
+            except Exception:
+                pass
+            status_code = _STATUS_TO_CODE.get(r["status"], r["status"][:1].upper())
+            wager_type_code = _WAGER_TYPE_TO_CODE.get(r.get("wager_type") or "straight", "S")
+            try:
+                ticket_n = int(r["external_id"])
+            except (TypeError, ValueError):
+                ticket_n = 0
+            stake = float(r["stake"])
+            settled = r.get("settled_amount")
+            amount_won = max(0.0, (float(settled) - stake)) if (settled is not None and r["status"] == "win") else 0.0
+            amount_lost = stake if r["status"] == "loss" else 0.0
+            market_key = (r.get("market_key") or "")
+            out.append(BetEntryModel(
+                customer_id=cid,
+                account_label=label,
+                ticket_number=ticket_n,
+                accepted_at=r["accepted_at"],
+                settled_at=r.get("settled_at"),
+                wager_status=status_code,
+                wager_type=wager_type_code,
+                total_picks=r["total_picks"],
+                amount_wagered=stake,
+                to_win_amount=float(r.get("to_win") or 0.0),
+                amount_won=amount_won,
+                amount_lost=amount_lost,
+                is_free_play=bool(r.get("is_free_play")),
+                sport_type=None,
+                sport_sub_type=r.get("sport_key"),
+                period=None,
+                team1_id=r.get("home_team"),
+                team2_id=r.get("away_team"),
+                chosen_team_id=r.get("outcome_name"),
+                description=r.get("raw_description"),
+                final_money=r.get("odds_american"),
+                adj_spread=r.get("outcome_point") if market_key.startswith("spread") else None,
+                adj_total_points=r.get("outcome_point") if market_key.startswith("total") else None,
+                clv_pct=clv_pct,
+            ))
+        out.sort(key=lambda b: b.accepted_at, reverse=True)
         return BetsResponse(
-            bets=all_bets,
-            total_count=len(all_bets),
+            bets=out, total_count=len(out),
             backfill_weeks=DEFAULT_BACKFILL_WEEKS,
         )
 
