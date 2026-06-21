@@ -86,14 +86,24 @@ export function ArbitrageTable({ opportunities }: { opportunities: ArbOpportunit
                 className="border-t border-border-subtle hover:bg-bg-1/40"
               >
                 <td className="px-3 py-2">
-                  <span
-                    className={clsx(
-                      "tabular font-semibold",
-                      roiColor(op.roi_pct)
+                  <div className="flex flex-col">
+                    <span
+                      className={clsx(
+                        "tabular font-semibold",
+                        roiColor(op.roi_pct)
+                      )}
+                    >
+                      +{op.roi_pct.toFixed(2)}%
+                    </span>
+                    {op.max_total_stake_dollars != null && (
+                      <span
+                        className="text-[10px] text-text-3 tabular"
+                        title="Largest total stake that respects every leg's fillable depth at the displayed price"
+                      >
+                        max ${op.max_total_stake_dollars.toFixed(0)}
+                      </span>
                     )}
-                  >
-                    +{op.roi_pct.toFixed(2)}%
-                  </span>
+                  </div>
                 </td>
                 <td className="px-2 py-2 text-text-2 text-[11px] uppercase tracking-wide">
                   {sportLabel(op.sport_key)}
@@ -103,7 +113,7 @@ export function ArbitrageTable({ opportunities }: { opportunities: ArbOpportunit
                 </td>
                 <td className="px-2 py-2 text-text-2">{marketLabel(op)}</td>
                 <td className="px-2 py-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <BookLogo bookKey={a.book} mode="label" />
                     <span className="text-text-2 text-[11px] tabular">
                       {a.outcome_name}
@@ -114,10 +124,18 @@ export function ArbitrageTable({ opportunities }: { opportunities: ArbOpportunit
                     <span className="text-text-3 text-[10px] tabular">
                       stake {a.stake_pct.toFixed(1)}%
                     </span>
+                    {a.max_stake_dollars != null && (
+                      <span
+                        className="text-text-3 text-[10px] tabular"
+                        title="Top-of-book depth at the displayed price"
+                      >
+                        max ${a.max_stake_dollars.toFixed(0)}
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td className="px-2 py-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <BookLogo bookKey={b.book} mode="label" />
                     <span className="text-text-2 text-[11px] tabular">
                       {b.outcome_name}
@@ -128,6 +146,14 @@ export function ArbitrageTable({ opportunities }: { opportunities: ArbOpportunit
                     <span className="text-text-3 text-[10px] tabular">
                       stake {b.stake_pct.toFixed(1)}%
                     </span>
+                    {b.max_stake_dollars != null && (
+                      <span
+                        className="text-text-3 text-[10px] tabular"
+                        title="Top-of-book depth at the displayed price"
+                      >
+                        max ${b.max_stake_dollars.toFixed(0)}
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td className="px-2 py-2 text-right text-text-3 tabular text-[11px]">

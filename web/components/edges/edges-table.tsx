@@ -293,6 +293,14 @@ export function EdgesTable({
                             <span className="text-price-up font-semibold tabular">
                               {formatAmerican(leg.price_american)}
                             </span>
+                            {leg.max_stake_dollars != null && (
+                              <span
+                                className="text-text-3 text-[10px] tabular"
+                                title="Top-of-book depth at the displayed price"
+                              >
+                                max ${leg.max_stake_dollars.toFixed(0)}
+                              </span>
+                            )}
                           </div>
                         ))}
                       </div>

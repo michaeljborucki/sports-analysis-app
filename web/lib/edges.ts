@@ -60,6 +60,10 @@ export interface EdgeLeg {
   role: "a" | "b" | "offered" | "hedge" | "fair";
   /** Stake share (arb/LH legs, 0-1). EV/FB derive this in stake-calc. */
   stake_pct?: number;
+  /** Top-of-book fillable depth in dollars at the displayed price.
+   *  Non-null for Kalshi / Polymarket arb legs; null for sportsbooks
+   *  (no published depth) and for non-arb modes. */
+  max_stake_dollars?: number | null;
 }
 
 /** Shared envelope across all modes. */
@@ -121,6 +125,7 @@ export function fromArb(op: ArbOpportunity, idx: number): EdgeOpportunity {
     point: s.point,
     role: i === 0 ? "a" : "b",
     stake_pct: s.stake_pct,
+    max_stake_dollars: s.max_stake_dollars ?? null,
   }));
   return {
     mode: "arb",

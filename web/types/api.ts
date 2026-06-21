@@ -4,6 +4,119 @@
  */
 
 export interface paths {
+    "/api/stream/odds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream Odds
+         * @description Subscribe to the live odds event stream.
+         *
+         *     Returns an SSE stream. The browser's EventSource handles
+         *     reconnect automatically; this endpoint just produces events
+         *     for as long as the client stays connected.
+         */
+        get: operations["stream_odds_api_stream_odds_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stream/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream Status
+         * @description Lightweight diagnostic — how many SSE subscribers are
+         *     currently connected. Useful for debugging connection leaks.
+         */
+        get: operations["stream_status_api_stream_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Bets */
+        get: operations["get_bets_api_bets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bets/rollups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Rollups */
+        get: operations["get_rollups_api_bets_rollups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bets/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Import */
+        post: operations["post_import_api_bets_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bets/import/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Template */
+        get: operations["get_template_api_bets_import_template_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -106,6 +219,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/fetcher/refresh-now": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Now
+         * @description Ad-hoc: fire every enabled tier once right now, async. Returns
+         *     immediately with the list of triggered tier names. Tasks run in the
+         *     background on the event loop. Refused in snapshot mode — writing
+         *     fresh rows to the snapshot file would corrupt the reproducible
+         *     reference set.
+         */
+        post: operations["refresh_now_api_fetcher_refresh_now_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/refresh/{event_id}": {
         parameters: {
             query?: never;
@@ -153,6 +290,9 @@ export interface paths {
          *
          *     `books` is an optional comma-separated allowlist — only prices from
          *     these bookmaker keys are considered. Empty = all books in the cache.
+         *
+         *     Memoized for 20s so the Edges page's burst-of-four simultaneous
+         *     SWR pulls collapses to one actual scan.
          */
         get: operations["get_arbs_api_arbitrage_get"];
         put?: never;
@@ -187,7 +327,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Free Bets */
+        /**
+         * Get Free Bets
+         * @description books = hedge-leg universe (your funded accounts).
+         *     free_bet_books = books where you have a promo credit — the free leg
+         *     is locked to one of these. Omit to treat any visible book as a
+         *     potential promo leg.
+         */
         get: operations["get_free_bets_api_free_bets_get"];
         put?: never;
         post?: never;
@@ -217,8 +363,54 @@ export interface paths {
          *       - stale_seconds: drop offered prices older than this; default 60
          *       - max_results: server-side cap after sort; default 300
          *       - tag_arb: also_in_arb flag — set false to skip arb pre-scan
+         *       - wager_filter: "any" (default) | "straight" | "parlay".
+         *           "straight" → keep rows whose offered line is straight-bettable
+         *             (coral33 wager_type ∈ {straight, both} OR row is non-coral33,
+         *             since every Odds-API book is inherently straight-eligible).
+         *           "parlay"   → keep ONLY coral33 rows whose offered line is
+         *             parlay-eligible (wager_type ∈ {parlay, both}).
+         *           "any"      → no filter.
+         *
+         *     Memoized for 20s — the Edges page fires arb + lh + ev + fb in the
+         *     same SWR tick, so the second-third-fourth EV scan within a 20s
+         *     window comes back from this cache instead of re-running the full
+         *     devig pass over 1000+ rows.
          */
         get: operations["get_ev_api_ev_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profit_boost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Profit Boost
+         * @description Scan for profit-boost conversion opportunities.
+         *
+         *     Query params:
+         *       - boost_pct: percentage boost applied to winnings (default 30).
+         *         Range [0, 100]. 0 = no boost, conversion will rarely clear.
+         *       - books: csv of books usable for either leg (empty = all visible).
+         *       - boost_books: csv of books the user holds a boost token at — the
+         *         boosted leg will ALWAYS land at one of these. Empty = same set
+         *         as `books`.
+         *       - min_conversion: floor on guaranteed conversion %. Default 0
+         *         surfaces every break-even-or-better pair. Set higher to
+         *         filter to clearly-profitable pairs only.
+         *       - min_boost_odds: floor on the BOOSTED leg's ORIGINAL American
+         *         price. Default -10000 = unlimited. Raise to +100 to scope to
+         *         plus-odds lines only (typical "longshot boost" promo behavior).
+         */
+        get: operations["get_profit_boost_api_profit_boost_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -266,6 +458,226 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/coral33/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Accounts */
+        get: operations["get_accounts_api_coral33_accounts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/coral33/accounts/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Accounts */
+        post: operations["refresh_accounts_api_coral33_accounts_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/coral33/accounts/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get History */
+        get: operations["get_history_api_coral33_accounts_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/coral33/accounts/bets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Bets
+         * @description Backward-compat wrapper. Reads from the unified `bets` table
+         *     (populated by the 30-min wager-log mirror tick) and reshapes
+         *     into the BetEntryModel contract the existing /accounts UI
+         *     consumes. The new /bets page reads /api/bets directly.
+         */
+        get: operations["get_bets_api_coral33_accounts_bets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/coral33/accounts/clv-backfill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Clv Backfill
+         * @description One-shot historical CLV backfill.
+         *
+         *     Walks the persisted wager log, finds entries that don't yet
+         *     have a closing line, discovers their Odds API event_ids via the
+         *     historical events endpoint, and fetches per-event archived odds
+         *     ~7 minutes before commence. Devigs and writes to closing_lines.
+         *
+         *     Default `dry_run=True` performs event discovery and reports the
+         *     match counts + estimated cost without spending credits on
+         *     per-event fetches. Re-run with `dry_run=false` to execute.
+         *
+         *     Idempotent — already-covered wagers are skipped, partial runs
+         *     can resume.
+         */
+        post: operations["clv_backfill_api_coral33_accounts_clv_backfill_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/kalshi/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh
+         * @description Trigger one immediate kalshi cycle across every configured sport.
+         */
+        post: operations["refresh_api_kalshi_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/kalshi/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_kalshi_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/polymarket/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh
+         * @description Trigger one immediate polymarket cycle across every configured sport.
+         */
+        post: operations["refresh_api_polymarket_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/polymarket/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_polymarket_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cache-mode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Mode */
+        get: operations["get_mode_api_cache_mode_get"];
+        put?: never;
+        /** Set Mode */
+        post: operations["set_mode_api_cache_mode_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cache-snapshot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Capture Snapshot
+         * @description Capture the current live cache into the snapshot file. Uses SQLite
+         *     VACUUM INTO — atomic, compressed, and safe to run while the source is
+         *     being read. Does NOT change the current mode.
+         */
+        post: operations["capture_snapshot_api_cache_snapshot_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/settings": {
         parameters: {
             query?: never;
@@ -305,6 +717,69 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccountHistoryModel */
+        AccountHistoryModel: {
+            /** Customer Id */
+            customer_id: string;
+            /** Label */
+            label: string;
+            /** Points */
+            points: components["schemas"]["HistoryPointModel"][];
+        };
+        /** AccountSnapshotModel */
+        AccountSnapshotModel: {
+            /** Customer Id */
+            customer_id: string;
+            /** Label */
+            label: string;
+            /** Fetched At */
+            fetched_at: string;
+            /** Current Balance */
+            current_balance: number;
+            /** Available Balance */
+            available_balance: number;
+            /** Pending Wager Balance */
+            pending_wager_balance: number;
+            /** Free Play Balance */
+            free_play_balance: number;
+            /** Credit Limit */
+            credit_limit: number;
+            /** Wager Limit */
+            wager_limit: number;
+            /** Player Name */
+            player_name?: string | null;
+            /** Agent Id */
+            agent_id?: string | null;
+            wagers: components["schemas"]["WagerSummaryModel"];
+            /**
+             * Pending Wagers
+             * @default []
+             */
+            pending_wagers: components["schemas"]["PendingWagerModel"][];
+            /** Error */
+            error?: string | null;
+        };
+        /** AccountsRollupModel */
+        AccountsRollupModel: {
+            /** Snapshots */
+            snapshots: components["schemas"]["AccountSnapshotModel"][];
+            /** Refreshed At */
+            refreshed_at: string | null;
+            /** Refreshing */
+            refreshing: boolean;
+            /** Total Current Balance */
+            total_current_balance: number;
+            /** Total Available Balance */
+            total_available_balance: number;
+            /** Total Pending Balance */
+            total_pending_balance: number;
+            /** Total Free Play */
+            total_free_play: number;
+            /** Total Open Wagers */
+            total_open_wagers: number;
+            /** Account Count */
+            account_count: number;
+        };
         /** ArbOpportunity */
         ArbOpportunity: {
             /** Sport Key */
@@ -331,6 +806,8 @@ export interface components {
             roi_pct: number;
             /** Sides */
             sides: components["schemas"]["ArbSide"][];
+            /** Max Total Stake Dollars */
+            max_total_stake_dollars?: number | null;
         };
         /** ArbResponse */
         ArbResponse: {
@@ -356,6 +833,131 @@ export interface components {
             point?: number | null;
             /** Stake Pct */
             stake_pct: number;
+            /** Max Stake Dollars */
+            max_stake_dollars?: number | null;
+        };
+        /**
+         * BetEntryModel
+         * @description One ticket on the bet-history table. Parlays/teasers are flattened
+         *     to a single row representing the HEAD leg per the product spec —
+         *     `total_picks` tells the UI to render a "PARLAY ×N" chip.
+         */
+        BetEntryModel: {
+            /** Customer Id */
+            customer_id: string;
+            /** Account Label */
+            account_label: string;
+            /** Ticket Number */
+            ticket_number: number;
+            /**
+             * Accepted At
+             * Format: date-time
+             */
+            accepted_at: string;
+            /** Settled At */
+            settled_at?: string | null;
+            /** Wager Status */
+            wager_status: string;
+            /** Wager Type */
+            wager_type: string;
+            /** Total Picks */
+            total_picks: number;
+            /** Amount Wagered */
+            amount_wagered: number;
+            /** To Win Amount */
+            to_win_amount: number;
+            /** Amount Won */
+            amount_won: number;
+            /** Amount Lost */
+            amount_lost: number;
+            /** Is Free Play */
+            is_free_play: boolean;
+            /** Sport Type */
+            sport_type?: string | null;
+            /** Sport Sub Type */
+            sport_sub_type?: string | null;
+            /** Period */
+            period?: string | null;
+            /** Team1 Id */
+            team1_id?: string | null;
+            /** Team2 Id */
+            team2_id?: string | null;
+            /** Chosen Team Id */
+            chosen_team_id?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Final Money */
+            final_money?: number | null;
+            /** Adj Spread */
+            adj_spread?: number | null;
+            /** Adj Total Points */
+            adj_total_points?: number | null;
+            /** Clv Pct */
+            clv_pct?: number | null;
+        };
+        /** BetModel */
+        BetModel: {
+            /** Source Book */
+            source_book: string;
+            /** External Id */
+            external_id: string;
+            /** Customer Id */
+            customer_id?: string | null;
+            /**
+             * Accepted At
+             * Format: date-time
+             */
+            accepted_at: string;
+            /** Settled At */
+            settled_at?: string | null;
+            /** Status */
+            status: string;
+            /** Wager Type */
+            wager_type: string;
+            /** Total Picks */
+            total_picks: number;
+            /** Sport Key */
+            sport_key?: string | null;
+            /** Event Id */
+            event_id?: string | null;
+            /** Home Team */
+            home_team?: string | null;
+            /** Away Team */
+            away_team?: string | null;
+            /** Market Key */
+            market_key?: string | null;
+            /** Outcome Name */
+            outcome_name?: string | null;
+            /**
+             * Outcome Point
+             * @default 0
+             */
+            outcome_point: number;
+            /** Odds American */
+            odds_american?: number | null;
+            /** Stake */
+            stake: number;
+            /** To Win */
+            to_win?: number | null;
+            /** Settled Amount */
+            settled_amount?: number | null;
+            /**
+             * Is Free Play
+             * @default false
+             */
+            is_free_play: boolean;
+            /** Raw Description */
+            raw_description?: string | null;
+            /** Clv Pct */
+            clv_pct?: number | null;
+        };
+        /** Body_post_import_api_bets_import_post */
+        Body_post_import_api_bets_import_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
         };
         /** BookPrice */
         BookPrice: {
@@ -370,6 +972,39 @@ export interface components {
              * Format: date-time
              */
             fetched_at: string;
+        };
+        /** CacheModeSetRequest */
+        CacheModeSetRequest: {
+            /** Mode */
+            mode: string;
+        };
+        /** CacheModeStatus */
+        CacheModeStatus: {
+            /** Mode */
+            mode: string;
+            /** Snapshot Available */
+            snapshot_available: boolean;
+            /** Snapshot Captured At */
+            snapshot_captured_at?: string | null;
+            /** Snapshot Newest Row At */
+            snapshot_newest_row_at?: string | null;
+            /** Snapshot Row Count */
+            snapshot_row_count?: number | null;
+            /** Live Newest Row At */
+            live_newest_row_at?: string | null;
+            /** Live Row Count */
+            live_row_count?: number | null;
+        };
+        /** CacheSnapshotResponse */
+        CacheSnapshotResponse: {
+            /** Status */
+            status: string;
+            /** Path */
+            path: string;
+            /** Captured At */
+            captured_at: string;
+            /** Row Count */
+            row_count: number;
         };
         /** Coral33RefreshResponse */
         Coral33RefreshResponse: {
@@ -469,11 +1104,8 @@ export interface components {
              * @enum {string}
              */
             confidence: "normal" | "low";
-            /**
-             * Wager Type — coral33 parlay-eligibility tag.
-             * NULL for every other book.
-             */
-            wager_type?: "straight" | "parlay" | "both" | null;
+            /** Wager Type */
+            wager_type?: ("straight" | "parlay" | "both") | null;
         };
         /** EVResponse */
         EVResponse: {
@@ -603,10 +1235,97 @@ export interface components {
              */
             stale_seconds: number;
         };
+        /** GroupRollup */
+        GroupRollup: {
+            /** Source Book */
+            source_book?: string | null;
+            /** Sport Key */
+            sport_key?: string | null;
+            /** Market Key */
+            market_key?: string | null;
+            /** Count */
+            count: number;
+            /** Wagered */
+            wagered: number;
+            /** Net */
+            net: number;
+            /** Roi Pct */
+            roi_pct: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HistoryPointModel */
+        HistoryPointModel: {
+            /** Date */
+            date: string;
+            /** Won */
+            won: number;
+            /** Lost */
+            lost: number;
+            /** Net */
+            net: number;
+            /** Balance */
+            balance: number;
+            /**
+             * Pending
+             * @default 0
+             */
+            pending: number;
+        };
+        /** HistoryRollupModel */
+        HistoryRollupModel: {
+            /** Weeks */
+            weeks: number;
+            /** Accounts */
+            accounts: components["schemas"]["AccountHistoryModel"][];
+        };
+        /** ImportResponse */
+        ImportResponse: {
+            /** Accepted */
+            accepted: number;
+            /** Rejected */
+            rejected: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** KalshiRefreshResponse */
+        KalshiRefreshResponse: {
+            /** Status */
+            status: string;
+            /** Sports Refreshed */
+            sports_refreshed: string[];
+            /** Duration S */
+            duration_s: number;
+            /** Errors */
+            errors: string[];
+            /** Last Cycle Rows */
+            last_cycle_rows: {
+                [key: string]: number;
+            };
+        };
+        /**
+         * KalshiStatusResponse
+         * @description Status of the Kalshi direct-API fetcher.
+         *
+         *     Mirrors Coral33StatusResponse so a single frontend component can poll
+         *     both /api/coral33/status and /api/kalshi/status. `jwt_authenticated`
+         *     is always True for Kalshi (read endpoints are unauthenticated) — the
+         *     field is preserved purely for response-shape parity.
+         */
+        KalshiStatusResponse: {
+            /** Running */
+            running: boolean;
+            /** Last Cycle At */
+            last_cycle_at?: string | null;
+            /** Last Cycle Rows */
+            last_cycle_rows: {
+                [key: string]: number;
+            };
+            /** Jwt Authenticated */
+            jwt_authenticated: boolean;
         };
         /** LowHoldOpportunity */
         LowHoldOpportunity: {
@@ -709,6 +1428,37 @@ export interface components {
              */
             fetched_at: string;
         };
+        /** PendingWagerModel */
+        PendingWagerModel: {
+            /** Ticket Number */
+            ticket_number: number;
+            /** Wager Number */
+            wager_number: number;
+            /** Bet Type */
+            bet_type: string;
+            /** Wager Status */
+            wager_status?: string | null;
+            /** Amount Wagered */
+            amount_wagered: number;
+            /** To Win Amount */
+            to_win_amount: number;
+            /** Is Free Play */
+            is_free_play: boolean;
+            /** Accepted At */
+            accepted_at?: string | null;
+            /** Parlay Name */
+            parlay_name?: string | null;
+            /** Teaser Name */
+            teaser_name?: string | null;
+            /** Legs */
+            legs: components["schemas"]["WagerLegModel"][];
+            /** Has Open Legs */
+            has_open_legs: boolean;
+            /** Has Graded Legs */
+            has_graded_legs: boolean;
+            /** Is Partial */
+            is_partial: boolean;
+        };
         /** Pick */
         Pick: {
             /** Id */
@@ -779,6 +1529,137 @@ export interface components {
             last_checked_at: string;
             /** Bet Card Date */
             bet_card_date?: string | null;
+        };
+        /** PolymarketRefreshResponse */
+        PolymarketRefreshResponse: {
+            /** Status */
+            status: string;
+            /** Sports Refreshed */
+            sports_refreshed: string[];
+            /** Duration S */
+            duration_s: number;
+            /** Errors */
+            errors: string[];
+            /** Last Cycle Rows */
+            last_cycle_rows: {
+                [key: string]: number;
+            };
+        };
+        /**
+         * PolymarketStatusResponse
+         * @description Status of the Polymarket direct-API fetcher.
+         *
+         *     Mirrors KalshiStatusResponse shape so a single frontend component
+         *     can poll both `/api/polymarket/status` and `/api/kalshi/status`.
+         *     `jwt_authenticated` is always True for Polymarket (read endpoints
+         *     are unauthenticated and require no key) — the field is preserved
+         *     purely for response-shape parity with the auth-bearing books.
+         */
+        PolymarketStatusResponse: {
+            /** Running */
+            running: boolean;
+            /** Last Cycle At */
+            last_cycle_at?: string | null;
+            /** Last Cycle Rows */
+            last_cycle_rows: {
+                [key: string]: number;
+            };
+            /** Jwt Authenticated */
+            jwt_authenticated: boolean;
+        };
+        /**
+         * ProfitBoostBoostLeg
+         * @description Boosted leg carries both the original and post-boost prices so the
+         *     UI can show the price improvement (e.g., "+200 → +260").
+         */
+        ProfitBoostBoostLeg: {
+            /** Outcome Name */
+            outcome_name: string;
+            /** Book */
+            book: string;
+            /** Point */
+            point?: number | null;
+            /** Original Price American */
+            original_price_american: number;
+            /** Boosted Price American */
+            boosted_price_american: number;
+        };
+        /** ProfitBoostHedgeLeg */
+        ProfitBoostHedgeLeg: {
+            /** Outcome Name */
+            outcome_name: string;
+            /** Book */
+            book: string;
+            /** Point */
+            point?: number | null;
+            /** Price American */
+            price_american: number;
+        };
+        /** ProfitBoostOpportunity */
+        ProfitBoostOpportunity: {
+            /** Sport Key */
+            sport_key: string;
+            /** Event Id */
+            event_id: string;
+            /** Home Team */
+            home_team: string;
+            /** Away Team */
+            away_team: string;
+            /**
+             * Commence Time
+             * Format: date-time
+             */
+            commence_time: string;
+            /** Market Kind */
+            market_kind: string;
+            /** Point */
+            point?: number | null;
+            /** Conversion Pct */
+            conversion_pct: number;
+            /** Hold Pct */
+            hold_pct: number;
+            /** Boost Pct */
+            boost_pct: number;
+            /** Hedge Stake Per 100 Boost */
+            hedge_stake_per_100_boost: number;
+            boost_leg: components["schemas"]["ProfitBoostBoostLeg"];
+            hedge_leg: components["schemas"]["ProfitBoostHedgeLeg"];
+        };
+        /** ProfitBoostResponse */
+        ProfitBoostResponse: {
+            /** Opportunities */
+            opportunities: components["schemas"]["ProfitBoostOpportunity"][];
+            /**
+             * Scanned At
+             * Format: date-time
+             */
+            scanned_at: string;
+            /** Boost Pct */
+            boost_pct: number;
+            /** Min Conversion Pct */
+            min_conversion_pct: number;
+        };
+        /** RefreshResponse */
+        RefreshResponse: {
+            /** Status */
+            status: string;
+            /**
+             * Account Count
+             * @default 0
+             */
+            account_count: number;
+        };
+        /** RollupsResponse */
+        RollupsResponse: {
+            window_30d: components["schemas"]["WindowRollup"];
+            window_90d: components["schemas"]["WindowRollup"];
+            lifetime: components["schemas"]["WindowRollup"];
+            /** By Book */
+            by_book: components["schemas"]["GroupRollup"][];
+            /** By Sport */
+            by_sport: components["schemas"]["GroupRollup"][];
+            /** By Market */
+            by_market: components["schemas"]["GroupRollup"][];
         };
         /** SettingsPayload */
         SettingsPayload: {
@@ -870,6 +1751,89 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /** WagerLegModel */
+        WagerLegModel: {
+            /** Play Number */
+            play_number: number;
+            /** Description */
+            description: string;
+            /** Sport Type */
+            sport_type?: string | null;
+            /** Sport Sub Type */
+            sport_sub_type?: string | null;
+            /** Period */
+            period?: string | null;
+            /** Team1 */
+            team1?: string | null;
+            /** Team2 */
+            team2?: string | null;
+            /** Chosen Team */
+            chosen_team?: string | null;
+            /** Final Money */
+            final_money?: number | null;
+            /** Spread */
+            spread?: number | null;
+            /** Total Points */
+            total_points?: number | null;
+            /** Game Datetime */
+            game_datetime?: string | null;
+            /** Outcome */
+            outcome?: string | null;
+            /**
+             * Leg Amount Wagered
+             * @default 0
+             */
+            leg_amount_wagered: number;
+            /**
+             * Leg To Win Amount
+             * @default 0
+             */
+            leg_to_win_amount: number;
+        };
+        /** WagerSummaryModel */
+        WagerSummaryModel: {
+            /** Open Count */
+            open_count: number;
+            /** Open Amount Risked */
+            open_amount_risked: number;
+            /** Open Amount To Win */
+            open_amount_to_win: number;
+            /** Straight Count */
+            straight_count: number;
+            /** Parlay Count */
+            parlay_count: number;
+            /** Parlay Partial Count */
+            parlay_partial_count: number;
+            /** Free Play Count */
+            free_play_count: number;
+        };
+        /** WindowRollup */
+        WindowRollup: {
+            /** Count */
+            count: number;
+            /** Wagered */
+            wagered: number;
+            /** Net */
+            net: number;
+            /** Roi Pct */
+            roi_pct: number;
+        };
+        /** BetsResponse */
+        server__api__bets__BetsResponse: {
+            /** Bets */
+            bets: components["schemas"]["BetModel"][];
+            /** Total Count */
+            total_count: number;
+        };
+        /** BetsResponse */
+        server__api__coral33_accounts__BetsResponse: {
+            /** Bets */
+            bets: components["schemas"]["BetEntryModel"][];
+            /** Total Count */
+            total_count: number;
+            /** Backfill Weeks */
+            backfill_weeks: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -879,6 +1843,159 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    stream_odds_api_stream_odds_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    stream_status_api_stream_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    get_bets_api_bets_get: {
+        parameters: {
+            query?: {
+                /** @description open|win|loss|push|void|pending */
+                status?: string | null;
+                book?: string | null;
+                sport?: string | null;
+                market_key?: string | null;
+                from?: string | null;
+                to?: string | null;
+                limit?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["server__api__bets__BetsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_rollups_api_bets_rollups_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RollupsResponse"];
+                };
+            };
+        };
+    };
+    post_import_api_bets_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_post_import_api_bets_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_template_api_bets_import_template_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     health_api_health_get: {
         parameters: {
             query?: never;
@@ -1032,6 +2149,26 @@ export interface operations {
             };
         };
     };
+    refresh_now_api_fetcher_refresh_now_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FetcherControlResponse"];
+                };
+            };
+        };
+    };
     refresh_api_refresh__event_id__post: {
         parameters: {
             query?: never;
@@ -1150,6 +2287,7 @@ export interface operations {
         parameters: {
             query?: {
                 books?: string;
+                free_bet_books?: string;
                 min_free_odds?: number;
                 max_results?: number;
             };
@@ -1189,6 +2327,8 @@ export interface operations {
                 stale_seconds?: number;
                 max_results?: number;
                 tag_arb?: boolean;
+                sort?: string;
+                wager_filter?: string;
             };
             header?: never;
             path?: never;
@@ -1203,6 +2343,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EVResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profit_boost_api_profit_boost_get: {
+        parameters: {
+            query?: {
+                boost_pct?: number;
+                books?: string;
+                boost_books?: string;
+                min_conversion?: number;
+                min_boost_odds?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfitBoostResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1252,6 +2427,304 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Coral33StatusResponse"];
+                };
+            };
+        };
+    };
+    get_accounts_api_coral33_accounts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountsRollupModel"];
+                };
+            };
+        };
+    };
+    refresh_accounts_api_coral33_accounts_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+        };
+    };
+    get_history_api_coral33_accounts_history_get: {
+        parameters: {
+            query?: {
+                weeks?: number;
+                force?: boolean;
+                /** @description Re-run the one-time wager-log backfill. Default behavior reads from the persisted JSON cache (no API cost). Set true to refresh the cache from Coral33. */
+                force_wager_log?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryRollupModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_bets_api_coral33_accounts_bets_get: {
+        parameters: {
+            query?: {
+                /** @description any | open | settled (graded W/L/P/X) */
+                status?: string;
+                force_wager_log?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["server__api__coral33_accounts__BetsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clv_backfill_api_coral33_accounts_clv_backfill_post: {
+        parameters: {
+            query?: {
+                /** @description Estimate cost without spending credits */
+                dry_run?: boolean;
+                /** @description Fetch player-prop markets too (≈2× cost) */
+                include_props?: boolean;
+                /** @description Cap total credits consumed; abort once reached */
+                max_credits?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_api_kalshi_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KalshiRefreshResponse"];
+                };
+            };
+        };
+    };
+    status_api_kalshi_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KalshiStatusResponse"];
+                };
+            };
+        };
+    };
+    refresh_api_polymarket_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolymarketRefreshResponse"];
+                };
+            };
+        };
+    };
+    status_api_polymarket_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolymarketStatusResponse"];
+                };
+            };
+        };
+    };
+    get_mode_api_cache_mode_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CacheModeStatus"];
+                };
+            };
+        };
+    };
+    set_mode_api_cache_mode_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CacheModeSetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CacheModeStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    capture_snapshot_api_cache_snapshot_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CacheSnapshotResponse"];
                 };
             };
         };
