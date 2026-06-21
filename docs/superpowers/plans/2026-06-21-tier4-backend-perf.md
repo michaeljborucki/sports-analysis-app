@@ -178,6 +178,8 @@ EOF
 
 - [ ] **Step 1: Failing test**
 
+The implementation will add a `now: datetime | None = None` kwarg to `distinct_events` (see Step 3) for testability — that's cleaner than patching `datetime.now` globally. Tests use it directly.
+
 Append to `server/tests/test_cache.py`:
 
 ```python
@@ -207,46 +209,34 @@ def test_distinct_events_within_hours_ahead_filters(tmp_path):
     """SQL pushdown via HAVING returns only events with MAX(commence_time)
     in [now, now+24h]."""
     from datetime import datetime, timezone, timedelta
-    from unittest.mock import patch
     from server.odds.cache import OddsCache
     cache = OddsCache(tmp_path / "test.db")
     cache.init()
     fixed_now = datetime(2026, 6, 21, 20, 0, tzinfo=timezone.utc)
     rows = [
-        # 1h ahead — within 24h window
         {"event_id": "ev_soon",  "sport_key": "nba", "home_team": "BOS",
          "away_team": "MIA", "commence_time": fixed_now + timedelta(hours=1),
          "bookmaker_key": "dk", "market_key": "h2h", "outcome_name": "BOS",
          "outcome_point": None, "price_american": -110, "fetched_at": fixed_now},
-        # 30h ahead — outside 24h window
         {"event_id": "ev_far",   "sport_key": "nba", "home_team": "BOS",
          "away_team": "MIA", "commence_time": fixed_now + timedelta(hours=30),
          "bookmaker_key": "dk", "market_key": "h2h", "outcome_name": "BOS",
          "outcome_point": None, "price_american": -110, "fetched_at": fixed_now},
-        # 5h ago — past
         {"event_id": "ev_past",  "sport_key": "nba", "home_team": "BOS",
          "away_team": "MIA", "commence_time": fixed_now - timedelta(hours=5),
          "bookmaker_key": "dk", "market_key": "h2h", "outcome_name": "BOS",
          "outcome_point": None, "price_american": -110, "fetched_at": fixed_now},
     ]
     cache.upsert(rows)
-    with patch("server.odds.cache.datetime") as mock_dt:
-        mock_dt.now.return_value = fixed_now
-        # Important: timedelta is accessed off cache.py's `datetime` import
-        # too in the function body; patch carefully so timedelta still works.
-        from datetime import timedelta as _td
-        mock_dt.fromisoformat = datetime.fromisoformat
-        result = cache.distinct_events(within_hours_ahead=24)
+    result = cache.distinct_events(within_hours_ahead=24, now=fixed_now)
     eids = {r["event_id"] for r in result}
     assert eids == {"ev_soon"}
-    # Returned commence_time should be a datetime (per existing API)
     soon = next(r for r in result if r["event_id"] == "ev_soon")
     assert isinstance(soon["commence_time"], datetime)
 
 
 def test_distinct_events_sport_filter_and_time_filter_combined(tmp_path):
     from datetime import datetime, timezone, timedelta
-    from unittest.mock import patch
     from server.odds.cache import OddsCache
     cache = OddsCache(tmp_path / "test.db")
     cache.init()
@@ -262,14 +252,11 @@ def test_distinct_events_sport_filter_and_time_filter_combined(tmp_path):
          "outcome_point": None, "price_american": -110, "fetched_at": fixed_now},
     ]
     cache.upsert(rows)
-    with patch("server.odds.cache.datetime") as mock_dt:
-        mock_dt.now.return_value = fixed_now
-        mock_dt.fromisoformat = datetime.fromisoformat
-        result = cache.distinct_events(within_hours_ahead=24, sport_key="nba")
+    result = cache.distinct_events(
+        within_hours_ahead=24, sport_key="nba", now=fixed_now,
+    )
     assert {r["event_id"] for r in result} == {"nba_soon"}
 ```
-
-(Note: patching `datetime` is fiddly because `cache.py` also imports `timedelta`. Simpler alternative — accept a `now` kwarg on `distinct_events` for testability. Re-spec to add `now: datetime | None = None` and use that. See implementation step.)
 
 - [ ] **Step 2: Run to verify the no-filter test passes already (sanity baseline) and the time-filter test fails**
 
@@ -399,8 +386,8 @@ Create `server/tests/test_fetcher.py`:
 """Tests for FetcherRegistry._resolve_keys (A5 — 24h TTL)."""
 from __future__ import annotations
 
-import asyncio
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -416,8 +403,6 @@ def _make_registry(resolve_return=None, resolve_raises: Exception | None = None)
         client.resolve_sport_keys = AsyncMock(side_effect=resolve_raises)
     else:
         client.resolve_sport_keys = AsyncMock(return_value=resolve_return or [])
-    # FetcherRegistry constructor expects (config, sports, cache, client, settings_store).
-    # Minimal valid setup: pass MagicMocks for everything except client.
     return FetcherRegistry(
         config=MagicMock(),
         sports=[],
@@ -428,14 +413,14 @@ def _make_registry(resolve_return=None, resolve_raises: Exception | None = None)
 
 
 def _sport(key: str = "tennis", odds_api_keys: list[str] | None = None) -> Sport:
-    """Build a minimal Sport object for the resolve test."""
+    """Build a Sport with the exact dataclass shape (frozen, with
+    Path-typed agent_dir and tuple-typed odds_api_sport_keys)."""
+    keys = tuple(odds_api_keys) if odds_api_keys else (f"{key}_atp_*",)
     return Sport(
         key=key,
         label=key.upper(),
-        odds_api_sport_keys=odds_api_keys or [f"{key}_atp_*"],
-        # Fill in other required fields with sane defaults — the exact
-        # shape depends on Sport's dataclass; consult `server/sports.py`.
-        # If Sport has more required fields, add them here.
+        odds_api_sport_keys=keys,
+        agent_dir=Path("/tmp"),
         markets_config="",
     )
 
@@ -522,7 +507,19 @@ Expected: ImportError on `_RESOLVED_KEYS_TTL`. (Or, if Sport's required fields d
 
 - [ ] **Step 3: Implement in `server/odds/fetcher.py`**
 
-Near the top of the file (after the imports, before the class), add:
+First, add `timedelta` to the datetime import. Change line 7 from:
+
+```python
+from datetime import datetime, timezone
+```
+
+to:
+
+```python
+from datetime import datetime, timedelta, timezone
+```
+
+Then near the top of the file (after the imports, before the class), add:
 
 ```python
 # A5: re-resolve sport→Odds-API key mappings every 24h so tournament
