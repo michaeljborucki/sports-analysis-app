@@ -316,3 +316,20 @@ class KalshiClient:
             if not cursor:
                 break
         return out
+
+    async def get_orderbook(self, ticker: str) -> dict:
+        """GET /markets/{ticker}/orderbook — full L2 book for one market.
+
+        Returns the parsed JSON response, shape:
+          {"orderbook": {"yes": [[price_cents, size], ...],
+                          "no":  [[price_cents, size], ...]}}
+
+        Each side carries that side's BIDS, sorted ascending by price.
+        YES asks are derived by inverting NO bids; the orderbook_depth
+        helper module owns that translation.
+
+        Signed via _signed_get; auth required for higher rate limits.
+        Response shape pinned by fixture at
+        server/tests/fixtures/kalshi_orderbook.json.
+        """
+        return await self._signed_get(f"/markets/{ticker}/orderbook")

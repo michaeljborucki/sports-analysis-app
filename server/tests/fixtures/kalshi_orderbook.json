@@ -1,0 +1,16 @@
+{
+  "_comment": "Hand-crafted fixture matching Kalshi's documented /markets/{ticker}/orderbook response shape. Each side carries that side's BIDS as [[price_cents, size_contracts], ...]. YES asks are derived by inverting NO bids: yes_ask_cents = 100 - no_bid_cents. Capture against a live ticker (with auth) when feasible and replace this fixture with the real one.",
+  "orderbook": {
+    "yes": [
+      [38, 250],
+      [40, 175],
+      [42, 100],
+      [45, 50]
+    ],
+    "no": [
+      [52, 200],
+      [55, 150],
+      [58, 80]
+    ]
+  }
+}

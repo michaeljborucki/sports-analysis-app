@@ -324,3 +324,17 @@ def test_normalize_h2h_period_skips_tie_market():
     assert names == {"Cleveland Cavaliers", "New York Knicks"}
     for r in rows:
         assert r["market_key"] == "h2h_h1"
+
+
+# ──────────────────────── KalshiClient.get_orderbook ──────────────────
+
+
+@pytest.mark.asyncio
+async def test_get_orderbook_calls_signed_get_with_path():
+    from unittest.mock import AsyncMock
+    from server.odds.books.kalshi.client import KalshiClient
+    client = KalshiClient(api_key="test", private_key_path=None)
+    client._signed_get = AsyncMock(return_value={"orderbook": {"yes": [], "no": []}})
+    result = await client.get_orderbook("KXMARKET-TICKER")
+    client._signed_get.assert_called_once_with("/markets/KXMARKET-TICKER/orderbook")
+    assert "orderbook" in result
