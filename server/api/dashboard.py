@@ -59,15 +59,26 @@ def build_router(
             else date.today()
         )
 
+        # Pull the cache ONCE and partition by sport_key in memory.
+        # The previous loop scanned `all_current(sport_key=…)` per sport
+        # and then scanned `all_current()` AGAIN for the cross-sport arb
+        # pass — N+1 full-table scans per dashboard load on a 100MB+ DB.
+        # One pass + a dict bucket cuts dashboard latency by roughly the
+        # number of sports configured.
+        all_non_prop_rows = [
+            r for r in cache.all_current()
+            if not is_prop_market(r["market_key"])
+        ]
+        rows_by_sport: dict[str, list[dict]] = {}
+        for r in all_non_prop_rows:
+            rows_by_sport.setdefault(r["sport_key"], []).append(r)
+
         summaries: list[SportSummary] = []
         upcoming_all: list[dict] = []
         picks_all: list[dict] = []
 
         for sport in sports:
-            sport_rows = [
-                r for r in cache.all_current(sport_key=sport.key)
-                if not is_prop_market(r["market_key"])
-            ]
+            sport_rows = rows_by_sport.get(sport.key, [])
             sport_games = rows_to_games(sport_rows, now=now)
             upcoming = [
                 g for g in sport_games
@@ -101,13 +112,11 @@ def build_router(
                 )
             )
 
-        # Top 5 arbitrage opportunities across all sports. When the caller
-        # passes ?books=..., filter to those books — this keeps the dashboard
-        # consistent with the user's global book-visibility settings.
-        arb_rows = [
-            r for r in cache.all_current() if not is_prop_market(r["market_key"])
-        ]
-        arb_games = rows_to_games(arb_rows, now=now)
+        # Top 5 arbitrage opportunities across all sports — reuses the
+        # already-fetched rows instead of scanning the cache a second
+        # time. When the caller passes ?books=..., filter to those
+        # books to keep dashboard consistent with global book-visibility.
+        arb_games = rows_to_games(all_non_prop_rows, now=now)
         all_arbs = scan_all_arbs(arb_games, books_filter=books_set)
         top_arbs = all_arbs[:5]
 

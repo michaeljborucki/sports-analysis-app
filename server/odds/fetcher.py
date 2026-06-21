@@ -462,11 +462,10 @@ class FetcherRegistry:
             }
         self._event_refresh_ts[event_id] = now_ts
 
-        # Find which sport this event belongs to
-        row = self.cache.distinct_events()
-        sport_key = next(
-            (e["sport_key"] for e in row if e["event_id"] == event_id), None
-        )
+        # Find which sport this event belongs to. Indexed lookup against
+        # the PK rather than the previous full-table `distinct_events()`
+        # scan — refresh_event runs on every UI "refresh this game" click.
+        sport_key = self.cache.event_sport_key(event_id)
         if not sport_key:
             return {"status": "unknown_event", "event_id": event_id}
         sport = next((s for s in self.sports if s.key == sport_key), None)

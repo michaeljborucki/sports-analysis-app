@@ -212,6 +212,10 @@ SPORTS: dict[str, Sport] = {
         key="soccer",
         label="Soccer",
         odds_api_sport_keys=(
+            # FIFA World Cup — top of the list because it overrides every
+            # other competition during the tournament window (Jun-Jul of
+            # WC years). Drop this entry after the final to save quota.
+            "soccer_fifa_world_cup",
             # Europe — top five + UEFA competitions
             "soccer_epl",
             "soccer_spain_la_liga",

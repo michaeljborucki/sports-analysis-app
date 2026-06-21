@@ -125,10 +125,23 @@ class OddsCache:
                 except sqlite3.OperationalError as e:
                     if "duplicate column" not in str(e).lower():
                         raise
-            # Ensure the index exists after migrations
-            c.execute(
-                "CREATE INDEX IF NOT EXISTS idx_odds_sport ON odds_snapshot(sport_key)"
-            )
+            # Ensure indexes exist after migrations. These cover the hot
+            # access patterns the audit identified:
+            #   - purge_stale_rows() filters on fetched_at every main-tier
+            #     cycle; without this index it's a full table scan on a
+            #     100MB+ table every few minutes.
+            #   - all endpoint scanners filter by sport_key (existing) and
+            #     usually also by market_key / is_prop_market — composite
+            #     lets SQLite skip prop rows at the query stage.
+            #   - purge_finished_games() and the FUTURE_WINDOW filter on
+            #     commence_time run on every dashboard/odds request.
+            for idx_stmt in (
+                "CREATE INDEX IF NOT EXISTS idx_odds_sport ON odds_snapshot(sport_key)",
+                "CREATE INDEX IF NOT EXISTS idx_odds_fetched_at ON odds_snapshot(fetched_at)",
+                "CREATE INDEX IF NOT EXISTS idx_odds_sport_market ON odds_snapshot(sport_key, market_key)",
+                "CREATE INDEX IF NOT EXISTS idx_odds_commence_time ON odds_snapshot(commence_time)",
+            ):
+                c.execute(idx_stmt)
 
     def upsert(self, rows: Iterable[dict]) -> None:
         prepared = []
@@ -187,6 +200,19 @@ class OddsCache:
                     d["outcome_point"] = None
                 rows.append(d)
             return rows
+
+    def event_sport_key(self, event_id: str) -> str | None:
+        """Look up the sport_key for a single event without scanning the
+        whole cache. Replaces the previous `distinct_events()` call site
+        in `refresh_event`, which did a full-table GROUP BY just to map
+        one event to its sport. Uses the PK's leading-column index on
+        event_id, so this is O(log n)."""
+        with self._conn() as c:
+            row = c.execute(
+                "SELECT sport_key FROM odds_snapshot WHERE event_id = ? LIMIT 1",
+                (event_id,),
+            ).fetchone()
+            return row["sport_key"] if row else None
 
     def set_status(self, *, last_fetch_at: datetime | None = None,
                    requests_used: int | None = None,

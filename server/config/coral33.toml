@@ -319,8 +319,126 @@ nats            = "washington nationals"
 
 [team_aliases.soccer]
 # Soccer team naming is a mess — Odds API tends toward full club names
-# ("Manchester City"), coral33 sometimes shortens ("Kasimpasa"). Add
-# aliases when orphan logs surface a specific miss.
+# ("Manchester City") and short national-team forms ("USA", "South
+# Korea"); coral33 emits a different convention depending on league
+# (often full formal names like "United States", "Korea Republic").
+# Aliases below map coral33's form on the LEFT to Odds API canonical
+# on the RIGHT (both lowercased — the normalizer case-folds before
+# lookup).
+#
+# Seed populated 2026-06 for the 2026 FIFA World Cup. Add aliases as
+# orphan logs surface additional misses.
+
+# ─── FIFA World Cup 2026 — national teams ────────────────────────────
+# Common alias forms by region. Where coral33's form already matches
+# Odds API canonical (e.g. "brazil", "germany"), no entry is needed.
+"united states"                 = "usa"
+"united states of america"      = "usa"
+"u.s.a."                        = "usa"
+"korea republic"                = "south korea"
+"republic of korea"             = "south korea"
+"czechia"                       = "czech republic"
+"bosnia and herzegovina"        = "bosnia & herzegovina"
+"bosnia"                        = "bosnia & herzegovina"
+"côte d'ivoire"                 = "ivory coast"
+"cote d'ivoire"                 = "ivory coast"
+"türkiye"                       = "turkey"
+"turkiye"                       = "turkey"
+"cabo verde"                    = "cape verde"
+"cape verde islands"            = "cape verde"
+"dr congo"                      = "democratic republic of the congo"
+"d.r. congo"                    = "democratic republic of the congo"
+"congo dr"                      = "democratic republic of the congo"
+"trinidad and tobago"           = "trinidad & tobago"
+"saint kitts and nevis"         = "st. kitts & nevis"
+"saint vincent and the grenadines" = "st. vincent & the grenadines"
+"united arab emirates"          = "uae"
+"new zealand all whites"        = "new zealand"
+"ir iran"                       = "iran"
+"i.r. iran"                     = "iran"
+"islamic republic of iran"      = "iran"
+"north macedonia"               = "north macedonia"
+"fyr macedonia"                 = "north macedonia"
+
+# ─── English Premier League ──────────────────────────────────────────
+"man city"                      = "manchester city"
+"man. city"                     = "manchester city"
+"mcfc"                          = "manchester city"
+"man utd"                       = "manchester united"
+"man united"                    = "manchester united"
+"man. united"                   = "manchester united"
+"mufc"                          = "manchester united"
+"spurs"                         = "tottenham hotspur"
+"tottenham"                     = "tottenham hotspur"
+"wolves"                        = "wolverhampton wanderers"
+"brighton"                      = "brighton and hove albion"
+"brighton & hove albion"        = "brighton and hove albion"
+"newcastle"                     = "newcastle united"
+"west ham"                      = "west ham united"
+"leeds"                         = "leeds united"
+"forest"                        = "nottingham forest"
+"nott'm forest"                 = "nottingham forest"
+"sheff utd"                     = "sheffield united"
+"sheffield utd"                 = "sheffield united"
+"crystal palace"                = "crystal palace"
+
+# ─── Bundesliga ──────────────────────────────────────────────────────
+"bayern"                        = "bayern munich"
+"bayern münchen"                = "bayern munich"
+"fc bayern munich"              = "bayern munich"
+"dortmund"                      = "borussia dortmund"
+"bvb"                           = "borussia dortmund"
+"borussia mönchengladbach"      = "borussia monchengladbach"
+"b. mönchengladbach"            = "borussia monchengladbach"
+"bayer leverkusen"              = "bayer leverkusen"
+"b. leverkusen"                 = "bayer leverkusen"
+"rb leipzig"                    = "rb leipzig"
+"red bull leipzig"              = "rb leipzig"
+"eintracht"                     = "eintracht frankfurt"
+"e. frankfurt"                  = "eintracht frankfurt"
+
+# ─── La Liga ─────────────────────────────────────────────────────────
+"atletico"                      = "atletico madrid"
+"atlético"                      = "atletico madrid"
+"atlético madrid"               = "atletico madrid"
+"atleti"                        = "atletico madrid"
+"athletic"                      = "athletic bilbao"
+"athletic club"                 = "athletic bilbao"
+"real sociedad"                 = "real sociedad"
+"betis"                         = "real betis"
+"villarreal cf"                 = "villarreal"
+
+# ─── Serie A ─────────────────────────────────────────────────────────
+"inter"                         = "inter milan"
+"internazionale"                = "inter milan"
+"milan"                         = "ac milan"
+"ac milan"                      = "ac milan"
+"juve"                          = "juventus"
+"roma"                          = "as roma"
+"napoli"                        = "napoli"
+
+# ─── Ligue 1 ─────────────────────────────────────────────────────────
+"psg"                           = "paris saint-germain"
+"paris sg"                      = "paris saint-germain"
+"paris s.g."                    = "paris saint-germain"
+"paris saintgermain"            = "paris saint-germain"
+"marseille"                     = "olympique marseille"
+"om"                            = "olympique marseille"
+"lyon"                          = "olympique lyonnais"
+"ol"                            = "olympique lyonnais"
+"monaco"                        = "as monaco"
+
+# ─── MLS / Liga MX ───────────────────────────────────────────────────
+"la galaxy"                     = "los angeles galaxy"
+"lafc"                          = "los angeles fc"
+"red bulls"                     = "new york red bulls"
+"nycfc"                         = "new york city fc"
+"d.c. united"                   = "dc united"
+"new england"                   = "new england revolution"
+"club américa"                  = "club america"
+"américa"                       = "club america"
+"chivas"                        = "guadalajara"
+"club deportivo guadalajara"    = "guadalajara"
 
 [team_aliases.baseball_ncaa]
 # coral33 sends bare school names ("Duke", "North Carolina"); Odds API
