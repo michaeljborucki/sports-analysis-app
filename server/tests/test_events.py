@@ -288,7 +288,7 @@ async def test_stream_status_endpoint():
 
 async def _fast_flush_loop():
     """A flush loop that fires every 10ms — quicker turnaround for tests
-    than the production FLUSH_INTERVAL_S of 100ms. Otherwise identical
+    than the production FLUSH_INTERVAL_S (1.0s). Otherwise identical
     semantics."""
     import time
     while True:

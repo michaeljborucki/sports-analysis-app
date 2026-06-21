@@ -1,10 +1,11 @@
 """SSE event broadcaster for live odds updates.
 
 The cache writes (upsert + 3 purge methods) call `mark_dirty()`. A
-background `flush_loop` checks the dirty flag every 100ms; if set, it
-broadcasts a single "tick" event to every subscriber and resets the
-flag. Net effect: a burst of N upserts inside a 100ms window coalesces
-to one tick — bounded UI re-render rate regardless of WS push volume.
+background `flush_loop` checks the dirty flag every FLUSH_INTERVAL_S;
+if set, it broadcasts a single "tick" event to every subscriber and
+resets the flag. Net effect: a burst of N upserts inside the window
+coalesces to one tick — bounded UI re-render rate regardless of WS
+push volume.
 
 A separate `heartbeat_loop` broadcasts a no-op every 15s so that
 proxies / intermediaries don't drop the SSE connection during idle
@@ -40,16 +41,22 @@ logger = logging.getLogger(__name__)
 
 
 # Coalescing window — multiple mark_dirty() calls within this many
-# seconds emit one tick. 100ms is the rough UI re-render cadence;
-# faster would just churn the browser without informational value.
-FLUSH_INTERVAL_S = 0.1
+# seconds emit one tick. 1.0s is the floor at which client work
+# (SWR mutate(()=>true) → revalidate every key globally) stops
+# saturating the main thread. Kalshi/Polymarket WS streams push so
+# continuously that the dirty flag is essentially always set, so this
+# interval IS the effective tick rate. Still 15× faster than the old
+# 15s SWR polling. Don't drop below ~0.5s without re-checking client
+# CPU and server scanner load.
+FLUSH_INTERVAL_S = 1.0
 
 # Idle keepalive so proxies / NAT translators don't drop the SSE
 # connection. 15s is well inside every common idle-timeout default.
 HEARTBEAT_INTERVAL_S = 15.0
 
-# Per-subscriber bounded queue. 256 is generous — at 10 ticks/s the
-# buffer holds ~25s of events for a stuck client before drops start.
+# Per-subscriber bounded queue. 256 is generous — at 1 tick/s the
+# buffer holds ~4 minutes of events for a stuck client before drops
+# start.
 QUEUE_MAX = 256
 
 
@@ -69,7 +76,7 @@ def mark_dirty() -> None:
 
     Cheap (sets a boolean). Safe to call from any context — sync code,
     async code, no event loop running yet. Multiple calls within a
-    100ms flush window coalesce to a single broadcast tick.
+    FLUSH_INTERVAL_S window coalesce to a single broadcast tick.
 
     Hooked at `OddsCache._bump_version()` so every state-changing op
     (upsert, purges) flows through here uniformly. Calls from outside
