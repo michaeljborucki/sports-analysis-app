@@ -86,6 +86,41 @@ CREATE TABLE IF NOT EXISTS balance_snapshots (
 
 CREATE INDEX IF NOT EXISTS idx_balance_snap_date
   ON balance_snapshots(customer_id, local_date);
+
+-- Unified bet ledger across every source: coral33 mirror, kalshi
+-- portfolio fills, polymarket trades, and CSV imports. One row per
+-- ticket / fill / position / import row. CLV is computed at query
+-- time against `closing_lines` — never persisted here.
+CREATE TABLE IF NOT EXISTS bets (
+  source_book      TEXT NOT NULL,
+  external_id      TEXT NOT NULL,
+  customer_id      TEXT,
+  accepted_at      TEXT NOT NULL,
+  settled_at       TEXT,
+  status           TEXT NOT NULL,
+  wager_type       TEXT NOT NULL,
+  total_picks      INTEGER NOT NULL DEFAULT 1,
+  sport_key        TEXT,
+  event_id         TEXT,
+  home_team        TEXT,
+  away_team        TEXT,
+  market_key       TEXT,
+  outcome_name     TEXT,
+  outcome_point    REAL NOT NULL DEFAULT 0.0,
+  odds_american    INTEGER,
+  stake            REAL NOT NULL,
+  to_win           REAL,
+  settled_amount   REAL,
+  is_free_play     INTEGER NOT NULL DEFAULT 0,
+  raw_description  TEXT,
+  imported_at      TEXT,
+  PRIMARY KEY (source_book, external_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_bets_accepted ON bets(accepted_at);
+CREATE INDEX IF NOT EXISTS idx_bets_event    ON bets(event_id);
+CREATE INDEX IF NOT EXISTS idx_bets_book     ON bets(source_book);
+CREATE INDEX IF NOT EXISTS idx_bets_status   ON bets(status);
 """
 
 

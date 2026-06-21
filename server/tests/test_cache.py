@@ -148,3 +148,28 @@ def test_version_bumps_on_stale_and_book_purge(cache: OddsCache):
     removed = cache.purge_live_rows_for_book("coral33", future)
     assert removed == 1
     assert cache.version == v_before_live + 1
+
+
+def test_bets_table_created(tmp_path):
+    from server.odds.cache import OddsCache
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    with cache._conn() as c:
+        cols = {r[1] for r in c.execute("PRAGMA table_info(bets)")}
+    assert {
+        "source_book", "external_id", "customer_id", "accepted_at",
+        "settled_at", "status",
+        "wager_type", "total_picks", "sport_key", "event_id",
+        "home_team", "away_team", "market_key", "outcome_name",
+        "outcome_point", "odds_american", "stake", "to_win",
+        "settled_amount", "is_free_play", "raw_description", "imported_at",
+    }.issubset(cols)
+
+
+def test_bets_indexes_created(tmp_path):
+    from server.odds.cache import OddsCache
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    with cache._conn() as c:
+        names = {r[0] for r in c.execute("SELECT name FROM sqlite_master WHERE type='index'")}
+    assert {"idx_bets_accepted", "idx_bets_event", "idx_bets_book", "idx_bets_status"}.issubset(names)
