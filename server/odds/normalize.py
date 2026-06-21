@@ -175,7 +175,7 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
     on every emitted BookPrice is the *effective* (post-commission) price.
     The cache still stores the listed price; commission is applied on read.
     """
-    from .best_odds import pick_best_price, median_american_odds
+    from .best_odds import best_price_dict, median_american_odds
     from .commissions import effective_american
 
     # M7: outcome-name collision detection — log once per address per
@@ -235,14 +235,7 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
         for mk_key, outcomes in ev["markets_by_key"].items():
             out_list = []
             for out in outcomes.values():
-                price_tuples = [(p["bookmaker_key"], p["price_american"]) for p in out["prices"]]
-                best = pick_best_price(price_tuples)
-                best_price = None
-                if best is not None:
-                    best_price = next(
-                        p for p in out["prices"]
-                        if p["bookmaker_key"] == best[0] and p["price_american"] == best[1]
-                    )
+                best_price = best_price_dict(out["prices"])
                 consensus = median_american_odds([p["price_american"] for p in out["prices"]])
                 out_list.append({
                     "outcome_name": out["outcome_name"],

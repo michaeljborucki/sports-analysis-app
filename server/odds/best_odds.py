@@ -19,6 +19,21 @@ def pick_best_price(prices: list[tuple[str, int]]) -> tuple[str, int] | None:
     return max(prices, key=lambda p: _american_to_payout_multiplier(p[1]))
 
 
+def best_price_dict(prices: list[dict]) -> dict | None:
+    """Pick the dict from `prices` whose `price_american` gives the
+    highest payout multiplier to the bettor. Returns None for an empty
+    list.
+
+    Coexists with `pick_best_price` (tuple API, retained for callers
+    that work with (bookmaker_key, american_odds) tuples). This dict
+    API saves the redundant linear scan in `rows_to_games` to recover
+    the original dict from a (book, price) tuple match.
+    """
+    if not prices:
+        return None
+    return max(prices, key=lambda p: _american_to_payout_multiplier(p["price_american"]))
+
+
 def _prob_to_american(p: float) -> int:
     if p <= 0 or p >= 1:
         return 0
