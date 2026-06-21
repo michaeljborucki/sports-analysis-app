@@ -130,3 +130,33 @@ class KalshiEventMatcher:
             "away_team": canon_away,
             "commence_time": canon_commence,
         }
+
+    def match_multi_anchor(
+        self,
+        sport_key: str,
+        home: str, away: str,
+        candidate_commences: list[datetime],
+        tight_window_min: int = 180,
+    ) -> dict | None:
+        """M3: try each candidate anchor at `tight_window_min`. Return
+        the match closest in time to any anchor, or None if no anchor
+        hits. Caller falls back to the existing single-anchor wide-
+        window `match()` when this returns None.
+        """
+        best: tuple[float, dict] | None = None
+        for anchor in candidate_commences:
+            result = self.match(
+                sport_key, home, away, anchor,
+                window_minutes=tight_window_min,
+            )
+            if result is None:
+                continue
+            ev_ts = result["commence_time"]
+            if isinstance(ev_ts, str):
+                ev_ts = datetime.fromisoformat(ev_ts.replace("Z", "+00:00"))
+            if ev_ts.tzinfo is None:
+                ev_ts = ev_ts.replace(tzinfo=timezone.utc)
+            diff = abs((ev_ts - anchor).total_seconds())
+            if best is None or diff < best[0]:
+                best = (diff, result)
+        return best[1] if best is not None else None

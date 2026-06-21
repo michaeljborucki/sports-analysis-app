@@ -213,6 +213,38 @@ class KalshiFetcher:
             return []
         return self._ingestor.registered_tickers()
 
+    def _smart_match_event(self, matcher):
+        """M3: build a match_event callable that prefers multi-anchor
+        scan when the normalizer signals a date-only ticker (via the
+        wide _DATE_ONLY_MATCH_WINDOW_MIN). Falls back to the existing
+        single-anchor wide-window match() if no anchor hits.
+        """
+        from datetime import datetime as _dt, timezone as _tz
+        from zoneinfo import ZoneInfo
+        from .._anchor_table import anchors_for_sport, TIGHT_WINDOW_MIN
+        from .normalizer import _DATE_ONLY_MATCH_WINDOW_MIN
+        _ET = ZoneInfo("America/New_York")
+
+        def _match(sport_k: str, home: str, away: str, anchor, window_minutes=None):
+            if window_minutes == _DATE_ONLY_MATCH_WINDOW_MIN:
+                anchor_et = anchor.astimezone(_ET) if anchor.tzinfo else anchor
+                candidates = [
+                    _dt(anchor_et.year, anchor_et.month, anchor_et.day, h, m,
+                        tzinfo=_ET).astimezone(_tz.utc)
+                    for h, m in anchors_for_sport(sport_k)
+                ]
+                tight = matcher.match_multi_anchor(
+                    sport_k, home, away, candidates,
+                    tight_window_min=TIGHT_WINDOW_MIN,
+                )
+                if tight is not None:
+                    return tight
+            return matcher.match(
+                sport_k, home, away, anchor, window_minutes=window_minutes,
+            )
+
+        return _match
+
     def stop_all(self) -> dict:
         if not self._running:
             return {"status": "already_stopped"}
@@ -328,7 +360,7 @@ class KalshiFetcher:
                 markets,
                 series_ticker=series_ticker,
                 fetched_at=now,
-                match_event=matcher.match,
+                match_event=self._smart_match_event(matcher),
             )
             if rows:
                 self.cache.upsert(rows)

@@ -265,12 +265,40 @@ class PolymarketFetcher:
             return
 
         matcher = self._matcher()
+
+        # M3: when the normalizer calls match_event with a noon-ET
+        # anchor (the date-only convention from _noon_et_anchor), try
+        # the multi-anchor scan at per-sport candidate start times first;
+        # fall back to the original single-anchor wide-window match
+        # when no anchor hits. Eliminates the random-pick behavior on
+        # same-day back-to-backs between the same two teams.
+        from datetime import datetime as _dt, timezone as _tz
+        from zoneinfo import ZoneInfo
+        from .._anchor_table import anchors_for_sport, TIGHT_WINDOW_MIN
+        _ET = ZoneInfo("America/New_York")
+
+        def _smart_match_event(sport_k: str, a: str, b: str, anchor):
+            anchor_et = anchor.astimezone(_ET) if anchor.tzinfo else anchor
+            if anchor_et.hour == 12 and anchor_et.minute == 0:
+                candidates = [
+                    _dt(anchor_et.year, anchor_et.month, anchor_et.day, h, m,
+                        tzinfo=_ET).astimezone(_tz.utc)
+                    for h, m in anchors_for_sport(sport_k)
+                ]
+                tight = matcher.match_multi_anchor(
+                    sport_k, a, b, candidates,
+                    tight_window_min=TIGHT_WINDOW_MIN,
+                )
+                if tight is not None:
+                    return tight
+            return matcher.match(sport_k, a, b, anchor)
+
         rows = normalize_events(
             events,
             sport_key=sport_key,
             slug_prefixes=sport_cfg.slug_prefixes,
             fetched_at=now,
-            match_event=matcher.match,
+            match_event=_smart_match_event,
         )
 
         if rows:
