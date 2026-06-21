@@ -124,21 +124,37 @@ class PolymarketIngestor:
         asks = msg.get("asks") or []
         if not asks:
             return 0
-        # min(price) across all levels = best (cheapest) ask. Defensive
-        # against array-ordering changes upstream.
-        prices: list[float] = []
+        # Find the (price, size) at the min-price level = best (cheapest)
+        # ask. Defensive against array-ordering changes upstream — we
+        # don't trust either ascending or descending sort.
+        best_price: float | None = None
+        best_size: float | None = None
         for ask in asks:
             if not isinstance(ask, dict):
                 continue
             try:
-                prices.append(float(ask.get("price")))
+                p = float(ask.get("price"))
+                s = float(ask.get("size"))
             except (TypeError, ValueError):
                 continue
-        if not prices:
+            if best_price is None or p < best_price:
+                best_price = p
+                best_size = s
+        if best_price is None:
             return 0
-        best_ask = min(prices)
+        # Dollar size fillable at the displayed price. The fee-adjusted
+        # American odds we store represent the cost-per-contract; the
+        # raw dollar size is `price × shares` either way (the fee is
+        # paid on top by the bettor but it's already baked into our
+        # American odds, so the stake here matches the displayed odds).
+        max_stake_dollars: float | None = None
+        if best_size is not None and best_size > 0:
+            max_stake_dollars = round(best_price * best_size, 4) or None
 
-        return self._upsert_with_price(template, best_ask, msg.get("timestamp"))
+        return self._upsert_with_price(
+            template, best_price, msg.get("timestamp"),
+            max_stake_dollars=max_stake_dollars,
+        )
 
     def _process_price_change(self, msg: dict) -> int:
         """Delta. The message has an `asset_id` at the top level AND a
@@ -188,10 +204,15 @@ class PolymarketIngestor:
 
     def _upsert_with_price(
         self, template: dict, best_ask: float, timestamp,
+        max_stake_dollars: float | None = None,
     ) -> int:
         """Convert best_ask (decimal probability 0..1) to American odds,
         stamp fetched_at (prefer WS-server timestamp, fallback wall clock),
         and upsert. Returns 1 on success, 0 on filter rejection / DB error.
+
+        When max_stake_dollars is None (e.g. on price_change deltas that
+        don't carry size), cache.upsert's COALESCE clause preserves any
+        previously-captured non-null value from a prior book event.
         """
         american = yes_to_american(best_ask)
         if american is None:
@@ -201,6 +222,7 @@ class PolymarketIngestor:
             **template,
             "price_american": int(american),
             "fetched_at": fetched_at,
+            "max_stake_dollars": max_stake_dollars,
         }
         try:
             self.cache.upsert([new_row])
