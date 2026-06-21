@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from ..odds.cache import OddsCache
+from ..odds.coalesce import memoized_coalesced
 from ..odds.low_hold import scan_all_low_hold
 from ..odds.market_config import is_prop_market
 from ..odds.normalize import rows_to_games
@@ -49,29 +50,29 @@ def build_router(cache: OddsCache) -> APIRouter:
     ) -> LowHoldResponse:
         # `cache.version` folds in the OddsCache's monotonic state version
         # so this memo can survive past its 20s TTL during quiet stretches.
-        # See server/api/ev.py for the full rationale.
+        # `memoized_coalesced` additionally collapses simultaneous duplicate
+        # requests into one underlying scan. See server/api/ev.py + the
+        # docstring on server/odds/coalesce.py for the full rationale.
         cache_key = ("low_hold", str(cache.path), cache.version, books, max_hold_pct)
-        hit = memo.get(cache_key)
-        if hit is not None:
-            return hit
 
-        books_set: set[str] | None = None
-        if books.strip():
-            books_set = {b for b in books.split(",") if b}
+        async def _compute() -> LowHoldResponse:
+            books_set: set[str] | None = None
+            if books.strip():
+                books_set = {b for b in books.split(",") if b}
 
-        now = datetime.now(timezone.utc)
-        rows = [
-            r for r in cache.all_current() if not is_prop_market(r["market_key"])
-        ]
-        games = rows_to_games(rows, now=now)
-        ops = scan_all_low_hold(games, books_filter=books_set, max_hold_pct=max_hold_pct)
+            now = datetime.now(timezone.utc)
+            rows = [
+                r for r in cache.all_current() if not is_prop_market(r["market_key"])
+            ]
+            games = rows_to_games(rows, now=now)
+            ops = scan_all_low_hold(games, books_filter=books_set, max_hold_pct=max_hold_pct)
 
-        response = LowHoldResponse(
-            opportunities=[LowHoldOpportunity.model_validate(o) for o in ops],
-            scanned_at=now,
-            max_hold_pct=max_hold_pct,
-        )
-        memo.set(cache_key, response)
-        return response
+            return LowHoldResponse(
+                opportunities=[LowHoldOpportunity.model_validate(o) for o in ops],
+                scanned_at=now,
+                max_hold_pct=max_hold_pct,
+            )
+
+        return await memoized_coalesced(memo, cache_key, _compute)
 
     return router

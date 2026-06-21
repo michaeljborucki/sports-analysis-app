@@ -15,6 +15,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from ..odds.cache import OddsCache
+from ..odds.coalesce import memoized_coalesced
 from ..odds.normalize import rows_to_games
 from ..odds.profit_boost import scan_all_profit_boost
 from ..util import TTLCache
@@ -92,43 +93,45 @@ def build_router(cache: OddsCache) -> APIRouter:
             plus-odds lines only (typical "longshot boost" promo behavior).
         """
         boost_pct = max(0.0, min(100.0, float(boost_pct)))
+        # `cache.version` folds in the OddsCache's monotonic state version so
+        # this memo survives past its 20s TTL during quiet stretches.
+        # `memoized_coalesced` collapses simultaneous duplicate requests into
+        # one underlying scan. See server/odds/coalesce.py for details.
         cache_key = (
-            "pb", str(cache.path), boost_pct, books, boost_books,
+            "pb", str(cache.path), cache.version, boost_pct, books, boost_books,
             min_conversion, min_boost_odds,
         )
-        hit = memo.get(cache_key)
-        if hit is not None:
-            return hit
 
-        hedge_books_set: set[str] | None = None
-        if books.strip():
-            hedge_books_set = {b for b in books.split(",") if b}
-        boost_books_set: set[str] | None = None
-        if boost_books.strip():
-            boost_books_set = {b for b in boost_books.split(",") if b}
+        async def _compute() -> ProfitBoostResponse:
+            hedge_books_set: set[str] | None = None
+            if books.strip():
+                hedge_books_set = {b for b in books.split(",") if b}
+            boost_books_set: set[str] | None = None
+            if boost_books.strip():
+                boost_books_set = {b for b in boost_books.split(",") if b}
 
-        now = datetime.now(timezone.utc)
-        rows = cache.all_current()
-        games = rows_to_games(rows, now=now)
+            now = datetime.now(timezone.utc)
+            rows = cache.all_current()
+            games = rows_to_games(rows, now=now)
 
-        opps = scan_all_profit_boost(
-            games,
-            hedge_books_filter=hedge_books_set,
-            boost_books_filter=boost_books_set,
-            boost_pct=boost_pct,
-            min_boost_odds=min_boost_odds,
-            min_conversion_pct=min_conversion,
-        )
+            opps = scan_all_profit_boost(
+                games,
+                hedge_books_filter=hedge_books_set,
+                boost_books_filter=boost_books_set,
+                boost_pct=boost_pct,
+                min_boost_odds=min_boost_odds,
+                min_conversion_pct=min_conversion,
+            )
 
-        response = ProfitBoostResponse(
-            opportunities=[
-                ProfitBoostOpportunity.model_validate(o) for o in opps
-            ],
-            scanned_at=now,
-            boost_pct=boost_pct,
-            min_conversion_pct=min_conversion,
-        )
-        memo.set(cache_key, response)
-        return response
+            return ProfitBoostResponse(
+                opportunities=[
+                    ProfitBoostOpportunity.model_validate(o) for o in opps
+                ],
+                scanned_at=now,
+                boost_pct=boost_pct,
+                min_conversion_pct=min_conversion,
+            )
+
+        return await memoized_coalesced(memo, cache_key, _compute)
 
     return router

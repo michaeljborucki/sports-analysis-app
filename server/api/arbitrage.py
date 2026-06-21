@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from ..odds.arbitrage import scan_all_arbs
 from ..odds.cache import OddsCache
+from ..odds.coalesce import memoized_coalesced
 from ..odds.market_config import is_prop_market
 from ..odds.normalize import rows_to_games
 from ..util import TTLCache
@@ -56,31 +57,34 @@ def build_router(cache: OddsCache) -> APIRouter:
         # `cache.version` folds in the OddsCache's monotonic state version
         # so this memo can survive past its 20s TTL during quiet stretches.
         # See server/api/ev.py for the full rationale.
+        # `memoized_coalesced` ALSO collapses simultaneous duplicate requests
+        # into one underlying scan (e.g. the Edges page firing arb+lh+ev+fb
+        # in the same SWR tick, or two tabs sharing a request burst). See
+        # server/odds/coalesce.py for the in-flight registry semantics.
         cache_key = ("arb", str(cache.path), cache.version, books)
-        hit = memo.get(cache_key)
-        if hit is not None:
-            return hit
 
-        books_set: set[str] | None = None
-        if books.strip():
-            books_set = {b for b in books.split(",") if b}
+        async def _compute() -> ArbResponse:
+            books_set: set[str] | None = None
+            if books.strip():
+                books_set = {b for b in books.split(",") if b}
 
-        now = datetime.now(timezone.utc)
-        # Skip prop markets at the scan stage — they're too noisy and a different
-        # pairing model (pitcher Cole O/U 6.5 isn't an arb with pitcher Cole O/U 7).
-        rows = [
-            r for r in cache.all_current()
-            if not is_prop_market(r["market_key"])
-        ]
-        game_dicts = rows_to_games(rows, now=now)
-        opps = scan_all_arbs(game_dicts, books_filter=books_set)
+            now = datetime.now(timezone.utc)
+            # Skip prop markets at the scan stage — they're too noisy and a
+            # different pairing model (pitcher Cole O/U 6.5 isn't an arb with
+            # pitcher Cole O/U 7).
+            rows = [
+                r for r in cache.all_current()
+                if not is_prop_market(r["market_key"])
+            ]
+            game_dicts = rows_to_games(rows, now=now)
+            opps = scan_all_arbs(game_dicts, books_filter=books_set)
 
-        response = ArbResponse(
-            opportunities=[ArbOpportunity.model_validate(o) for o in opps],
-            scanned_at=now,
-            book_count=len(books_set) if books_set is not None else -1,
-        )
-        memo.set(cache_key, response)
-        return response
+            return ArbResponse(
+                opportunities=[ArbOpportunity.model_validate(o) for o in opps],
+                scanned_at=now,
+                book_count=len(books_set) if books_set is not None else -1,
+            )
+
+        return await memoized_coalesced(memo, cache_key, _compute)
 
     return router

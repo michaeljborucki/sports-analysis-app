@@ -160,3 +160,63 @@ def test_low_hold_memo_hits_when_version_unchanged(cache, monkeypatch):
     assert call_count["n"] == 1, (
         f"expected 1 scan (memo hit), got {call_count['n']}"
     )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Coalescing — simultaneous-request behavior
+# ──────────────────────────────────────────────────────────────────────
+#
+# The memo above catches the *serial* case (B arrives after A returns,
+# B hits memo). Coalescing catches the *concurrent* case (A and B both
+# arrive before A's scan completes → both should share A's work).
+# Verified by injecting an artificially-slow scan so the requests
+# actually overlap in time.
+
+
+async def test_arbitrage_coalesces_simultaneous_requests(cache, monkeypatch):
+    """Three concurrent /api/arbitrage requests on the same cache state
+    must trigger scan_all_arbs exactly ONCE. They all share the first
+    caller's task via the coalesce helper."""
+    import asyncio
+    import time
+    import httpx
+    from httpx import ASGITransport
+    import server.api.arbitrage as arb_mod
+    from server.odds import coalesce
+
+    _seed_two_book_h2h(cache)
+    # Make sure no in-flight state leaks in from another test in the module.
+    coalesce._inflight.clear()
+
+    call_count = {"n": 0}
+    real_scan = arb_mod.scan_all_arbs
+
+    def slow_scan(*args, **kwargs):
+        # Artificial delay so the second and third requests have time
+        # to join the in-flight task before the first one returns.
+        call_count["n"] += 1
+        time.sleep(0.10)
+        return real_scan(*args, **kwargs)
+
+    monkeypatch.setattr(arb_mod, "scan_all_arbs", slow_scan)
+
+    app = FastAPI()
+    app.include_router(build_arb_router(cache))
+
+    async with httpx.AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://t"
+    ) as client:
+        r1, r2, r3 = await asyncio.gather(
+            client.get("/api/arbitrage"),
+            client.get("/api/arbitrage"),
+            client.get("/api/arbitrage"),
+        )
+
+    assert r1.status_code == 200
+    assert r2.status_code == 200
+    assert r3.status_code == 200
+    assert r1.json() == r2.json() == r3.json()
+    # Coalescing: ONE underlying scan despite three concurrent requests.
+    assert call_count["n"] == 1, (
+        f"expected 1 scan (coalesced), got {call_count['n']}"
+    )

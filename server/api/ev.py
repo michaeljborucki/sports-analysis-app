@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from ..odds.arbitrage import scan_all_arbs
 from ..odds.cache import OddsCache
+from ..odds.coalesce import memoized_coalesced
 from ..odds.ev import SHARP_BOOKS, scan_all_ev
 from ..odds.normalize import rows_to_games
 from ..util import TTLCache
@@ -102,73 +103,71 @@ def build_router(cache: OddsCache) -> APIRouter:
             max_longshot_odds, stale_seconds, max_results, tag_arb, sort,
             wager_filter,
         )
-        hit = memo.get(cache_key)
-        if hit is not None:
-            return hit
 
-        books_set: set[str] | None = None
-        if books.strip():
-            books_set = {b for b in books.split(",") if b}
+        async def _compute() -> EVResponse:
+            books_set: set[str] | None = None
+            if books.strip():
+                books_set = {b for b in books.split(",") if b}
 
-        sharp_set = SHARP_BOOKS
-        if sharp_books.strip():
-            candidate = {b for b in sharp_books.split(",") if b}
-            if candidate:
-                sharp_set = frozenset(candidate)
+            sharp_set = SHARP_BOOKS
+            if sharp_books.strip():
+                candidate = {b for b in sharp_books.split(",") if b}
+                if candidate:
+                    sharp_set = frozenset(candidate)
 
-        now = datetime.now(timezone.utc)
-        # Player props are included: outcomes are encoded as
-        # "<Player> Over/Under/Yes/No" and the scanner pairs per-player via
-        # market-aware bucket logic in ev._pair_bucket.
-        rows = cache.all_current()
-        games = rows_to_games(rows, now=now)
+            now = datetime.now(timezone.utc)
+            # Player props are included: outcomes are encoded as
+            # "<Player> Over/Under/Yes/No" and the scanner pairs per-player
+            # via market-aware bucket logic in ev._pair_bucket.
+            rows = cache.all_current()
+            games = rows_to_games(rows, now=now)
 
-        arb_keys: set[tuple] | None = None
-        if tag_arb:
-            arb_rows = scan_all_arbs(games)
-            arb_keys = {
-                (a["event_id"], a["market_kind"], a["point"])
-                for a in arb_rows
-            }
+            arb_keys: set[tuple] | None = None
+            if tag_arb:
+                arb_rows = scan_all_arbs(games)
+                arb_keys = {
+                    (a["event_id"], a["market_kind"], a["point"])
+                    for a in arb_rows
+                }
 
-        opps = scan_all_ev(
-            games,
-            now=now,
-            books_filter=books_set,
-            sharp_books=sharp_set,
-            min_ev_pct=min_ev,
-            max_longshot_american=max_longshot_odds,
-            stale_seconds=float(stale_seconds),
-            arb_keys=arb_keys,
-            max_results=max_results,
-            sort=sort if sort in ("desc", "asc", "bidir") else "desc",
-        )
+            opps = scan_all_ev(
+                games,
+                now=now,
+                books_filter=books_set,
+                sharp_books=sharp_set,
+                min_ev_pct=min_ev,
+                max_longshot_american=max_longshot_odds,
+                stale_seconds=float(stale_seconds),
+                arb_keys=arb_keys,
+                max_results=max_results,
+                sort=sort if sort in ("desc", "asc", "bidir") else "desc",
+            )
 
-        wf = wager_filter if wager_filter in ("any", "straight", "parlay") else "any"
-        if wf == "straight":
-            # Keep non-coral33 rows (always straight-bettable) and coral33
-            # rows tagged straight or both. Drops parlay-only.
-            opps = [
-                o for o in opps
-                if o.get("book") != "coral33"
-                or o.get("wager_type") in ("straight", "both")
-            ]
-        elif wf == "parlay":
-            # Coral33 rows with parlay tab presence only. Other books can't
-            # be parlayed with coral33 anyway, so they're dropped.
-            opps = [
-                o for o in opps
-                if o.get("book") == "coral33"
-                and o.get("wager_type") in ("parlay", "both")
-            ]
+            wf = wager_filter if wager_filter in ("any", "straight", "parlay") else "any"
+            if wf == "straight":
+                # Keep non-coral33 rows (always straight-bettable) and coral33
+                # rows tagged straight or both. Drops parlay-only.
+                opps = [
+                    o for o in opps
+                    if o.get("book") != "coral33"
+                    or o.get("wager_type") in ("straight", "both")
+                ]
+            elif wf == "parlay":
+                # Coral33 rows with parlay tab presence only. Other books
+                # can't be parlayed with coral33 anyway, so they're dropped.
+                opps = [
+                    o for o in opps
+                    if o.get("book") == "coral33"
+                    and o.get("wager_type") in ("parlay", "both")
+                ]
 
-        response = EVResponse(
-            opportunities=[EVOpportunity.model_validate(o) for o in opps],
-            scanned_at=now,
-            min_ev_pct=min_ev,
-            sharp_anchor_books=sorted(sharp_set),
-        )
-        memo.set(cache_key, response)
-        return response
+            return EVResponse(
+                opportunities=[EVOpportunity.model_validate(o) for o in opps],
+                scanned_at=now,
+                min_ev_pct=min_ev,
+                sharp_anchor_books=sorted(sharp_set),
+            )
+
+        return await memoized_coalesced(memo, cache_key, _compute)
 
     return router
