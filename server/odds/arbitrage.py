@@ -79,6 +79,28 @@ def _try_pair(
     return best_a, best_b, roi
 
 
+def _clamp_total_stake(
+    sizes: list[float | None], stake_pcts: list[float],
+) -> float | None:
+    """Largest total stake that respects every leg's fillable depth.
+
+    For each leg, the max total = size / (stake_pct / 100). The
+    overall clamp is the min across legs. If any leg's size is None
+    (unknown — typical for sportsbook rows), we can't clamp: return
+    None so the UI doesn't display a misleading cap.
+    """
+    if any(s is None for s in sizes):
+        return None
+    caps: list[float] = []
+    for size, pct in zip(sizes, stake_pcts):
+        if pct <= 0:
+            return None
+        caps.append(float(size) / (pct / 100.0))
+    if not caps:
+        return None
+    return round(min(caps), 2)
+
+
 def _emit(
     game: dict,
     market_kind: str,
@@ -92,6 +114,11 @@ def _emit(
     imp_a = american_to_implied_prob(best_a["price_american"])
     imp_b = american_to_implied_prob(best_b["price_american"])
     total = imp_a + imp_b
+    stake_a_pct = imp_a / total * 100.0
+    stake_b_pct = imp_b / total * 100.0
+    a_size = best_a.get("max_stake_dollars")
+    b_size = best_b.get("max_stake_dollars")
+    max_total = _clamp_total_stake([a_size, b_size], [stake_a_pct, stake_b_pct])
     return {
         "sport_key": game.get("sport_key", "mlb"),
         "event_id": game["event_id"],
@@ -101,20 +128,23 @@ def _emit(
         "market_kind": market_kind,       # "h2h" | "spreads" | "totals"
         "point": point,
         "roi_pct": roi * 100.0,
+        "max_total_stake_dollars": max_total,
         "sides": [
             {
                 "outcome_name": side_a["outcome_name"],
                 "book": best_a["bookmaker_key"],
                 "price_american": best_a["price_american"],
                 "point": best_a.get("point"),
-                "stake_pct": imp_a / total * 100.0,
+                "stake_pct": stake_a_pct,
+                "max_stake_dollars": a_size,
             },
             {
                 "outcome_name": side_b["outcome_name"],
                 "book": best_b["bookmaker_key"],
                 "price_american": best_b["price_american"],
                 "point": best_b.get("point"),
-                "stake_pct": imp_b / total * 100.0,
+                "stake_pct": stake_b_pct,
+                "max_stake_dollars": b_size,
             },
         ],
     }
@@ -157,6 +187,9 @@ def _emit_three_way(
 ) -> dict:
     imps = [american_to_implied_prob(b["price_american"]) for b in bests]
     total = sum(imps)
+    stake_pcts = [imp / total * 100.0 for imp in imps]
+    sizes = [b.get("max_stake_dollars") for b in bests]
+    max_total = _clamp_total_stake(sizes, stake_pcts)
     return {
         "sport_key": game.get("sport_key", "mlb"),
         "event_id": game["event_id"],
@@ -166,6 +199,7 @@ def _emit_three_way(
         "market_kind": market_kind,
         "point": None,
         "roi_pct": roi * 100.0,
+        "max_total_stake_dollars": max_total,
         "sides": [
             {
                 "outcome_name": s["outcome_name"],
@@ -173,6 +207,7 @@ def _emit_three_way(
                 "price_american": b["price_american"],
                 "point": b.get("point"),
                 "stake_pct": imp / total * 100.0,
+                "max_stake_dollars": b.get("max_stake_dollars"),
             }
             for s, b, imp in zip(sides, bests, imps)
         ],

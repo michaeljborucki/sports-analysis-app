@@ -162,6 +162,11 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
             # other book — propagated all the way to the EVOpportunity so
             # the frontend can filter on parlay-eligibility.
             "wager_type": r.get("wager_type"),
+            # Kalshi/Polymarket only: top-of-book fillable dollar size at
+            # the displayed price. NULL for sportsbook rows (no depth data).
+            # Consumed by the arb scanner to clamp stake recommendations
+            # on cross-venue opportunities.
+            "max_stake_dollars": r.get("max_stake_dollars"),
         })
         now_utc = now if now.tzinfo else now.replace(tzinfo=timezone.utc)
         age = max(0, int((now_utc - fetched_at).total_seconds()))

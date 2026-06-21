@@ -20,6 +20,7 @@ class ArbSide(BaseModel):
     price_american: int
     point: float | None = None
     stake_pct: float
+    max_stake_dollars: float | None = None
 
 
 class ArbOpportunity(BaseModel):
@@ -32,6 +33,7 @@ class ArbOpportunity(BaseModel):
     point: float | None = None
     roi_pct: float
     sides: list[ArbSide]
+    max_total_stake_dollars: float | None = None
 
 
 class ArbResponse(BaseModel):
