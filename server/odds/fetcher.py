@@ -4,7 +4,7 @@ import asyncio
 import logging
 import os
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Callable
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -33,6 +33,13 @@ logger = logging.getLogger(__name__)
 # this if your plan tier supports more (Odds API publishes per-tier
 # req/sec caps on their pricing page).
 ODDS_API_CONCURRENCY = max(1, int(os.environ.get("ODDS_API_CONCURRENCY", "4")))
+
+
+# A5: re-resolve sport→Odds-API key mappings every 24h so tournament
+# rotations (ATP draws, soccer matchdays) get picked up without a
+# server restart. On refresh failure with a prior good cache, keep
+# the cached set AND don't update the timestamp — next caller retries.
+_RESOLVED_KEYS_TTL = timedelta(hours=24)
 
 
 class FetcherRegistry:
@@ -64,7 +71,7 @@ class FetcherRegistry:
         self._running = False
         self._last_error: dict[str, str] = {}
         self._event_refresh_ts: dict[str, float] = {}
-        self._resolved_keys: dict[str, list[str]] = {}
+        self._resolved_keys: dict[str, tuple[list[str], datetime]] = {}
         self._market_cfg: dict[str, MarketConfig] = {}
         self._event_sport_map: dict[str, str] = {}
 
@@ -243,17 +250,52 @@ class FetcherRegistry:
             await self._run_per_event(sport, tier)
         return run
 
-    async def _resolve_keys(self, sport: Sport) -> list[str]:
+    async def _resolve_keys(
+        self, sport: Sport, now: datetime | None = None,
+    ) -> list[str]:
+        """Resolve a sport's Odds-API key set, cached with 24h TTL.
+
+        On refresh failure (cached entry exists, TTL expired, resolve
+        raises), returns the previously-cached keys unchanged AND does
+        not update the timestamp — next call retries on whatever
+        cadence the caller runs.
+
+        On first-time failure (no cached entry, resolve raises), falls
+        back to the static-key subset (strips pattern entries) and
+        caches that with the current timestamp to avoid retry-storming
+        on every tier tick.
+
+        `now` is injected for testability; production callers omit it.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
         cached = self._resolved_keys.get(sport.key)
         if cached is not None:
-            return cached
+            keys, cached_at = cached
+            if now - cached_at < _RESOLVED_KEYS_TTL:
+                return keys
+        # Resolve fresh (first-time OR TTL expired).
         try:
             keys = await self.client.resolve_sport_keys(sport.odds_api_sport_keys)
         except Exception:
             logger.exception("resolve_sport_keys failed for %s", sport.key)
+            if cached is not None:
+                # Refresh failure with a prior good cache → keep it,
+                # don't update timestamp. Next call retries.
+                return cached[0]
+            # First-time failure → fall back to static keys, cache to
+            # avoid retry-storm on every tier tick.
             keys = [k for k in sport.odds_api_sport_keys if not k.endswith("*")]
-        self._resolved_keys[sport.key] = keys
-        logger.info("sport %s resolves to Odds API keys: %s", sport.key, keys)
+        # Log when refresh changed the resolved set (new tournaments
+        # rotated in, old ones out).
+        if cached is not None and keys != cached[0]:
+            logger.info(
+                "sport %s key set changed: %s → %s",
+                sport.key, cached[0], keys,
+            )
+        else:
+            logger.info("sport %s resolves to Odds API keys: %s", sport.key, keys)
+        self._resolved_keys[sport.key] = (keys, now)
         return keys
 
     async def _run_main(self, sport: Sport, tier: TierConfig) -> None:
