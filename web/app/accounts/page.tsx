@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import useSWR from "swr";
 import clsx from "clsx";
 import {
@@ -376,7 +377,22 @@ export default function AccountsPage() {
           </div>
 
           {tab === "bets" ? (
-            <BetsTable bets={betsData?.bets} weeks={betsData?.backfill_weeks} />
+            <div className="rounded border border-border-subtle bg-bg-1 p-6 flex items-center justify-between">
+              <div className="text-sm text-text-2">
+                Bet history moved to the new{" "}
+                <Link href="/bets" className="text-accent underline">
+                  /bets
+                </Link>{" "}
+                page — it now includes Kalshi, Polymarket, and CSV imports
+                alongside Coral33.
+              </div>
+              <Link
+                href="/bets"
+                className="rounded border border-border-subtle bg-bg-2 px-3 py-1.5 text-sm"
+              >
+                View bets →
+              </Link>
+            </div>
           ) : (
             <>
 
