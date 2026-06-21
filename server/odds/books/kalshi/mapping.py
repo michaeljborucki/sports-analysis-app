@@ -212,6 +212,35 @@ TEAM_CODE_TO_CANONICAL: dict[str, dict[str, str]] = {
 }
 
 
+def validate_code_map_unique_prefixes(code_map: dict[str, str]) -> None:
+    """Raise if any code is a prefix of another. Called once at load
+    time — fail loud so adding a future team rebrand doesn't silently
+    break `_split_team_pair` event resolution.
+
+    Codes of equal length can never be prefix-overlapping (unless
+    equal), so we only check unequal-length pairs.
+    """
+    codes = sorted(code_map.keys(), key=len)
+    for i, short in enumerate(codes):
+        for longer in codes[i + 1:]:
+            if len(longer) == len(short):
+                continue
+            if longer.startswith(short):
+                raise ValueError(
+                    f"Kalshi code_map has prefix collision: "
+                    f"'{short}' is a prefix of '{longer}' — "
+                    f"_split_team_pair would silently fail on tickers "
+                    f"containing both."
+                )
+
+
+# Validate on module load. TEAM_CODE_TO_CANONICAL is nested by sport
+# (dict[str, dict[str, str]]); collisions only matter within a single
+# sport's _split_team_pair scope, so check each sub-map independently.
+for _sport, _sub_map in TEAM_CODE_TO_CANONICAL.items():
+    validate_code_map_unique_prefixes(_sub_map)
+
+
 @dataclass
 class KalshiSportConfig:
     """One sport block in kalshi.toml.

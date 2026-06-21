@@ -367,3 +367,40 @@ def test_ingestor_registered_tickers_returns_known_tickers(tmp_path):
         "outcome_point": None, "price_american": +110, "fetched_at": now,
     }])
     assert set(ing.registered_tickers()) == {"KX-A", "KX-B"}
+
+
+# ───────────────────────── M5: code_map validation ───────────────────
+
+
+def test_validate_code_map_unique_prefixes_passes_real_map():
+    """The actual TEAM_CODE_TO_CANONICAL map (loaded by the module) must
+    not have any prefix collisions today. This pins it as a regression.
+
+    TEAM_CODE_TO_CANONICAL is nested by sport (dict[str, dict[str, str]]),
+    so we validate each sport's sub-map independently — collisions only
+    matter within a single sport's _split_team_pair scope.
+    """
+    from server.odds.books.kalshi.mapping import (
+        TEAM_CODE_TO_CANONICAL,
+        validate_code_map_unique_prefixes,
+    )
+    for sport, sub_map in TEAM_CODE_TO_CANONICAL.items():
+        validate_code_map_unique_prefixes(sub_map)
+
+
+def test_validate_code_map_unique_prefixes_catches_collision():
+    from server.odds.books.kalshi.mapping import validate_code_map_unique_prefixes
+    bad = {"BOS": "Boston Celtics", "BOSEN": "Hypothetical New Team"}
+    with pytest.raises(ValueError) as exc:
+        validate_code_map_unique_prefixes(bad)
+    msg = str(exc.value)
+    assert "BOS" in msg and "BOSEN" in msg
+
+
+def test_validate_code_map_ignores_same_length_codes():
+    """Two codes of the same length cannot be prefix-overlapping (one
+    can't be a prefix of the other unless they're equal). Verify the
+    common case where all codes are 3-letter abbreviations passes."""
+    from server.odds.books.kalshi.mapping import validate_code_map_unique_prefixes
+    fine = {"BOS": "Boston", "MIA": "Miami", "OKC": "Oklahoma City"}
+    validate_code_map_unique_prefixes(fine)  # no raise
