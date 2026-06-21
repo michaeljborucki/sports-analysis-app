@@ -146,6 +146,12 @@ class KalshiTickerIngestor:
         self.last_update_at = time.time()
         return len(rows_to_upsert)
 
+    def registered_tickers(self) -> list[str]:
+        """Public accessor — list of market_tickers currently in the
+        template map. Used by the orderbook poller to enumerate which
+        markets to fetch depth for."""
+        return list(self._templates.keys())
+
     # ────────────────────── Status / observability ────────────────────
 
     def status(self) -> dict:

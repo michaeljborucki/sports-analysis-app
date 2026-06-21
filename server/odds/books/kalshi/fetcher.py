@@ -205,6 +205,14 @@ class KalshiFetcher:
             out.update(self._ingestor.status())
         return out
 
+    def registered_tickers(self) -> list[str]:
+        """Market_tickers currently in the ingestor's template map.
+        Empty list if the ingestor hasn't been initialized yet (e.g.
+        before start_all()). Used by the orderbook poller."""
+        if self._ingestor is None:
+            return []
+        return self._ingestor.registered_tickers()
+
     def stop_all(self) -> dict:
         if not self._running:
             return {"status": "already_stopped"}

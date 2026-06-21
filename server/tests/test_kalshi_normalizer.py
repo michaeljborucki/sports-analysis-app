@@ -338,3 +338,32 @@ async def test_get_orderbook_calls_signed_get_with_path():
     result = await client.get_orderbook("KXMARKET-TICKER")
     client._signed_get.assert_called_once_with("/markets/KXMARKET-TICKER/orderbook")
     assert "orderbook" in result
+
+
+# ─────────────────── registered_tickers() accessor ────────────────────
+
+
+def test_ingestor_registered_tickers_returns_known_tickers(tmp_path):
+    from datetime import datetime, timezone
+    from server.odds.cache import OddsCache
+    from server.odds.books.kalshi.ws_ingest import KalshiTickerIngestor
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    ing = KalshiTickerIngestor(cache=cache)
+    now = datetime.now(timezone.utc)
+    ing.register_rows([{
+        "_market_ticker": "KX-A", "_ws_side": "yes",
+        "event_id": "e1", "sport_key": "nba", "home_team": "BOS",
+        "away_team": "MIA", "commence_time": now,
+        "bookmaker_key": "kalshi",
+        "market_key": "h2h", "outcome_name": "BOS",
+        "outcome_point": None, "price_american": -145, "fetched_at": now,
+    }, {
+        "_market_ticker": "KX-B", "_ws_side": "yes",
+        "event_id": "e2", "sport_key": "nba", "home_team": "OKC",
+        "away_team": "MIN", "commence_time": now,
+        "bookmaker_key": "kalshi",
+        "market_key": "h2h", "outcome_name": "OKC",
+        "outcome_point": None, "price_american": +110, "fetched_at": now,
+    }])
+    assert set(ing.registered_tickers()) == {"KX-A", "KX-B"}
