@@ -671,32 +671,48 @@ class OddsCache:
         self,
         within_hours_ahead: int | None = None,
         sport_key: str | None = None,
+        now: datetime | None = None,
     ) -> list[dict]:
         """List distinct (event_id, sport_key, commence_time, home, away)
-        known to the cache, optionally filtering by sport + time window."""
-        from datetime import datetime, timezone
-        q = """
+        known to the cache, optionally filtering by sport + time window.
+
+        When `within_hours_ahead` is set, the time filter is applied as
+        `HAVING MAX(commence_time) BETWEEN ? AND ?` on the GROUP BY —
+        preserves the historical Python-filter semantics (filter on the
+        per-event MAX, not on raw rows that may disagree on
+        commence_time). `now` is injected for testability.
+        """
+        from datetime import datetime as _dt, timezone as _tz
+        q_parts: list[str] = ["""
             SELECT event_id, MAX(sport_key) AS sport_key,
                    MAX(commence_time) AS commence_time,
                    MAX(home_team) AS home_team, MAX(away_team) AS away_team
             FROM odds_snapshot
-        """
-        args: tuple = ()
+        """]
+        args: list = []
         if sport_key:
-            q += " WHERE sport_key = ?"
-            args = (sport_key,)
-        q += " GROUP BY event_id"
+            q_parts.append("WHERE sport_key = ?")
+            args.append(sport_key)
+        q_parts.append("GROUP BY event_id")
+        if within_hours_ahead is not None:
+            ts_now = now if now is not None else _dt.now(_tz.utc)
+            horizon = ts_now + timedelta(hours=within_hours_ahead)
+            q_parts.append(
+                "HAVING MAX(commence_time) >= ? AND MAX(commence_time) <= ?"
+            )
+            args.extend([ts_now.isoformat(), horizon.isoformat()])
+        q = " ".join(q_parts)
         with self._conn() as c:
             rows = [dict(r) for r in c.execute(q, args)]
         if within_hours_ahead is None:
             return rows
-        now = datetime.now(timezone.utc)
-        horizon = now + timedelta(hours=within_hours_ahead)
-        out = []
+        # Parse commence_time → datetime for callers (preserves the v1
+        # API: returned commence_time is datetime when within_hours_ahead
+        # is set, raw string otherwise).
+        out: list[dict] = []
         for r in rows:
-            ct = datetime.fromisoformat(r["commence_time"])
+            ct = _dt.fromisoformat(r["commence_time"])
             if ct.tzinfo is None:
-                ct = ct.replace(tzinfo=timezone.utc)
-            if now <= ct <= horizon:
-                out.append({**r, "commence_time": ct})
+                ct = ct.replace(tzinfo=_tz.utc)
+            out.append({**r, "commence_time": ct})
         return out

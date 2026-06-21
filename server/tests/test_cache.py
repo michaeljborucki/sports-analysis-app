@@ -295,3 +295,81 @@ def test_purge_live_rows_default_grace_is_zero(tmp_path):
     cache.upsert([row])
     removed = cache.purge_live_rows_for_book("coral33", now)
     assert removed == 1
+
+
+# ─────────────────── A8: distinct_events SQL pushdown ─────────────────
+
+
+def test_distinct_events_no_filter_returns_all(tmp_path):
+    from datetime import datetime, timezone, timedelta
+    from server.odds.cache import OddsCache
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    now = datetime(2026, 6, 21, 20, 0, tzinfo=timezone.utc)
+    rows = [
+        {
+            "event_id": f"ev_{i}", "sport_key": "nba",
+            "home_team": "BOS", "away_team": "MIA",
+            "commence_time": now + timedelta(hours=h),
+            "bookmaker_key": "dk", "market_key": "h2h",
+            "outcome_name": "BOS", "outcome_point": None,
+            "price_american": -110, "fetched_at": now,
+        }
+        for i, h in enumerate([1, 10, 30, 50])
+    ]
+    cache.upsert(rows)
+    result = cache.distinct_events()
+    assert {r["event_id"] for r in result} == {"ev_0", "ev_1", "ev_2", "ev_3"}
+
+
+def test_distinct_events_within_hours_ahead_filters(tmp_path):
+    """SQL pushdown via HAVING returns only events with MAX(commence_time)
+    in [now, now+24h]."""
+    from datetime import datetime, timezone, timedelta
+    from server.odds.cache import OddsCache
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    fixed_now = datetime(2026, 6, 21, 20, 0, tzinfo=timezone.utc)
+    rows = [
+        {"event_id": "ev_soon",  "sport_key": "nba", "home_team": "BOS",
+         "away_team": "MIA", "commence_time": fixed_now + timedelta(hours=1),
+         "bookmaker_key": "dk", "market_key": "h2h", "outcome_name": "BOS",
+         "outcome_point": None, "price_american": -110, "fetched_at": fixed_now},
+        {"event_id": "ev_far",   "sport_key": "nba", "home_team": "BOS",
+         "away_team": "MIA", "commence_time": fixed_now + timedelta(hours=30),
+         "bookmaker_key": "dk", "market_key": "h2h", "outcome_name": "BOS",
+         "outcome_point": None, "price_american": -110, "fetched_at": fixed_now},
+        {"event_id": "ev_past",  "sport_key": "nba", "home_team": "BOS",
+         "away_team": "MIA", "commence_time": fixed_now - timedelta(hours=5),
+         "bookmaker_key": "dk", "market_key": "h2h", "outcome_name": "BOS",
+         "outcome_point": None, "price_american": -110, "fetched_at": fixed_now},
+    ]
+    cache.upsert(rows)
+    result = cache.distinct_events(within_hours_ahead=24, now=fixed_now)
+    eids = {r["event_id"] for r in result}
+    assert eids == {"ev_soon"}
+    soon = next(r for r in result if r["event_id"] == "ev_soon")
+    assert isinstance(soon["commence_time"], datetime)
+
+
+def test_distinct_events_sport_filter_and_time_filter_combined(tmp_path):
+    from datetime import datetime, timezone, timedelta
+    from server.odds.cache import OddsCache
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    fixed_now = datetime(2026, 6, 21, 20, 0, tzinfo=timezone.utc)
+    rows = [
+        {"event_id": "nba_soon", "sport_key": "nba", "home_team": "BOS",
+         "away_team": "MIA", "commence_time": fixed_now + timedelta(hours=1),
+         "bookmaker_key": "dk", "market_key": "h2h", "outcome_name": "BOS",
+         "outcome_point": None, "price_american": -110, "fetched_at": fixed_now},
+        {"event_id": "mlb_soon", "sport_key": "mlb", "home_team": "LAD",
+         "away_team": "SF", "commence_time": fixed_now + timedelta(hours=1),
+         "bookmaker_key": "dk", "market_key": "h2h", "outcome_name": "LAD",
+         "outcome_point": None, "price_american": -110, "fetched_at": fixed_now},
+    ]
+    cache.upsert(rows)
+    result = cache.distinct_events(
+        within_hours_ahead=24, sport_key="nba", now=fixed_now,
+    )
+    assert {r["event_id"] for r in result} == {"nba_soon"}
