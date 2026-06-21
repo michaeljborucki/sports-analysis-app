@@ -36,13 +36,19 @@ Append to `server/tests/test_kalshi_normalizer.py`:
 ```python
 def test_validate_code_map_unique_prefixes_passes_real_map():
     """The actual TEAM_CODE_TO_CANONICAL map (loaded by the module) must
-    not have any prefix collisions today. This pins it as a regression."""
+    not have any prefix collisions today. This pins it as a regression.
+
+    TEAM_CODE_TO_CANONICAL is nested by sport (dict[str, dict[str, str]]),
+    so we validate each sport's sub-map independently — collisions only
+    matter within a single sport's _split_team_pair scope.
+    """
     from server.odds.books.kalshi.mapping import (
         TEAM_CODE_TO_CANONICAL,
         validate_code_map_unique_prefixes,
     )
     # Should not raise — passes silently
-    validate_code_map_unique_prefixes(TEAM_CODE_TO_CANONICAL)
+    for sport, sub_map in TEAM_CODE_TO_CANONICAL.items():
+        validate_code_map_unique_prefixes(sub_map)
 
 
 def test_validate_code_map_unique_prefixes_catches_collision():
@@ -98,8 +104,11 @@ def validate_code_map_unique_prefixes(code_map: dict[str, str]) -> None:
                 )
 
 
-# Validate on module load.
-validate_code_map_unique_prefixes(TEAM_CODE_TO_CANONICAL)
+# Validate on module load. TEAM_CODE_TO_CANONICAL is nested by sport
+# (dict[str, dict[str, str]]); collisions only matter within a single
+# sport's _split_team_pair scope, so check each sub-map independently.
+for _sport, _sub_map in TEAM_CODE_TO_CANONICAL.items():
+    validate_code_map_unique_prefixes(_sub_map)
 ```
 
 - [ ] **Step 4: Run tests**
@@ -498,23 +507,31 @@ Locate the exact line that returns `[]` when fewer than 3 outcomes are present (
 
 - [ ] **Step 2: Failing test**
 
-In `server/tests/test_polymarket_normalizer.py`, find an existing test for 3-way soccer or create a new file. Add:
+In `server/tests/test_polymarket_normalizer.py`, find an existing test for soccer 3-way or create a new file. The function under test is `_normalize_soccer_3way_event` (verified at line 565) with signature `(parsed_markets, sport_key, fetched_at, match_event)`. `parsed_markets` is `list[tuple[market_dict, parsed_slug_dict]]`. Each `parsed_slug` has shape `{kind: "soccer_3way", team_a_code, team_b_code, details}` where `details ∈ {team_a_code, team_b_code, "draw"}`.
+
+Read the existing test patterns in `test_polymarket_normalizer.py` for the fixture shape (look for any existing test that touches `_normalize_soccer_3way_event` or that constructs `parsed_markets` tuples). Build fixtures matching that shape. Skeleton:
 
 ```python
-def test_soccer_3way_emits_partial_when_draw_missing():
+def test_soccer_3way_emits_partial_when_draw_missing(fixed_now):
     """When only home + away are present (no draw yet), Polymarket
     should still emit those 2 outcomes — cross-book aggregation will
-    complete the 3-way picture when paired with another book that has
-    all 3."""
-    from server.odds.books.polymarket.normalizer import _aggregate_soccer_3way
-    # Construct a by_segment dict with only home + away (no draw)
-    by_segment = {
-        "cry": _make_outcome_segment(team="Crystal Palace", yes_ask=0.45),
-        "ars": _make_outcome_segment(team="Arsenal",        yes_ask=0.40),
+    complete the 3-way picture when paired with another book."""
+    from server.odds.books.polymarket.normalizer import _normalize_soccer_3way_event
+    # Build (market, parsed_slug) tuples for team_a and team_b only —
+    # NO "draw" entry. The exact dict shapes for market_dict and
+    # parsed_slug_dict should mirror what _parse_slug() emits today;
+    # read the existing tests / slug_parser.py for the canonical shape.
+    parsed_markets = [
+        (_market_fixture(yes_ask=0.45), _parsed_slug("cry", "ars", "cry")),
+        (_market_fixture(yes_ask=0.40), _parsed_slug("cry", "ars", "ars")),
         # "draw" intentionally missing
-    }
-    rows = _aggregate_soccer_3way("soccer", by_segment, event_metadata=_event_meta())
-    # 2 outcomes expected (no synthesized draw)
+    ]
+    rows = _normalize_soccer_3way_event(
+        parsed_markets,
+        sport_key="soccer",
+        fetched_at=fixed_now,
+        match_event=_mock_match_event_for_palace_v_arsenal,
+    )
     outcome_names = {r["outcome_name"] for r in rows}
     assert "Crystal Palace" in outcome_names
     assert "Arsenal" in outcome_names
@@ -522,19 +539,24 @@ def test_soccer_3way_emits_partial_when_draw_missing():
     assert len(rows) == 2
 
 
-def test_soccer_3way_full_set_still_emits_3():
+def test_soccer_3way_full_set_still_emits_3(fixed_now):
     """The 3-of-3 happy path is unchanged."""
-    from server.odds.books.polymarket.normalizer import _aggregate_soccer_3way
-    by_segment = {
-        "cry":  _make_outcome_segment(team="Crystal Palace", yes_ask=0.40),
-        "ars":  _make_outcome_segment(team="Arsenal",        yes_ask=0.35),
-        "draw": _make_outcome_segment(team=None,             yes_ask=0.25),
-    }
-    rows = _aggregate_soccer_3way("soccer", by_segment, event_metadata=_event_meta())
+    from server.odds.books.polymarket.normalizer import _normalize_soccer_3way_event
+    parsed_markets = [
+        (_market_fixture(yes_ask=0.40), _parsed_slug("cry", "ars", "cry")),
+        (_market_fixture(yes_ask=0.35), _parsed_slug("cry", "ars", "ars")),
+        (_market_fixture(yes_ask=0.25), _parsed_slug("cry", "ars", "draw")),
+    ]
+    rows = _normalize_soccer_3way_event(
+        parsed_markets,
+        sport_key="soccer",
+        fetched_at=fixed_now,
+        match_event=_mock_match_event_for_palace_v_arsenal,
+    )
     assert len(rows) == 3
 ```
 
-(Adjust `_make_outcome_segment` and `_event_meta` to match the actual data shapes the aggregator expects. Read the function signature from the source to align.)
+The fixture helpers (`_market_fixture`, `_parsed_slug`, `_mock_match_event_*`, `fixed_now`) must be defined per the existing test conventions in `test_polymarket_normalizer.py` — read 1-2 existing tests in that file for the exact shapes before writing these.
 
 - [ ] **Step 3: Run to verify fail**
 
@@ -546,45 +568,39 @@ Expected: the partial test fails (returns `[]` instead of 2 rows).
 
 - [ ] **Step 4: Implement**
 
-In `server/odds/books/polymarket/normalizer.py`, find the early-return on line ~612:
+In `server/odds/books/polymarket/normalizer.py:_normalize_soccer_3way_event`, find the early-return that requires all 3 segments (around line 612):
 
 ```python
         if not (code_a in by_segment and code_b in by_segment and "draw" in by_segment):
             return []
 ```
 
-Replace with:
+Replace with a partial-acceptance check:
 
 ```python
         # Allow partials: emit whatever outcomes ARE present (2-of-3
         # or 1-of-3). The cross-book devig still gates the full 3-way
         # downstream; surfacing partials lets another book with all 3
-        # complete the picture. Single-leg sets are unusual but
-        # harmless — they pair against the same outcome from another
-        # book in `rows_to_games`.
-        present_count = sum(
-            1 for k in (code_a, code_b, "draw") if k in by_segment
-        )
-        if present_count == 0:
+        # complete the picture.
+        present_segments = [s for s in (code_a, code_b, "draw") if s in by_segment]
+        if not present_segments:
             return []
-        # When all 3 are present, the existing overround sanity check
-        # still applies below. When only 2 (or 1), skip the overround
-        # gate — it requires all 3 YES probs to sum sensibly.
 ```
 
-Then update the existing overround sanity check (further down in the function — find the `overround_sum` computation) so it only applies when all 3 outcomes are present. The simplest shape:
+Then find the overround sanity check further down (search for `overround_sum`, `_OVERROUND`, or `MAX_3WAY` in `_normalize_soccer_3way_event` — pin the exact line before editing) and gate it so it only runs when all 3 are present:
 
 ```python
-        if present_count == 3:
-            # Existing 3-way overround sanity check
-            overround_sum = sum(...)
-            if overround_sum > MAX_3WAY_OVERROUND:
-                return []
+        if len(present_segments) == 3:
+            # Existing 3-way overround sanity check, unchanged
+            ...
 ```
 
-Then the emission loop simply iterates over whichever of `code_a`, `code_b`, `"draw"` are in `by_segment` and emits one row each.
+Finally, update the emission loop so it iterates `present_segments` instead of unconditionally accessing all three (e.g., `by_segment[code_a]`, `by_segment[code_b]`, `by_segment["draw"]`). For each present segment, emit one row using the YES side's price + asset_id, mapping the segment to its canonical `outcome_name`:
+- `code_a` → `canon_a`
+- `code_b` → `canon_b`
+- `"draw"` → `"Draw"`
 
-(The exact edit depends on the existing code shape — read it carefully and apply the partial-emission pattern.)
+(Read the existing emission loop carefully — preserve the existing per-row construction shape exactly; this fix only changes which subset is iterated.)
 
 - [ ] **Step 5: Run tests + verify scanner still works**
 
