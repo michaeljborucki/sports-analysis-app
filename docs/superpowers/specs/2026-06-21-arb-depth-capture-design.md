@@ -54,19 +54,49 @@ Zero new API calls. The data is already on the wire.
 
 ### Kalshi — new orderbook poller
 
-Add a periodic task `_kalshi_orderbook_tick` to the existing `clv_scheduler` in `server/main.py`. Cadence: 60 seconds. For each market currently in `kalshi_fetcher.ingestor._templates` (the set of sports markets we care about), call `KalshiClient.get_orderbook(ticker)` (new method on `KalshiClient`).
+Add a periodic task `_kalshi_orderbook_tick` to the existing `clv_scheduler` in `server/main.py`. Cadence: 60 seconds.
 
-The Kalshi `/markets/{ticker}/orderbook` response shape:
-```json
-{
-  "orderbook": {
-    "yes": [[price_cents, size_contracts], ...],   // sorted ascending or descending — verify at fetch time
-    "no":  [[price_cents, size_contracts], ...]
-  }
-}
+**New `KalshiClient` method (does not exist today):**
+```python
+async def get_orderbook(self, ticker: str) -> dict:
+    """GET /trade-api/v2/markets/{ticker}/orderbook
+    Signed via self._signed_get; auth required for higher rate limits.
+    Returns the parsed JSON response."""
+    return await self._signed_get(f"/markets/{ticker}/orderbook")
 ```
 
-For each registered (ticker, ws_side) template, look up the matching side's best ask price + size, compute `max_stake_dollars = price_cents / 100 × size_contracts`, and upsert. Reuses the same template-based path the WS ticker ingestor already uses — only the price source differs.
+**New public accessor on `KalshiTickerIngestor`** to avoid the scheduler reaching into private state. The fetcher exposes the ingestor as `kalshi_fetcher._ingestor` (already private); we add a public `registered_tickers()` on the ingestor and a `registered_tickers()` passthrough on `KalshiFetcher`:
+```python
+# in KalshiTickerIngestor
+def registered_tickers(self) -> list[str]:
+    return list(self._templates.keys())
+
+# in KalshiFetcher
+def registered_tickers(self) -> list[str]:
+    return self._ingestor.registered_tickers()
+```
+
+**Kalshi orderbook response → (ask_price, ask_size) translation:**
+
+Kalshi's orderbook endpoint returns each side's BIDS — the `yes` array is people bidding to buy YES at each price level; the `no` array is people bidding to buy NO. A taker filling YES at the best ask is equivalent to taking the best NO bid (since YES_ask_cents = 100 - NO_bid_cents). The translation logic is small but non-obvious; the implementation pins it via a fixture file `server/tests/fixtures/kalshi_orderbook.json` captured against a live market at build time, with tests covering both YES-side and NO-side rows.
+
+Implementation pseudocode (the planner will turn this into a concrete `orderbook_to_size` helper with the fixture-pinned semantics):
+```
+for each registered (ticker, ws_side) template:
+    book = client.get_orderbook(ticker).orderbook
+    if ws_side == "yes":
+        opposite = book.get("no") or []   # NO bids → YES asks
+    else:
+        opposite = book.get("yes") or []  # YES bids → NO asks
+    if not opposite: continue
+    best = highest-price entry in opposite        # depends on sort; fixture pins
+    ask_cents = 100 - best.price_cents
+    size = best.size_contracts
+    max_stake_dollars = ask_cents / 100 * size
+    upsert(template + {price_american, max_stake_dollars})
+```
+
+Reuses the same template-based path the WS ticker ingestor already uses — only the price source differs.
 
 **Cost:** ~100 sports markets at 60s cadence = ~1.7 calls/sec sustained. Kalshi's authenticated rate limit is 100 calls/sec — comfortable headroom.
 
