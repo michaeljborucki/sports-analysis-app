@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Iterable
 
+from .player_names import normalize_player_name
+
 
 # Bookmaker keys whose rows we DO NOT want to ingest from the Odds API —
 # we own these books via a direct fetcher and the Odds API copy is staler.
@@ -12,22 +14,31 @@ from typing import Iterable
 _EXCLUDE_BOOKMAKERS: frozenset[str] = frozenset({"kalshi"})
 
 
-def _encode_outcome_name(market_key: str, name: str, description: str | None) -> str:
+def _encode_outcome_name(
+    market_key: str, name: str, description: str | None, sport_key: str = "",
+) -> str:
     """Player props come back as (name='Over', description='Drew Rasmussen').
     Encode both into a single outcome_name so the cache PK stays stable
     across different players/teams with the same line.
 
     Applied to:
       - All player-level prop markets: MLB (pitcher_*, batter_*), NBA/NHL/etc.
-        (player_*).
+        (player_*). Player names are canonicalized via
+        `normalize_player_name` so the same player from Odds API,
+        Polymarket, Coral33, and Kalshi lands in the SAME PK slot.
       - Team-totals markets: outcomes come back as (name='Over', description
         '<team>'). Without this encoding, home and away team Over/Unders at
-        the same point would collide in the PK.
+        the same point would collide in the PK. Team names are passed
+        through unchanged — team-level canonicalization is handled by the
+        event matcher upstream.
     """
     if not description:
         return name
     if market_key.startswith(("pitcher_", "batter_", "player_")):
-        return f"{description} {name}"
+        # Cross-book canonicalization: fold + sport-scoped alias lookup.
+        # Falls back to the folded description if no alias hit.
+        canon = normalize_player_name(description, sport_key)
+        return f"{canon} {name}" if canon else f"{description} {name}"
     # team_totals + alternate_team_totals + any period variant of those.
     if "team_totals" in market_key:
         return f"{description} {name}"
@@ -61,7 +72,8 @@ def normalize_odds_response(
                 market_key = mk["key"]
                 for oc in mk.get("outcomes", []):
                     encoded_name = _encode_outcome_name(
-                        market_key, oc["name"], oc.get("description")
+                        market_key, oc["name"], oc.get("description"),
+                        sport_key=sport_key,
                     )
                     base_row = {
                         "event_id": event_id,

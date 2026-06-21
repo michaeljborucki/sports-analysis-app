@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Callable
 
+from ...player_names import normalize_player_name
 from .mapping import PERIOD_SUFFIX, PROP_STAT_TO_MARKET_KEY
 
 
@@ -254,9 +255,17 @@ def normalize_player_props(
         if line.get("Status") != "O":
             circled += 1
             continue
-        player = _clean_team(line.get("Team1ID", ""))
+        raw_player = _clean_team(line.get("Team1ID", ""))
         stat = (line.get("Team2ID") or "").strip()
-        if not player or not stat:
+        if not raw_player or not stat:
+            continue
+        # Canonicalize the player so the outcome_name PK slot matches
+        # rows from Odds API / Polymarket / Kalshi. Fold-only (no sport
+        # alias hit) is the most common path; aliases bridge coral33's
+        # initial-only forms ("V Wembanyama") and surname-only forms
+        # ("Trout") to the full names emitted elsewhere.
+        player = normalize_player_name(raw_player, sport_key)
+        if not player:
             continue
         market_key = stat_map.get(stat)
         if market_key is None:

@@ -6,6 +6,7 @@ import re
 from datetime import datetime, timezone
 from typing import Callable
 
+from ...player_names import normalize_player_name
 from .mapping import SERIES_TO_SPORT_MARKET, TEAM_CODE_TO_CANONICAL
 
 
@@ -1126,6 +1127,47 @@ def _normalize_f5_winner_markets(
             skipped_quality, skipped_unknown,
         )
     return rows
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Player-prop title parsing (forward declaration)
+# ──────────────────────────────────────────────────────────────────────
+
+
+# Kalshi prop markets surface the player name in the market `title` like
+# "yes Victor Wembanyama: 30+ points". When the prop-ingest path lands,
+# the parser should extract the raw name and pipe it through this helper
+# to produce the cross-book canonical outcome_name segment. Exposed now
+# so the contract stays stable when wired up.
+_PROP_TITLE_RX = re.compile(
+    r"^(?:yes|no)\s+(?P<player>.+?)\s*:\s*(?P<line>\d+[+-]?)", re.IGNORECASE,
+)
+
+
+def parse_prop_title(title: str, sport_key: str) -> tuple[str, str] | None:
+    """Decode a Kalshi prop-market title into (canonical_player, line).
+
+    Example:
+      ("yes Victor Wembanyama: 30+ points", "nba")
+        → ("victor wembanyama", "30+")
+
+    Returns None when the title doesn't match the expected shape (e.g.
+    a non-prop market title). Wires through `normalize_player_name` so
+    the emitted outcome_name segment is identical to what every other
+    book produces for the same player. Tested in
+    `server/tests/test_player_names.py::TestKalshiTitleIntegration`.
+    """
+    if not title:
+        return None
+    m = _PROP_TITLE_RX.match(title)
+    if m is None:
+        return None
+    raw_player = m.group("player").strip()
+    line = m.group("line").strip()
+    canon = normalize_player_name(raw_player, sport_key)
+    if not canon:
+        return None
+    return canon, line
 
 
 # ──────────────────────────────────────────────────────────────────────

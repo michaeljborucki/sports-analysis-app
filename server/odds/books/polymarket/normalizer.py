@@ -37,6 +37,7 @@ import math
 from datetime import datetime, timezone
 from typing import Callable
 
+from ...player_names import normalize_player_name
 from .mapping import TEAM_CODE_TO_CANONICAL
 
 
@@ -508,7 +509,15 @@ def normalize_player_prop_market(
     player_slug = parsed_slug.get("details") or ""
     if strike is None or not player_slug:
         return []
-    player = _decode_player_name(player_slug)
+    display = _decode_player_name(player_slug)
+    if not display:
+        return []
+    # Canonicalize against the cross-book convention. The Polymarket slug
+    # has already stripped punctuation, so the only deltas to bridge here
+    # are (a) accents on names like "Dončić" that Polymarket emits as
+    # "doncic" already (no-op via fold) and (b) sport-scoped nickname
+    # aliases like "sga" → "shai gilgeous alexander".
+    player = normalize_player_name(display, sport_key)
     if not player:
         return []
 

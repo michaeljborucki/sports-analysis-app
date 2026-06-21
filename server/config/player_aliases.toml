@@ -1,0 +1,55 @@
+# Player-name aliases for cross-book canonicalization.
+#
+# How this is consumed: `server/odds/player_names.normalize_player_name`
+# applies the deterministic folding (lowercase + ASCII-fold + drop punctuation
+# + collapse whitespace) FIRST, then looks up the result in the per-sport
+# table below. If present, the value (already folded) replaces the input.
+# Both keys and values in this file MUST be in canonical (folded) form —
+# the loader validates this on load.
+#
+# Reactive growth pattern: when a player shows up as orphaned in the EV/arb
+# scanner (one book has them, none of the others do), grep the orphan logs
+# for `player_orphan` lines to find the two folded variants you need to
+# bridge, then add an alias entry here. No restart needed if the loader is
+# hot-reload-aware; today it reloads at process start.
+#
+# Folding rules (so you can predict what a key/value should be):
+#   "Stephen Curry"           → "stephen curry"
+#   "Luka Dončić"             → "luka doncic"     (NFKD + drop combining)
+#   "Shai Gilgeous-Alexander" → "shai gilgeous alexander"   (hyphen→space)
+#   "Shaquille O'Neal"        → "shaquille oneal"  (apostrophe stripped)
+#   "V Wembanyama"            → "wembanyama"      (single-letter initial dropped)
+#
+# Bias: small + sport-scoped. Nicknames ("KD", "Steph") are intentionally
+# included only where they appear in real source feeds — they're harmless
+# when they don't fire and load-bearing when they do.
+
+[nba]
+# Common nicknames seen in Kalshi titles + some chat-driven sources.
+"kd"              = "kevin durant"
+"steph"           = "stephen curry"
+"sga"             = "shai gilgeous alexander"
+"giannis"         = "giannis antetokounmpo"
+# Polymarket slug strips apostrophes — "De'Aaron Fox" decodes to
+# "deaaron fox". Bridge to the canonical form Coral33/Odds API emits.
+"deaaron fox"     = "de aaron fox"
+
+[mlb]
+# Single-name media references → full names. Useful for Kalshi titles
+# (which sometimes use surname-only) and chat-style coral33 fields.
+"shohei"          = "shohei ohtani"
+"judge"           = "aaron judge"
+"trout"           = "mike trout"
+
+[nhl]
+# Seed empty — extend as orphan logs reveal mismatches.
+
+[wnba]
+"clark"           = "caitlin clark"
+
+[soccer]
+# Player props in soccer are rare in our current sources; placeholder
+# for future expansion.
+
+[tennis]
+# Tennis player props are not yet wired up; placeholder.
