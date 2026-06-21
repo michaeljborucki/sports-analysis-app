@@ -152,3 +152,92 @@ def query_bets(
         q += " LIMIT ?"; args.append(int(limit))
     with cache._conn() as c:
         return [dict(r) for r in c.execute(q, args)]
+
+
+def _window_iso(now: datetime, days: int) -> str:
+    from datetime import timedelta as _td
+    return (now - _td(days=days)).isoformat()
+
+
+def _rollup_for_window(cache: OddsCache, from_iso: str | None) -> dict:
+    """Single-window rollup. from_iso=None means lifetime."""
+    q = """
+      SELECT
+        COUNT(*) AS count,
+        COALESCE(SUM(stake), 0) AS wagered,
+        COALESCE(SUM(CASE WHEN status NOT IN ('open', 'pending') AND is_free_play = 0
+                          THEN settled_amount - stake END), 0) AS net,
+        COALESCE(SUM(CASE WHEN status NOT IN ('open', 'pending') AND is_free_play = 0
+                          THEN stake END), 0) AS settled_wagered
+      FROM bets
+      WHERE 1=1
+    """
+    args: list = []
+    if from_iso is not None:
+        q += " AND accepted_at >= ?"
+        args.append(from_iso)
+    with cache._conn() as c:
+        row = c.execute(q, args).fetchone()
+    count = int(row["count"])
+    wagered = float(row["wagered"] or 0)
+    net = float(row["net"] or 0)
+    settled_wagered = float(row["settled_wagered"] or 0)
+    roi_pct = (net / settled_wagered * 100.0) if settled_wagered > 0 else 0.0
+    return {
+        "count": count,
+        "wagered": round(wagered, 2),
+        "net": round(net, 2),
+        "roi_pct": round(roi_pct, 2),
+    }
+
+
+def _rollup_grouped(cache: OddsCache, group_col: str) -> list[dict]:
+    """Lifetime rollup grouped by a column (source_book, sport_key,
+    market_key). Returns one row per non-null group value."""
+    q = f"""
+      SELECT
+        {group_col} AS grp,
+        COUNT(*) AS count,
+        COALESCE(SUM(stake), 0) AS wagered,
+        COALESCE(SUM(CASE WHEN status NOT IN ('open', 'pending') AND is_free_play = 0
+                          THEN settled_amount - stake END), 0) AS net,
+        COALESCE(SUM(CASE WHEN status NOT IN ('open', 'pending') AND is_free_play = 0
+                          THEN stake END), 0) AS settled_wagered
+      FROM bets
+      WHERE {group_col} IS NOT NULL
+      GROUP BY {group_col}
+      ORDER BY wagered DESC
+    """
+    out: list[dict] = []
+    with cache._conn() as c:
+        for r in c.execute(q):
+            settled_wagered = float(r["settled_wagered"] or 0)
+            net = float(r["net"] or 0)
+            roi_pct = (net / settled_wagered * 100.0) if settled_wagered > 0 else 0.0
+            out.append({
+                group_col: r["grp"],
+                "count": int(r["count"]),
+                "wagered": round(float(r["wagered"] or 0), 2),
+                "net": round(net, 2),
+                "roi_pct": round(roi_pct, 2),
+            })
+    return out
+
+
+def rollups(cache: OddsCache, now: datetime | None = None) -> dict:
+    """One-pass rollup payload for the /bets dashboard.
+
+    Returns: window_30d, window_90d, lifetime, by_book, by_sport,
+    by_market. Each window has {count, wagered, net, roi_pct}.
+    """
+    if now is None:
+        from datetime import datetime as _dt, timezone as _tz
+        now = _dt.now(_tz.utc)
+    return {
+        "window_30d": _rollup_for_window(cache, _window_iso(now, 30)),
+        "window_90d": _rollup_for_window(cache, _window_iso(now, 90)),
+        "lifetime": _rollup_for_window(cache, None),
+        "by_book": _rollup_grouped(cache, "source_book"),
+        "by_sport": _rollup_grouped(cache, "sport_key"),
+        "by_market": _rollup_grouped(cache, "market_key"),
+    }

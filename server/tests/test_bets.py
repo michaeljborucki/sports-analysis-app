@@ -68,3 +68,46 @@ def test_query_filters_by_status(cache):
     ])
     rows = query_bets(cache, status="win")
     assert {r["external_id"] for r in rows} == {"b"}
+
+
+from datetime import timedelta
+
+
+def test_rollups_lifetime_and_windows(cache):
+    from server.odds.bets import rollups
+    now = datetime(2026, 6, 21, tzinfo=timezone.utc)
+    upsert_bets(cache, [_row(
+        external_id="recent_win", accepted_at=now - timedelta(days=10),
+        settled_at=now - timedelta(days=9), status="win",
+        stake=100.0, settled_amount=200.0,
+    )])
+    upsert_bets(cache, [_row(
+        external_id="old_loss", accepted_at=now - timedelta(days=100),
+        settled_at=now - timedelta(days=99), status="loss",
+        stake=50.0, settled_amount=0.0,
+    )])
+    out = rollups(cache, now=now)
+    assert out["lifetime"]["count"] == 2
+    assert out["lifetime"]["wagered"] == 150.0
+    assert abs(out["lifetime"]["roi_pct"] - ((200 - 150) / 150 * 100)) < 0.01
+    assert out["window_30d"]["count"] == 1
+    assert out["window_30d"]["wagered"] == 100.0
+    assert out["window_90d"]["count"] == 1
+
+
+def test_rollups_by_book(cache):
+    from server.odds.bets import rollups
+    now = datetime(2026, 6, 21, tzinfo=timezone.utc)
+    upsert_bets(cache, [
+        _row(source_book="coral33", external_id="a", stake=100,
+             status="win", settled_amount=180,
+             accepted_at=now - timedelta(days=5)),
+        _row(source_book="kalshi", external_id="b", stake=100,
+             status="loss", settled_amount=0,
+             accepted_at=now - timedelta(days=5)),
+    ])
+    out = rollups(cache, now=now)
+    by_book = {b["source_book"]: b for b in out["by_book"]}
+    assert by_book["coral33"]["count"] == 1
+    assert by_book["coral33"]["wagered"] == 100
+    assert by_book["kalshi"]["count"] == 1
