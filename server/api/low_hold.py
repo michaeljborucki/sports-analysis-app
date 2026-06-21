@@ -47,7 +47,10 @@ def build_router(cache: OddsCache) -> APIRouter:
         books: str = "",
         max_hold_pct: float = 1.0,
     ) -> LowHoldResponse:
-        cache_key = ("low_hold", str(cache.path), books, max_hold_pct)
+        # `cache.version` folds in the OddsCache's monotonic state version
+        # so this memo can survive past its 20s TTL during quiet stretches.
+        # See server/api/ev.py for the full rationale.
+        cache_key = ("low_hold", str(cache.path), cache.version, books, max_hold_pct)
         hit = memo.get(cache_key)
         if hit is not None:
             return hit

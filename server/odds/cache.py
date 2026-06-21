@@ -108,6 +108,34 @@ _MIGRATIONS = [
 class OddsCache:
     def __init__(self, path: Path):
         self.path = path
+        # Monotonic in-memory version counter. Bumps on every successful
+        # state-changing op (upsert + the three purge methods). Scanner
+        # endpoints fold this into their TTLCache keys so a quiet stretch
+        # (no upserts) re-hits the memo even after the 20s TTL expires,
+        # collapsing a re-scan of the 100MB+ SQLite cache into a single
+        # dict lookup.
+        #
+        # In-memory (not persisted) is intentional: a server restart
+        # legitimately invalidates every scanner memo anyway (the memo
+        # itself is in-process), so persisting the counter would add a
+        # write per upsert for zero gain. CPython's GIL makes the
+        # `self._version += 1` increment atomic across coroutines that
+        # share this instance.
+        self._version: int = 0
+
+    @property
+    def version(self) -> int:
+        """Monotonic counter incremented on every state-changing op.
+
+        Stable while the cache contents are unchanged — safe to include
+        in scanner TTLCache keys so unchanged-cache requests memo-hit
+        across the TTL boundary.
+        """
+        return self._version
+
+    def _bump_version(self) -> None:
+        # GIL makes this atomic in CPython. Documented for clarity.
+        self._version += 1
 
     def _conn(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.path, detect_types=sqlite3.PARSE_DECLTYPES)
@@ -160,6 +188,10 @@ class OddsCache:
                 "outcome_point": 0.0 if point is None else float(point),
                 "wager_type": r.get("wager_type"),
             })
+        if not prepared:
+            # No-op input — don't churn the version counter and pointlessly
+            # invalidate the scanner memos.
+            return
         with self._conn() as c:
             c.executemany(
                 """
@@ -183,6 +215,7 @@ class OddsCache:
                 """,
                 prepared,
             )
+        self._bump_version()
 
     def all_current(self, sport_key: str | None = None) -> list[dict]:
         """All cached rows, optionally filtered to a single sport."""
@@ -251,7 +284,10 @@ class OddsCache:
                 "DELETE FROM odds_snapshot WHERE commence_time < ?",
                 (cutoff,),
             )
-            return cur.rowcount
+            removed = cur.rowcount
+        if removed:
+            self._bump_version()
+        return removed
 
     def purge_live_rows_for_book(self, bookmaker_key: str, now: datetime) -> int:
         """Delete rows from a specific book whose game has already started.
@@ -263,7 +299,10 @@ class OddsCache:
                 "DELETE FROM odds_snapshot WHERE bookmaker_key = ? AND commence_time <= ?",
                 (bookmaker_key, cutoff),
             )
-            return cur.rowcount
+            removed = cur.rowcount
+        if removed:
+            self._bump_version()
+        return removed
 
     def purge_stale_rows(self, now: datetime, max_age_seconds: int = 600) -> int:
         """Delete rows whose `fetched_at` is older than `max_age_seconds`.
@@ -287,7 +326,10 @@ class OddsCache:
                 "DELETE FROM odds_snapshot WHERE fetched_at < ?",
                 (cutoff,),
             )
-            return cur.rowcount
+            removed = cur.rowcount
+        if removed:
+            self._bump_version()
+        return removed
 
     # ───────────────────────── Closing lines ─────────────────────────
 

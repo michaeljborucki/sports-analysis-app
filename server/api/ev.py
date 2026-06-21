@@ -88,8 +88,17 @@ def build_router(cache: OddsCache) -> APIRouter:
         window comes back from this cache instead of re-running the full
         devig pass over 1000+ rows.
         """
+        # `cache.version` folds in the OddsCache's monotonic state version.
+        # When no upserts/purges have happened since the last call, the
+        # version is unchanged → same key → the memo hits even after its
+        # 20s TTL expires, which is the common case during quiet stretches
+        # (no Odds API poll cycles, no WS ticks, no coral pulls). Any
+        # upsert anywhere bumps the version and the next request gets a
+        # clean miss + fresh scan. Scanners read the full universe (no
+        # sport filter), so a global counter is exactly the right
+        # granularity.
         cache_key = (
-            "ev", str(cache.path), books, sharp_books, min_ev,
+            "ev", str(cache.path), cache.version, books, sharp_books, min_ev,
             max_longshot_odds, stale_seconds, max_results, tag_arb, sort,
             wager_filter,
         )

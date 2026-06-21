@@ -53,7 +53,10 @@ def build_router(cache: OddsCache) -> APIRouter:
         Memoized for 20s so the Edges page's burst-of-four simultaneous
         SWR pulls collapses to one actual scan.
         """
-        cache_key = ("arb", str(cache.path), books)
+        # `cache.version` folds in the OddsCache's monotonic state version
+        # so this memo can survive past its 20s TTL during quiet stretches.
+        # See server/api/ev.py for the full rationale.
+        cache_key = ("arb", str(cache.path), cache.version, books)
         hit = memo.get(cache_key)
         if hit is not None:
             return hit
