@@ -1,9 +1,58 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from typing import Iterable
 
 from .player_names import normalize_player_name
+
+
+logger = logging.getLogger(__name__)
+
+
+# M7: Outcome-name collision dedup. Records (event_id, market_key,
+# outcome_point) addresses we've already warned about. Process-lifetime;
+# bounded by distinct addresses × server uptime (realistic worst case
+# ~few thousand entries).
+_COLLISION_WARNED: set[tuple[str, str, float]] = set()
+
+
+def _reset_collision_log_for_tests() -> None:
+    """Clear the dedup set. Tests only."""
+    _COLLISION_WARNED.clear()
+
+
+def _check_outcome_name_collisions(rows: Iterable[dict]) -> None:
+    """Walk the raw rows once, building (address → set[outcome_name]).
+    For any address where the set has >1 distinct name, emit a
+    WARNING (deduplicated via _COLLISION_WARNED). Pure observability —
+    never mutates rows or raises.
+    """
+    seen: dict[tuple[str, str, float], set[str]] = {}
+    for r in rows:
+        try:
+            point = float(r.get("outcome_point") or 0.0)
+        except (TypeError, ValueError):
+            point = 0.0
+        addr = (
+            str(r.get("event_id") or ""),
+            str(r.get("market_key") or ""),
+            point,
+        )
+        name = str(r.get("outcome_name") or "")
+        if not addr[0] or not addr[1] or not name:
+            continue
+        seen.setdefault(addr, set()).add(name)
+    for addr, names in seen.items():
+        if len(names) <= 1:
+            continue
+        if addr in _COLLISION_WARNED:
+            continue
+        _COLLISION_WARNED.add(addr)
+        logger.warning(
+            "outcome-name collision in %s/%s/%s: %s",
+            addr[0], addr[1], addr[2], ", ".join(sorted(names)),
+        )
 
 
 # Bookmaker keys whose rows we DO NOT want to ingest from the Odds API —
@@ -128,6 +177,12 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
     """
     from .best_odds import pick_best_price, median_american_odds
     from .commissions import effective_american
+
+    # M7: outcome-name collision detection — log once per address per
+    # process when two books emit different outcome_name strings for the
+    # same (event_id, market_key, outcome_point). Pure observability.
+    rows = list(rows)
+    _check_outcome_name_collisions(rows)
 
     by_event: dict[str, dict] = {}
     for r in rows:
