@@ -121,9 +121,9 @@ In the `prepared.append({...})` block, add:
 
 In the `INSERT INTO odds_snapshot` columns list, append `, max_stake_dollars`.
 In the `VALUES` list, append `, :max_stake_dollars`.
-In the `DO UPDATE SET` clause, append:
+In the `DO UPDATE SET` clause, append (using COALESCE so a NULL write — e.g. a Polymarket `price_change` delta that doesn't carry size — does NOT clobber a previously-captured non-null value; Task 2's `test_price_change_leaves_max_stake_dollars_unchanged` depends on this):
 ```sql
-                   max_stake_dollars = excluded.max_stake_dollars,
+                   max_stake_dollars = COALESCE(excluded.max_stake_dollars, max_stake_dollars),
 ```
 
 - [ ] **Step 4: Run all cache tests**
@@ -325,7 +325,10 @@ Update `_upsert_with_price` signature + body to accept and propagate `max_stake_
         return 1
 ```
 
-(Verify the existing `_process_price_change` already calls `_upsert_with_price` WITHOUT `max_stake_dollars` — if so, that path naturally leaves the existing column value unchanged via the `if max_stake_dollars is not None` guard. If `_upsert_with_price` instead always writes a fresh row, you'll need to read the existing row's `max_stake_dollars` and preserve it. Check before implementing.)
+Why this works for the `price_change` path:
+- `_process_price_change` calls `_upsert_with_price` WITHOUT a `max_stake_dollars` arg → default `None` → the `if max_stake_dollars is not None` guard skips adding the field to `new_row`.
+- `cache.upsert`'s prepared dict still defaults the field to `None` (via `r.get(...)`), but the `DO UPDATE SET` clause uses `COALESCE(excluded.max_stake_dollars, max_stake_dollars)` (added in Task 1) — so writing NULL preserves the prior non-null value.
+- Net effect: book events refresh size; price_change events refresh only price. Spec's "leave size stale between book events" behavior holds.
 
 - [ ] **Step 5: Run tests**
 
@@ -1114,7 +1117,7 @@ Modify the `sides` block to include the size field, and add the top-level clamp 
     }
 ```
 
-Apply the same pattern to `_try_three_way` / its emit path (3 legs, same min-over-legs clamp).
+Apply the same pattern to `_emit_three_way` in `server/odds/arbitrage.py:151` (3 legs, same min-over-legs clamp — `min(leg.max_stake / leg.stake_pct for leg in legs)` when all three legs are non-null, else None).
 
 - [ ] **Step 4: Extend Pydantic models**
 
@@ -1143,15 +1146,28 @@ class ArbOpportunity(BaseModel):
     max_total_stake_dollars: float | None = None
 ```
 
-- [ ] **Step 5: Verify rows_to_games carries max_stake_dollars through**
+- [ ] **Step 5: Add max_stake_dollars to the price dict in normalize.py**
 
-Check `server/odds/best_odds.py` — find `rows_to_games` and confirm the price dicts it emits include `max_stake_dollars` from each `odds_snapshot` row. If not, add the field to the price dict construction (same pattern as `point`, `bookmaker_key`).
+`rows_to_games` lives at `server/odds/normalize.py:122`. The price-dict construction at lines 156-165 hardcodes specific keys — it does NOT generically propagate extra columns from the row. The scanner consumes `outcome["prices"]`, so this dict is the bridge from the cache to the arb engine. Add the field:
 
-```bash
-grep -n "rows_to_games\|bookmaker_key.*price_american\|point.*price_american" server/odds/best_odds.py | head -10
+In `server/odds/normalize.py`, find the dict literal at lines 156-165 and add one line:
+
+```python
+        out["prices"].append({
+            "bookmaker_key": r["bookmaker_key"],
+            "price_american": effective_price,
+            "point": r.get("outcome_point"),
+            "fetched_at": fetched_at,
+            "wager_type": r.get("wager_type"),
+            "max_stake_dollars": r.get("max_stake_dollars"),  # ← new
+        })
 ```
 
-If the price dict construction doesn't already pass through extra columns, add `"max_stake_dollars": r.get("max_stake_dollars")` to the price dict literal.
+Quick verification:
+```bash
+grep -n "max_stake_dollars" server/odds/normalize.py
+# Should show exactly one line, the new addition
+```
 
 - [ ] **Step 6: Run tests + commit**
 
