@@ -33,7 +33,7 @@ Each item lands as a discrete change. The audit recommendations already specify 
 
 **Files:** `server/odds/books/kalshi/normalizer.py`, `server/odds/books/polymarket/event_matcher.py`.
 
-**Today:** Date-only Kalshi tickers and Polymarket date-only slugs anchor a single noon-ET candidate `commence_time` and the matcher accepts any Odds-API event within a wide window (`±6h` on Polymarket; Kalshi inherits the wide window indirectly via `_parse_event_ticker_commence`). Playoff back-to-backs between the same two teams can theoretically cross-pair.
+**Today:** Date-only Kalshi tickers and Polymarket date-only slugs anchor a single noon-ET candidate `commence_time` and the matcher accepts any Odds-API event within a wide window (Polymarket: `POLYMARKET_MATCH_WINDOW_MIN = 720` minutes = `±12h` / 24h total; Kalshi inherits a similar wide window indirectly via `_parse_event_ticker_commence`). Playoff back-to-backs between the same two teams can theoretically cross-pair.
 
 **Fix:** Multi-anchor scan. For date-only inputs, generate candidate `commence_time`s at `{12:00, 19:00, 22:00}` US-Eastern (covers day games, primetime, late West-Coast windows). For each candidate, use a tight `±3h` window. Pick the candidate that's nearest in time to a real Odds-API event in the same date bucket. Falls back to the original wide window only when no candidate hits.
 
