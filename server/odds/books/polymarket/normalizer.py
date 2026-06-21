@@ -606,10 +606,19 @@ def _normalize_soccer_3way_event(
         if seg in (code_a, code_b, "draw") and seg not in by_segment:
             by_segment[seg] = market
 
-    # Require ALL three legs — a partial 3-way set is unusable for
-    # cross-book aggregation (we'd be left with a 2-way book on a 3-way
-    # market). Defer until next REST cycle when all 3 land.
-    if not (code_a in by_segment and code_b in by_segment and "draw" in by_segment):
+    # M6: allow partials. Emit whatever outcomes ARE present (typically
+    # 2-of-3, when draw isn't listed yet on an early-tournament event).
+    # The cross-book devig still gates the full 3-way downstream;
+    # surfacing partials lets another book with all 3 complete the
+    # picture. The 3-way overround sanity check only runs when all 3
+    # legs are present — it requires all 3 YES probs to sum sensibly.
+    candidate_segments: list[tuple[str, str]] = [
+        (code_a, canon_a),
+        (code_b, canon_b),
+        ("draw", "Draw"),
+    ]
+    present_segments = [(s, n) for s, n in candidate_segments if s in by_segment]
+    if not present_segments:
         return []
 
     base = {
@@ -625,13 +634,8 @@ def _normalize_soccer_3way_event(
     }
 
     rows: list[dict] = []
-    segment_to_outcome: list[tuple[str, str]] = [
-        (code_a, canon_a),
-        (code_b, canon_b),
-        ("draw", "Draw"),
-    ]
     yes_probs: list[float] = []
-    for segment, outcome_name in segment_to_outcome:
+    for segment, outcome_name in present_segments:
         market = by_segment[segment]
         extracted = _extract_two_sided(market)
         if extracted is None:
@@ -661,10 +665,10 @@ def _normalize_soccer_3way_event(
             "_ws_side":       "yes",
         })
 
-    # 3-way overround check: sum of 3 YES probs should be ~1.0 + small vig.
-    # Use the same MAX_OVERROUND as binary markets — bookmakers don't
-    # widen vig much on 3-way.
-    if sum(yes_probs) > MAX_OVERROUND:
+    # 3-way overround check only when ALL three legs are present.
+    # Partials (2-of-3 / 1-of-3) don't sum to a meaningful 3-way
+    # overround; downstream cross-book devig handles their quality.
+    if len(present_segments) == 3 and sum(yes_probs) > MAX_OVERROUND:
         return []
 
     return rows
