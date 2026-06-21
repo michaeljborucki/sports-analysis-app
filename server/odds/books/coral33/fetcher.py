@@ -273,7 +273,12 @@ class Coral33Fetcher:
         # Once-per-cycle cleanup of rows for games that have gone live since
         # we last pulled them. Done at the top of the cycle so all three tiers
         # write into a freshly-scrubbed slate.
-        purged = self.cache.purge_live_rows_for_book("coral33", now)
+        # 30-minute grace window: don't purge a row whose commence_time
+        # is within the last 30 minutes. Catches the common rain-delay /
+        # soft-start case without polling Coral33 for live game status.
+        purged = self.cache.purge_live_rows_for_book(
+            "coral33", now, grace_seconds=1800,
+        )
         if purged:
             logger.info("coral33 %s: purged %d live rows", sport_key, purged)
         # Row-level TTL for dropped lines — applies to ALL books, not just

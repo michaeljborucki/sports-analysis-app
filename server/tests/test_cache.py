@@ -246,3 +246,52 @@ def test_price_change_preserves_max_stake_via_coalesce(tmp_path):
     rows = cache.all_current()
     assert rows[0]["price_american"] == -148
     assert rows[0]["max_stake_dollars"] == 100.0  # preserved
+
+
+def test_purge_live_rows_grace_window_preserves_recent(tmp_path):
+    """Rows whose commence_time is within `grace_seconds` of now should
+    NOT be purged — they may be delayed / soft-start games."""
+    from datetime import datetime, timezone, timedelta
+    from server.odds.cache import OddsCache
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    now = datetime(2026, 6, 21, 20, 0, tzinfo=timezone.utc)
+    recent = {
+        "event_id": "ev_recent", "sport_key": "nba",
+        "home_team": "BOS", "away_team": "MIA",
+        "commence_time": now - timedelta(minutes=10),
+        "bookmaker_key": "coral33",
+        "market_key": "h2h", "outcome_name": "BOS",
+        "outcome_point": None, "price_american": -145,
+        "fetched_at": now,
+    }
+    old = {**recent, "event_id": "ev_old",
+           "commence_time": now - timedelta(minutes=45)}
+    cache.upsert([recent, old])
+    removed = cache.purge_live_rows_for_book("coral33", now, grace_seconds=1800)
+    assert removed == 1
+    remaining = {r["event_id"] for r in cache.all_current()}
+    assert "ev_recent" in remaining
+    assert "ev_old" not in remaining
+
+
+def test_purge_live_rows_default_grace_is_zero(tmp_path):
+    """Without grace_seconds (existing call sites), behavior is
+    unchanged — anything with commence_time <= now is purged."""
+    from datetime import datetime, timezone, timedelta
+    from server.odds.cache import OddsCache
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    now = datetime(2026, 6, 21, 20, 0, tzinfo=timezone.utc)
+    row = {
+        "event_id": "ev_at_kickoff", "sport_key": "nba",
+        "home_team": "BOS", "away_team": "MIA",
+        "commence_time": now - timedelta(seconds=1),
+        "bookmaker_key": "coral33",
+        "market_key": "h2h", "outcome_name": "BOS",
+        "outcome_point": None, "price_american": -145,
+        "fetched_at": now,
+    }
+    cache.upsert([row])
+    removed = cache.purge_live_rows_for_book("coral33", now)
+    assert removed == 1

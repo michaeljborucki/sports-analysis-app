@@ -342,11 +342,22 @@ class OddsCache:
             self._bump_version()
         return removed
 
-    def purge_live_rows_for_book(self, bookmaker_key: str, now: datetime) -> int:
-        """Delete rows from a specific book whose game has already started.
-        Used for coral33: its in-play prices aren't trusted by the sharp devig
-        model so we keep them out of every scanner's universe."""
-        cutoff = now.isoformat()
+    def purge_live_rows_for_book(
+        self, bookmaker_key: str, now: datetime,
+        grace_seconds: int = 0,
+    ) -> int:
+        """Delete rows from a specific book whose game has been live
+        for more than `grace_seconds`. Default 0 — any row whose
+        commence_time <= now gets purged. Used for coral33 with
+        grace_seconds=1800 (30 minutes) so delayed / soft-start games
+        don't lose their pre-game lines while actual kickoff is still
+        pending.
+        """
+        # Guard against clock skew / negative input — never expand the
+        # purge window past `now`.
+        grace = max(int(grace_seconds), 0)
+        cutoff_dt = now - timedelta(seconds=grace)
+        cutoff = cutoff_dt.isoformat()
         with self._conn() as c:
             cur = c.execute(
                 "DELETE FROM odds_snapshot WHERE bookmaker_key = ? AND commence_time <= ?",
