@@ -1174,7 +1174,7 @@ grep -n "max_stake_dollars" server/odds/normalize.py
 ```bash
 .venv/bin/python -m pytest server/tests/test_arbitrage_depth.py -v
 .venv/bin/python -m pytest server/tests/test_api.py -v -k arb
-git add server/odds/arbitrage.py server/api/arbitrage.py server/tests/test_arbitrage_depth.py server/odds/best_odds.py
+git add server/odds/arbitrage.py server/api/arbitrage.py server/tests/test_arbitrage_depth.py server/odds/normalize.py
 git commit -m "$(cat <<'EOF'
 feat(arb): emit max_stake_dollars per leg + max_total_stake_dollars (#10)
 
