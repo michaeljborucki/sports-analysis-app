@@ -133,11 +133,19 @@ def create_app() -> FastAPI:
         endpoint costs ~14 calls per account per refresh; 8 accounts ×
         30-min cadence = 224 calls/hour, well under their rate limit.
         Settled wagers are immutable so re-pulling is cheap on the
-        persistence side (JSON overwrite)."""
+        persistence side (JSON overwrite). After refreshing, mirror the
+        log into the unified `bets` table so /api/bets is in sync.
+        """
         try:
-            await accounts_scraper.get_wager_log(force=True)
+            wager_log = await accounts_scraper.get_wager_log(force=True)
         except Exception:
             logging.exception("wager-log refresh tick failed")
+            return
+        try:
+            from .odds.books.coral33.bets_mirror import mirror_coral33_wager_log_to_bets
+            mirror_coral33_wager_log_to_bets(cache, wager_log)
+        except Exception:
+            logging.exception("coral33 bets mirror tick failed")
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -202,10 +210,61 @@ def create_app() -> FastAPI:
                 replace_existing=True,
                 max_instances=1,
             )
+
+            # Kalshi portfolio sync — pulls auth'd fills into the bets
+            # table. 5-min cadence. No-op when Kalshi auth isn't set.
+            async def _kalshi_portfolio_tick():
+                try:
+                    if not kalshi_fetcher.client.is_authenticated:
+                        return
+                    from .odds.books.kalshi.portfolio_sync import sync_kalshi_fills
+                    await sync_kalshi_fills(client=kalshi_fetcher.client, cache=cache)
+                except Exception:
+                    logging.exception("kalshi portfolio sync tick failed")
+
+            clv_scheduler.add_job(
+                _kalshi_portfolio_tick,
+                trigger="interval", minutes=5,
+                id="kalshi_portfolio_sync",
+                replace_existing=True, max_instances=1,
+            )
+
+            # Polymarket trade sync — wallet-keyed, no auth needed.
+            # Wallet address is read directly from user_settings.json under
+            # `polymarket_wallet_address`. Not yet in the UserSettings
+            # dataclass — bypass and read the JSON file to avoid a schema
+            # migration just for one optional field.
+            async def _polymarket_portfolio_tick():
+                try:
+                    import json
+                    from .user_settings import SETTINGS_PATH
+                    try:
+                        with open(SETTINGS_PATH, "r") as fh:
+                            wallet = json.load(fh).get("polymarket_wallet_address", "") or ""
+                    except (FileNotFoundError, json.JSONDecodeError):
+                        wallet = ""
+                    if not wallet:
+                        return
+                    from .odds.books.polymarket.portfolio_sync import sync_polymarket_trades
+                    await sync_polymarket_trades(
+                        client=polymarket_fetcher.client,
+                        cache=cache,
+                        wallet_address=wallet,
+                    )
+                except Exception:
+                    logging.exception("polymarket portfolio sync tick failed")
+
+            clv_scheduler.add_job(
+                _polymarket_portfolio_tick,
+                trigger="interval", minutes=5,
+                id="polymarket_portfolio_sync",
+                replace_existing=True, max_instances=1,
+            )
+
             clv_scheduler.start()
             logging.info(
                 "CLV capture (60s) + wager-log refresh (30min) "
-                "schedulers started"
+                "+ kalshi/polymarket portfolio sync (5min) schedulers started"
             )
         else:
             logging.info(
