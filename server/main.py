@@ -269,8 +269,10 @@ def create_app() -> FastAPI:
     from .api.cache_mode import build_router as cache_mode_router
     from .api.settings import build_router as settings_router
     from .api.stream import build_router as stream_router
+    from .api.bets import build_router as bets_router
 
     app.include_router(stream_router())
+    app.include_router(bets_router(cache))
     app.include_router(health_router(cache, fetcher))
     app.include_router(odds_router(cache))
     app.include_router(props_router(cache))
