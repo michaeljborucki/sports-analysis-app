@@ -33,8 +33,12 @@ logger = logging.getLogger(__name__)
 # to thread fixtures through every code path that touches the orchestrator.
 _scraper: Any = None
 _cache_db_path: Path = Path("server/cache.db")
+# Lives next to cache.db (mirrors the existing cache_mode.json pattern at
+# server/cache_mode.json). server/main.py overrides this via configure() to
+# the same path; the default is here for subprocesses / scripts that import
+# the factory without going through create_app.
 _mode_config_path: Path = (
-    Path(__file__).resolve().parent.parent / "config" / "sidecar_mode.json"
+    Path(__file__).resolve().parent.parent / "sidecar_mode.json"
 )
 _orchestrator: SidecarOrchestrator | None = None
 
