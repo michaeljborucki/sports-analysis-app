@@ -158,6 +158,15 @@ def create_app() -> FastAPI:
         sse_flush_task = _asyncio.create_task(_events.flush_loop())
         sse_heartbeat_task = _asyncio.create_task(_events.heartbeat_loop())
 
+        # OddsCache version-bump debounce loop. WS upserts (Kalshi +
+        # Polymarket) call _bump_version() per row, which used to blow
+        # up the scanner memos hundreds of times/min during live games.
+        # This loop coalesces bumps into one version change per 200ms
+        # window so the scanner memo's cache-version fingerprint holds.
+        # Runs regardless of cache mode — harmless when no upserts
+        # happen, no-op when the dirty flag stays clear.
+        cache_version_flush_task = _asyncio.create_task(cache.version_flush_loop())
+
         # cache_mode is the single source of truth for whether fetchers run.
         # LIVE → both fetchers up. LATEST / SNAPSHOT → both off, serving the
         # frozen snapshot file. The user toggling cache mode in the UI IS the
@@ -310,6 +319,21 @@ def create_app() -> FastAPI:
                 replace_existing=True, max_instances=1, coalesce=True,
             )
 
+            # closing_lines TTL purge — the closing_lines table was 62%
+            # of cache.db with no expiry mechanism. Daily, 90-day cutoff
+            # keeps recent CLV analysis intact; older bets in the `bets`
+            # table will report "CLV unavailable" once their closing
+            # lines drop out, which is acceptable. `coalesce=True` +
+            # `jitter` smooth out post-resume catch-up; `max_instances=1`
+            # prevents overlap if a purge somehow runs long.
+            clv_scheduler.add_job(
+                lambda: cache.purge_closing_lines_older_than(days=90),
+                trigger="interval", hours=24,
+                id="closing_lines_purge",
+                replace_existing=True, coalesce=True,
+                max_instances=1, jitter=600,
+            )
+
             clv_scheduler.start()
             logging.info(
                 "CLV capture (60s) + wager-log refresh (30min) "
@@ -326,10 +350,12 @@ def create_app() -> FastAPI:
         yield
         # Cancel SSE background loops first — they don't depend on any
         # other resource and stopping them lets connected browsers see
-        # a clean close.
+        # a clean close. The cache version flush loop sits in the same
+        # bucket — no external dependencies, cancel-clean.
         sse_flush_task.cancel()
         sse_heartbeat_task.cancel()
-        for t in (sse_flush_task, sse_heartbeat_task):
+        cache_version_flush_task.cancel()
+        for t in (sse_flush_task, sse_heartbeat_task, cache_version_flush_task):
             try:
                 await t
             except (asyncio.CancelledError, BaseException):

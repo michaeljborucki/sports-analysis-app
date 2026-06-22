@@ -107,6 +107,11 @@ def test_arbitrage_memo_busts_on_upsert(cache, monkeypatch):
     app = FastAPI()
     app.include_router(build_arb_router(cache))
     with TestClient(app) as client:
+        # Flush any pending bump from the seeding upsert so v_before
+        # captures the resting version (the upsert sets a dirty flag
+        # the loop converts to a bump on its next tick; here we drive
+        # it inline).
+        cache._flush_version_now()
         r1 = client.get("/api/arbitrage")
         v_before = cache.version
 
@@ -123,6 +128,9 @@ def test_arbitrage_memo_busts_on_upsert(cache, monkeypatch):
                 "price_american": -105, "fetched_at": now,
             },
         ])
+        # Force the debounced bump through so the version-keyed memo
+        # busts deterministically for the second request below.
+        cache._flush_version_now()
         assert cache.version == v_before + 1
 
         r2 = client.get("/api/arbitrage")

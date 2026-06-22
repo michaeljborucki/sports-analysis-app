@@ -1,9 +1,31 @@
 from __future__ import annotations
 
+import asyncio
+import functools
+import logging
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Iterable
+
+
+logger = logging.getLogger(__name__)
+
+
+# Debounce window for the in-memory cache version counter. WS upserts
+# (Kalshi + Polymarket) call `_bump_version()` per row, which blew up
+# the scanner memos hundreds of times per minute during live games.
+# Coalescing bumps inside a 200ms window means lots of WS writes
+# collapse to ONE version change — the scanner memo's cache-version
+# fingerprint then holds, and the 5 scanner endpoints reuse the same
+# cached scan instead of re-running.
+#
+# 200ms is short enough that user-perceived freshness is unaffected
+# (well below human-perceptible UI update latency) but long enough to
+# coalesce typical WS bursts. Aligned in spirit with the SSE flush_loop
+# in events.py — both batch state-change signals at the boundary
+# closest to consumers.
+VERSION_FLUSH_INTERVAL_S = 0.2
 
 
 SCHEMA = """
@@ -224,6 +246,15 @@ def _init_schema(conn: sqlite3.Connection) -> None:
         "CREATE INDEX IF NOT EXISTS idx_odds_fetched_at ON odds_snapshot(fetched_at)",
         "CREATE INDEX IF NOT EXISTS idx_odds_sport_market ON odds_snapshot(sport_key, market_key)",
         "CREATE INDEX IF NOT EXISTS idx_odds_commence_time ON odds_snapshot(commence_time)",
+        # Composite covering index for distinct_events() / events_in_close_window().
+        # Even with the HAVING pushdown those queries still SCAN odds_snapshot
+        # to satisfy the GROUP BY event_id and the MAX(...) selects on the
+        # other event-identity columns. This index orders rows so SQLite can
+        # walk it once in event_id order — the leading column drives the
+        # GROUP BY, the rest cover the MAX(...) projections so SQLite never
+        # needs to revisit the table heap.
+        "CREATE INDEX IF NOT EXISTS idx_odds_event_commence "
+        "ON odds_snapshot(event_id, commence_time, sport_key, home_team, away_team)",
     ):
         conn.execute(idx_stmt)
 
@@ -246,38 +277,54 @@ def init_schema_on_path(path) -> None:
 class OddsCache:
     def __init__(self, path: Path):
         self.path = path
-        # Monotonic in-memory version counter. Bumps on every successful
-        # state-changing op (upsert + the three purge methods). Scanner
-        # endpoints fold this into their TTLCache keys so a quiet stretch
-        # (no upserts) re-hits the memo even after the 20s TTL expires,
-        # collapsing a re-scan of the 100MB+ SQLite cache into a single
-        # dict lookup.
+        # Monotonic in-memory version counter. Bumped at most once per
+        # VERSION_FLUSH_INTERVAL_S window by `_version_flush_loop`.
+        # Scanner endpoints fold this into their TTLCache keys so a
+        # quiet stretch (no upserts) re-hits the memo even after the
+        # 20s TTL expires, collapsing a re-scan of the 100MB+ SQLite
+        # cache into a single dict lookup.
         #
         # In-memory (not persisted) is intentional: a server restart
         # legitimately invalidates every scanner memo anyway (the memo
         # itself is in-process), so persisting the counter would add a
-        # write per upsert for zero gain. CPython's GIL makes the
-        # `self._version += 1` increment atomic across coroutines that
-        # share this instance.
+        # write per upsert for zero gain.
         self._version: int = 0
+        # Debounce flag — set synchronously by `_bump_version()`, read
+        # and cleared by the background flush loop. Read/write of a
+        # Python bool is atomic under the GIL; a write between the
+        # loop's read and clear is captured on the next iteration.
+        self._version_dirty: bool = False
 
     @property
     def version(self) -> int:
-        """Monotonic counter incremented on every state-changing op.
+        """Monotonic counter incremented at most once per
+        VERSION_FLUSH_INTERVAL_S window when any state-changing op
+        has occurred since the previous flush.
 
         Stable while the cache contents are unchanged — safe to include
         in scanner TTLCache keys so unchanged-cache requests memo-hit
-        across the TTL boundary.
+        across the TTL boundary. Lags behind individual writes by up
+        to one flush interval, which is the whole point: bursts of WS
+        upserts (Kalshi/Polymarket fire per row) collapse to a single
+        memo invalidation instead of hundreds.
         """
         return self._version
 
     def _bump_version(self) -> None:
-        # GIL makes this atomic in CPython. Documented for clarity.
-        self._version += 1
+        """Mark the cache version as dirty. The actual counter
+        increment is deferred to the next `_version_flush_loop` tick,
+        which coalesces bursts of bumps into one version change per
+        VERSION_FLUSH_INTERVAL_S window.
+
+        Sync flag-set — safe to call from any context (no running
+        event loop required, no awaits). Mirrors the pattern in
+        `server/odds/events.py`'s `mark_dirty()` / `flush_loop()`.
+        """
+        self._version_dirty = True
         # Notify the SSE event broadcaster that cache state changed.
         # Sync flag-set — safe to call from any context (no running
-        # event loop required, no awaits). The flush_loop coalesces
-        # bursts of bumps into one outbound tick per 100ms window.
+        # event loop required, no awaits). The SSE flush_loop coalesces
+        # bursts of bumps into one outbound tick per 1s window.
         # Lazy import keeps `cache.py` standalone for tests that
         # instantiate OddsCache without the rest of the server stack.
         try:
@@ -285,6 +332,78 @@ class OddsCache:
             _events.mark_dirty()
         except Exception:  # pragma: no cover — never let SSE break upserts
             pass
+
+    def _flush_version_now(self) -> bool:
+        """Apply a pending version bump immediately, if any.
+
+        Returns True if the counter was incremented, False if no
+        bump was pending. Used by `_version_flush_loop` (production
+        path) and by tests that want the synchronous pre-debounce
+        behavior without spinning up the flush task.
+        """
+        if self._version_dirty:
+            # Clear before increment so any concurrent _bump_version
+            # during this call is captured on the next flush tick.
+            self._version_dirty = False
+            self._version += 1
+            # Bust the per-version memo so the next all_current_cached()
+            # call rebuilds against the new version.
+            try:
+                self._all_current_for_version.cache_clear()
+            except Exception:  # pragma: no cover — defensive
+                pass
+            return True
+        return False
+
+    async def version_flush_loop(self) -> None:
+        """Background task: every VERSION_FLUSH_INTERVAL_S, increment
+        the version counter ONCE if any `_bump_version()` calls have
+        occurred since the previous tick. Multiple bumps in the window
+        coalesce to a single version change — that's the whole point.
+
+        Started from FastAPI's lifespan context next to the SSE
+        flush_loop; cancelled on shutdown. Exceptions during a single
+        tick are logged so a transient failure doesn't kill the loop.
+        """
+        logger.info(
+            "OddsCache version_flush_loop starting (interval=%.2fs)",
+            VERSION_FLUSH_INTERVAL_S,
+        )
+        while True:
+            try:
+                await asyncio.sleep(VERSION_FLUSH_INTERVAL_S)
+                self._flush_version_now()
+            except asyncio.CancelledError:
+                logger.info("OddsCache version_flush_loop cancelled")
+                raise
+            except Exception:
+                logger.exception(
+                    "OddsCache version_flush_loop iteration failed; continuing"
+                )
+
+    # `lru_cache` on an instance method holds `self` in the cache key, so
+    # the cache survives across instances. In practice OddsCache is a
+    # process-wide singleton, so the leak is bounded to one entry — the
+    # latest version's materialized rows — and is GC'd on every bump via
+    # `_flush_version_now`'s `cache_clear()`.
+    @functools.lru_cache(maxsize=1)
+    def _all_current_for_version(self, version: int) -> list[dict]:
+        """Materialized rows for a specific cache version. lru_cache=1
+        means only the latest version is held; the previous gets GC'd as
+        soon as a new bump lands (and `_flush_version_now` clears the
+        cache eagerly on every version change for promptness)."""
+        return self.all_current()
+
+    def all_current_cached(self) -> list[dict]:
+        """Cache-version-aware wrapper around `all_current()`.
+
+        All callers in one tick (e.g. the Edges page firing arb + lh +
+        ev + free_bet + profit_boost on the same SWR revalidation)
+        share the same materialized row list — second-and-later callers
+        get an O(1) lookup returning the SAME list object by identity.
+        Memoization invalidates on the next version bump.
+        """
+        return self._all_current_for_version(self.version)
 
     def _conn(self) -> sqlite3.Connection:
         conn = sqlite3.connect(
@@ -629,6 +748,62 @@ class OddsCache:
             ).fetchone()
             return dict(row) if row else None
 
+    def find_closing_lines_bulk(
+        self,
+        addresses: list[tuple[str, str, str, float | None]],
+    ) -> dict[tuple[str, str, str, float | None], dict]:
+        """Batched exact-match version of `find_closing_line`.
+
+        Address tuple: (event_id, market_key, outcome_name, outcome_point).
+        Returns a dict keyed by the input tuple. Addresses with no
+        matching closing line are simply absent from the result —
+        callers should check `address in result`.
+
+        Trades the closest-line fallback for ONE query instead of N. The
+        /api/bets path fires ~150 individual lookups per page load
+        (~1.4s warm cost); batching collapses that to a single round
+        trip. Callers needing the closest-line fallback (e.g. backfill
+        scripts) keep using `find_closing_line` per-row.
+        """
+        if not addresses:
+            return {}
+        # Normalize NULL outcome_point to the sentinel (0.0) used at
+        # write time so the row-value match lines up with the stored
+        # PK column.
+        normalized: list[tuple[str, str, str, float]] = []
+        for ev, mk, on, pt in addresses:
+            normalized.append((ev, mk, on, 0.0 if pt is None else float(pt)))
+        # Build `IN (VALUES (?,?,?,?), (?,?,?,?), ...)` parameter
+        # expansion. SQLite supports row-value IN with a VALUES list —
+        # verified on 3.51 (and back to 3.15 where row-value comparison
+        # was added).
+        placeholders = ", ".join(["(?,?,?,?)"] * len(normalized))
+        params: list = []
+        for tup in normalized:
+            params.extend(tup)
+        q = (
+            "SELECT * FROM closing_lines "
+            "WHERE (event_id, market_key, outcome_name, outcome_point) "
+            f"IN (VALUES {placeholders})"
+        )
+        with self._conn() as c:
+            rows = c.execute(q, params).fetchall()
+        out: dict[tuple[str, str, str, float | None], dict] = {}
+        # Map results back onto the caller's original address tuples
+        # (so a caller that passed outcome_point=None gets None back in
+        # the key, not the 0.0 sentinel).
+        addr_by_normalized = {n: a for n, a in zip(normalized, addresses)}
+        for r in rows:
+            d = dict(r)
+            norm_key = (
+                d["event_id"], d["market_key"],
+                d["outcome_name"], float(d["outcome_point"]),
+            )
+            orig = addr_by_normalized.get(norm_key)
+            if orig is not None:
+                out[orig] = d
+        return out
+
     def events_in_close_window(
         self,
         now: datetime,
@@ -668,6 +843,31 @@ class OddsCache:
         well past the wager-log retention window so live CLV lookups stay
         covered."""
         cutoff = (now - timedelta(days=days)).isoformat()
+        with self._conn() as c:
+            cur = c.execute(
+                "DELETE FROM closing_lines WHERE commence_time < ?",
+                (cutoff,),
+            )
+            return cur.rowcount
+
+    def purge_closing_lines_older_than(self, days: int = 90) -> int:
+        """Delete `closing_lines` rows whose commence_time is older
+        than `days` ago. Returns number of rows deleted. Idempotent.
+
+        Scheduled to run daily in `server/main.py` because
+        closing_lines was the dominant cache.db consumer (140 MB / 62%
+        with no expiry mechanism). 90 days keeps recent CLV analysis
+        intact — older bets in the `bets` table simply report "CLV
+        unavailable" once their closing lines drop out, which is fine.
+
+        Sibling to `purge_old_closing_lines(now, days=60)`: this one
+        takes only a duration and uses `datetime.utcnow()` internally
+        so apscheduler can call it via a no-arg lambda. The other is
+        invoked from `_capture_tick` with the same `now` it uses for
+        capture, to keep tick semantics tight.
+        """
+        from datetime import datetime as _dt, timezone as _tz
+        cutoff = (_dt.now(_tz.utc) - timedelta(days=days)).isoformat()
         with self._conn() as c:
             cur = c.execute(
                 "DELETE FROM closing_lines WHERE commence_time < ?",
