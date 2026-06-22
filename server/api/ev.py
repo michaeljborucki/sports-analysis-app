@@ -11,6 +11,7 @@ from ..odds.cache import OddsCache
 from ..odds.coalesce import memoized_coalesced
 from ..odds.ev import SHARP_BOOKS, scan_all_ev
 from ..odds.normalize import rows_to_games
+from ..sidecar.ev_row_id import build_ev_row_id
 from ..util import TTLCache
 
 
@@ -40,6 +41,10 @@ class EVOpportunity(BaseModel):
     #   "parlay"   — line is on coral33's Parlay tab only
     #   "both"     — line is on both tabs (the common case)
     wager_type: Literal["straight", "parlay", "both"] | None = None
+    # Canonical row identifier (event_id|market_kind|point|outcome_name|book)
+    # used by the auto-bet sidecar so the frontend can echo a single string
+    # back to POST /api/sidecar/place.
+    ev_row_id: str
 
 
 class EVResponse(BaseModel):
@@ -160,6 +165,18 @@ def build_router(cache: OddsCache) -> APIRouter:
                     if o.get("book") == "coral33"
                     and o.get("wager_type") in ("parlay", "both")
                 ]
+
+            # Stamp each opportunity with its canonical row_id so the UI can
+            # round-trip it back to POST /api/sidecar/place without having
+            # to reconstruct the address from individual fields.
+            for o in opps:
+                o["ev_row_id"] = build_ev_row_id(
+                    event_id=o["event_id"],
+                    market_kind=o["market_kind"],
+                    point=o.get("point"),
+                    outcome_name=o["outcome_name"],
+                    book=o["book"],
+                )
 
             return EVResponse(
                 opportunities=[EVOpportunity.model_validate(o) for o in opps],
