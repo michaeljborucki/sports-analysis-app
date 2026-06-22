@@ -2,7 +2,10 @@ import asyncio
 import json
 from unittest.mock import AsyncMock
 
-from server.odds.books.coral33.accounts import load_account_credentials
+from server.odds.books.coral33.accounts import (
+    AccountsScraper,
+    load_account_credentials,
+)
 
 
 def test_load_credentials_parses_proxy_and_cap(monkeypatch):
@@ -117,3 +120,42 @@ def test_account_snapshot_carries_placement_context(monkeypatch):
     assert snap.store == "wiseguys"
     assert snap.cust_profile == ".                   "
     assert snap.available_balance == 480.0
+
+
+def test_trigger_refresh_async_coalesces_concurrent_taps(monkeypatch):
+    """Rapid 5x POST to /api/coral33/accounts/refresh must spawn ONE
+    scrape; the other 4 return ``already_running`` without queueing on
+    the lock and re-pulling every account."""
+    monkeypatch.setenv("CORAL33_ACCOUNTS", json.dumps([
+        {"customer_id": "VR1", "password": "p"},
+    ]))
+
+    scrape_count = 0
+
+    async def slow_fetch(cred):
+        nonlocal scrape_count
+        scrape_count += 1
+        # Yield so the next trigger_refresh_async sees _refreshing=True.
+        await asyncio.sleep(0.05)
+        from server.odds.books.coral33.accounts import AccountSnapshot
+        return AccountSnapshot(
+            customer_id=cred.customer_id, label=cred.customer_id,
+            fetched_at="2026-01-01T00:00:00+00:00",
+        )
+
+    from server.odds.books.coral33 import accounts as accts
+    monkeypatch.setattr(accts, "fetch_account", slow_fetch)
+
+    async def run():
+        scraper = AccountsScraper()
+        results = [scraper.trigger_refresh_async() for _ in range(5)]
+        # Let the spawned task run to completion.
+        await asyncio.sleep(0.2)
+        return results
+
+    results = asyncio.run(run())
+    # Exactly one "triggered", four "already_running".
+    statuses = sorted(r["status"] for r in results)
+    assert statuses == ["already_running"] * 4 + ["triggered"]
+    # And the actual scrape ran exactly once.
+    assert scrape_count == 1

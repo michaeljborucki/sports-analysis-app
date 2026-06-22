@@ -488,6 +488,11 @@ class AccountsScraper:
         self._creds = load_account_credentials()
         self._cached: AccountsRollup | None = None
         self._refreshing = False
+        # Set synchronously by trigger_refresh_async before create_task;
+        # cleared by refresh() once it enters the lock-held block. Closes
+        # the race where rapid synchronous triggers fire before the
+        # first task gets a chance to run.
+        self._trigger_pending = False
         # Optional OddsCache reference — when provided, every successful
         # refresh writes a balance_snapshots row per account. Makes the
         # daily-chart "pending overlay" self-populating; no need to run
@@ -530,6 +535,9 @@ class AccountsScraper:
                 pass
             return self.cached()
         async with self._lock:
+            # Clear the synchronous trigger flag now that the lock-held
+            # state machine is authoritative.
+            self._trigger_pending = False
             self._refreshing = True
             try:
                 t0 = time.time()
@@ -578,11 +586,26 @@ class AccountsScraper:
         return self.cached()
 
     def trigger_refresh_async(self) -> dict[str, Any]:
-        """Fire-and-forget refresh. Returns immediately with status."""
-        if self._refreshing:
-            return {"status": "already_refreshing"}
+        """Fire-and-forget refresh. Returns immediately with status.
+
+        Coalesces button-mash: if a refresh task is already in flight,
+        we return ``already_running`` without spawning another task.
+        Without this, N rapid POSTs spawn N tasks that serialize on
+        ``self._lock`` and each re-pull every account — wastes work and
+        rate-limit budget.
+
+        We can't rely on ``self._refreshing`` or ``self._lock.locked()``
+        alone here: ``asyncio.create_task`` schedules the coroutine but
+        the event loop may not have run it yet, so the next synchronous
+        call would see neither flag set. ``_trigger_pending`` is flipped
+        on synchronously and cleared by ``refresh()`` once the lock
+        block is entered, closing that race window."""
+        if self._refreshing or self._lock.locked() or self._trigger_pending:
+            return {"status": "already_running",
+                    "account_count": len(self._creds)}
         if not self._creds:
             return {"status": "no_credentials_configured"}
+        self._trigger_pending = True
         asyncio.create_task(self.refresh())
         return {"status": "triggered", "account_count": len(self._creds)}
 
