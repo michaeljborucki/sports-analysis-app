@@ -1,4 +1,5 @@
 "use client";
+import { memo } from "react";
 import clsx from "clsx";
 import type { ArbOpportunity } from "@/lib/api";
 import { formatAmerican } from "@/lib/format";
@@ -77,93 +78,108 @@ export function ArbitrageTable({ opportunities }: { opportunities: ArbOpportunit
           </tr>
         </thead>
         <tbody>
-          {opportunities.map((op, i) => {
-            const a = op.sides[0];
-            const b = op.sides[1];
-            return (
-              <tr
-                key={`${op.event_id}-${op.market_kind}-${op.point ?? "na"}-${i}`}
-                className="border-t border-border-subtle hover:bg-bg-1/40"
-              >
-                <td className="px-3 py-2">
-                  <div className="flex flex-col">
-                    <span
-                      className={clsx(
-                        "tabular font-semibold",
-                        roiColor(op.roi_pct)
-                      )}
-                    >
-                      +{op.roi_pct.toFixed(2)}%
-                    </span>
-                    {op.max_total_stake_dollars != null && (
-                      <span
-                        className="text-[10px] text-text-3 tabular"
-                        title="Largest total stake that respects every leg's fillable depth at the displayed price"
-                      >
-                        max ${op.max_total_stake_dollars.toFixed(0)}
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-2 py-2 text-text-2 text-[11px] uppercase tracking-wide">
-                  {sportLabel(op.sport_key)}
-                </td>
-                <td className="px-2 py-2 text-text-1 whitespace-nowrap">
-                  {op.away_team} @ {op.home_team}
-                </td>
-                <td className="px-2 py-2 text-text-2">{marketLabel(op)}</td>
-                <td className="px-2 py-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <BookLogo bookKey={a.book} mode="label" />
-                    <span className="text-text-2 text-[11px] tabular">
-                      {a.outcome_name}
-                    </span>
-                    <span className="text-price-up font-semibold tabular">
-                      {formatAmerican(a.price_american)}
-                    </span>
-                    <span className="text-text-3 text-[10px] tabular">
-                      stake {a.stake_pct.toFixed(1)}%
-                    </span>
-                    {a.max_stake_dollars != null && (
-                      <span
-                        className="text-text-3 text-[10px] tabular"
-                        title="Top-of-book depth at the displayed price"
-                      >
-                        max ${a.max_stake_dollars.toFixed(0)}
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-2 py-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <BookLogo bookKey={b.book} mode="label" />
-                    <span className="text-text-2 text-[11px] tabular">
-                      {b.outcome_name}
-                    </span>
-                    <span className="text-price-up font-semibold tabular">
-                      {formatAmerican(b.price_american)}
-                    </span>
-                    <span className="text-text-3 text-[10px] tabular">
-                      stake {b.stake_pct.toFixed(1)}%
-                    </span>
-                    {b.max_stake_dollars != null && (
-                      <span
-                        className="text-text-3 text-[10px] tabular"
-                        title="Top-of-book depth at the displayed price"
-                      >
-                        max ${b.max_stake_dollars.toFixed(0)}
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-2 py-2 text-right text-text-3 tabular text-[11px]">
-                  {commenceLabel(op.commence_time)}
-                </td>
-              </tr>
-            );
-          })}
+          {opportunities.map((op, i) => (
+            <ArbRow
+              key={`${op.event_id}-${op.market_kind}-${op.point ?? "na"}-${i}`}
+              op={op}
+            />
+          ))}
         </tbody>
       </table>
     </div>
   );
 }
+
+/**
+ * One arbitrage row, memo'd so an SWR tick that delivered a fresh
+ * `opportunities` array but with reference-equal entries for unchanged
+ * rows can skip the per-row formatting work. ArbOpportunity is the only
+ * prop, so default shallow equality is correct.
+ *
+ * Note: lib's arb assembly currently builds fresh objects each tick
+ * (no SWR compare), so the memo only saves work when the parent
+ * re-renders for non-data reasons. Worth it for the cleaner row scope
+ * and to mirror the EdgesTable pattern.
+ */
+const ArbRow = memo(function ArbRow({ op }: { op: ArbOpportunity }) {
+  const a = op.sides[0];
+  const b = op.sides[1];
+  return (
+    <tr className="border-t border-border-subtle hover:bg-bg-1/40">
+      <td className="px-3 py-2">
+        <div className="flex flex-col">
+          <span
+            className={clsx(
+              "tabular font-semibold",
+              roiColor(op.roi_pct),
+            )}
+          >
+            +{op.roi_pct.toFixed(2)}%
+          </span>
+          {op.max_total_stake_dollars != null && (
+            <span
+              className="text-[10px] text-text-3 tabular"
+              title="Largest total stake that respects every leg's fillable depth at the displayed price"
+            >
+              max ${op.max_total_stake_dollars.toFixed(0)}
+            </span>
+          )}
+        </div>
+      </td>
+      <td className="px-2 py-2 text-text-2 text-[11px] uppercase tracking-wide">
+        {sportLabel(op.sport_key)}
+      </td>
+      <td className="px-2 py-2 text-text-1 whitespace-nowrap">
+        {op.away_team} @ {op.home_team}
+      </td>
+      <td className="px-2 py-2 text-text-2">{marketLabel(op)}</td>
+      <td className="px-2 py-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <BookLogo bookKey={a.book} mode="label" />
+          <span className="text-text-2 text-[11px] tabular">
+            {a.outcome_name}
+          </span>
+          <span className="text-price-up font-semibold tabular">
+            {formatAmerican(a.price_american)}
+          </span>
+          <span className="text-text-3 text-[10px] tabular">
+            stake {a.stake_pct.toFixed(1)}%
+          </span>
+          {a.max_stake_dollars != null && (
+            <span
+              className="text-text-3 text-[10px] tabular"
+              title="Top-of-book depth at the displayed price"
+            >
+              max ${a.max_stake_dollars.toFixed(0)}
+            </span>
+          )}
+        </div>
+      </td>
+      <td className="px-2 py-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <BookLogo bookKey={b.book} mode="label" />
+          <span className="text-text-2 text-[11px] tabular">
+            {b.outcome_name}
+          </span>
+          <span className="text-price-up font-semibold tabular">
+            {formatAmerican(b.price_american)}
+          </span>
+          <span className="text-text-3 text-[10px] tabular">
+            stake {b.stake_pct.toFixed(1)}%
+          </span>
+          {b.max_stake_dollars != null && (
+            <span
+              className="text-text-3 text-[10px] tabular"
+              title="Top-of-book depth at the displayed price"
+            >
+              max ${b.max_stake_dollars.toFixed(0)}
+            </span>
+          )}
+        </div>
+      </td>
+      <td className="px-2 py-2 text-right text-text-3 tabular text-[11px]">
+        {commenceLabel(op.commence_time)}
+      </td>
+    </tr>
+  );
+});
