@@ -19,7 +19,7 @@ Today, the user manually logs into each account, picks the eligible one with eno
 - Per-account requests route through a dedicated sticky residential proxy URL (one per account, static).
 - Stake is computed from a user-set static bankroll × the chosen Kelly fraction; the account with the **lowest balance that still covers the stake** wins.
 - If no account in the pool has the available balance, the sidecar refuses to fire and pages the user to top up.
-- A `dry-run` / `live` master toggle in `user_settings.json` is the sole guardrail, defaulted to `dry-run` and explicitly flipped by the user — mirrors the `cache_mode` pattern already established for the metered Odds API fetcher.
+- A `dry-run` / `live` master toggle in a dedicated `sidecar_mode.json` store is the sole guardrail, defaulted to `dry-run` and explicitly flipped by the user — mirrors the `cache_mode` pattern (`server/odds/cache_mode.py`, `server/config/cache_mode.json`) already established for the metered Odds API fetcher.
 
 ## Non-goals (v1)
 
@@ -48,11 +48,14 @@ server/sidecar/
   picker.py          # select_account(required_stake, accounts) → AccountCredential | None
   placement.py       # orchestrator: picker → client.place_parlay → audit log → SSE emit
   audit.py           # SQLite r/w for sidecar_placements
-  settings.py        # typed accessors over user_settings.json (sidecar_mode, sidecar_bankroll)
+  mode_store.py      # SidecarModeStore — dedicated sidecar_mode.json (parallels cache_mode.py)
+  settings.py        # typed accessors over user_settings.json for sidecar_bankroll
 server/api/sidecar.py
   POST /api/sidecar/place           → 202 { job_id }
   GET  /api/sidecar/runs            → recent placements (paginated)
   GET  /api/sidecar/runs/{job_id}   → one placement detail
+  GET  /api/sidecar/mode            → { mode: "dry-run" | "live" }
+  POST /api/sidecar/mode            → flip mode (mirrors /api/cache_mode)
 ```
 
 ### Extension to the Coral33 client
@@ -106,19 +109,29 @@ def select_account(
 
 The lowest-balance eligible account drains its bankroll first — matching the user's promo-cycling strategy (consolidate cash into the few highest-balance accounts).
 
-### Configuration shape — `user_settings.json`
+### Configuration shape
 
-Two new keys, both required, with safe defaults:
+Two new pieces of persisted state, deliberately split between two stores by sensitivity:
+
+**`server/config/sidecar_mode.json`** — dedicated store, mirrors `cache_mode` exactly:
+
+```json
+{"mode": "dry-run"}
+```
+
+- `mode`: `"dry-run"` | `"live"`. Defaults to `"dry-run"`. Flipped via a dedicated `POST /api/sidecar/mode` endpoint (paralleling `POST /api/cache_mode`), which the UI exposes as a top-of-page toggle on `/sidecar`. Backed by a `SidecarModeStore` class modeled on `CacheModeStore` (`server/odds/cache_mode.py`). Memory rule: **never auto-flip `sidecar_mode` to `"live"`** — same protocol as `cache_mode`.
+
+**`server/config/user_settings.json`** — the existing user-settings store gains one routine numeric key:
 
 ```json
 {
-  "sidecar_mode": "dry-run",
   "sidecar_bankroll": 4000
 }
 ```
 
-- `sidecar_mode`: `"dry-run"` | `"live"`. The default is `"dry-run"` and the user must explicitly PATCH to `"live"` via `/api/settings` — same gate model as `cache_mode`. Memory rule: **never auto-flip `sidecar_mode` to `"live"`** (mirrors `cache_mode`).
-- `sidecar_bankroll`: the dollar figure that Kelly fractions multiply against to produce the stake. Set once, edited rarely.
+- `sidecar_bankroll`: the dollar figure that Kelly fractions multiply against to produce the stake. Set once, edited rarely. Exposed via the existing `/api/settings` PATCH surface.
+
+The split is deliberate: live-mode arming is a sensitive blast-radius gate and earns its own store + endpoint + persistence file (same calculus that justified `cache_mode.json`'s separate existence); the bankroll number is a routine value that belongs with other user preferences.
 
 ### Storage — one new table in `cache.db`
 
