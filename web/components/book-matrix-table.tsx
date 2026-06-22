@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, type ReactNode } from "react";
+import { memo, useMemo, type ReactNode } from "react";
 import clsx from "clsx";
 
 import type { MarketOutcome, BookPrice } from "@/lib/api";
@@ -53,17 +53,23 @@ const PRICE_PAD_STYLE: React.CSSProperties = {
 };
 
 
+/**
+ * "Best" american odds = highest payout. For American odds, the higher
+ * the signed number, the higher the payout ratio (across sign too:
+ * positive odds always beat negative odds). So a single linear pass of
+ * `Math.max` over the americans matches the prior chained
+ * `.map().map().sort().map()` logic without the O(N log N) sort and
+ * intermediate object allocation. At N props × M books per row this was
+ * a measurable per-row cost.
+ */
 function bestAmerican(prices: BookPrice[]): number | null {
   if (prices.length === 0) return null;
-  return Math.max(
-    ...prices.map(p =>
-      p.price_american > 0
-        ? p.price_american / 100.0
-        : 100.0 / -p.price_american
-    ).map((r, i) => ({ r, v: prices[i].price_american }))
-     .sort((a, b) => b.r - a.r)
-     .map(x => x.v)
-  );
+  let best = prices[0].price_american;
+  for (let i = 1; i < prices.length; i++) {
+    const v = prices[i].price_american;
+    if (v > best) best = v;
+  }
+  return best;
 }
 
 
@@ -112,18 +118,8 @@ export function BookMatrixTable({
    */
   emptyMessage?: string | ReactNode;
 }) {
-  // Precompute best-price-per-row-per-side for tinting. Cheap: N × 2.
-  const bestBySide = useMemo(() => {
-    const out: Record<string, { over: number | null; under: number | null }> = {};
-    for (const r of rows) {
-      out[r.key] = {
-        over: r.over ? bestAmerican(r.over.prices) : null,
-        under: r.under ? bestAmerican(r.under.prices) : null,
-      };
-    }
-    return out;
-  }, [rows]);
-
+  // best-by-side is computed inside MatrixRowView (memoised) so a single
+  // row's `over`/`under` change doesn't invalidate the whole map.
   if (rows.length === 0 || books.length === 0) {
     // Callers may pass either a raw string (legacy) or a ReactNode such as
     // `<EmptyState …>`. Strings get the original dim-centered treatment so
@@ -181,7 +177,6 @@ export function BookMatrixTable({
                 books={books}
                 sideMode={sideMode}
                 sideLabels={sideLabels}
-                best={bestBySide[row.key]}
               />
             ))}
           </tbody>
@@ -192,19 +187,40 @@ export function BookMatrixTable({
 }
 
 
-function MatrixRowView({
+/**
+ * One MatrixRow (Over + Under stack, or single side). Memoised so that
+ * an SWR tick which only touches another row's prices doesn't ripple
+ * through every row of the matrix. `best` is computed inside via
+ * useMemo so the parent doesn't have to hand us a fresh object each
+ * render (which would defeat the memo).
+ *
+ * `sideLabels` defaults to a module-level constant in callers, so its
+ * reference is stable across renders. If a caller starts passing an
+ * inline `{ over: …, under: … }` literal each render the memo will
+ * thrash — lift it to a module constant or useMemo if that happens.
+ */
+const MatrixRowView = memo(function MatrixRowView({
   row,
   books,
   sideMode,
   sideLabels,
-  best,
 }: {
   row: MatrixRow;
   books: string[];
   sideMode: "both" | "over" | "under";
   sideLabels: SideLabels;
-  best: { over: number | null; under: number | null };
 }) {
+  // Best per side — only recomputed when the row's outcome refs change.
+  // Two scalars come out so the BookCell can take a primitive `isBest`
+  // prop and skip re-render when the row's specific price didn't move.
+  const { bestOver, bestUnder } = useMemo(
+    () => ({
+      bestOver: row.over ? bestAmerican(row.over.prices) : null,
+      bestUnder: row.under ? bestAmerican(row.under.prices) : null,
+    }),
+    [row.over, row.under],
+  );
+
   const sides: ("Over" | "Under")[] =
     sideMode === "over" ? ["Over"]
     : sideMode === "under" ? ["Under"]
@@ -214,7 +230,7 @@ function MatrixRowView({
     <>
       {sides.map((side, idx) => {
         const outcome = side === "Over" ? row.over : row.under;
-        const sideBest = side === "Over" ? best.over : best.under;
+        const sideBest = side === "Over" ? bestOver : bestUnder;
         const isFirst = idx === 0;
         const labelBgClass = row.isMain ? "bg-accent/5" : "bg-bg-0";
         const rowBgClass = row.isMain ? "bg-accent/5" : "";
@@ -278,24 +294,12 @@ function MatrixRowView({
             )}
             {books.map(book => {
               const price = priceForBook(outcome, book);
-              const isBest = price != null && price === sideBest;
               return (
-                <td
+                <MatrixCell
                   key={book}
-                  className={clsx(
-                    "text-center tabular",
-                    isBest ? "text-price-up font-semibold" : "text-text-2",
-                  )}
-                  style={PRICE_PAD_STYLE}
-                >
-                  {price != null ? (
-                    <AnimatedPrice value={price}>
-                      {formatAmerican(price)}
-                    </AnimatedPrice>
-                  ) : (
-                    <span className="text-text-3">—</span>
-                  )}
-                </td>
+                  price={price}
+                  isBest={price != null && price === sideBest}
+                />
               );
             })}
           </tr>
@@ -303,4 +307,35 @@ function MatrixRowView({
       })}
     </>
   );
-}
+});
+
+/**
+ * One price cell — memoised on primitive (price, isBest) so unchanged
+ * cells skip re-render when SWR returns a fresh row payload that only
+ * touched a sibling cell. AnimatedPrice's flash animation is keyed on
+ * `value` change inside its own useEffect, so the flash still fires
+ * the first time a price actually moves.
+ */
+const MatrixCell = memo(function MatrixCell({
+  price,
+  isBest,
+}: {
+  price: number | null;
+  isBest: boolean;
+}) {
+  return (
+    <td
+      className={clsx(
+        "text-center tabular",
+        isBest ? "text-price-up font-semibold" : "text-text-2",
+      )}
+      style={PRICE_PAD_STYLE}
+    >
+      {price != null ? (
+        <AnimatedPrice value={price}>{formatAmerican(price)}</AnimatedPrice>
+      ) : (
+        <span className="text-text-3">—</span>
+      )}
+    </td>
+  );
+});
