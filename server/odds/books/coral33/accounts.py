@@ -328,7 +328,9 @@ async def fetch_account(cred: AccountCredential) -> AccountSnapshot:
         label=label,
         fetched_at=datetime.now(timezone.utc).isoformat(),
     )
-    client = Coral33Client(cred.customer_id, cred.password)
+    client = Coral33Client(
+        cred.customer_id, cred.password, proxy_url=cred.proxy_url,
+    )
     try:
         await client.authenticate()
     except (Coral33AuthError, Coral33APIError) as e:
@@ -385,7 +387,9 @@ async def fetch_account_history(
                 "ActualBalance": 1416.43, "PreviousBalance": 3056.43,
                 "figuredays": "0, 4, 5, 6", ...}}
     """
-    client = Coral33Client(cred.customer_id, cred.password)
+    client = Coral33Client(
+        cred.customer_id, cred.password, proxy_url=cred.proxy_url,
+    )
     try:
         await client.authenticate()
     except (Coral33AuthError, Coral33APIError) as e:
