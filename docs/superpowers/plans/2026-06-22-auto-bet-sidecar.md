@@ -1674,7 +1674,11 @@ def build_insert_wager_parlay(
                 "listedPitcher2": None,
                 "pitcher2ReqFlag": "",
                 "percentBook": 100,
-                "volumeAmount": int(stake_dollars * 100),
+                # volumeAmount per HAR: round(min(risk, win) * 100). For
+                # +odds underdogs this collapses to stake*100; for favorites
+                # (where win < stake) it uses win*100. Verified against both
+                # HAR samples (straight $5.15/$5 → 500; parlay $10/$47.5 → 1000).
+                "volumeAmount": round(min(stake_dollars, decimal_win_amount) * 100),
                 "currencyCode": "USD",
                 "date": today,
                 "agentID": agent_id,
@@ -2603,6 +2607,10 @@ class SidecarPlaceRequest:
     kelly_full_pct: float       # the +EV row's full-Kelly %
     kelly_fraction: KellyFraction
     bankroll: int
+    trigger_source: str = "user"            # 'user' | 'delta_tick'
+    # Delta-tick path uses this to bypass Kelly recompute; user-triggered
+    # placements leave it None.
+    stake_override_dollars: int | None = None
 
 
 class JitterDisabled:
@@ -2659,8 +2667,15 @@ class SidecarOrchestrator:
         req: SidecarPlaceRequest,
         job_id: str,             # caller-provided (route generates and returns it)
     ) -> str:
-        kelly_pct = kelly_to_pct(req.kelly_fraction, req.kelly_full_pct)
-        target = round(kelly_pct * req.bankroll)
+        # stake_override_dollars is set by the delta-tick path: the tick
+        # has already computed the dollar delta, the orchestrator should
+        # split THAT amount (not re-derive from Kelly). User-triggered
+        # placements leave it None and we compute from Kelly here.
+        if req.stake_override_dollars is not None:
+            target = req.stake_override_dollars
+        else:
+            kelly_pct = kelly_to_pct(req.kelly_fraction, req.kelly_full_pct)
+            target = round(kelly_pct * req.bankroll)
 
         pool = self.pool_provider()
         plan = plan_splits(target, pool)
