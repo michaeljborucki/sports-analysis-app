@@ -48,15 +48,37 @@ def get_bankroll() -> int:
 def get_default_kelly() -> KellyFraction:
     """Default Kelly fraction shown in the confirm modal. Default half."""
     raw = _load_raw()
-    val = raw.get("sidecar_default_kelly", "half")
+    val = raw.get("sidecar_default_kelly", "quarter")
     if isinstance(val, str) and val in _FRACTION_VALUES:
         return KellyFraction(val)
-    return KellyFraction.HALF
+    return KellyFraction.QUARTER
 
 
-def kelly_to_pct(fraction: KellyFraction, full_kelly_pct: float) -> float:
-    if fraction is KellyFraction.FULL:
-        return full_kelly_pct
-    if fraction is KellyFraction.HALF:
-        return full_kelly_pct * 0.5
-    return full_kelly_pct * 0.25
+def kelly_to_fraction(
+    fraction: KellyFraction, full_kelly_pct: float
+) -> float:
+    """Convert the EV scanner's `kelly_full_pct` (a percentage value
+    like 4.6 meaning 4.6%) into a **decimal fraction of bankroll** the
+    caller can multiply against the bankroll dollar amount.
+
+    Examples:
+      kelly_full_pct=4.6, fraction=HALF  → 0.023 (= 2.3% of bankroll)
+      kelly_full_pct=4.6, fraction=QUARTER → 0.0115 (= 1.15%)
+
+    The /100 conversion is critical: kelly_full_pct comes off the
+    EVOpportunity response in percentage form (the same /api/ev field
+    the UI renders as "X.YZ%"), so dollar math needs the divisor or you
+    end up 100× over-bet.
+    """
+    multiplier = {
+        KellyFraction.FULL: 1.0,
+        KellyFraction.HALF: 0.5,
+        KellyFraction.QUARTER: 0.25,
+    }[fraction]
+    return (full_kelly_pct / 100.0) * multiplier
+
+
+# Backwards-compat alias for existing call sites. New code should use
+# kelly_to_fraction for clarity — the old name is misleading because the
+# return value is a fraction, not a percentage.
+kelly_to_pct = kelly_to_fraction

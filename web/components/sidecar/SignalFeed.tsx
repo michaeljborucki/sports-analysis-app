@@ -27,17 +27,23 @@ export interface SidecarSettingsResponse {
 }
 
 /**
- * Mirrors the Python `kelly_to_pct` mapping in server/sidecar/settings.py.
- * Multiplies the full-Kelly fraction by 1 / 0.5 / 0.25 depending on the
- * user's default Kelly setting.
+ * Mirrors the Python `kelly_to_fraction` in server/sidecar/settings.py.
+ *
+ * `fullKellyPct` is a PERCENTAGE (e.g., 4.6 means 4.6%, the same value
+ * /api/ev returns and that the row displays as "4.60%"). The /100
+ * conversion is critical — without it, multiplying by bankroll produces
+ * a 100× over-bet.
+ *
+ * Returns a decimal fraction of bankroll. Callers do `result * bankroll`
+ * to get a dollar amount.
  */
 export function kellyToPct(
   fraction: "full" | "half" | "quarter",
   fullKellyPct: number,
 ): number {
-  if (fraction === "full") return fullKellyPct;
-  if (fraction === "half") return fullKellyPct * 0.5;
-  return fullKellyPct * 0.25;
+  const multiplier =
+    fraction === "full" ? 1 : fraction === "half" ? 0.5 : 0.25;
+  return (fullKellyPct / 100) * multiplier;
 }
 
 /** Per-parlay minimum stake floor from server/sidecar/splitter.py. Below
@@ -232,7 +238,7 @@ function SignalRow({
         {op.ev_pct.toFixed(2)}%
       </td>
       <td className="px-2 py-1.5 align-top text-right tabular text-text-2">
-        {(op.kelly_full_pct * 100).toFixed(2)}%
+        {op.kelly_full_pct.toFixed(2)}%
       </td>
       <td
         className={clsx(

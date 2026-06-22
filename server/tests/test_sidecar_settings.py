@@ -27,7 +27,7 @@ def test_default_kelly_default_when_file_missing(tmp_path, monkeypatch):
         "server.sidecar.settings._settings_path",
         lambda: tmp_path / "user_settings.json",
     )
-    assert get_default_kelly() is KellyFraction.HALF
+    assert get_default_kelly() is KellyFraction.QUARTER
 
 
 def test_bankroll_from_user_settings(tmp_path, monkeypatch):
@@ -39,13 +39,13 @@ def test_bankroll_from_user_settings(tmp_path, monkeypatch):
     assert get_bankroll() == 7500
 
 
-def test_invalid_kelly_falls_back_to_half(tmp_path, monkeypatch):
+def test_invalid_kelly_falls_back_to_quarter(tmp_path, monkeypatch):
     p = _write(tmp_path, {"sidecar_default_kelly": "wild"})
     monkeypatch.setattr(
         "server.sidecar.settings._settings_path",
         lambda: p,
     )
-    assert get_default_kelly() is KellyFraction.HALF
+    assert get_default_kelly() is KellyFraction.QUARTER
 
 
 def test_sidecar_keys_dont_break_existing_user_settings_load(tmp_path):

@@ -158,7 +158,9 @@ async def test_dry_run_target_230_stacks_on_stanley(audit_db):
         SidecarPlaceRequest(
             ev_row_id="rid",
             ev_leg=make_leg(),
-            kelly_full_pct=0.046,        # produces $230 target at $10k x half
+            # kelly_full_pct is a PERCENTAGE (e.g., 4.6 means 4.6%).
+            # 4.6% × half × $10k = $230 target.
+            kelly_full_pct=4.6,
             kelly_fraction=KellyFraction.HALF,
             bankroll=10000,
         ),
@@ -204,7 +206,7 @@ async def test_off_mode_refuses_new_jobs(audit_db):
         SidecarPlaceRequest(
             ev_row_id="rid",
             ev_leg=make_leg(),
-            kelly_full_pct=0.046,
+            kelly_full_pct=4.6,
             kelly_fraction=KellyFraction.HALF,
             bankroll=10000,
         ),
@@ -286,7 +288,7 @@ async def test_account_scoped_failure_skips_remaining_same_account_siblings(
         SidecarPlaceRequest(
             ev_row_id="rid",
             ev_leg=make_leg(),
-            kelly_full_pct=0.05,    # target $250 at $10k x half
+            kelly_full_pct=5.0,     # 5.0% × half × $10k = $250 target
             kelly_fraction=KellyFraction.HALF,
             bankroll=10000,
         ),

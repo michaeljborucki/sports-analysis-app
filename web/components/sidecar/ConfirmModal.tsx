@@ -54,11 +54,6 @@ interface AccountsResponse {
   }>;
 }
 
-interface UserSettingsResponse {
-  sidecar_bankroll?: number;
-  sidecar_default_kelly?: KellyFraction;
-}
-
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
 
@@ -116,8 +111,12 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   const mounted = useIsMounted();
 
-  const { data: settings } = useSWR<UserSettingsResponse>(
-    "/api/settings",
+  // Pulls the sidecar-specific settings (bankroll + default_kelly).
+  // The general /api/settings endpoint does NOT expose these keys —
+  // they're opaque additions on user_settings.json read separately by
+  // /api/sidecar/settings.
+  const { data: settings } = useSWR<{ bankroll: number; default_kelly: KellyFraction }>(
+    "/api/sidecar/settings",
     fetchJson,
   );
   const { data: accountsData } = useSWR<AccountsResponse>(
@@ -137,13 +136,15 @@ export function ConfirmModal({
   // "setState in effect → cascading renders" lint warning.
   const [userFraction, setUserFraction] = useState<KellyFraction | null>(null);
   const fraction: KellyFraction =
-    userFraction ?? settings?.sidecar_default_kelly ?? "half";
+    userFraction ?? settings?.default_kelly ?? "quarter";
   const setFraction = (next: KellyFraction) => setUserFraction(next);
 
-  const bankroll = settings?.sidecar_bankroll ?? 10_000;
-  const mult = KELLY_OPTIONS.find((o) => o.value === fraction)?.mult ?? 0.5;
-  const kellyPct = fullKellyPct * mult;
-  const target = Math.max(0, Math.round(kellyPct * bankroll));
+  const bankroll = settings?.bankroll ?? 10_000;
+  const mult = KELLY_OPTIONS.find((o) => o.value === fraction)?.mult ?? 0.25;
+  // fullKellyPct is a PERCENTAGE (e.g., 4.6 = 4.6%). The /100 is the
+  // unit conversion to a decimal fraction of bankroll.
+  const kellyFractionOfBankroll = (fullKellyPct / 100) * mult;
+  const target = Math.max(0, Math.round(kellyFractionOfBankroll * bankroll));
 
   const decimalOdds =
     offeredPriceAmerican > 0
@@ -251,7 +252,7 @@ export function ConfirmModal({
                 {evPct.toFixed(2)}%
               </span>
               <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] font-semibold tracking-wider text-accent bg-accent/15">
-                KELLY {(kellyPct * 100).toFixed(2)}%
+                KELLY {(kellyFractionOfBankroll * 100).toFixed(2)}%
               </span>
               <span className="text-text-3 text-[10px] uppercase tracking-wide">
                 {sportKey}

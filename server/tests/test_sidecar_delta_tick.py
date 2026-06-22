@@ -55,7 +55,10 @@ async def test_tick_fires_delta_when_kelly_grew(db, monkeypatch):
                   price_numerator=1, price_denominator=1)
     monkeypatch.setattr(
         "server.sidecar.delta_tick.resolve_ev_row_to_leg",
-        lambda rid: (leg, 0.04),     # full kelly 4% × $10k × half = $200
+        # kelly_full_pct is a PERCENTAGE (e.g., 4.0 means 4%).
+        # _arm uses HALF by default → 4% × half × $10k = $200 target.
+        # Signal already has $100 placed → delta $100 ≥ $30 floor → fires.
+        lambda rid: (leg, 4.0),
     )
     # ``staticmethod`` so attribute lookup on the dynamic class doesn't
     # bind the function and prepend `self` to the call args.
@@ -87,7 +90,9 @@ async def test_tick_skips_when_delta_below_floor(db, monkeypatch):
                   price_numerator=1, price_denominator=1)
     monkeypatch.setattr(
         "server.sidecar.delta_tick.resolve_ev_row_to_leg",
-        lambda rid: (leg, 0.022),    # full kelly 2.2% × $10k × half = $110
+        # 2.2% × half × $10k = $110 target; signal already has $100 →
+        # delta $10 < $30 floor → does NOT fire.
+        lambda rid: (leg, 2.2),
     )
     monkeypatch.setattr(
         "server.sidecar.delta_tick.get_orchestrator",
