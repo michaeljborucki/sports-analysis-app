@@ -1,5 +1,5 @@
 "use client";
-import { Fragment } from "react";
+import { Fragment, memo, useMemo } from "react";
 import clsx from "clsx";
 import {
   ArrowDownIcon,
@@ -184,298 +184,344 @@ export function EdgesTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map(op => {
-            const open = expanded.has(op.row_key);
-            // Deterministic seed — same row across renders produces the
-            // same sparkline.
-            const sparkSeed = `${op.event_id}|${op.market_kind}|${op.point ?? ""}|${op.mode}`;
-            return (
-              <Fragment key={op.row_key}>
-                <tr
-                  className={clsx(
-                    "group/edgerow border-t border-border-subtle",
-                    "motion-safe:transition-colors motion-safe:duration-150",
-                    open ? "bg-bg-1" : "hover:bg-bg-1/60",
-                    op.stale && "opacity-70",
-                  )}
-                  style={
-                    open
-                      ? undefined
-                      : ({
-                          // Per-row hover-bar colour — the caret cell
-                          // below reads this var inside its
-                          // `group-hover/edgerow:[box-shadow:var(--row-hover-bar)]`
-                          // rule. Each row picks its own ramp shade based
-                          // on edge magnitude without needing a class-per-bucket.
-                          ["--row-hover-bar" as string]: hoverBarShadow(op),
-                        } as React.CSSProperties)
-                  }
-                >
-                  <td
-                    className={clsx(
-                      "align-top",
-                      "motion-safe:transition-shadow motion-safe:duration-150",
-                      !open &&
-                        "group-hover/edgerow:[box-shadow:var(--row-hover-bar)]",
-                    )}
-                    style={CARET_PAD_STYLE}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => onToggleExpand(op.row_key)}
-                      aria-expanded={open}
-                      aria-label={open ? "Collapse workbench" : "Expand workbench"}
-                      className="w-5 h-5 inline-flex items-center justify-center text-text-3 hover:text-text-1 transition-colors"
-                    >
-                      {open ? (
-                        <ChevronDownIcon size={12} />
-                      ) : (
-                        <ChevronRightIcon size={12} />
-                      )}
-                    </button>
-                  </td>
-                  <td className="align-top" style={CELL_PAD_STYLE}>
-                    <AnimatedPrice
-                      value={op.edge_pct}
-                      className={clsx("tabular font-semibold", edgeColor(op))}
-                      invert={op.mode === "low_hold"}
-                    >
-                      {formatEdgePct(op)}
-                    </AnimatedPrice>
-                  </td>
-                  <td className="align-top" style={CELL_PAD_STYLE}>
-                    <span
-                      className={clsx(
-                        "inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] font-semibold tracking-wider",
-                        MODE_CHIP_STYLE[op.mode],
-                      )}
-                    >
-                      {MODE_LABEL[op.mode]}
-                    </span>
-                  </td>
-                  <td className="align-top text-right" style={CELL_PAD_STYLE}>
-                    <span
-                      className="inline-block"
-                      title="Synthetic edge % over the last 15 minutes (placeholder data until the backend time-series lands)."
-                    >
-                      <EdgeSparkline
-                        seedKey={sparkSeed}
-                        currentEdge={op.edge_pct}
-                      />
-                    </span>
-                  </td>
-                  <td
-                    className="text-text-2 text-[11px] uppercase tracking-wide align-top"
-                    style={CELL_PAD_STYLE}
-                  >
-                    {sportShortLabel(op.sport_key)}
-                  </td>
-                  <td
-                    className="text-text-1 whitespace-nowrap align-top"
-                    style={CELL_PAD_STYLE}
-                  >
-                    {op.away_team} @ {op.home_team}
-                  </td>
-                  <td className="text-text-2 align-top" style={CELL_PAD_STYLE}>
-                    {marketLabel(op)}
-                  </td>
-                  <td className="align-top" style={CELL_PAD_STYLE}>
-                    {op.mode === "arb" || op.mode === "low_hold" ? (
-                      <div className="flex flex-col gap-0.5">
-                        {op.legs.map((leg, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center gap-1.5 text-[11px]"
-                          >
-                            <BookLogo bookKey={leg.book} mode="label" />
-                            <span className="text-text-2 truncate max-w-[120px]">
-                              {formatOutcomeLabel(leg.outcome_name, op.market_kind, leg.point)}
-                            </span>
-                            <span className="text-price-up font-semibold tabular">
-                              {formatAmerican(leg.price_american)}
-                            </span>
-                            {leg.max_stake_dollars != null && (
-                              <span
-                                className="text-text-3 text-[10px] tabular"
-                                title="Top-of-book depth at the displayed price"
-                              >
-                                max ${leg.max_stake_dollars.toFixed(0)}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : op.mode === "ev" ? (
-                      <div className="flex items-center gap-2 text-[11px]">
-                        <BookLogo bookKey={op.raw.book} mode="label" />
-                        <span className="text-text-2 truncate max-w-[140px]">
-                          {sideLabel(op)}
-                        </span>
-                        <span className="text-price-up font-semibold tabular">
-                          {formatAmerican(op.raw.offered_price_american)}
-                        </span>
-                        <span
-                          className={clsx(
-                            "inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider",
-                            op.anchor === "pinnacle"
-                              ? "text-accent bg-accent/10"
-                              : "text-text-3 bg-bg-2",
-                          )}
-                          title={
-                            op.anchor === "pinnacle"
-                              ? "Pinnacle no-vig"
-                              : `Consensus of ${op.raw.anchor_book_count} books`
-                          }
-                        >
-                          {op.anchor === "pinnacle" ? "PIN" : "CON"}
-                        </span>
-                        <span className="text-text-1 tabular">
-                          {formatAmerican(op.raw.fair_price_american)}
-                        </span>
-                        {/* Sidecar auto-place button — only for Coral33 +EV
-                            rows that are parlay-eligible (wager_type ∈
-                            {parlay, both}). Each EV row IS a per-book best
-                            price by construction, so the "best price"
-                            half of the predicate is implicit. */}
-                        {op.raw.book === "coral33" &&
-                          (op.raw.wager_type === "parlay" ||
-                            op.raw.wager_type === "both") &&
-                          op.raw.ev_row_id != null && (
-                            <AutoPlaceButton
-                              evRowId={op.raw.ev_row_id}
-                              sportKey={op.sport_key}
-                              marketLabel={marketLabel(op)}
-                              sideLabel={sideLabel(op)}
-                              offeredPriceAmerican={op.raw.offered_price_american}
-                              evPct={op.raw.ev_pct}
-                              fullKellyPct={op.raw.kelly_full_pct}
-                            />
-                          )}
-                      </div>
-                    ) : op.mode === "profit_boost" ? (
-                      // Two-leg conversion: BOOST leg (with original →
-                      // boosted price delta) + HEDGE leg.
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1.5 text-[11px]">
-                          <span
-                            className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-violet-accent bg-violet-accent/15"
-                            title={`Profit boost ${op.raw.boost_pct}% applied to winnings`}
-                          >
-                            BOOST {op.raw.boost_pct}%
-                          </span>
-                          <BookLogo bookKey={op.raw.boost_leg.book} mode="label" />
-                          <span className="text-text-2 truncate max-w-[120px]">
-                            {formatOutcomeLabel(op.raw.boost_leg.outcome_name, op.market_kind, op.raw.boost_leg.point)}
-                          </span>
-                          <span className="text-text-3 tabular text-[10px]">
-                            {formatAmerican(op.raw.boost_leg.original_price_american)} →
-                          </span>
-                          <span className="text-price-up font-semibold tabular">
-                            {formatAmerican(op.raw.boost_leg.boosted_price_american)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-[11px]">
-                          <span className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-text-3 bg-bg-2">
-                            HEDGE
-                          </span>
-                          <BookLogo bookKey={op.raw.hedge_leg.book} mode="label" />
-                          <span className="text-text-2 truncate max-w-[120px]">
-                            {formatOutcomeLabel(op.raw.hedge_leg.outcome_name, op.market_kind, op.raw.hedge_leg.point)}
-                          </span>
-                          <span className="text-text-1 font-semibold tabular">
-                            {formatAmerican(op.raw.hedge_leg.price_american)}
-                          </span>
-                          <span
-                            className="text-text-3 tabular text-[10px] ml-1"
-                            title={`Boosted-pair hold ${op.raw.hold_pct >= 0 ? "+" : ""}${op.raw.hold_pct.toFixed(2)}% — negative = locked profit`}
-                          >
-                            hold {op.raw.hold_pct >= 0 ? "+" : ""}{op.raw.hold_pct.toFixed(2)}%
-                          </span>
-                        </div>
-                      </div>
-                    ) : op.mode === "free_bet" ? (
-                      // free_bet
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1.5 text-[11px]">
-                          <span className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-flash bg-flash/15">
-                            FREE
-                          </span>
-                          <BookLogo bookKey={op.raw.free_leg.book} mode="label" />
-                          <span className="text-text-2 truncate max-w-[120px]">
-                            {formatOutcomeLabel(op.raw.free_leg.outcome_name, op.market_kind, op.raw.free_leg.point)}
-                          </span>
-                          <span className="text-price-up font-semibold tabular">
-                            {formatAmerican(op.raw.free_leg.price_american)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-[11px]">
-                          <span className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-text-3 bg-bg-2">
-                            HEDGE
-                          </span>
-                          <BookLogo bookKey={op.raw.hedge_leg.book} mode="label" />
-                          <span className="text-text-2 truncate max-w-[120px]">
-                            {formatOutcomeLabel(op.raw.hedge_leg.outcome_name, op.market_kind, op.raw.hedge_leg.point)}
-                          </span>
-                          <span className="text-text-1 font-semibold tabular">
-                            {formatAmerican(op.raw.hedge_leg.price_american)}
-                          </span>
-                        </div>
-                      </div>
-                    ) : null}
-                  </td>
-                  <td className="text-right align-top" style={CELL_PAD_STYLE}>
-                    <StakeCell op={op} stake={stake} />
-                  </td>
-                  <td
-                    className="text-right text-text-3 tabular text-[11px] align-top"
-                    style={CELL_PAD_STYLE}
-                  >
-                    {commenceLabel(op.commence_time)}
-                  </td>
-                  <td className="text-right align-top" style={CELL_PAD_STYLE}>
-                    <div className="inline-flex gap-1">
-                      {op.also_in_arb && op.mode !== "arb" && (
-                        <span
-                          className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-price-up bg-price-up/20"
-                          title="Also present as an arbitrage pair."
-                        >
-                          ARB
-                        </span>
-                      )}
-                      {op.suspicious && (
-                        <span
-                          className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-price-down bg-price-down/10"
-                          title="EV > 15% — likely stale or mispriced."
-                        >
-                          SUS
-                        </span>
-                      )}
-                      {op.stale && (
-                        <span
-                          className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-text-3 bg-bg-2"
-                          title={`Row age ${op.row_age_s}s.`}
-                        >
-                          STALE
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-                {open && (
-                  <tr className="border-t border-border-subtle">
-                    <td colSpan={11} className="p-0">
-                      <Workbench op={op} stake={stake} />
-                    </td>
-                  </tr>
-                )}
-              </Fragment>
-            );
-          })}
+          {/* NOTE: at ~500 rows the memo'd row + flat .map() is fine; if the
+              row count regularly exceeds 1k, consider virtualization
+              (`@tanstack/react-virtual`) — explicitly NOT added here to
+              avoid a new dep. */}
+          {rows.map(op => (
+            <EdgeRow
+              key={op.row_key}
+              op={op}
+              open={expanded.has(op.row_key)}
+              stake={stake}
+              onToggleExpand={onToggleExpand}
+            />
+          ))}
         </tbody>
       </table>
     </div>
   );
 }
+
+/**
+ * One row in the edges table. Extracted + memoised so:
+ *   1) toggling `expanded` for ONE row only re-renders that row (the rest
+ *      receive the same `op`/`open`/`stake`/`onToggleExpand` props by
+ *      shallow equality).
+ *   2) the per-row `--row-hover-bar` inline style object is built once per
+ *      `(open, shadow)` tuple via `useMemo` rather than re-allocated on
+ *      every parent render.
+ *
+ * `onToggleExpand` is the parent's stable identity callback (`EdgesTable`
+ * passes through the prop it receives from `app/edges/page.tsx`, which is
+ * wrapped in `useCallback` there). If that ever stops being stable, every
+ * row will re-render on every parent tick and the memo becomes a no-op —
+ * keep that callback referentially stable.
+ */
+const EdgeRow = memo(function EdgeRow({
+  op,
+  open,
+  stake,
+  onToggleExpand,
+}: {
+  op: EdgeOpportunity;
+  open: boolean;
+  stake: number;
+  onToggleExpand: (key: string) => void;
+}) {
+  // Deterministic seed — same row across renders produces the same sparkline.
+  const sparkSeed = `${op.event_id}|${op.market_kind}|${op.point ?? ""}|${op.mode}`;
+
+  // Hover-bar shadow is a pure function of mode + edge_pct; memo on
+  // those scalars so the style object identity is stable even when other
+  // fields of `op` change (e.g. `row_age_s` ticks).
+  const shadow = useMemo(() => hoverBarShadow(op), [op]);
+  const rowStyle = useMemo<React.CSSProperties | undefined>(
+    () =>
+      open
+        ? undefined
+        : ({
+            // Per-row hover-bar colour — the caret cell below reads this
+            // var inside its
+            // `group-hover/edgerow:[box-shadow:var(--row-hover-bar)]`
+            // rule. Each row picks its own ramp shade based on edge
+            // magnitude without needing a class-per-bucket.
+            ["--row-hover-bar" as string]: shadow,
+          } as React.CSSProperties),
+    [open, shadow],
+  );
+
+  return (
+    <Fragment>
+      <tr
+        className={clsx(
+          "group/edgerow border-t border-border-subtle",
+          "motion-safe:transition-colors motion-safe:duration-150",
+          open ? "bg-bg-1" : "hover:bg-bg-1/60",
+          op.stale && "opacity-70",
+        )}
+        style={rowStyle}
+      >
+        <td
+          className={clsx(
+            "align-top",
+            "motion-safe:transition-shadow motion-safe:duration-150",
+            !open &&
+              "group-hover/edgerow:[box-shadow:var(--row-hover-bar)]",
+          )}
+          style={CARET_PAD_STYLE}
+        >
+          <button
+            type="button"
+            onClick={() => onToggleExpand(op.row_key)}
+            aria-expanded={open}
+            aria-label={open ? "Collapse workbench" : "Expand workbench"}
+            className="w-5 h-5 inline-flex items-center justify-center text-text-3 hover:text-text-1 transition-colors"
+          >
+            {open ? (
+              <ChevronDownIcon size={12} />
+            ) : (
+              <ChevronRightIcon size={12} />
+            )}
+          </button>
+        </td>
+        <td className="align-top" style={CELL_PAD_STYLE}>
+          <AnimatedPrice
+            value={op.edge_pct}
+            className={clsx("tabular font-semibold", edgeColor(op))}
+            invert={op.mode === "low_hold"}
+          >
+            {formatEdgePct(op)}
+          </AnimatedPrice>
+        </td>
+        <td className="align-top" style={CELL_PAD_STYLE}>
+          <span
+            className={clsx(
+              "inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] font-semibold tracking-wider",
+              MODE_CHIP_STYLE[op.mode],
+            )}
+          >
+            {MODE_LABEL[op.mode]}
+          </span>
+        </td>
+        <td className="align-top text-right" style={CELL_PAD_STYLE}>
+          <span
+            className="inline-block"
+            title="Synthetic edge % over the last 15 minutes (placeholder data until the backend time-series lands)."
+          >
+            <EdgeSparkline
+              seedKey={sparkSeed}
+              currentEdge={op.edge_pct}
+            />
+          </span>
+        </td>
+        <td
+          className="text-text-2 text-[11px] uppercase tracking-wide align-top"
+          style={CELL_PAD_STYLE}
+        >
+          {sportShortLabel(op.sport_key)}
+        </td>
+        <td
+          className="text-text-1 whitespace-nowrap align-top"
+          style={CELL_PAD_STYLE}
+        >
+          {op.away_team} @ {op.home_team}
+        </td>
+        <td className="text-text-2 align-top" style={CELL_PAD_STYLE}>
+          {marketLabel(op)}
+        </td>
+        <td className="align-top" style={CELL_PAD_STYLE}>
+          {op.mode === "arb" || op.mode === "low_hold" ? (
+            <div className="flex flex-col gap-0.5">
+              {op.legs.map((leg, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-1.5 text-[11px]"
+                >
+                  <BookLogo bookKey={leg.book} mode="label" />
+                  <span className="text-text-2 truncate max-w-[120px]">
+                    {formatOutcomeLabel(leg.outcome_name, op.market_kind, leg.point)}
+                  </span>
+                  <span className="text-price-up font-semibold tabular">
+                    {formatAmerican(leg.price_american)}
+                  </span>
+                  {leg.max_stake_dollars != null && (
+                    <span
+                      className="text-text-3 text-[10px] tabular"
+                      title="Top-of-book depth at the displayed price"
+                    >
+                      max ${leg.max_stake_dollars.toFixed(0)}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : op.mode === "ev" ? (
+            <div className="flex items-center gap-2 text-[11px]">
+              <BookLogo bookKey={op.raw.book} mode="label" />
+              <span className="text-text-2 truncate max-w-[140px]">
+                {sideLabel(op)}
+              </span>
+              <span className="text-price-up font-semibold tabular">
+                {formatAmerican(op.raw.offered_price_american)}
+              </span>
+              <span
+                className={clsx(
+                  "inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider",
+                  op.anchor === "pinnacle"
+                    ? "text-accent bg-accent/10"
+                    : "text-text-3 bg-bg-2",
+                )}
+                title={
+                  op.anchor === "pinnacle"
+                    ? "Pinnacle no-vig"
+                    : `Consensus of ${op.raw.anchor_book_count} books`
+                }
+              >
+                {op.anchor === "pinnacle" ? "PIN" : "CON"}
+              </span>
+              <span className="text-text-1 tabular">
+                {formatAmerican(op.raw.fair_price_american)}
+              </span>
+              {/* Sidecar auto-place button — only for Coral33 +EV
+                  rows that are parlay-eligible (wager_type ∈
+                  {parlay, both}). Each EV row IS a per-book best
+                  price by construction, so the "best price"
+                  half of the predicate is implicit. */}
+              {op.raw.book === "coral33" &&
+                (op.raw.wager_type === "parlay" ||
+                  op.raw.wager_type === "both") &&
+                op.raw.ev_row_id != null && (
+                  <AutoPlaceButton
+                    evRowId={op.raw.ev_row_id}
+                    sportKey={op.sport_key}
+                    marketLabel={marketLabel(op)}
+                    sideLabel={sideLabel(op)}
+                    offeredPriceAmerican={op.raw.offered_price_american}
+                    evPct={op.raw.ev_pct}
+                    fullKellyPct={op.raw.kelly_full_pct}
+                  />
+                )}
+            </div>
+          ) : op.mode === "profit_boost" ? (
+            // Two-leg conversion: BOOST leg (with original →
+            // boosted price delta) + HEDGE leg.
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-1.5 text-[11px]">
+                <span
+                  className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-violet-accent bg-violet-accent/15"
+                  title={`Profit boost ${op.raw.boost_pct}% applied to winnings`}
+                >
+                  BOOST {op.raw.boost_pct}%
+                </span>
+                <BookLogo bookKey={op.raw.boost_leg.book} mode="label" />
+                <span className="text-text-2 truncate max-w-[120px]">
+                  {formatOutcomeLabel(op.raw.boost_leg.outcome_name, op.market_kind, op.raw.boost_leg.point)}
+                </span>
+                <span className="text-text-3 tabular text-[10px]">
+                  {formatAmerican(op.raw.boost_leg.original_price_american)} →
+                </span>
+                <span className="text-price-up font-semibold tabular">
+                  {formatAmerican(op.raw.boost_leg.boosted_price_american)}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px]">
+                <span className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-text-3 bg-bg-2">
+                  HEDGE
+                </span>
+                <BookLogo bookKey={op.raw.hedge_leg.book} mode="label" />
+                <span className="text-text-2 truncate max-w-[120px]">
+                  {formatOutcomeLabel(op.raw.hedge_leg.outcome_name, op.market_kind, op.raw.hedge_leg.point)}
+                </span>
+                <span className="text-text-1 font-semibold tabular">
+                  {formatAmerican(op.raw.hedge_leg.price_american)}
+                </span>
+                <span
+                  className="text-text-3 tabular text-[10px] ml-1"
+                  title={`Boosted-pair hold ${op.raw.hold_pct >= 0 ? "+" : ""}${op.raw.hold_pct.toFixed(2)}% — negative = locked profit`}
+                >
+                  hold {op.raw.hold_pct >= 0 ? "+" : ""}{op.raw.hold_pct.toFixed(2)}%
+                </span>
+              </div>
+            </div>
+          ) : op.mode === "free_bet" ? (
+            // free_bet
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-1.5 text-[11px]">
+                <span className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-flash bg-flash/15">
+                  FREE
+                </span>
+                <BookLogo bookKey={op.raw.free_leg.book} mode="label" />
+                <span className="text-text-2 truncate max-w-[120px]">
+                  {formatOutcomeLabel(op.raw.free_leg.outcome_name, op.market_kind, op.raw.free_leg.point)}
+                </span>
+                <span className="text-price-up font-semibold tabular">
+                  {formatAmerican(op.raw.free_leg.price_american)}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px]">
+                <span className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-text-3 bg-bg-2">
+                  HEDGE
+                </span>
+                <BookLogo bookKey={op.raw.hedge_leg.book} mode="label" />
+                <span className="text-text-2 truncate max-w-[120px]">
+                  {formatOutcomeLabel(op.raw.hedge_leg.outcome_name, op.market_kind, op.raw.hedge_leg.point)}
+                </span>
+                <span className="text-text-1 font-semibold tabular">
+                  {formatAmerican(op.raw.hedge_leg.price_american)}
+                </span>
+              </div>
+            </div>
+          ) : null}
+        </td>
+        <td className="text-right align-top" style={CELL_PAD_STYLE}>
+          <StakeCell op={op} stake={stake} />
+        </td>
+        <td
+          className="text-right text-text-3 tabular text-[11px] align-top"
+          style={CELL_PAD_STYLE}
+        >
+          {commenceLabel(op.commence_time)}
+        </td>
+        <td className="text-right align-top" style={CELL_PAD_STYLE}>
+          <div className="inline-flex gap-1">
+            {op.also_in_arb && op.mode !== "arb" && (
+              <span
+                className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-price-up bg-price-up/20"
+                title="Also present as an arbitrage pair."
+              >
+                ARB
+              </span>
+            )}
+            {op.suspicious && (
+              <span
+                className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-price-down bg-price-down/10"
+                title="EV > 15% — likely stale or mispriced."
+              >
+                SUS
+              </span>
+            )}
+            {op.stale && (
+              <span
+                className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-text-3 bg-bg-2"
+                title={`Row age ${op.row_age_s}s.`}
+              >
+                STALE
+              </span>
+            )}
+          </div>
+        </td>
+      </tr>
+      {open && (
+        <tr className="border-t border-border-subtle">
+          <td colSpan={11} className="p-0">
+            <Workbench op={op} stake={stake} />
+          </td>
+        </tr>
+      )}
+    </Fragment>
+  );
+});
 
 /**
  * Compact per-row stake preview. Uses the same math module as the
