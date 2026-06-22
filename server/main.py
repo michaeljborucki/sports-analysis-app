@@ -286,11 +286,36 @@ def create_app() -> FastAPI:
                 replace_existing=True, max_instances=1,
             )
 
+            # Auto-bet sidecar Kelly-delta tick (E5). Runs every 60s; the
+            # tick itself reads sidecar_mode and bails when it's 'off',
+            # so the kill-switch silently halts autonomous activity even
+            # while the scheduler is still registered. The orchestrator
+            # factory raises until F1 wires the live pool/placer, so we
+            # wrap the call to log-and-skip if the factory isn't ready.
+            from .sidecar.delta_tick import run_delta_tick as _sidecar_delta_tick
+
+            async def _sidecar_delta_tick_job():
+                try:
+                    await _sidecar_delta_tick(db_path=cache.path)
+                except RuntimeError as ex:
+                    # Factory not initialized yet (pre-F1); skip silently.
+                    logging.debug("sidecar delta tick skipped: %s", ex)
+                except Exception:
+                    logging.exception("sidecar delta tick failed")
+
+            clv_scheduler.add_job(
+                _sidecar_delta_tick_job,
+                trigger="interval", seconds=60,
+                id="sidecar_delta_tick",
+                replace_existing=True, max_instances=1, coalesce=True,
+            )
+
             clv_scheduler.start()
             logging.info(
                 "CLV capture (60s) + wager-log refresh (30min) "
                 "+ kalshi/polymarket portfolio sync (5min) "
-                "+ kalshi orderbook depth poll (60s) schedulers started"
+                "+ kalshi orderbook depth poll (60s) "
+                "+ sidecar delta tick (60s) schedulers started"
             )
         else:
             logging.info(
