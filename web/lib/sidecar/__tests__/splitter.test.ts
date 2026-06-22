@@ -81,14 +81,14 @@ test("target 130, STANLEY (cap=150, bal=300) lowest balance takes alone", () => 
   expect(pairs(plan)).toEqual([["STANLEY", 130]]);
 });
 
-test("target 230, STANLEY 150 cap then B 80", () => {
+test("target 230, STANLEY stacks twice (150 then 80) — balance covers second parlay", () => {
   const stanley = acct("STANLEY", 300, 150);
   const other = acct("B", 1000);
   const plan = planSplits(230, [stanley, other]);
   expect(plan.status).toBe("planned");
   expect(pairs(plan)).toEqual([
     ["STANLEY", 150],
-    ["B", 80],
+    ["STANLEY", 80],
   ]);
 });
 
