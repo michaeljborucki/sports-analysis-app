@@ -1,0 +1,101 @@
+{
+  "url": "https://coral33.com/cloud/api/WagerSport/insertWagerParlay",
+  "request": {
+    "customerID": "VR12509   ",
+    "list": [
+      {
+        "customerID": "VR12509   ",
+        "docNum": 27458945,
+        "wagerType": "P",
+        "gameNum": 619136397,
+        "wagerCount": 1,
+        "gameDate": "2026-06-21 19:00:01.000",
+        "sportType": "Soccer              ",
+        "sportSubType": "WORLD CUP   ",
+        "lineType": "M",
+        "adjSpread": 0,
+        "adjTotal": 0,
+        "priceType": "A",
+        "finalMoney": 475,
+        "finalDecimal": 5.75,
+        "finalNumerator": 19,
+        "finalDenominator": 4,
+        "chosenTeamID": "New Zealand",
+        "riskAmount": 10,
+        "winAmount": 47.5,
+        "store": "wiseguys",
+        "custProfile": ".                   ",
+        "periodNumber": 0,
+        "periodDescription": "Game",
+        "oddsFlag": "Y",
+        "listedPitcher1": null,
+        "pitcher1ReqFlag": "",
+        "listedPitcher2": null,
+        "pitcher2ReqFlag": "",
+        "percentBook": 100,
+        "volumeAmount": 1000,
+        "currencyCode": "USD",
+        "date": "2026-06-21",
+        "agentID": "TYSONR",
+        "easternLine": 0,
+        "origPrice": 475,
+        "origDecimal": 5.75,
+        "origNumerator": 19,
+        "origDenominator": 4,
+        "creditAcctFlag": "Y",
+        "wager": {
+          "date": "2026-06-21",
+          "minPicks": 1,
+          "totalPicks": 2,
+          "wagerCount": 1,
+          "riskAmount": 10,
+          "winAmount": "99.77",
+          "description": "Soccer #225390 New Zealand +475 - For Game ",
+          "lineType": "P",
+          "freePlay": "N",
+          "agentID": "TYSONR",
+          "currencyCode": "USD",
+          "creditAcctFlag": "Y",
+          "playNumber": 1,
+          "roundRobin": 0,
+          "parlayName": "10 team",
+          "openSpotFlag": "O",
+          "parlayPayOutType": "R",
+          "maxPayOut": 1000000,
+          "update": false,
+          "team": 2
+        },
+        "itemNumber": 1,
+        "wagerNumber": 1,
+        "origSpread": 475,
+        "origTotal": 475,
+        "origMoney": 475,
+        "roundRobin": "0",
+        "extra": {
+          "team1": "Egypt",
+          "team2": "New Zealand",
+          "rot1": 225389,
+          "rot2": 225390,
+          "line": "+475",
+          "buy": false,
+          "point": 0
+        },
+        "status": "O"
+      }
+    ],
+    "agentView": false,
+    "operation": "insertWagerParlay",
+    "delay": {
+      "time": 1782088322,
+      "secs": 0,
+      "sig": "nDMewRtW8JQcrCA42kRsvsRUOJz1DWSfHCsfvAdjW_g"
+    }
+  },
+  "response": {
+    "STATUS": {
+      "STATE": 1,
+      "DOC": 1471133392,
+      "T": ""
+    }
+  }
+}

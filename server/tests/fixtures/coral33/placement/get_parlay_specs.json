@@ -1,0 +1,15 @@
+{
+  "url": "https://coral33.com/cloud/api/Limit/getParlaySpecs",
+  "request": {
+    "customerID": "VR12509   ",
+    "parlayName": "10 team",
+    "operation": "getParlaySpecs",
+    "RRO": 1
+  },
+  "response": {
+    "INFO": {
+      "MaxPicks": 10,
+      "DefaultPrice": -110
+    }
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "url": "https://coral33.com/cloud/api/Limit/getInfoParlay",
+  "request": {
+    "customerID": "VR12509   ",
+    "teams": 2,
+    "parlayName": "10 team",
+    "selects": "619136397-M|New Zealand^0",
+    "operation": "getInfoParlay",
+    "RRO": 1
+  },
+  "response": {
+    "INFO": {
+      "CONFIG": false,
+      "CARD": [
+        {
+          "GamesPicked": 2,
+          "MoneyLine": 2.6,
+          "ToBase": 1,
+          "MaxPayoutMoneyLine": null,
+          "MaxPayoutToBase": null
+        },
+        {
+          "GamesPicked": 3,
+          "MoneyLine": 6,
+          "ToBase": 1,
+          "MaxPayoutMoneyLine": null,
+          "MaxPayoutToBase": null
+        },
+        {
+          "GamesPicked": 4,
+          "MoneyLine": 10,
+          "ToBase": 1,
+          "MaxPayoutMoneyLine": null,
+          "MaxPayoutToBase": null
+        },
+        {
+          "GamesPicked": 5,
+          "MoneyLine": 20,
+          "ToBase": 1,
+          "MaxPayoutMoneyLine": null,
+          "MaxPayoutToBase": null
+        },
+        {
+          "GamesPicked": 6,
+          "MoneyLine": 40,
+          "ToBase": 1,
+          "MaxPayoutMoneyLine": null,
+          "MaxPayoutToBase": null
+        },
+        {
+          "GamesPicked": 7,
+          "MoneyLine": 80,
+          "ToBase": 1,
+          "MaxPayoutMoneyLine": null,
+          "MaxPayoutToBase": null
+        },
+        {
+          "GamesPicked": 8,
+          "MoneyLine": 160,
+          "ToBase": 1,
+          "MaxPayoutMoneyLine": null,
+          "MaxPayoutToBase": null
+        },
+        {
+          "GamesPicked": 9,
+          "MoneyLine": 300,
+          "ToBase": 1,
+          "MaxPayoutMoneyLine": null,
+          "MaxPayoutToBase": null
+        },
+        {
+          "GamesPicked": 10,
+          "MoneyLine": 600,
+          "ToBase": 1,
+          "MaxPayoutMoneyLine": null,
+          "MaxPayoutToBase": null
+        }
+      ],
+      "ACUM_PAYOUT": {
+        "ToWinAmount": 0
+      },
+      "PARAM": {
+        "TYPE": {
+          "ParmString": "R"
+        },
+        "PRICE_RANGE": {
+          "ParmInteger": 3
+        }
+      }
+    }
+  }
+}
