@@ -453,58 +453,84 @@ git commit -m "feat(sidecar): SidecarModeStore — dedicated dry-run/live JSON, 
 ### Task B3: Settings accessors for `sidecar_bankroll` + `sidecar_default_kelly`
 
 **Files:**
-- Modify: `server/user_settings.py` (existing user-settings store)
 - Create: `server/sidecar/settings.py` (typed accessors)
 - Test: `server/tests/test_sidecar_settings.py`
 
-- [ ] **Step 1: Read `server/user_settings.py` to understand the existing pattern**
+The existing `server/user_settings.py` exposes `UserSettings` (dataclass) + `UserSettingsStore` (class with hardcoded `SETTINGS_PATH = server/config/user_settings.json`). It does NOT expose a `read_settings()` function and has no env-path override. The `UserSettings` dataclass strict-validates known keys (`disabled_sports`, `disabled_markets`, `visible_books`) — adding new keys to `UserSettings` would force every consumer to update. Instead, treat the sidecar keys as **opaque additions** to the JSON file: read them with raw `json.load` and let the existing `UserSettingsStore` continue ignoring them.
 
-The existing module already manages `user_settings.json`. The new keys are simple numeric/enum reads. Settings accessors live in `server/sidecar/settings.py` so the sidecar package owns its config surface.
-
-- [ ] **Step 2: Write the failing test**
+- [ ] **Step 1: Write the failing test**
 
 ```python
 # server/tests/test_sidecar_settings.py
-from server.sidecar.settings import get_bankroll, get_default_kelly, KellyFraction
+import json
+from server.sidecar.settings import (
+    get_bankroll, get_default_kelly, KellyFraction, _settings_path,
+)
 
 
-def test_bankroll_default(monkeypatch, tmp_path):
-    monkeypatch.setenv("USER_SETTINGS_PATH", str(tmp_path / "us.json"))
+def _write(tmp_path, payload):
+    p = tmp_path / "user_settings.json"
+    p.write_text(json.dumps(payload))
+    return p
+
+
+def test_bankroll_default_when_file_missing(tmp_path, monkeypatch):
+    monkeypatch.setattr("server.sidecar.settings._settings_path",
+                       lambda: tmp_path / "user_settings.json")
     assert get_bankroll() == 10000
 
 
-def test_default_kelly_default(monkeypatch, tmp_path):
-    monkeypatch.setenv("USER_SETTINGS_PATH", str(tmp_path / "us.json"))
+def test_default_kelly_default_when_file_missing(tmp_path, monkeypatch):
+    monkeypatch.setattr("server.sidecar.settings._settings_path",
+                       lambda: tmp_path / "user_settings.json")
     assert get_default_kelly() is KellyFraction.HALF
 
 
-def test_bankroll_from_user_settings(monkeypatch, tmp_path):
-    p = tmp_path / "us.json"
-    p.write_text('{"sidecar_bankroll": 7500}')
-    monkeypatch.setenv("USER_SETTINGS_PATH", str(p))
+def test_bankroll_from_user_settings(tmp_path, monkeypatch):
+    p = _write(tmp_path, {"sidecar_bankroll": 7500})
+    monkeypatch.setattr("server.sidecar.settings._settings_path",
+                       lambda: p)
     assert get_bankroll() == 7500
 
 
-def test_invalid_kelly_falls_back_to_half(monkeypatch, tmp_path):
-    p = tmp_path / "us.json"
-    p.write_text('{"sidecar_default_kelly": "wild"}')
-    monkeypatch.setenv("USER_SETTINGS_PATH", str(p))
+def test_invalid_kelly_falls_back_to_half(tmp_path, monkeypatch):
+    p = _write(tmp_path, {"sidecar_default_kelly": "wild"})
+    monkeypatch.setattr("server.sidecar.settings._settings_path",
+                       lambda: p)
     assert get_default_kelly() is KellyFraction.HALF
+
+
+def test_sidecar_keys_dont_break_existing_user_settings_load(tmp_path):
+    """Verify the existing UserSettingsStore tolerates the new keys."""
+    from server.user_settings import UserSettingsStore
+    p = _write(tmp_path, {
+        "disabled_sports": [],
+        "sidecar_bankroll": 7500,
+        "sidecar_default_kelly": "quarter",
+    })
+    # If UserSettingsStore strictly validates keys, this will throw.
+    store = UserSettingsStore(p)
+    settings = store.load()
+    assert settings is not None
 ```
 
-- [ ] **Step 3: Implement `server/sidecar/settings.py`**
+- [ ] **Step 2: Implement `server/sidecar/settings.py` using a path-indirection helper**
 
 ```python
 """Typed accessors over user_settings.json for sidecar-routine settings.
 
 The mode toggle (live vs dry-run) lives in its own sidecar_mode.json file
 (see mode_store.py). Bankroll and default Kelly are routine values that ride
-on the existing user-settings store."""
+on the existing user-settings store as opaque extra keys — the existing
+UserSettings dataclass ignores unknown fields, so we read them directly via
+json.load without depending on its strict schema."""
 from __future__ import annotations
 
+import json
 from enum import Enum
+from pathlib import Path
 
-from server.user_settings import read_settings
+from server.user_settings import SETTINGS_PATH as _DEFAULT_SETTINGS_PATH
 
 
 class KellyFraction(str, Enum):
@@ -516,10 +542,22 @@ class KellyFraction(str, Enum):
 _FRACTION_VALUES = {f.value for f in KellyFraction}
 
 
+def _settings_path() -> Path:
+    """Indirection seam so tests can patch this without touching the store."""
+    return _DEFAULT_SETTINGS_PATH
+
+
+def _load_raw() -> dict:
+    try:
+        return json.loads(_settings_path().read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
 def get_bankroll() -> int:
     """Static bankroll used by the splitter. Default $10,000."""
-    settings = read_settings()
-    val = settings.get("sidecar_bankroll", 10000)
+    raw = _load_raw()
+    val = raw.get("sidecar_bankroll", 10000)
     try:
         return int(val)
     except (TypeError, ValueError):
@@ -528,15 +566,14 @@ def get_bankroll() -> int:
 
 def get_default_kelly() -> KellyFraction:
     """Default Kelly fraction shown in the confirm modal. Default half."""
-    settings = read_settings()
-    raw = settings.get("sidecar_default_kelly", "half")
-    if isinstance(raw, str) and raw in _FRACTION_VALUES:
-        return KellyFraction(raw)
+    raw = _load_raw()
+    val = raw.get("sidecar_default_kelly", "half")
+    if isinstance(val, str) and val in _FRACTION_VALUES:
+        return KellyFraction(val)
     return KellyFraction.HALF
 
 
 def kelly_to_pct(fraction: KellyFraction, full_kelly_pct: float) -> float:
-    """Apply the fraction multiplier to a full-Kelly percentage."""
     if fraction is KellyFraction.FULL:
         return full_kelly_pct
     if fraction is KellyFraction.HALF:
@@ -544,16 +581,16 @@ def kelly_to_pct(fraction: KellyFraction, full_kelly_pct: float) -> float:
     return full_kelly_pct * 0.25
 ```
 
-- [ ] **Step 4: Verify `read_settings` honors `USER_SETTINGS_PATH`**
+- [ ] **Step 3: Verify the existing `UserSettingsStore` doesn't reject unknown keys**
 
-Check `server/user_settings.py`. If it doesn't, either add an env override or pass an explicit path. Update the test to match the real surface.
+Run: `grep -n "from_dict\|strict\|unknown" server/user_settings.py`. The existing `UserSettings.from_dict` uses `.get()` per known key and ignores extras (verified at lines 56–62). Adding new keys is safe.
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [ ] **Step 4: Run tests to verify they pass**
 
 Run: `pytest server/tests/test_sidecar_settings.py -v`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add server/sidecar/settings.py server/tests/test_sidecar_settings.py
@@ -835,20 +872,27 @@ def _row_from_cursor(r, cur) -> AuditRow:
     return AuditRow(**d)
 ```
 
-- [ ] **Step 4: Add `init_schema_on_path` helper to `server/odds/cache.py` (test convenience)**
+- [ ] **Step 4: Add `init_schema_on_path` helper to `server/odds/cache.py`**
 
-Tests need a way to spin up a temp DB with the sidecar table without polluting global state. Add a small helper that takes a path and runs the same DDL:
+Tests need a way to spin up a temp DB with the sidecar table without polluting global state. First check what's there:
+
+Run: `grep -n "def _init_schema\|def init_schema\|CREATE TABLE" server/odds/cache.py | head -20`
+
+If `_init_schema(conn)` (or equivalent) is already a module-level function: add a thin path-taking wrapper next to it. If schema init is inlined in `__init__`, extract the DDL block into a `_init_schema(conn)` function first, then wrap. Either way the final shape is:
 
 ```python
-def init_schema_on_path(path: Path) -> None:
-    """Initialize the cache schema at a given path. Used by tests."""
+def init_schema_on_path(path) -> None:
+    """Initialize the cache schema at a given path. Used by tests so each
+    test gets a clean DB without touching the global server/cache.db."""
     import sqlite3
-    conn = sqlite3.connect(path)
+    conn = sqlite3.connect(str(path))
     try:
-        _init_schema(conn)  # whatever the existing internal function is
+        _init_schema(conn)
     finally:
         conn.close()
 ```
+
+Export it from `server/odds/cache.py` so the audit test can `from server.odds.cache import init_schema_on_path`.
 
 - [ ] **Step 5: Run tests to verify they pass**
 
@@ -1296,6 +1340,32 @@ if __name__ == "__main__":
     main()
 ```
 
+- [ ] **Step 1.5: Verify HAR entry indices match the expected operations**
+
+Add this to the extractor immediately before writing each fixture file:
+
+```python
+EXPECTED_OPS = {
+    36: "getParlaySpecs",
+    37: "getInfoParlay",
+    40: "checkWagerLineMulti",
+    41: "insertWagerParlay",
+    44: "getPendingByTicket",
+}
+for idx, name in ENTRIES.items():
+    e = entries[idx]
+    url = e["request"]["url"]
+    expected = EXPECTED_OPS[idx]
+    if expected not in url:
+        raise SystemExit(
+            f"HAR entry {idx} URL {url!r} does not contain expected "
+            f"operation {expected!r}; HAR may have changed shape — "
+            f"re-capture or update ENTRIES indices."
+        )
+```
+
+This guards against HAR drift: if the user re-captures with a slightly different click sequence, the indices may shift. The script aborts loudly instead of silently writing the wrong fixtures.
+
 - [ ] **Step 2: Run the extractor**
 
 Run: `python scripts/extract_har_fixtures.py`
@@ -1658,6 +1728,149 @@ Expected: PASS for all five builder tests (the `insert_wager_parlay` test compar
 ```bash
 git add server/odds/books/coral33/placement.py server/tests/test_coral33_placement.py
 git commit -m "feat(coral33): pure payload builders for parlay placement chain"
+```
+
+---
+
+### Task D2.5: Add `post_json` method to `Coral33Client`
+
+**Why:** The existing `Coral33Client.post_form` (client.py:162) is hard-wired for **form-encoded** bodies: it `_stringify`s every param value and sends `application/x-www-form-urlencoded; charset=UTF-8`. The HAR shows placement bodies are **JSON** with nested arrays (`list: [...]`) and nested objects (`wager: {...}`, `extra: {...}`, `delay: {...}`). Trying to `_stringify` a `list` produces `str(list)` (e.g., `"[{'gameNum': 619136397, ...}]"`) — broken on the wire. We need a parallel method that POSTs raw JSON.
+
+**Files:**
+- Modify: `server/odds/books/coral33/client.py` (add `post_json`)
+- Test: `server/tests/test_coral33_post_json.py`
+
+- [ ] **Step 1: Write the failing test**
+
+```python
+# server/tests/test_coral33_post_json.py
+import json
+import asyncio
+import pytest
+from unittest.mock import patch
+from server.odds.books.coral33.client import Coral33Client
+
+
+@pytest.mark.asyncio
+async def test_post_json_sends_application_json_body(monkeypatch):
+    """post_json must serialize the body as JSON, not form-encoded, and
+    set content-type accordingly. Captures the request via a mock and
+    asserts the captured body equals the input dict."""
+    captured = {}
+
+    async def fake_post(self, url, data=None, headers=None, json=None, **kw):
+        captured["data"] = data
+        captured["json"] = json
+        captured["headers"] = headers
+        # Return a fake response object
+        class R:
+            status_code = 200
+            text = '{"INFO": {"MaxPicks": 10}}'
+            def json(self):
+                return {"INFO": {"MaxPicks": 10}}
+        return R()
+
+    from curl_cffi.requests import AsyncSession
+    monkeypatch.setattr(AsyncSession, "post", fake_post)
+
+    c = Coral33Client("VR12509", "pw")
+    # Pre-set a token to skip auth
+    c._token = "FAKE_JWT"
+    c._token_exp = 9999999999
+
+    nested_body = {
+        "customerID": "VR12509   ",
+        "list": [{"gameNum": 619136397, "wagerType": "P"}],
+        "operation": "checkWagerLineMulti",
+        "RRO": 0,
+    }
+    result = await c.post_json("checkWagerLineMulti", nested_body)
+    assert result == {"INFO": {"MaxPicks": 10}}
+    # Content-type must indicate JSON
+    assert "application/json" in captured["headers"]["content-type"].lower()
+    # Body must round-trip as the SAME nested dict (no _stringify)
+    sent = captured["json"] or json.loads(captured["data"])
+    assert sent == nested_body
+    assert isinstance(sent["list"], list)
+    assert isinstance(sent["list"][0], dict)
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `pytest server/tests/test_coral33_post_json.py -v`
+Expected: FAIL — `post_json` not defined.
+
+- [ ] **Step 3: Implement `post_json`**
+
+In `server/odds/books/coral33/client.py`, add after `_raw_post`:
+
+```python
+    async def post_json(
+        self, operation: str, body: dict[str, Any]
+    ) -> dict:
+        """POST {operation} with a JSON body (not form-encoded).
+        Used by the placement chain — the bodies have nested arrays and
+        nested objects that the form-encoded post_form path mangles.
+
+        Same auth / proxy / impersonation behavior as post_form: re-auths
+        on 401, retries once."""
+        async with self._lock:
+            if not self._token or self._token_expired():
+                await self.authenticate()
+            token_at_call = self._token
+        try:
+            return await self._raw_post_json(operation, body)
+        except Coral33AuthError:
+            async with self._lock:
+                if self._token is None or self._token == token_at_call:
+                    await self.authenticate()
+            return await self._raw_post_json(operation, body)
+
+    async def _raw_post_json(
+        self, operation: str, body: dict[str, Any]
+    ) -> dict:
+        headers = {
+            **_browser_headers(),
+            "content-type": "application/json",
+            "authorization": f"Bearer {self._token}",
+        }
+        proxies = {"http": self.proxy_url, "https": self.proxy_url} \
+                  if self.proxy_url else None
+        async with AsyncSession(
+            impersonate="chrome", timeout=TIMEOUT, proxies=proxies
+        ) as http:
+            resp = await http.post(
+                f"{BASE_URL}/{_operation_path(operation)}",
+                json=body,
+                headers=headers,
+            )
+            if resp.status_code == 401:
+                self._token = None
+                self._token_exp = None
+                raise Coral33AuthError(f"{operation}: 401 — token rejected")
+            if resp.status_code != 200:
+                raise Coral33APIError(
+                    f"{operation} {resp.status_code}: {resp.text[:300]}"
+                )
+            return resp.json()
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run: `pytest server/tests/test_coral33_post_json.py -v`
+Expected: PASS
+
+- [ ] **Step 5: Update Task D3's `Coral33Placer` to call `post_json` (not `post_form`)**
+
+In the placer's five-call orchestration, every `await self.client.post_form("opName", body)` becomes `await self.client.post_json("opName", body)`. This applies to all five ops: `getParlaySpecs`, `getInfoParlay`, `checkWagerLineMulti`, `insertWagerParlay`, `getPendingByTicket`.
+
+The `FakeCoral33Client` test fixture in Task D3 needs a matching `post_json` method (just rename `post_form` to `post_json` in the fake).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add server/odds/books/coral33/client.py server/tests/test_coral33_post_json.py
+git commit -m "feat(coral33): post_json — JSON-body alternative to form-encoded post_form"
 ```
 
 ---
@@ -2031,28 +2244,89 @@ git commit -m "feat(coral33): carry agent_id/store/cust_profile on AccountSnapsh
 
 ## Phase E — Sidecar orchestrator
 
-### Task E1: SSE event types
+### Task E1: SSE event types — `publish()` on the existing broker
+
+**Why this is different from how it's drafted:** The SSE broker lives at `server/odds/events.py`, not `server/api/stream.py`. It has `mark_dirty()` (line 74) and `subscribe()` (line 90), but no public publish — only a module-private `_broadcast(event: dict)` (line 115). The existing flow is **dumb-tick**: `mark_dirty()` enqueues a flag that the `flush_loop` debounces into a single generic event. The sidecar needs **typed** events (per-job placement results), so we add one new public function `publish(event)` that bypasses the dumb-tick coalescing and broadcasts immediately with whatever shape the caller chose.
 
 **Files:**
-- Modify: `server/api/stream.py`
+- Modify: `server/odds/events.py` (add public `publish`)
+- Modify: `server/api/stream.py` (verify the SSE writer forwards the new event types unchanged — it should because `_format_event` already emits whatever dict it's given)
+- Create: `server/sidecar/sse.py`
+- Test: extend an existing `server/tests/test_events.py` if present, or add `server/tests/test_sidecar_sse.py`
 
-- [ ] **Step 1: Find the existing event-type registry**
+- [ ] **Step 1: Read `server/odds/events.py` end-to-end**
 
-Run: `grep -n "event\[.type.\]\|_format_event\|SSE_EVENT" server/api/stream.py | head -10`
+Note: `_broadcast(event)` (line 115) iterates `subscribers` and calls `put_nowait` per queue. `flush_loop` (line 138) is what mark_dirty schedules. They're orthogonal — `publish` needs to call `_broadcast` directly.
 
-Add four new event types (constants or inline strings, matching the pattern):
-- `sidecar_placement`
-- `sidecar_topup_required`
-- `sidecar_signal_skipped`
-- `sidecar_partial_fill`
+- [ ] **Step 2: Write the failing test**
 
-- [ ] **Step 2: Expose a small `emit` helper for sidecar events**
+```python
+# server/tests/test_sidecar_sse.py
+import asyncio
+import pytest
+from server.odds import events
 
-If the existing pattern uses a publisher object, just import it. Otherwise add a thin wrapper module `server/sidecar/sse.py`:
+
+@pytest.mark.asyncio
+async def test_publish_broadcasts_typed_event_to_subscriber():
+    events._reset_for_tests()
+    q = events.subscribe()
+    try:
+        events.publish({"type": "sidecar_placement", "job_id": "j1",
+                        "result": "placed", "stake": 100})
+        # Should land in the queue effectively immediately
+        msg = await asyncio.wait_for(q.get(), timeout=0.5)
+        assert msg["type"] == "sidecar_placement"
+        assert msg["job_id"] == "j1"
+    finally:
+        events.unsubscribe(q)
+
+
+@pytest.mark.asyncio
+async def test_publish_does_not_disturb_mark_dirty_coalescing():
+    """publish() is a separate path; it shouldn't reset the mark_dirty
+    debounce window."""
+    events._reset_for_tests()
+    q = events.subscribe()
+    try:
+        events.mark_dirty()
+        events.publish({"type": "sidecar_placement", "job_id": "j2"})
+        # mark_dirty is still pending until the next flush tick. publish
+        # delivered immediately. So the queue has at least the publish.
+        first = await asyncio.wait_for(q.get(), timeout=0.5)
+        assert first["type"] == "sidecar_placement"
+    finally:
+        events.unsubscribe(q)
+```
+
+- [ ] **Step 3: Implement `publish` in `server/odds/events.py`**
+
+```python
+def publish(event: dict[str, Any]) -> None:
+    """Broadcast a typed event to every subscriber IMMEDIATELY.
+
+    Distinct from mark_dirty(), which is the dumb-tick coalescing path used
+    by cache writers. Callers (currently: the sidecar orchestrator) own the
+    event shape — convention is to set event['type'] so consumers can
+    discriminate. The SSE writer in server/api/stream.py emits whatever
+    dict it receives, so no parser changes are needed."""
+    if "type" not in event:
+        raise ValueError("publish() event must carry a 'type' field")
+    _broadcast(event)
+```
+
+- [ ] **Step 4: Implement the sidecar SSE helpers**
 
 ```python
 # server/sidecar/sse.py
-from server.api.stream import events  # whatever the existing broker is named
+"""Typed publish helpers for the four sidecar SSE event types.
+
+Thin layer over server.odds.events.publish() — every helper sets the type
+field. Keeping these inline-typed dicts ensures the consumer schema is
+discoverable from one file."""
+from __future__ import annotations
+
+from server.odds import events
 
 
 def emit_placement(payload: dict) -> None:
@@ -2071,11 +2345,16 @@ def emit_partial_fill(payload: dict) -> None:
     events.publish({"type": "sidecar_partial_fill", **payload})
 ```
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 5: Verify `server/api/stream.py` forwards the new event types**
+
+Read `stream.py`'s event-writing loop. It pulls events from the subscriber queue and yields SSE frames. If it does `yield f"data: {json.dumps(event)}\n\n"` or `yield _format_event(...)` with the event dict verbatim, no changes needed. If it filters by allow-listed event types, add the four new types.
+
+- [ ] **Step 6: Run tests + commit**
 
 ```bash
-git add server/sidecar/sse.py server/api/stream.py
-git commit -m "feat(sidecar): SSE event types — placement, topup_required, signal_skipped, partial_fill"
+pytest server/tests/test_sidecar_sse.py -v
+git add server/odds/events.py server/sidecar/sse.py server/tests/test_sidecar_sse.py
+git commit -m "feat(sidecar): publish() on events broker + typed SSE helpers"
 ```
 
 ---
@@ -2436,6 +2715,188 @@ git commit -m "feat(sidecar): orchestrator — splitter → loop → audit → S
 
 ## Phase F — API endpoints
 
+### Task F0: Define `ev_row_id` format + add the field to `EVOpportunity`
+
+**Why:** The plan and spec reference `ev_row_id` as if it exists on the EV API surface, but it doesn't — `EVOpportunity` (server/api/ev.py:17–42) has `event_id`, `market_kind`, `point`, `outcome_name`, `book`, but no canonical row identifier. The frontend needs ONE string per row to send back in `POST /api/sidecar/place`. We define a canonical pipe-delimited string and add it as a computed field.
+
+**Format:** `f"{event_id}|{market_kind}|{point or ''}|{outcome_name}|{book}"`. Sport_key is omitted (already implicit in event_id under the cache's keying). `point` serializes empty when None.
+
+**Files:**
+- Create: `server/sidecar/ev_row_id.py` (canonical format + parser)
+- Modify: `server/api/ev.py` (add `ev_row_id` field to `EVOpportunity`)
+- Modify: `web/types/api.ts` (regenerate from openapi after the field lands)
+- Test: `server/tests/test_sidecar_ev_row_id.py`
+
+- [ ] **Step 1: Write the failing test**
+
+```python
+# server/tests/test_sidecar_ev_row_id.py
+from server.sidecar.ev_row_id import build_ev_row_id, parse_ev_row_id
+
+
+def test_round_trip_with_point():
+    rid = build_ev_row_id(
+        event_id="evt-123", market_kind="totals", point=2.5,
+        outcome_name="Over", book="coral33",
+    )
+    assert rid == "evt-123|totals|2.5|Over|coral33"
+    parsed = parse_ev_row_id(rid)
+    assert parsed["event_id"] == "evt-123"
+    assert parsed["market_kind"] == "totals"
+    assert parsed["point"] == 2.5
+    assert parsed["outcome_name"] == "Over"
+    assert parsed["book"] == "coral33"
+
+
+def test_round_trip_with_none_point():
+    rid = build_ev_row_id(
+        event_id="evt-X", market_kind="h2h", point=None,
+        outcome_name="New Zealand", book="coral33",
+    )
+    assert rid == "evt-X|h2h||New Zealand|coral33"
+    parsed = parse_ev_row_id(rid)
+    assert parsed["point"] is None
+
+
+def test_outcome_name_with_pipe_is_rejected():
+    import pytest
+    with pytest.raises(ValueError):
+        build_ev_row_id(
+            event_id="e", market_kind="h2h", point=None,
+            outcome_name="Bad|name", book="coral33",
+        )
+
+
+def test_malformed_row_id_is_rejected():
+    import pytest
+    with pytest.raises(ValueError):
+        parse_ev_row_id("not-enough-parts")
+```
+
+- [ ] **Step 2: Implement the canonical-id module**
+
+```python
+# server/sidecar/ev_row_id.py
+"""Canonical row identifier for /api/ev opportunities.
+
+Format: f"{event_id}|{market_kind}|{point or ''}|{outcome_name}|{book}"
+
+Strict: no field may contain a literal '|'. event_id and outcome_name in
+Odds-API data don't contain pipes today, but we validate to avoid silent
+ambiguity if that ever changes."""
+from __future__ import annotations
+
+
+SEP = "|"
+
+
+def build_ev_row_id(
+    *,
+    event_id: str,
+    market_kind: str,
+    point: float | None,
+    outcome_name: str,
+    book: str,
+) -> str:
+    for name, val in [
+        ("event_id", event_id), ("market_kind", market_kind),
+        ("outcome_name", outcome_name), ("book", book),
+    ]:
+        if SEP in val:
+            raise ValueError(f"{name} contains '{SEP}': {val!r}")
+    point_str = "" if point is None else f"{point:g}"
+    return SEP.join([event_id, market_kind, point_str, outcome_name, book])
+
+
+def parse_ev_row_id(rid: str) -> dict:
+    parts = rid.split(SEP)
+    if len(parts) != 5:
+        raise ValueError(f"malformed ev_row_id (expected 5 parts): {rid!r}")
+    event_id, market_kind, point_str, outcome_name, book = parts
+    return {
+        "event_id": event_id,
+        "market_kind": market_kind,
+        "point": float(point_str) if point_str else None,
+        "outcome_name": outcome_name,
+        "book": book,
+    }
+```
+
+- [ ] **Step 3: Add the field to `EVOpportunity` and populate it**
+
+In `server/api/ev.py`, add to `EVOpportunity`:
+
+```python
+class EVOpportunity(BaseModel):
+    sport_key: str
+    event_id: str
+    ...existing fields...
+    wager_type: Literal["straight", "parlay", "both"] | None = None
+    ev_row_id: str   # canonical (event_id, market_kind, point, outcome_name, book)
+```
+
+In the response builder (search `model_validate` or wherever `EVOpportunity` instances are constructed), populate `ev_row_id` via `build_ev_row_id(...)` from the same fields.
+
+- [ ] **Step 4: Implement `resolve_ev_row_to_leg`**
+
+This is the resolver the API endpoint uses. It takes the row_id, parses it, looks up the current cached EV row, and returns `(LegSpec, kelly_full_pct)`:
+
+```python
+# server/sidecar/resolve.py
+"""Resolve an ev_row_id back into a LegSpec + Kelly% by re-reading the
+current /api/ev output. Re-uses the live EV scanner (with TTL cache) so
+the sidecar fires against the same snapshot the UI sees.
+
+Returns None if the row is no longer present (line moved off best price,
+event went off the board, etc.). The orchestrator surfaces a 404 in that
+case."""
+from __future__ import annotations
+
+from server.sidecar.ev_row_id import parse_ev_row_id
+from server.sidecar.models import LegSpec
+
+
+def resolve_ev_row_to_leg(ev_row_id: str) -> tuple[LegSpec, float] | None:
+    parsed = parse_ev_row_id(ev_row_id)
+    # Use the same scanner the /api/ev endpoint uses; the response model
+    # gives us every field we need to build a LegSpec.
+    from server.api.ev import _scan_ev_opportunities  # internal helper
+    opps = _scan_ev_opportunities(
+        # Reasonable defaults — we just need to FIND this one row.
+        min_ev=-100.0, stale_seconds=300, max_results=10000,
+    )
+    match = next(
+        (o for o in opps
+         if o.event_id == parsed["event_id"]
+         and o.market_kind == parsed["market_kind"]
+         and (o.point or None) == parsed["point"]
+         and o.outcome_name == parsed["outcome_name"]
+         and o.book == parsed["book"]),
+        None,
+    )
+    if match is None:
+        return None
+    # The Coral33-specific fields (sport_type, game_num, rot_num,
+    # price_decimal, etc.) come from the SAME cache row that fed
+    # /api/ev. Look them up via the cache's existing event lookup
+    # (`OddsCache.get_event_row(event_id, market_kind, outcome_name, book)`)
+    # — the helper or its equivalent already exists; if not, add it.
+    ...
+    return leg, match.kelly_full_pct
+```
+
+The actual resolver implementation needs to walk from `EVOpportunity` (which has prices in American + decimal + ev_pct + kelly) plus the cache's raw row (which has sport_type, sport_sub_type, game_num, rot_num, game_datetime, price_numerator/denominator, etc.) into a `LegSpec`. Both data sources are already in `cache.db`. The plan executor: read `server/odds/cache.py` for the existing row-lookup pattern; copy the join logic that `/api/ev` itself uses.
+
+- [ ] **Step 5: Run all new tests + commit**
+
+```bash
+pytest server/tests/test_sidecar_ev_row_id.py -v
+git add server/sidecar/ev_row_id.py server/sidecar/resolve.py server/api/ev.py server/tests/test_sidecar_ev_row_id.py
+git commit -m "feat(sidecar): canonical ev_row_id on EVOpportunity + resolver"
+```
+
+---
+
 ### Task F1: `POST /api/sidecar/place`
 
 **Files:**
@@ -2545,9 +3006,10 @@ async def post_place(body: PlaceBody, background_tasks: BackgroundTasks):
     target = round(kelly_to_pct(fraction, kelly_full_pct) * bankroll)
     plan = plan_splits(target, orchestrator.pool_provider())
 
-    background_tasks.add_task(orchestrator.handle_place, req)
+    job_id = uuid.uuid4().hex
+    background_tasks.add_task(orchestrator.handle_place, req, job_id)
     return PlaceResponse(
-        job_id="<placeholder>",          # See note
+        job_id=job_id,
         plan_preview={
             "target": plan.target,
             "status": plan.status,
@@ -2559,7 +3021,22 @@ async def post_place(body: PlaceBody, background_tasks: BackgroundTasks):
     )
 ```
 
-> **Note on job_id timing.** Returning the job_id requires knowing it before the BackgroundTask starts. Easiest: generate it in the route, pass it into `handle_place` instead of generating inside. Refactor the orchestrator's `handle_place` to accept an external `job_id`.
+- [ ] **Step 1.5: Refactor `SidecarOrchestrator.handle_place` to accept an external `job_id`**
+
+`handle_place` currently generates `job_id = uuid.uuid4().hex` internally. The route needs to know the id before the BackgroundTask returns, so flip the dependency:
+
+```python
+async def handle_place(
+    self,
+    req: SidecarPlaceRequest,
+    job_id: str,          # provided by the caller
+) -> str:
+    # ...remove the internal uuid generation...
+    # ...all the rest is unchanged...
+    return job_id
+```
+
+Update the orchestrator tests in `server/tests/test_sidecar_placement.py` to pass a job_id explicitly: `await orchestrator.handle_place(req, uuid4().hex)`.
 
 - [ ] **Step 3: Add `resolve_ev_row_to_leg` and `get_orchestrator` helpers**
 
