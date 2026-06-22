@@ -21,3 +21,12 @@ def test_devig_two_way_skewed():
     home, away = devig_two_way(-200, 170)
     assert home > away
     assert abs((home + away) - 1.0) < 0.0001
+
+
+def test_american_to_implied_prob_is_cached():
+    """Repeat calls on the same odds hit the LRU cache, not the math."""
+    american_to_implied_prob.cache_clear()
+    american_to_implied_prob(-110)
+    american_to_implied_prob(-110)
+    info = american_to_implied_prob.cache_info()
+    assert info.hits >= 1

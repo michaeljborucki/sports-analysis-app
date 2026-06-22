@@ -1,6 +1,13 @@
 from __future__ import annotations
 
+import functools
 
+
+# Pure arithmetic over bounded American-odds integers (typically
+# -1000..+1000), called thousands of times per EV scan during devig.
+# A small LRU cache turns the inner loop into a dict lookup — maxsize
+# 4096 comfortably covers the full common range with hits to spare.
+@functools.lru_cache(maxsize=4096)
 def american_to_implied_prob(odds: int) -> float:
     """Convert American odds to implied (vigged) probability."""
     if odds < 0:
