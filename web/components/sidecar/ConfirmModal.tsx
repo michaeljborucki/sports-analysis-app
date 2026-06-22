@@ -144,7 +144,11 @@ export function ConfirmModal({
   // fullKellyPct is a PERCENTAGE (e.g., 4.6 = 4.6%). The /100 is the
   // unit conversion to a decimal fraction of bankroll.
   const kellyFractionOfBankroll = (fullKellyPct / 100) * mult;
-  const target = Math.max(0, Math.round(kellyFractionOfBankroll * bankroll));
+  // Rounded to nearest $5 — mirrors server compute_kelly_target. Math.max
+  // guards against negative-EV defensive rendering; with $5 rounding,
+  // 0–$2.49 → $0, $2.50–$7.49 → $5, etc.
+  const rawTarget = kellyFractionOfBankroll * bankroll;
+  const target = Math.max(0, Math.round(rawTarget / 5) * 5);
 
   const decimalOdds =
     offeredPriceAmerican > 0

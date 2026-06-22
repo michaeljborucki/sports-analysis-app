@@ -75,11 +75,16 @@ async def _process_one(sig, db_path: Path, orchestrator) -> None:
             return
 
         leg, kelly_full_pct = resolved
-        kelly_pct = kelly_to_pct(
-            KellyFraction(sig.kelly_fraction), kelly_full_pct,
+        # All targets are rounded to the nearest $5 (compute_kelly_target
+        # is the canonical helper used by both this tick and the
+        # user-triggered orchestrator).
+        from server.sidecar.settings import compute_kelly_target, round_stake_to_5
+        current_target = compute_kelly_target(
+            KellyFraction(sig.kelly_fraction),
+            kelly_full_pct,
+            sig.bankroll_at_arm,
         )
-        current_target = round(kelly_pct * sig.bankroll_at_arm)
-        delta = current_target - sig.total_placed
+        delta = round_stake_to_5(current_target - sig.total_placed)
 
         conn = sqlite3.connect(str(db_path))
         try:

@@ -6,7 +6,7 @@ import { Zap } from "lucide-react";
 
 import { fetchJson } from "@/lib/api";
 import { ConfirmModal } from "./ConfirmModal";
-import { kellyToPct, type SidecarSettingsResponse } from "./SignalFeed";
+import { kellyStake, type SidecarSettingsResponse } from "./SignalFeed";
 
 export interface AutoPlaceButtonProps {
   evRowId: string;
@@ -46,10 +46,7 @@ export function AutoPlaceButton(props: AutoPlaceButtonProps) {
     { refreshInterval: 60_000 },
   );
   const stake = settings
-    ? Math.round(
-        kellyToPct(settings.default_kelly, props.fullKellyPct) *
-          settings.bankroll,
-      )
+    ? kellyStake(settings.default_kelly, props.fullKellyPct, settings.bankroll)
     : null;
 
   return (

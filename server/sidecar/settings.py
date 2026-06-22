@@ -82,3 +82,33 @@ def kelly_to_fraction(
 # kelly_to_fraction for clarity — the old name is misleading because the
 # return value is a fraction, not a percentage.
 kelly_to_pct = kelly_to_fraction
+
+
+STAKE_INCREMENT = 5   # All sidecar stakes are rounded to the nearest $5.
+
+
+def round_stake_to_5(dollars: float) -> int:
+    """Round a dollar amount to the nearest $5.
+
+    Used at the boundary between "Kelly says X" and "splitter targets X"
+    so every individual parlay the orchestrator places lands on a clean
+    $5 multiple. The splitter's peel-back math preserves this — given a
+    $5-multiple target, every resulting assignment is also a $5 multiple
+    (verified by inspection: caps $100/$150 are $5-multiples, FLOOR $30
+    is a $5-multiple, peel-back deficit $30 - residual_in_5s is a
+    $5-multiple)."""
+    return int(round(dollars / STAKE_INCREMENT) * STAKE_INCREMENT)
+
+
+def compute_kelly_target(
+    fraction: KellyFraction,
+    full_kelly_pct: float,
+    bankroll: int,
+) -> int:
+    """Combined helper: Kelly fraction × bankroll, rounded to $5.
+
+    The canonical place to compute the splitter target from settings.
+    Both the orchestrator (user-triggered placements) and the delta-tick
+    (autonomous re-fires) go through this so behavior is consistent."""
+    fraction_of_bankroll = kelly_to_fraction(fraction, full_kelly_pct)
+    return round_stake_to_5(fraction_of_bankroll * bankroll)

@@ -46,6 +46,28 @@ export function kellyToPct(
   return (fullKellyPct / 100) * multiplier;
 }
 
+/**
+ * All sidecar stakes are rounded to the nearest $5. Mirrors the Python
+ * `round_stake_to_5` in server/sidecar/settings.py.
+ */
+export const SIDECAR_STAKE_INCREMENT = 5;
+
+export function roundStakeToFive(dollars: number): number {
+  return Math.round(dollars / SIDECAR_STAKE_INCREMENT) * SIDECAR_STAKE_INCREMENT;
+}
+
+/**
+ * Combined: Kelly fraction × bankroll, rounded to $5. The single
+ * canonical helper for "what stake does this signal produce."
+ */
+export function kellyStake(
+  fraction: "full" | "half" | "quarter",
+  fullKellyPct: number,
+  bankroll: number,
+): number {
+  return roundStakeToFive(kellyToPct(fraction, fullKellyPct) * bankroll);
+}
+
 /** Per-parlay minimum stake floor from server/sidecar/splitter.py. Below
  * this, the splitter refuses the placement (status='below_minimum'), so
  * we want to surface that visually on the SignalFeed row. */
@@ -198,15 +220,12 @@ function SignalRow({
           ? "text-flash"
           : "text-text-2";
 
-  // Kelly-derived dollar stake at the user's default Kelly fraction.
-  // Mirrors the Python `int(round(kelly_to_pct(fraction, kelly_full_pct)
-  // * bankroll))` used server-side. Renders as a placeholder until
+  // Kelly-derived dollar stake at the user's default Kelly fraction,
+  // rounded to the nearest $5. Mirrors the Python `compute_kelly_target`
+  // helper in server/sidecar/settings.py. Renders as a placeholder until
   // settings load to avoid a layout shift.
   const stake = settings
-    ? Math.round(
-        kellyToPct(settings.default_kelly, op.kelly_full_pct) *
-          settings.bankroll,
-      )
+    ? kellyStake(settings.default_kelly, op.kelly_full_pct, settings.bankroll)
     : null;
   const belowFloor = stake !== null && stake < SIDECAR_STAKE_FLOOR;
 

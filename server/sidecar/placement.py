@@ -111,11 +111,16 @@ def _target_for(req: SidecarPlaceRequest) -> int:
     """Resolve the dollar target the splitter should fill.
 
     Delta-tick path passes ``stake_override_dollars``; user-triggered
-    placements leave it None and we compute from Kelly here."""
+    placements leave it None and we compute from Kelly here.
+
+    All targets are rounded to the nearest $5 (see
+    ``settings.compute_kelly_target``)."""
+    from server.sidecar.settings import compute_kelly_target, round_stake_to_5
     if req.stake_override_dollars is not None:
-        return int(req.stake_override_dollars)
-    kelly_pct = kelly_to_pct(req.kelly_fraction, req.kelly_full_pct)
-    return int(round(kelly_pct * req.bankroll))
+        return round_stake_to_5(req.stake_override_dollars)
+    return compute_kelly_target(
+        req.kelly_fraction, req.kelly_full_pct, req.bankroll,
+    )
 
 
 class SidecarOrchestrator:
