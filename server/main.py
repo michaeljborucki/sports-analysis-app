@@ -380,6 +380,19 @@ def create_app() -> FastAPI:
     from .api.settings import build_router as settings_router
     from .api.stream import build_router as stream_router
     from .api.bets import build_router as bets_router
+    from .api.sidecar import build_router as sidecar_router
+
+    # Wire the SidecarOrchestrator singleton against the live AccountsScraper
+    # and the running cache.db. The factory module holds module-level globals
+    # the orchestrator + route layer read lazily, so this MUST run before any
+    # /api/sidecar request hits the orchestrator. Router registration order
+    # below is fine — uvicorn only starts serving after create_app returns.
+    from .sidecar import factory as sidecar_factory
+    sidecar_factory.configure(
+        scraper=accounts_scraper,
+        cache_db_path=live_cache_path,
+        mode_config_path=live_cache_path.with_name("sidecar_mode.json"),
+    )
 
     app.include_router(stream_router())
     app.include_router(bets_router(cache))
@@ -401,6 +414,7 @@ def create_app() -> FastAPI:
     app.include_router(
         coral33_accounts_router(accounts_scraper, cache=cache, odds_client=client)
     )
+    app.include_router(sidecar_router())
     app.include_router(kalshi_ctl_router(kalshi_fetcher))
     app.include_router(polymarket_ctl_router(polymarket_fetcher))
     app.include_router(
