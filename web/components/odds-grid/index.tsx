@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, memo, useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
 import { ChevronRight } from "lucide-react";
 
@@ -263,132 +263,21 @@ export function OddsGrid({
               const rowCount = outcomes.length;
               return (
                 <Fragment key={g.event_id}>
-                  {outcomes.map((out, idx) => {
-                    const isFirst = idx === 0;
-                    const isLast = idx === rowCount - 1;
-                    const allPrices = out?.prices ?? [];
-                    // Best follows the filter; consensus is server-computed.
-                    const visiblePrices = allPrices.filter(p =>
-                      visible.has(p.bookmaker_key)
-                    );
-                    const tiedBest = findAllBest(visiblePrices);
-                    const tiedKeys = new Set(
-                      tiedBest.map(p => p.bookmaker_key)
-                    );
-                    const best =
-                      tiedBest.length > 0
-                        ? tiedBest.reduce((a, b) =>
-                            bookInfo(a.bookmaker_key).priority <=
-                            bookInfo(b.bookmaker_key).priority
-                              ? a
-                              : b
-                          )
-                        : pickBest(visiblePrices);
-                    const consensus = out?.consensus_price_american ?? null;
-                    return (
-                      <tr
-                        key={`${g.event_id}-${idx}`}
-                        className={clsx(
-                          isFirst && "border-t border-border-subtle",
-                          "hover:bg-bg-1/40"
-                        )}
-                      >
-                        {isFirst && (
-                          <td
-                            rowSpan={rowCount}
-                            onClick={() =>
-                              setSheetEventId(isOpen ? null : g.event_id)
-                            }
-                            className={clsx(
-                              "px-3 py-1.5 align-middle whitespace-nowrap",
-                              "border-r border-border-subtle/60 cursor-pointer",
-                              isOpen && "bg-bg-1/50"
-                            )}
-                          >
-                            <div className="flex items-center gap-2">
-                              <ChevronRight
-                                aria-hidden
-                                size={10}
-                                className={clsx(
-                                  "text-text-3 transition-transform",
-                                  isOpen ? "rotate-90" : "rotate-0"
-                                )}
-                              />
-                              <div className="flex flex-col gap-0.5">
-                                <span className="text-text-1 font-medium">
-                                  {renderTeam(g.away_team, sport)} @{" "}
-                                  {renderTeam(g.home_team, sport)}
-                                </span>
-                                <span className="text-text-3 text-[11px] flex items-center gap-1.5">
-                                  {matchesLiveFilter(g.commence_time, "live") ? (
-                                    <>
-                                      <span className="live-dot" aria-hidden />
-                                      <span className="text-price-down font-semibold uppercase tracking-wide">
-                                        live
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <GameTime commenceTime={g.commence_time} />
-                                  )}
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-                        )}
-                        <td
-                          className={clsx(
-                            "px-2 py-1.5 whitespace-nowrap text-text-1",
-                            !isFirst && "text-text-2"
-                          )}
-                        >
-                          {sideLabel(out, g, activeGroup.display, sport)}
-                        </td>
-                        <td className="text-right px-2 py-1.5 tabular">
-                          {best ? (
-                            <BestCell
-                              price={best.price_american}
-                              book={best.bookmaker_key}
-                            />
-                          ) : (
-                            <span className="text-text-3">—</span>
-                          )}
-                        </td>
-                        <td className="text-right px-2 py-1.5 tabular text-text-2 border-r border-border-subtle/60">
-                          {consensus != null
-                            ? formatAmerican(consensus)
-                            : "—"}
-                        </td>
-                        {books.map(b => {
-                          const p = priceAtBook(out, b);
-                          if (!p)
-                            return (
-                              <td
-                                key={b}
-                                className="text-right px-2 py-1.5 text-text-3 tabular"
-                              >
-                                —
-                              </td>
-                            );
-                          const isBest = tiedKeys.has(p.bookmaker_key);
-                          return (
-                            <td
-                              key={b}
-                              className={clsx(
-                                "text-right px-2 py-1.5 tabular transition-colors",
-                                isBest
-                                  ? "text-price-up font-semibold bg-price-up/[0.06] border-l border-price-up/25"
-                                  : "text-text-1"
-                              )}
-                            >
-                              <CellFlash value={p.price_american}>
-                                {formatAmerican(p.price_american)}
-                              </CellFlash>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
+                  {outcomes.map((out, idx) => (
+                    <OutcomeRow
+                      key={`${g.event_id}-${idx}`}
+                      game={g}
+                      outcome={out}
+                      idx={idx}
+                      rowCount={rowCount}
+                      isOpen={isOpen}
+                      sport={sport}
+                      display={activeGroup.display}
+                      books={books}
+                      visible={visible}
+                      onToggleSheet={setSheetEventId}
+                    />
+                  ))}
                 </Fragment>
               );
             })}
@@ -407,3 +296,189 @@ export function OddsGrid({
     </div>
   );
 }
+
+/**
+ * One outcome row in the odds grid. Extracted + memoised so the inner work
+ * (filtering visible prices, computing tied-best, finding the lead book
+ * among ties) runs in a useMemo keyed on stable inputs and re-renders
+ * skip when neither this row's outcome nor the book columns/visible set
+ * have changed.
+ *
+ * Caveats:
+ *   - SWR returns fresh `outcome` object refs on every poll even when the
+ *     underlying data is identical (no compare option configured). So
+ *     memo equality fails on every tick — but it still saves work when
+ *     OddsGrid re-renders for sheet open/close, market-tab swaps, or live
+ *     filter changes that don't touch this game's outcomes.
+ *   - `visible` is a `Set` (stable identity from `useVisibleBooks`); not
+ *     mutated in place so referential equality holds across renders that
+ *     don't change the set.
+ */
+const OutcomeRow = memo(function OutcomeRow({
+  game,
+  outcome,
+  idx,
+  rowCount,
+  isOpen,
+  sport,
+  display,
+  books,
+  visible,
+  onToggleSheet,
+}: {
+  game: Game;
+  outcome: MarketOutcome | undefined;
+  idx: number;
+  rowCount: number;
+  isOpen: boolean;
+  sport: Sport;
+  display: DisplayKind;
+  books: string[];
+  visible: Set<string>;
+  onToggleSheet: (eventId: string | null) => void;
+}) {
+  const isFirst = idx === 0;
+
+  // Compute best / tied / consensus once per (outcome, visible) tuple
+  // rather than per render. `pickBest` / `findAllBest` are O(prices) each
+  // — at ~30 books × 2-3 sides per game this adds up across the grid.
+  const { best, tiedKeys, consensus } = useMemo(() => {
+    const allPrices = outcome?.prices ?? [];
+    const visiblePrices = allPrices.filter(p =>
+      visible.has(p.bookmaker_key),
+    );
+    const tiedBest = findAllBest(visiblePrices);
+    const tiedKeysSet = new Set(tiedBest.map(p => p.bookmaker_key));
+    // When multiple books tie for best price, prefer the one with the
+    // lowest priority value (sharper / more recognised brand) so the
+    // Best cell shows a stable logo across renders.
+    const bestRow =
+      tiedBest.length > 0
+        ? tiedBest.reduce((a, b) =>
+            bookInfo(a.bookmaker_key).priority <=
+            bookInfo(b.bookmaker_key).priority
+              ? a
+              : b,
+          )
+        : pickBest(visiblePrices);
+    return {
+      best: bestRow,
+      tiedKeys: tiedKeysSet,
+      consensus: outcome?.consensus_price_american ?? null,
+    };
+  }, [outcome, visible]);
+
+  return (
+    <tr
+      className={clsx(
+        isFirst && "border-t border-border-subtle",
+        "hover:bg-bg-1/40",
+      )}
+    >
+      {isFirst && (
+        <td
+          rowSpan={rowCount}
+          onClick={() => onToggleSheet(isOpen ? null : game.event_id)}
+          className={clsx(
+            "px-3 py-1.5 align-middle whitespace-nowrap",
+            "border-r border-border-subtle/60 cursor-pointer",
+            isOpen && "bg-bg-1/50",
+          )}
+        >
+          <div className="flex items-center gap-2">
+            <ChevronRight
+              aria-hidden
+              size={10}
+              className={clsx(
+                "text-text-3 transition-transform",
+                isOpen ? "rotate-90" : "rotate-0",
+              )}
+            />
+            <div className="flex flex-col gap-0.5">
+              <span className="text-text-1 font-medium">
+                {renderTeam(game.away_team, sport)} @{" "}
+                {renderTeam(game.home_team, sport)}
+              </span>
+              <span className="text-text-3 text-[11px] flex items-center gap-1.5">
+                {matchesLiveFilter(game.commence_time, "live") ? (
+                  <>
+                    <span className="live-dot" aria-hidden />
+                    <span className="text-price-down font-semibold uppercase tracking-wide">
+                      live
+                    </span>
+                  </>
+                ) : (
+                  <GameTime commenceTime={game.commence_time} />
+                )}
+              </span>
+            </div>
+          </div>
+        </td>
+      )}
+      <td
+        className={clsx(
+          "px-2 py-1.5 whitespace-nowrap text-text-1",
+          !isFirst && "text-text-2",
+        )}
+      >
+        {sideLabel(outcome, game, display, sport)}
+      </td>
+      <td className="text-right px-2 py-1.5 tabular">
+        {best ? (
+          <BestCell
+            price={best.price_american}
+            book={best.bookmaker_key}
+          />
+        ) : (
+          <span className="text-text-3">—</span>
+        )}
+      </td>
+      <td className="text-right px-2 py-1.5 tabular text-text-2 border-r border-border-subtle/60">
+        {consensus != null ? formatAmerican(consensus) : "—"}
+      </td>
+      {books.map(b => {
+        const p = priceAtBook(outcome, b);
+        return (
+          <BookPriceCell
+            key={b}
+            price={p ? p.price_american : null}
+            isBest={p ? tiedKeys.has(p.bookmaker_key) : false}
+          />
+        );
+      })}
+    </tr>
+  );
+});
+
+/**
+ * One book × outcome cell. Memoised on primitive props so an SWR tick
+ * that returns the same price for this book skips the CellFlash effect
+ * comparison and the clsx work. The flash animation itself is keyed by
+ * `value` change inside CellFlash, so memoisation does NOT suppress
+ * legitimate flashes.
+ */
+const BookPriceCell = memo(function BookPriceCell({
+  price,
+  isBest,
+}: {
+  price: number | null;
+  isBest: boolean;
+}) {
+  if (price == null) {
+    return (
+      <td className="text-right px-2 py-1.5 text-text-3 tabular">—</td>
+    );
+  }
+  return (
+    <td
+      className={clsx(
+        "text-right px-2 py-1.5 tabular transition-colors",
+        isBest
+          ? "text-price-up font-semibold bg-price-up/[0.06] border-l border-price-up/25"
+          : "text-text-1",
+      )}
+    >
+      <CellFlash value={price}>{formatAmerican(price)}</CellFlash>
+    </td>
+  );
+});
