@@ -1,5 +1,6 @@
 import asyncio
 import json
+from unittest.mock import AsyncMock
 
 from server.odds.books.coral33.accounts import load_account_credentials
 
@@ -64,3 +65,55 @@ def test_accounts_scraper_passes_proxy_to_client(monkeypatch):
     assert captured, "Coral33Client was never constructed"
     assert captured[0]["cust"] == "VR11606"
     assert captured[0]["proxy"] == "http://u:p@isp.decodo.com:10007"
+
+
+def test_account_snapshot_carries_placement_context(monkeypatch):
+    """After a scrape, AccountSnapshot exposes the per-customer placement
+    context fields the Coral33Placer needs (agent_id, store, cust_profile)
+    alongside the existing balance fields."""
+    from server.odds.books.coral33 import accounts as accts
+
+    cred = accts.AccountCredential(
+        customer_id="VR11606", password="p", label="Stanley",
+        proxy_url="http://u:p@h:1", max_parlay_stake=150,
+    )
+
+    # Mock Coral33Client.post_form to return a getAccountInfo response that
+    # includes the placement-context fields the HAR confirms are present.
+    # Real key is "accountInfo" (camelCase) per the HAR fixture.
+    fake_account_info = {
+        "accountInfo": {
+            "CurrentBalance": 50000,        # cents → $500
+            "AvailableBalance": 480.0,
+            "PendingWagerBalance": 2000,    # cents → $20
+            "FreePlayBalance": 0,
+            "CreditLimit": 1000.0,
+            "WagerLimit": 200.0,
+            "AgentID": "TYSONR",
+            "Store": "wiseguys",
+            "CustProfile": ".                   ",
+        }
+    }
+
+    async def fake_post_form(self, op, params=None):
+        if op == "getAccountInfo":
+            return fake_account_info
+        if op == "Pending":
+            return {"Pending": []}
+        raise AssertionError(f"unscripted op in test: {op}")
+
+    monkeypatch.setattr(accts.Coral33Client, "post_form", fake_post_form)
+    # Skip the real authenticate (no network).
+    monkeypatch.setattr(accts.Coral33Client, "authenticate",
+                        AsyncMock(return_value=None))
+
+    # The real per-account fetch is the module-level fetch_account coroutine
+    # (A3 confirmed there's no `_scrape_one` method on AccountsScraper).
+    snap = asyncio.run(accts.fetch_account(cred))
+
+    assert snap.error is None, f"unexpected scrape error: {snap.error}"
+    assert snap.customer_id == "VR11606"
+    assert snap.agent_id == "TYSONR"
+    assert snap.store == "wiseguys"
+    assert snap.cust_profile == ".                   "
+    assert snap.available_balance == 480.0

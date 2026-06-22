@@ -134,6 +134,8 @@ class AccountSnapshot:
     wager_limit: float = 0.0
     player_name: str | None = None
     agent_id: str | None = None
+    store: str | None = None
+    cust_profile: str | None = None
     wagers: WagerSummary = field(default_factory=WagerSummary)
     pending_wagers: list[PendingWager] = field(default_factory=list)
     error: str | None = None
@@ -341,6 +343,11 @@ async def fetch_account(cred: AccountCredential) -> AccountSnapshot:
         ai = info.get("accountInfo") or {}
         snap.player_name = (ai.get("PlayerName") or "").strip() or None
         snap.agent_id = (ai.get("AgentID") or "").strip() or None
+        snap.store = (ai.get("Store") or "").strip() or None
+        # CustProfile is whitespace-significant for placement (the Coral33
+        # placer echoes it verbatim into wager payloads), so don't strip.
+        cust_profile_raw = ai.get("CustProfile")
+        snap.cust_profile = cust_profile_raw if cust_profile_raw else None
         # CurrentBalance, PendingWagerBalance, FreePlayBalance are CENTS.
         # AvailableBalance comes through in dollars already.
         # CreditLimit / WagerLimit are dollars.
