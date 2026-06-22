@@ -8,7 +8,9 @@
 
 The site already runs a `/api/ev` scanner that surfaces +EV rows across every connected book, tagged with `kelly_full_pct` / `kelly_quarter_pct` and (for Coral33 rows only) a `wager_type` ∈ {`straight`, `parlay`, `both`} indicating whether the offered line lives on Coral33's Parlay tab.
 
-The user is running a 9-account Coral33 strategy that deliberately *cycles* deposits/promos out of Coral and into regulated books via low-hold and middling. The Coral33 side of every trade is structured as a parlay: the +EV leg (from `/api/ev`) is paired with a manually-picked "open" second leg, then hedged on a regulated book separately. The site already authenticates and reads from all 9 Coral33 sub-accounts via `server/odds/books/coral33/client.py:Coral33Client` and `accounts.py:AccountsScraper`, but the client is **read-only** — `Get_LeagueLines2`, `getAccountInfo`, `Pending`, `getWagersByFigureDate`. There is no `placeWager` operation today.
+The user is running a 7-account Coral33 strategy that deliberately *cycles* deposits/promos out of Coral and into regulated books via low-hold and middling. The Coral33 side of every trade is structured as an open-spot parlay: the +EV leg (from `/api/ev`) is placed as the single picked leg of a 2-pick parlay with one server-reserved open slot, then hedged on a regulated book separately. The site already authenticates and reads from all 7 Coral33 sub-accounts via `server/odds/books/coral33/client.py:Coral33Client` and `accounts.py:AccountsScraper`, but the client is **read-only** — `Get_LeagueLines2`, `getAccountInfo`, `Pending`, `getWagersByFigureDate`. There is no `placeWager` operation today.
+
+The 7 accounts in the pool (Jimmy Dixon `VR11601`, Mike Bower `VR11605`, Ben Schraeder `VR65801014`, Ryan Stanley `VR11606`, Parker Guild `VR11607`, Kellen Platt `VR11609`, Owen Foster `VR11610`) each have a dedicated sticky-IP residential proxy (Decodo, distinct ports 10001–10007). Ryan Stanley's account has a $150/parlay limit; the other six are capped at $100/parlay.
 
 Today, the user manually logs into each account, picks the eligible one with enough balance, and places the parlay by hand. The repetition is the bottleneck. This spec covers a "sidecar" that automates the **Coral33 leg only** — the user continues to place the hedge manually on the regulated book.
 
@@ -161,7 +163,7 @@ The existing `CORAL33_ACCOUNTS` env JSON is extended with **two** new per-entry 
 - `proxy_url`: missing/null is allowed but emits a startup `WARN` per account (development convenience; production use should always set it).
 - `max_parlay_stake`: per-account hard ceiling Coral33 enforces server-side. Defaults to **$100** if absent. Stanley's entry sets **$150**. The splitter never allocates more than this to one account in one job.
 - `accounts.py:AccountCredential` gains `proxy_url: str | None = None` and `max_parlay_stake: int = 100` fields.
-- `AccountsScraper` reads the proxy and passes it through when constructing the per-account `Coral33Client` for the balance scrape. The existing accounts roll-up therefore also starts using per-account proxies — desirable side effect, since same-IP reads across 9 accounts is the same anti-detection concern as same-IP placements. `max_parlay_stake` rides on the credential dataclass and feeds the splitter.
+- `AccountsScraper` reads the proxy and passes it through when constructing the per-account `Coral33Client` for the balance scrape. The existing accounts roll-up therefore also starts using per-account proxies — desirable side effect, since same-IP reads across 7 accounts is the same anti-detection concern as same-IP placements. `max_parlay_stake` rides on the credential dataclass and feeds the splitter.
 
 ### Splitter rule
 
@@ -415,7 +417,7 @@ Click opens a confirm modal (NO open-leg picker — the open spot is server-side
 Pinned to the existing top-nav alongside `/odds`, `/edges`, `/accounts`. Three panels in the established Bloomberg-terminal palette (dark mode first, tabular figures for all $ values):
 
 - **Left — live signal feed.** Mirrors `/api/ev?wager_filter=parlay&book=coral33&best_price=1` with the same inline Auto-place button. Filterable by sport tab bar at the top.
-- **Right — account pool grid.** 9 cards, one per Coral33 sub-account. Each card: customer_id, label, current balance (large), available balance (smaller), today's bet count + stake total, last-used timestamp, a small dot indicator (green = last request succeeded, red = last 3 failed in a row, gray = no activity today). Cards sort by current balance ascending so the lowest-balance / next-to-fire account is at the top.
+- **Right — account pool grid.** 7 cards, one per Coral33 sub-account. Each card: customer_id, label, current balance (large), available balance (smaller), today's bet count + stake total, last-used timestamp, a small dot indicator (green = last request succeeded, red = last 3 failed in a row, gray = no activity today). Cards sort by current balance ascending so the lowest-balance / next-to-fire account is at the top.
 - **Bottom — run log.** Recent placements newest-first as a dense table. Rows that share a `job_id` are grouped visually (subtle background tint + a small "1/3, 2/3, 3/3" pill in the leftmost column). Columns: job time, sport, event/market/side, stake, account, result badge, ticket #. Result badges: green `placed`, yellow `dry_run`, gray `no_eligible_account` / `below_minimum`, orange `partial_fill`, red `error` (with hover-tooltip for `error_message`).
 
 ## Error handling
