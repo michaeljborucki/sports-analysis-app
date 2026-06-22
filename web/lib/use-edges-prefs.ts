@@ -28,7 +28,7 @@ export interface EdgesPrefs {
 
 const DEFAULTS: EdgesPrefs = {
   bankroll: 1000,
-  kellyFrac: 0.25,
+  kellyFrac: 0.5,
   rounding: 5,
 };
 

@@ -136,11 +136,11 @@ export function ConfirmModal({
   // "setState in effect → cascading renders" lint warning.
   const [userFraction, setUserFraction] = useState<KellyFraction | null>(null);
   const fraction: KellyFraction =
-    userFraction ?? settings?.default_kelly ?? "quarter";
+    userFraction ?? settings?.default_kelly ?? "half";
   const setFraction = (next: KellyFraction) => setUserFraction(next);
 
   const bankroll = settings?.bankroll ?? 10_000;
-  const mult = KELLY_OPTIONS.find((o) => o.value === fraction)?.mult ?? 0.25;
+  const mult = KELLY_OPTIONS.find((o) => o.value === fraction)?.mult ?? 0.5;
   // fullKellyPct is a PERCENTAGE (e.g., 4.6 = 4.6%). The /100 is the
   // unit conversion to a decimal fraction of bankroll.
   const kellyFractionOfBankroll = (fullKellyPct / 100) * mult;

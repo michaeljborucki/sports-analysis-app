@@ -321,7 +321,7 @@ def test_get_sidecar_settings_defaults(client, tmp_path, monkeypatch):
 
     r = client.get("/api/sidecar/settings")
     assert r.status_code == 200
-    assert r.json() == {"bankroll": 10000, "default_kelly": "quarter"}
+    assert r.json() == {"bankroll": 10000, "default_kelly": "half"}
 
 
 # --------------------------------------------------------------------------

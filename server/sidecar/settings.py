@@ -48,10 +48,10 @@ def get_bankroll() -> int:
 def get_default_kelly() -> KellyFraction:
     """Default Kelly fraction shown in the confirm modal. Default half."""
     raw = _load_raw()
-    val = raw.get("sidecar_default_kelly", "quarter")
+    val = raw.get("sidecar_default_kelly", "half")
     if isinstance(val, str) and val in _FRACTION_VALUES:
         return KellyFraction(val)
-    return KellyFraction.QUARTER
+    return KellyFraction.HALF
 
 
 def kelly_to_fraction(
