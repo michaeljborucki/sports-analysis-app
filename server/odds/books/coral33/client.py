@@ -88,14 +88,21 @@ class Coral33Client:
     force a re-auth + retry once.
     """
 
-    def __init__(self, customer_id: str, password: str):
+    def __init__(self, customer_id: str, password: str,
+                 proxy_url: str | None = None):
         if not customer_id or not password:
             raise Coral33AuthError("coral33 credentials missing")
         self.customer_id = customer_id.strip()
         self.password = password
+        self.proxy_url = proxy_url
         self._token: str | None = None
         self._token_exp: int | None = None   # unix seconds
         self._lock = asyncio.Lock()
+
+    def _proxies(self) -> dict[str, str] | None:
+        if not self.proxy_url:
+            return None
+        return {"http": self.proxy_url, "https": self.proxy_url}
 
     @property
     def is_authenticated(self) -> bool:
@@ -130,7 +137,11 @@ class Coral33Client:
             **_browser_headers(),
             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
         }
-        async with AsyncSession(impersonate="chrome", timeout=TIMEOUT) as http:
+        async with AsyncSession(
+            impersonate="chrome",
+            timeout=TIMEOUT,
+            proxies=self._proxies(),
+        ) as http:
             resp = await http.post(
                 f"{BASE_URL}/System/authenticateCustomer",
                 data=body,
@@ -194,7 +205,11 @@ class Coral33Client:
             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
             "authorization": f"Bearer {self._token}",
         }
-        async with AsyncSession(impersonate="chrome", timeout=TIMEOUT) as http:
+        async with AsyncSession(
+            impersonate="chrome",
+            timeout=TIMEOUT,
+            proxies=self._proxies(),
+        ) as http:
             resp = await http.post(
                 f"{BASE_URL}/{_operation_path(operation)}",
                 data=body,
