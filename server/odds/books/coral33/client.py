@@ -232,6 +232,62 @@ class Coral33Client:
                     f"{operation} non-JSON body: {resp.text[:300]}"
                 ) from e
 
+    async def post_json(
+        self, operation: str, body: dict[str, Any]
+    ) -> dict:
+        """POST {operation} with a JSON body (not form-encoded).
+        Used by the placement chain — the bodies have nested arrays and
+        nested objects that the form-encoded post_form path mangles.
+
+        Same auth / proxy / impersonation behavior as post_form: re-auths
+        on 401, retries once."""
+        async with self._lock:
+            if not self._token or self._token_expired():
+                await self.authenticate()
+            token_at_call = self._token
+        try:
+            return await self._raw_post_json(operation, body)
+        except Coral33AuthError:
+            async with self._lock:
+                if self._token is None or self._token == token_at_call:
+                    await self.authenticate()
+            return await self._raw_post_json(operation, body)
+
+    async def _raw_post_json(
+        self, operation: str, body: dict[str, Any]
+    ) -> dict:
+        headers = {
+            **_browser_headers(),
+            "content-type": "application/json",
+            "authorization": f"Bearer {self._token}",
+        }
+        async with AsyncSession(
+            impersonate="chrome",
+            timeout=TIMEOUT,
+            proxies=self._proxies(),
+        ) as http:
+            resp = await http.post(
+                f"{BASE_URL}/{_operation_path(operation)}",
+                json=body,
+                headers=headers,
+            )
+            if resp.status_code == 401:
+                self._token = None
+                self._token_exp = None
+                raise Coral33AuthError(
+                    f"{operation}: 401 — token rejected"
+                )
+            if resp.status_code != 200:
+                raise Coral33APIError(
+                    f"{operation} {resp.status_code}: {resp.text[:300]}"
+                )
+            try:
+                return resp.json()
+            except Exception as e:
+                raise Coral33APIError(
+                    f"{operation} non-JSON body: {resp.text[:300]}"
+                ) from e
+
     # ---------- Convenience endpoints ----------
 
     async def get_sports_leagues(self) -> list[dict]:
@@ -296,4 +352,9 @@ _OP_PATHS = {
     "getWagersByFigureDate": "Report/getWagersByFigureDate",
     "getDailyFiguresByCustomer": "Report/getDailyFiguresByCustomer",
     "authenticateCustomer": "System/authenticateCustomer",
+    "getParlaySpecs":      "Limit/getParlaySpecs",
+    "getInfoParlay":       "Limit/getInfoParlay",
+    "checkWagerLineMulti": "WagerSport/checkWagerLineMulti",
+    "insertWagerParlay":   "WagerSport/insertWagerParlay",
+    "getPendingByTicket":  "Report/getPendingByTicket",
 }
