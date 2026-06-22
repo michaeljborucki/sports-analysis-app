@@ -2412,16 +2412,20 @@ git commit -m "feat(sidecar): publish() on events broker + typed SSE helpers"
 ```python
 # server/tests/test_sidecar_placement.py
 import json
+import sqlite3
 import uuid
 import pytest
 
 from server.odds.books.coral33.accounts import AccountCredential
+from server.odds.cache import init_schema_on_path
+from server.sidecar import audit
 from server.sidecar.models import AccountSnapshot, LegSpec
 from server.sidecar.placement import (
     SidecarOrchestrator,
     SidecarPlaceRequest,
     JitterDisabled,
 )
+from server.sidecar.settings import KellyFraction
 
 
 def make_leg() -> LegSpec:
@@ -2461,17 +2465,48 @@ def make_pool() -> list[AccountSnapshot]:
     ]
 
 
-class FakePlacerFactory:
-    """Returns a fresh FakeCoral33Placer per customer_id."""
-    def __init__(self):
-        self.placers: dict[str, "FakeCoral33Placer"] = {}
+class FakeCoral33Placer:
+    """Records calls; returns scripted dry-run-shaped results."""
+    def __init__(self, customer_id: str):
+        self.customer_id = customer_id
+        self.calls: list[dict] = []
 
-    def for_account(self, snapshot: AccountSnapshot):
-        ...   # construct or reuse a FakeCoral33Placer keyed by customer_id
+    async def place_open_parlay(self, ev_leg, stake_dollars, live):
+        from server.odds.books.coral33.placement import PlacementResult
+        self.calls.append({"stake": stake_dollars, "live": live})
+        return PlacementResult(
+            ticket_number=None if not live else 1471133392,
+            dry_run=not live,
+            accepted_payload=None if not live else {"STATUS": {"STATE": 1, "DOC": 1471133392}},
+            would_be_payload={"operation": "insertWagerParlay",
+                              "stake": stake_dollars} if not live else None,
+            decimal_payout=5.75 * 2.6,
+            expected_win=stake_dollars * 5.75 * 2.6 - stake_dollars,
+        )
+
+
+class FakePlacerFactory:
+    """One FakeCoral33Placer per customer_id, reused across siblings."""
+    def __init__(self):
+        self.placers: dict[str, FakeCoral33Placer] = {}
+
+    def for_account(self, snapshot: AccountSnapshot) -> FakeCoral33Placer:
+        cid = snapshot.customer_id
+        if cid not in self.placers:
+            self.placers[cid] = FakeCoral33Placer(cid)
+        return self.placers[cid]
+
+
+@pytest.fixture
+def audit_db(tmp_path):
+    """A clean cache.db with the sidecar_placements table initialized."""
+    path = tmp_path / "cache.db"
+    init_schema_on_path(path)
+    return path
 
 
 @pytest.mark.asyncio
-async def test_dry_run_target_230_stanley_then_dixon(tmp_path):
+async def test_dry_run_target_230_stanley_then_dixon(audit_db):
     """Target $230 → Stanley($150) + Dixon($80), both as dry_run rows."""
     pool = make_pool()
     leg = make_leg()
@@ -2479,8 +2514,8 @@ async def test_dry_run_target_230_stanley_then_dixon(tmp_path):
         pool_provider=lambda: pool,
         placer_factory=FakePlacerFactory(),
         mode="dry-run",
-        db_path=tmp_path / "cache.db",
-        jitter=JitterDisabled,
+        db_path=audit_db,
+        jitter=JitterDisabled(),
     )
     job_id = uuid.uuid4().hex
     returned = await orchestrator.handle_place(
@@ -2494,7 +2529,12 @@ async def test_dry_run_target_230_stanley_then_dixon(tmp_path):
         job_id,
     )
     assert returned == job_id
-    rows = orchestrator.audit.fetch_job(job_id)
+
+    conn = sqlite3.connect(audit_db)
+    try:
+        rows = audit.fetch_job(conn, job_id)
+    finally:
+        conn.close()
     assert len(rows) == 2
     assert [r.picked_account for r in rows] == ["VR11606", "VR11601"]
     assert [r.stake for r in rows] == [150, 80]
@@ -2623,21 +2663,47 @@ class SidecarOrchestrator:
                 })
                 return job_id
 
-            # Per-account session reuse: group assignments by customer_id in
-            # the order they appear in plan.assignments (preserves the
-            # splitter's lowest-balance-first ordering).
+            # Per-account session reuse + account-scoped failure cascade.
+            # Group assignments by customer_id (preserving splitter's
+            # lowest-balance-first ordering for distinct customers, and the
+            # within-customer ordering). When any assignment in a group
+            # raises an account-scoped exception (auth/proxy/balance), the
+            # remaining same-group siblings are marked `error` WITHOUT
+            # calling place_open_parlay again.
             placers: dict[str, object] = {}
+            burned_accounts: set[str] = set()
 
             total = len(plan.assignments)
             for ix, assignment in enumerate(plan.assignments):
-                await self.jitter.sleep(ix, total)
                 cid = assignment.account.customer_id
+
+                if cid in burned_accounts:
+                    # Cascade: same-account sibling after an account-scoped
+                    # failure. Record without firing.
+                    self._record_placement(
+                        conn, job_id, req, assignment, None, "error",
+                        error_message="auth_failed (account-scoped cascade)",
+                    )
+                    sse.emit_placement({
+                        "job_id": job_id, "result": "error",
+                        "picked_account": cid,
+                        "stake": assignment.amount, "mode": self.mode,
+                        "error_message": "auth_failed (account-scoped cascade)",
+                    })
+                    continue
+
+                await self.jitter.sleep(ix, total)
                 if cid not in placers:
                     placers[cid] = self.placer_factory.for_account(
                         assignment.account
                     )
                 placer = placers[cid]
-                await self._fire_one(conn, job_id, req, assignment, placer)
+
+                account_scoped_failed = await self._fire_one(
+                    conn, job_id, req, assignment, placer,
+                )
+                if account_scoped_failed:
+                    burned_accounts.add(cid)
 
             if plan.status == "partial_fill":
                 self._record_partial(conn, job_id, req, plan)
@@ -2654,36 +2720,60 @@ class SidecarOrchestrator:
 
     async def _fire_one(
         self, conn, job_id, req, assignment: SplitAssignment, placer,
-    ):
+    ) -> bool:
+        """Fire one placement. Returns True if the failure was
+        ACCOUNT-SCOPED (auth, proxy, balance) and the caller should
+        cascade-skip remaining same-account siblings; False otherwise
+        (success, dry-run, or parlay-scoped failure)."""
+        from server.odds.books.coral33.client import (
+            Coral33AuthError, Coral33APIError,
+        )
         try:
             result = await placer.place_open_parlay(
                 ev_leg=req.ev_leg,
                 stake_dollars=assignment.amount,
                 live=(self.mode == "live"),
             )
+            kind = "placed" if not result.dry_run else "dry_run"
             self._record_placement(
-                conn, job_id, req, assignment, result, "placed"
-                if not result.dry_run else "dry_run",
+                conn, job_id, req, assignment, result, kind,
             )
             sse.emit_placement({
                 "job_id": job_id,
-                "result": "placed" if not result.dry_run else "dry_run",
+                "result": kind,
                 "ticket_number": str(result.ticket_number)
                                   if result.ticket_number else None,
                 "picked_account": assignment.account.customer_id,
                 "stake": assignment.amount,
                 "mode": self.mode,
             })
+            return False
+        except Coral33AuthError as ex:
+            self._record_failure(conn, job_id, req, assignment, str(ex))
+            return True   # account-scoped: cascade siblings
+        except Coral33APIError as ex:
+            # Coral33APIError covers connection errors + non-200s. Treat as
+            # account-scoped: same session/proxy is likely burned for this
+            # signal.
+            self._record_failure(conn, job_id, req, assignment, str(ex))
+            return True
         except Exception as ex:
-            self._record_placement(
-                conn, job_id, req, assignment, None, "error", str(ex),
-            )
-            sse.emit_placement({
-                "job_id": job_id, "result": "error",
-                "picked_account": assignment.account.customer_id,
-                "stake": assignment.amount, "mode": self.mode,
-                "error_message": str(ex),
-            })
+            # Parlay-scoped (line_changed, timeout, etc.): record but DON'T
+            # cascade — sibling assignments on the same account can still
+            # be attempted.
+            self._record_failure(conn, job_id, req, assignment, str(ex))
+            return False
+
+    def _record_failure(self, conn, job_id, req, assignment, msg):
+        self._record_placement(
+            conn, job_id, req, assignment, None, "error", msg,
+        )
+        sse.emit_placement({
+            "job_id": job_id, "result": "error",
+            "picked_account": assignment.account.customer_id,
+            "stake": assignment.amount, "mode": self.mode,
+            "error_message": msg,
+        })
 
     # --- audit row helpers (one per result kind) ---
 
@@ -2757,7 +2847,7 @@ Extend the test file with:
 ```python
 @pytest.mark.asyncio
 async def test_account_scoped_failure_skips_remaining_same_account_siblings(
-    tmp_path,
+    audit_db,
 ):
     """Target $250 against A=$300, cap $100 → A:$100, A:$100, A:$50.
     First A:$100 raises Coral33AuthError. Remaining A:* assignments are
@@ -2776,6 +2866,7 @@ async def test_account_scoped_failure_skips_remaining_same_account_siblings(
     call_count = {"n": 0}
 
     class FailingPlacer:
+        customer_id = "A"
         async def place_open_parlay(self, ev_leg, stake_dollars, live):
             call_count["n"] += 1
             if call_count["n"] == 1:
@@ -2785,14 +2876,16 @@ async def test_account_scoped_failure_skips_remaining_same_account_siblings(
             )
 
     class FailingFactory:
+        def __init__(self):
+            self._placer = FailingPlacer()
         def for_account(self, snapshot):
-            return FailingPlacer()
+            return self._placer
 
     orchestrator = SidecarOrchestrator(
         pool_provider=lambda: pool,
         placer_factory=FailingFactory(),
         mode="live",
-        db_path=tmp_path / "cache.db",
+        db_path=audit_db,
         jitter=JitterDisabled(),
     )
     job_id = uuid.uuid4().hex
@@ -2806,7 +2899,12 @@ async def test_account_scoped_failure_skips_remaining_same_account_siblings(
         ),
         job_id,
     )
-    rows = orchestrator.audit.fetch_job(job_id)
+
+    conn = sqlite3.connect(audit_db)
+    try:
+        rows = audit.fetch_job(conn, job_id)
+    finally:
+        conn.close()
 
     # Three split-siblings, but only ONE HTTP call was attempted
     assert call_count["n"] == 1
