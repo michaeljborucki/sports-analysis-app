@@ -14,7 +14,7 @@ Today, the user manually logs into each account, picks the eligible one with eno
 
 ## Goals
 
-- One-click placement of a 2-leg parlay (one +EV leg surfaced by the scanner + one user-picked open leg) on Coral33 from `/edges`.
+- One-click placement of a **1-placed-leg + 1-open-spot parlay** on Coral33 from `/edges`. The +EV leg surfaced by the scanner goes in as the single picked leg; Coral's server-side `openSpotFlag` reserves the second slot at the parlay card's default `-110`, producing a ~2.6× payout multiplier on a 2-team card (this is how the HAR's $10 → $99.77 math works). There is no user-picked second leg — the open spot is server-managed.
 - Stake is computed from a user-set static bankroll × the chosen Kelly fraction. Default bankroll **$10,000**; default Kelly fraction **half**. (Modal also exposes Full and Quarter.)
 - **Per-parlay maximum stake is a hard constraint per account.** Standard accounts cap at **$100/parlay**; the Ryan Stanley account caps at **$150/parlay**. The cap travels with each account in `CORAL33_ACCOUNTS` env JSON (`max_parlay_stake` field). The cap is per-parlay, NOT per-account-per-signal: **the same account may take multiple separate parlays** for one signal if its balance covers them.
 - **When the Kelly target exceeds a single parlay's cap, the sidecar fans out across multiple parlays** — stacking on the same account as long as the account's balance covers each successive parlay, then moving to the next account. Examples:
@@ -30,7 +30,7 @@ Today, the user manually logs into each account, picks the eligible one with eno
 ## Non-goals (v1)
 
 - **Auto-firing the hedge** on regulated books. The user remains in the loop for the non-Coral side.
-- **Auto-picking the open leg.** The open leg is always user-supplied per placement.
+- **User-picked second leg.** The HAR confirms the open spot is server-side via `openSpotFlag: "O"` + `totalPicks: 2` + `minPicks: 1`. Nothing for the user to type in. Earlier brainstorm draft proposed an open-leg typeahead; the HAR contradicts it; the typeahead is dropped.
 - **Auto-firing on EV signal** without an explicit click. The user remains the trigger; the sidecar automates split planning, login, payload, and receipts.
 - **Cap-aware splitter optimization** (preferring Stanley to minimize split count). Explicitly rejected — lowest-balance-first wins.
 - **Below-floor rounding** (placing $30 when Kelly says $18). Sub-floor signals are skipped, not rounded up.
@@ -66,20 +66,74 @@ server/api/sidecar.py
 
 ### Extension to the Coral33 client
 
-`server/odds/books/coral33/client.py` gains exactly one new method:
+`server/odds/books/coral33/client.py` gains **one public method** (`place_open_parlay`) that internally orchestrates the captured five-call placement sequence reverse-engineered from the user's HAR (`~/Downloads/coral33.com.har`).
 
 ```python
-async def place_parlay(
+async def place_open_parlay(
     self,
-    legs: list[LegSpec],     # 2-leg ticket: [ev_leg, open_leg]
-    stake_dollars: float,
+    ev_leg: LegSpec,            # the +EV leg surfaced by the scanner
+    stake_dollars: float,       # ≤ this client's max_parlay_stake; ≥ FLOOR
+    parlay_name: str = "10 team",
 ) -> PlaceParlayResponse:
-    """POST the captured place-wager operation. Returns ticket # + accepted prices."""
+    """Place one 1-placed-leg + 1-open-spot parlay.
+    Returns ticket # + accepted price + the parsed payout block."""
 ```
 
-The operation name, path, and form-payload shape come from a request the user captures from coral33.com via browser DevTools — same reverse-engineering path used to produce `authenticateCustomer` and `Get_LeagueLines2`. Until that request is captured, the method is stubbed and `place_parlay` raises `NotImplementedError` in live mode (dry-run still works against the stub, returning the payload that *would* have been sent).
-
 `Coral33Client.__init__` is extended with an optional `proxy_url: str | None`. When set, the underlying `curl_cffi.AsyncSession` is constructed with `proxies={"http": proxy_url, "https": proxy_url}`. The token cache, browser-header fingerprinting, and JWT refresh logic are unchanged.
+
+#### The five-call placement chain (from HAR)
+
+Every successful parlay placement Coral33's web UI makes is this exact sequence. The sidecar replicates it:
+
+| # | Operation | Path | Purpose | Required? |
+|---|---|---|---|---|
+| 1 | `getParlaySpecs` | `Limit/getParlaySpecs` | Returns `{ MaxPicks, DefaultPrice: -110 }` for the parlay card. Cacheable per (customer, parlayName). | Once per session per customer; cache result. |
+| 2 | `getInfoParlay` | `Limit/getInfoParlay` | Returns the per-team-count multiplier table. For `teams: 2`, the 2-team card pays `MoneyLine: 2.6` × the placed leg's decimal odds. Used for the modal payout display. | Once per placement (cheap; tells us expected payout for the receipt). |
+| 3 | `checkWagerLineMulti` | `WagerSport/checkWagerLineMulti` | **Mandatory gate.** Pre-validates the line and returns: (a) the current line snapshot, (b) a `DELAY: { time, secs, sig }` block. The `sig` is a short-lived server signature that `insertWagerParlay` MUST replay or the placement is rejected as anti-tamper. | Every placement, immediately before step 4. |
+| 4 | `insertWagerParlay` | `WagerSport/insertWagerParlay` | The actual placement. Carries the `list: [leg]` + `wager.openSpotFlag: "O"` + `wager.totalPicks: 2` + `wager.minPicks: 1` + the `delay` block from step 3. Returns `{ STATUS: { STATE: 1, DOC: <ticket# } }` on success. | Once per placement. |
+| 5 | `getPendingByTicket` | `Report/getPendingByTicket` | Pulls the just-landed ticket for receipt display. | Optional but useful — feeds the modal receipt card and audit's `accepted_payload`. |
+
+#### Per-customer placement context
+
+Several placement-payload fields come from the customer's profile and don't vary per bet. The sidecar reads them once via `Customer/getAccountInfo` (already wired) and caches them on the client:
+
+- `agentID` (e.g., `"TYSONR"`) — master agent. May differ per customer.
+- `store` (e.g., `"wiseguys"`) — observed static across the HAR but read it dynamically.
+- `custProfile` (e.g., `".                   "` — 20-char padded) — read from `getAccountInfo`.
+- `office` — already a constant in the client (`"LEOOFFICE"`).
+- `volumeAmount` — per-customer; appears in the HAR as `500` (straight) and `1000` (parlay). The sidecar sets it to `stake_dollars * 100` empirically (matches the HAR ratios); confirm by replay.
+
+#### Open-spot payload shape (the placement body's critical fields)
+
+The `wager` block inside `insertWagerParlay.list[0]` is what makes this an open-spot parlay:
+
+```json
+{
+  "minPicks": 1,
+  "totalPicks": 2,
+  "openSpotFlag": "O",
+  "parlayName": "10 team",
+  "parlayPayOutType": "R",
+  "maxPayOut": 1000000,
+  "roundRobin": 0,
+  "wagerCount": 1,
+  "team": 2,
+  "lineType": "P",
+  "riskAmount": <stake_dollars>,
+  "winAmount": <getInfoParlay 2-team multiplier × decimal_odds × stake>,
+  "description": "<sport> #<rotNum> <chosenTeam> <price_american> - For Game ",
+  "playNumber": 1,
+  ...constant fields (date, freePlay, agentID, currencyCode, creditAcctFlag)
+}
+```
+
+The outer placement record carries the per-leg pricing snapshot (`finalMoney`, `finalDecimal`, `finalNumerator`, `finalDenominator`, `chosenTeamID`, etc.) — all of which come from the `checkWagerLineMulti` response in step 3. The sidecar copies that block verbatim.
+
+#### Dry-run vs live
+
+In dry-run mode the client stops after step 3 (`checkWagerLineMulti`), captures the would-be `insertWagerParlay` payload (constructed but not sent), and returns a synthetic `PlaceParlayResponse` with `result="dry_run"` plus the constructed payload for audit display. In live mode steps 4–5 execute.
+
+The choice to still run step 3 in dry-run is deliberate: it (a) confirms the leg is still live and parlay-eligible right now (catches stale-cache mismatches), and (b) gives the audit log a real `DELAY.sig` value so the dry-run payload is a true replica.
 
 ### Proxy plumbing
 
@@ -251,8 +305,8 @@ CREATE TABLE sidecar_placements (
   job_id          TEXT NOT NULL,               -- groups split-siblings of one signal
   created_at      INTEGER NOT NULL,            -- unix seconds
   ev_row_id       TEXT NOT NULL,               -- canonical (event_id, market_key, address) tuple-string
-  open_leg        TEXT NOT NULL,               -- JSON of LegSpec (identical across split-siblings)
   ev_leg          TEXT NOT NULL,               -- JSON of LegSpec at fire time (identical across split-siblings)
+  parlay_name     TEXT NOT NULL DEFAULT '10 team',  -- Coral parlay card name; always "10 team" for now
   kelly_fraction  TEXT NOT NULL,               -- 'full' | 'half' | 'quarter'
   target_stake    REAL NOT NULL,               -- total Kelly target for the job (identical across split-siblings)
   stake           REAL,                        -- THIS placement's dollar amount; NULL on pre-flight refusal rows
@@ -275,12 +329,11 @@ CREATE INDEX sidecar_placements_created_at ON sidecar_placements(created_at DESC
 ```
 [User on /edges]
     ↓ click "Auto-place" on a row with Coral33 best price AND wager_type ∈ {parlay, both}
-[Open-leg modal]
-    ↓ type-ahead picks the open leg from current Coral33 odds cache
+[Confirm modal]
     ↓ select kelly_fraction (default from sidecar_default_kelly, typically 'half')
-    ↓ modal displays the SplitPlan preview (N rows: account, label, $amount)
+    ↓ modal displays the SplitPlan preview (N rows: account, label, $amount, expected payout)
     ↓ Confirm
-POST /api/sidecar/place { ev_row_id, open_leg, kelly_fraction }
+POST /api/sidecar/place { ev_row_id, kelly_fraction }
     ↓ resolve ev_row_id → ev_leg snapshot
     ↓ target = round(kelly_fraction × sidecar_bankroll)
     ↓ plan = splitter.plan_splits(target, accounts_cache)
@@ -288,12 +341,19 @@ POST /api/sidecar/place { ev_row_id, open_leg, kelly_fraction }
 [BackgroundTask]
     ↓ if plan.status == 'below_minimum' → write 1 refusal row, emit sidecar_signal_skipped SSE, done
     ↓ if plan.status == 'no_eligible_account' → write 1 refusal row, emit sidecar_topup_required SSE, done
-    ↓ if dry-run → write 1 dry_run row per assignment with the would-be payload, emit sidecar_placement SSE per row, done
-    ↓ live → for each assignment in plan.assignments (sequential, jittered):
-            Coral33Client(creds, proxy_url=creds.proxy_url)
-              → authenticate()
-              → place_parlay(legs=[ev_leg, open_leg], stake_dollars=assignment.amount)
-              → write audit row (placed | error), emit sidecar_placement SSE
+    ↓ for each assignment in plan.assignments (sequential, jittered 3–8s):
+            client = Coral33Client(creds, proxy_url=creds.proxy_url)  # reused across same-acct siblings
+              → authenticate() (if not already)
+              → place_open_parlay(ev_leg, stake_dollars=assignment.amount, parlay_name="10 team"):
+                   1. getParlaySpecs("10 team")                   [cached per session]
+                   2. getInfoParlay(teams=2, selects=…, parlayName="10 team")
+                   3. checkWagerLineMulti([ev_leg])  →  DELAY.sig
+                   4. dry-run? → return synthetic response with would-be payload, skip 4–5
+                      live?    → insertWagerParlay(list=[ev_leg],
+                                                   wager={openSpotFlag:"O", totalPicks:2, minPicks:1, …},
+                                                   delay=DELAY)
+                   5. getPendingByTicket(ticket_number)
+              → write audit row (placed | dry_run | error), emit sidecar_placement SSE
     ↓ if plan.status == 'partial_fill' after the loop → write 1 partial_fill row, emit sidecar_partial_fill SSE
 [UI]
     ↓ modal subscribes to job_id-scoped SSE → renders a row per split → ticket # appears as each lands
@@ -327,11 +387,14 @@ When consecutive assignments land on the same account, the sidecar **reuses the 
 
 Each row where `book == "coral33"` AND `is_best_price` AND `wager_type ∈ {parlay, both}` gets a compact button at the end of the row. The button is suppressed entirely when `sidecar_mode == "dry-run"` and `sidecar_bankroll` is zero/unset — there's nothing to fire.
 
-Click opens a modal:
+Click opens a confirm modal (NO open-leg picker — the open spot is server-side):
 
-- **Header.** The +EV leg description (event, market, side, price). Three stat chips: **EV%**, **Kelly%** (radio: Full / Half / Quarter, default from `sidecar_default_kelly`), **Target $** (live-computed from the kelly fraction × `sidecar_bankroll`, rounded to whole dollars).
-- **Body.** A type-ahead "Pick the open leg" search. Filters the current Coral33 odds cache (already in browser state via SWR) by event name, market, side. Selected leg renders as a card under the search with a "change" link.
-- **Split plan preview.** Below the open-leg picker, a live-computed table shows the splitter's plan for the current target:
+- **Header.** The +EV leg description (event, market, side, American price). Three stat chips:
+  - **EV%** — from the EV row.
+  - **Kelly%** — radio: Full / Half / Quarter. Default from `sidecar_default_kelly` (typically Half).
+  - **Target $** — `round(kelly_fraction × sidecar_bankroll)`. Re-renders on radio change.
+- **Expected payout strip.** Below the header, a single line: *"2-team parlay (open spot at -110): Risk $X → Win $Y"*. The 2-team multiplier comes from a cached `getInfoParlay` per (sport, parlay_name); on first open the modal makes the call, caches it in memory for ~5 minutes, and shows a small loading shimmer while it fetches. The win amount uses `Target $` × (decimal_odds × 2.6 multiplier).
+- **Split plan preview.** A live-computed table:
 
   ```
   Plan: $230 across 2 placements
@@ -339,8 +402,12 @@ Click opens a modal:
     2. VR11601 — Account 1          $80    (balance $920)
   ```
 
-  Re-renders whenever the user changes the Kelly radio. If `status == 'below_minimum'`: red banner "Kelly target $18 is below $30 floor — signal will be skipped." If `status == 'no_eligible_account'`: red banner "No account has $30+ available — top up to fire." If `status == 'partial_fill'`: yellow banner "Pool can fund $80 of $230; only $80 will be placed." Confirm button is **disabled** for `below_minimum` and `no_eligible_account`; **enabled** for `partial_fill` (user accepts the partial).
-- **Footer.** Mode badge: *dry-run* (muted yellow) or *live* (saturated green). Buttons: **Cancel** / **Confirm**. Confirm is disabled until an open leg is picked AND the plan is non-empty.
+  Re-renders on Kelly radio change. Status banners:
+  - `below_minimum` → red: "Kelly target $18 is below the $30 floor — signal will be skipped."
+  - `no_eligible_account` → red: "No account has $30+ available — top up to fire."
+  - `partial_fill` → yellow: "Pool can fund $80 of $230; only $80 will be placed."
+  - Confirm is **disabled** for `below_minimum` / `no_eligible_account`; **enabled** for `partial_fill` (user accepts the partial).
+- **Footer.** Mode badge: *dry-run* (muted yellow) or *live* (saturated green). Buttons: **Cancel** / **Confirm**.
 - **Result.** Modal shows a row per planned assignment, each with a spinner that swaps to a ticket # on SSE receipt. Sequential reveal mirrors the jittered placement order. Closes after the last assignment lands (or errors out) plus a ~3s read window.
 
 ### `/sidecar` — new top-nav page
@@ -349,7 +416,7 @@ Pinned to the existing top-nav alongside `/odds`, `/edges`, `/accounts`. Three p
 
 - **Left — live signal feed.** Mirrors `/api/ev?wager_filter=parlay&book=coral33&best_price=1` with the same inline Auto-place button. Filterable by sport tab bar at the top.
 - **Right — account pool grid.** 9 cards, one per Coral33 sub-account. Each card: customer_id, label, current balance (large), available balance (smaller), today's bet count + stake total, last-used timestamp, a small dot indicator (green = last request succeeded, red = last 3 failed in a row, gray = no activity today). Cards sort by current balance ascending so the lowest-balance / next-to-fire account is at the top.
-- **Bottom — run log.** Recent placements newest-first as a dense table. Rows that share a `job_id` are grouped visually (subtle background tint + a small "1/3, 2/3, 3/3" pill in the leftmost column). Columns: job time, sport, event/market/side, open leg short, stake, account, result badge, ticket #. Result badges: green `placed`, yellow `dry_run`, gray `no_eligible_account` / `below_minimum`, orange `partial_fill`, red `error` (with hover-tooltip for `error_message`).
+- **Bottom — run log.** Recent placements newest-first as a dense table. Rows that share a `job_id` are grouped visually (subtle background tint + a small "1/3, 2/3, 3/3" pill in the leftmost column). Columns: job time, sport, event/market/side, stake, account, result badge, ticket #. Result badges: green `placed`, yellow `dry_run`, gray `no_eligible_account` / `below_minimum`, orange `partial_fill`, red `error` (with hover-tooltip for `error_message`).
 
 ## Error handling
 
@@ -398,19 +465,24 @@ The behavior depends on whether the failure is **account-scoped** (will repeat f
 
 ### Integration
 
-- `FakeCoral33Client` (test fixture) records every `place_parlay` call. End-to-end through `POST /api/sidecar/place` proves: dry-run is a no-op (no client construction even when assignments exist), live calls the client with the right payload per assignment, all SSE events fire on the right paths in the right order, audit rows land grouped by `job_id`.
-- **Stacked-on-one-account end-to-end test:** target $250 against a fixture pool where account A has $260 balance produces three assignments (A:$100, A:$100, A:$50) all on the same `Coral33Client` session, three `placed` audit rows under one `job_id` with the same `picked_account`.
-- **Cross-account end-to-end test:** target $300 against (A:$250, B:$500) produces A:$100, A:$100, A:$50, B:$50 — four assignments, two distinct client sessions, four `placed` rows.
-- **Account-scoped cascade test:** target $230 split as Stanley:$150, B:$80 — Stanley's auth fails on first attempt; the test confirms the splitter does NOT retry on Stanley for a hypothetical second sibling (there isn't one here; but in a target $250 case with Stanley:$150 + Stanley:$30 wait — Stanley's cap is $150, so 250 would be Stanley:$150 + B:$100; that doesn't stack on Stanley. Use a different fixture: target $250 against A=$300 balance cap $100 → A:$100, A:$100, A:$50; if first A:$100 auth-fails, both other A assignments are marked `error` without an HTTP attempt).
+- `FakeCoral33Client` (test fixture) records every `place_open_parlay` call AND every intermediate step (`getParlaySpecs`, `getInfoParlay`, `checkWagerLineMulti`). End-to-end through `POST /api/sidecar/place` proves:
+  - dry-run runs steps 1–3, captures the would-be insertWagerParlay payload, does NOT issue step 4 (`insertWagerParlay`) or step 5 (`getPendingByTicket`).
+  - live mode runs all five steps in order, with the `DELAY.sig` from step 3 propagating into step 4 verbatim.
+  - SSE events fire on the right paths in the right order; audit rows land grouped by `job_id`.
+- **Payload shape test.** Build a synthetic LegSpec for "Soccer #225390 New Zealand +475" and confirm `place_open_parlay` produces an `insertWagerParlay` payload byte-equivalent to the HAR's entry-41 payload modulo `docNum`/`delay` (which are non-deterministic). This locks down the schema until Coral's API changes.
+- **Stacked-on-one-account end-to-end test:** target $250 against a fixture pool where account A has $260 balance produces three assignments (A:$100, A:$100, A:$50) all on the same `Coral33Client` session, three `placed` audit rows under one `job_id` with the same `picked_account`. The session reuse means `getParlaySpecs` is called once (cache hit on bets 2 and 3).
+- **Cross-account end-to-end test:** target $300 against (A:$250, B:$500) produces A:$100, A:$100, A:$50, B:$50 — four assignments, two distinct client sessions, four `placed` rows. `getParlaySpecs` runs twice (once per session).
+- **Account-scoped cascade test:** target $250 against A=$300 balance cap $100 → A:$100, A:$100, A:$50. If the first A:$100 fails on auth, both other A assignments are marked `error` without an HTTP attempt.
 - **Partial-fill end-to-end test:** target $300 against a pool that can only fund $130 → one `placed` row + one `partial_fill` row + `sidecar_partial_fill` SSE.
 - **Peel-back test:** target $105 against (A:$1000, B:$1000) produces A:$75, B:$30 — verify the partial on A is the peel-back result, not a naive $100.
-- Splitter integration with `AccountsScraper`'s cache shape — confirms the splitter reads the same dataclasses the UI sees and that `max_parlay_stake` round-trips from env → credential → cache → splitter.
+- Splitter integration with `AccountsScraper`'s cache shape — confirms `max_parlay_stake` round-trips from env → credential → cache → splitter.
 
 ### Manual smoke (one-time, against the real captured endpoint)
 
-1. **Dry-run smoke.** Place one synthetic 2-leg parlay through `/api/sidecar/place` in dry-run mode at a target that requires a split (e.g., $230). Inspect the resulting audit rows and SSE payloads to confirm both assignments produce the captured-endpoint payload shape.
-2. **Live smoke, single split.** Flip `sidecar_mode = "live"`, fire one real placement at minimum stake ($30) on a heavy underdog. Verify (a) the modal receipt matches Coral's web UI, (b) the existing 30-min wager-mirror tick picks the new ticket up into `bets`, (c) the proxy IP appears in Coral's session log if exposed.
-3. **Live smoke, multi-split.** Fire one real placement at a target that forces a split (e.g., $130 across two accounts). Verify: two distinct Coral wager numbers land, jittered gap between placements is visible in network logs, both wager-mirror rows surface.
+1. **Dry-run smoke.** Place one synthetic parlay through `/api/sidecar/place` in dry-run mode at a target that requires a split (e.g., $230). Inspect the resulting audit rows and SSE payloads to confirm both assignments construct an `insertWagerParlay` payload that matches the HAR's entry-41 shape (modulo dynamic fields). Step 3 (`checkWagerLineMulti`) should land successfully against the real server even in dry-run; step 4 should NOT.
+2. **Live smoke, single bet.** Flip `sidecar_mode = "live"`, fire one real placement at minimum stake ($30) on a heavy underdog. Verify (a) the modal receipt matches Coral's web UI (one ticket # appears under "Pending Wagers" with 1 placed + 1 open spot), (b) the existing 30-min wager-mirror tick picks the new ticket up into `bets`, (c) the proxy IP appears in Coral's session log if exposed.
+3. **Live smoke, multi-parlay-one-account.** Fire one real placement at a target that forces stacked parlays on a single account (e.g., $250 against an account with ≥$260 balance). Verify: three distinct Coral wager numbers land all on the same customer_id, jittered gap visible in network logs, three wager-mirror rows surface.
+4. **Live smoke, multi-account.** Fire one real placement at a target that forces a cross-account split (e.g., $130 against an account with $80 balance and a second account with $50 balance). Verify: two distinct sessions, two tickets, two wager-mirror rows.
 
 ### Verification gates before merge
 
@@ -420,11 +492,13 @@ The behavior depends on whether the failure is **account-scoped** (will repeat f
 
 ## Open questions for plan-writing
 
-- **Placement-endpoint capture timing.** The captured-request handoff must happen before live mode can be used. The user will provide a HAR file containing two captured placements: a straight bet ($5.15 on Oklahoma) and the parlay structure we'll actually use ($10 on New Zealand with one open leg). Plan should keep dry-run and live paths separable so dry-run lands first, with the live-mode wiring slotting in once the operation name + form payload are known.
-- **"One open leg" parlay structure in the captured payload.** The user's playbook is to place a 2-leg parlay where one leg is the +EV signal and the other is intentionally left "open" (unsettled). The captured parlay request will show how Coral represents this on the wire — whether the open leg has a special status flag, whether it's a future-game leg with no current line, or some other shape. Plan should treat the captured payload as ground truth and pattern-match the sidecar's payload construction to it exactly.
-- **Wager-mirror reconciliation.** The existing 30-min `bets_mirror.py` tick should naturally pick up sidecar-placed wagers. Worth a single integration test that confirms the new tickets land in the unified `bets` table without a sidecar-specific code path. With splits, one signal can produce N rows in `bets`; the test should confirm grouping is preserved (or that the existing schema handles N independent wagers cleanly).
+- **HAR file lives at `~/Downloads/coral33.com.har`.** Not committed to the repo (contains auth tokens). Plan should reference it for verification during implementation but not rely on its long-term availability.
+- **`volumeAmount` derivation.** The HAR shows `volumeAmount: 500` on the $5.15 straight bet and `volumeAmount: 1000` on the $10 parlay. The ratio is roughly $100 per $1 of risk. The sidecar uses `volumeAmount = stake_dollars × 100` empirically; this needs verification in the dry-run smoke (Coral may reject mismatched values).
+- **Where `agentID` comes from.** All HAR calls under `VR12509` show `agentID: "TYSONR"`. Likely each customer has a fixed `agentID` reachable via `Customer/getAccountInfo` (already wired). Plan should add an `agent_id` field to `AccountSnapshot` populated on the first authenticate-and-scrape cycle, then carry it through to placements. The remaining 8 accounts' `agent_id`s come from the same source.
+- **`docNum` semantics.** The placement payload carries `docNum: 27458945` (parlay) and `docNum: 72704614` (straight). These look like client-generated unique IDs (possibly hash of timestamp + leg). The sidecar can generate a fresh int per call using `int(time.time() * 1000) % 10**8` or similar — confirm Coral accepts arbitrary values vs requires server-side coordination.
+- **Wager-mirror reconciliation.** The existing 30-min `bets_mirror.py` tick should naturally pick up sidecar-placed wagers (it reads from `Pending` which surfaces the same ticket numbers `insertWagerParlay` returns). Worth a single integration test that confirms the new tickets land in the unified `bets` table without a sidecar-specific code path. With splits, one signal can produce N rows in `bets`; the test should confirm the existing schema handles N independent wagers under one `job_id` cleanly (or store `job_id` on the bets rows for grouping).
 - **Proxy-status dot derivation.** The "last 3 failed" indicator implies the sidecar tracks per-account request outcomes outside the audit log (which only records placement attempts, not the balance-scrape passes that share the same proxy). Two options to consider in the plan: extend the audit log to record balance-scrape results, or add a tiny in-memory ring buffer per account. Latter is probably simpler; plan to evaluate.
-- **Force-refresh after placement.** When a live placement succeeds, should the sidecar fire `POST /api/coral33/accounts/refresh` for the picked account(s) immediately? Default: yes, so the new ticket and updated balance land in `/accounts` and the next signal's split plan reflects the spent dollars. Confirm with user before implementing.
+- **Force-refresh after placement.** When a live placement succeeds, should the sidecar fire `POST /api/coral33/accounts/refresh` for the picked account(s) immediately? Default: yes, so the new ticket and updated balance land in `/accounts` and the next signal's split plan reflects the spent dollars. Single refresh per `job_id` after all assignments complete, scoped to the customer IDs actually used.
 
 ## Migration / rollout
 
