@@ -30,6 +30,7 @@ import { kellyStake, roundStake } from "@/lib/stake-calc";
 
 import { Workbench } from "./workbench";
 import { EdgeSparkline } from "./edge-sparkline";
+import { AutoPlaceButton } from "@/components/sidecar/AutoPlaceButton";
 
 const MODE_CHIP_STYLE: Record<EdgeMode, string> = {
   arb: "bg-price-up/15 text-price-up",
@@ -331,6 +332,25 @@ export function EdgesTable({
                         <span className="text-text-1 tabular">
                           {formatAmerican(op.raw.fair_price_american)}
                         </span>
+                        {/* Sidecar auto-place button — only for Coral33 +EV
+                            rows that are parlay-eligible (wager_type ∈
+                            {parlay, both}). Each EV row IS a per-book best
+                            price by construction, so the "best price"
+                            half of the predicate is implicit. */}
+                        {op.raw.book === "coral33" &&
+                          (op.raw.wager_type === "parlay" ||
+                            op.raw.wager_type === "both") &&
+                          op.raw.ev_row_id != null && (
+                            <AutoPlaceButton
+                              evRowId={op.raw.ev_row_id}
+                              sportKey={op.sport_key}
+                              marketLabel={marketLabel(op)}
+                              sideLabel={sideLabel(op)}
+                              offeredPriceAmerican={op.raw.offered_price_american}
+                              evPct={op.raw.ev_pct}
+                              fullKellyPct={op.raw.kelly_full_pct}
+                            />
+                          )}
                       </div>
                     ) : op.mode === "profit_boost" ? (
                       // Two-leg conversion: BOOST leg (with original →

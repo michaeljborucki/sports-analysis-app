@@ -1106,6 +1106,15 @@ export interface components {
             confidence: "normal" | "low";
             /** Wager Type */
             wager_type?: ("straight" | "parlay" | "both") | null;
+            /**
+             * Ev Row Id
+             * @description Stable per-row identifier minted server-side (F0 / commit 0e46e5f).
+             *     Used by the auto-bet sidecar to address a specific +EV
+             *     opportunity. Manually added here as a stopgap until
+             *     openapi.json is regenerated; remove once `npx openapi-typescript`
+             *     pulls it through.
+             */
+            ev_row_id?: string | null;
         };
         /** EVResponse */
         EVResponse: {
