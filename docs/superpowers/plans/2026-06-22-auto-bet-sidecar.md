@@ -1860,11 +1860,9 @@ In `server/odds/books/coral33/client.py`, add after `_raw_post`:
 Run: `pytest server/tests/test_coral33_post_json.py -v`
 Expected: PASS
 
-- [ ] **Step 5: Update Task D3's `Coral33Placer` to call `post_json` (not `post_form`)**
+- [ ] **Step 5: Reminder — D3's code blocks below already use `post_json`**
 
-In the placer's five-call orchestration, every `await self.client.post_form("opName", body)` becomes `await self.client.post_json("opName", body)`. This applies to all five ops: `getParlaySpecs`, `getInfoParlay`, `checkWagerLineMulti`, `insertWagerParlay`, `getPendingByTicket`.
-
-The `FakeCoral33Client` test fixture in Task D3 needs a matching `post_json` method (just rename `post_form` to `post_json` in the fake).
+This is a forward reference: when you implement Task D3 in the next task, the placer's five-call orchestration and the `FakeCoral33Client` test fixture are both written against `post_json`. Don't accidentally copy a `post_form` from anywhere else.
 
 - [ ] **Step 6: Commit**
 
@@ -1905,7 +1903,7 @@ class FakeCoral33Client:
     def script(self, operation: str, response: Any) -> None:
         self._responses[operation] = response
 
-    async def post_form(self, operation: str, body: dict) -> dict:
+    async def post_json(self, operation: str, body: dict) -> dict:
         self.posts.append((operation, body))
         if operation in self._responses:
             return self._responses[operation]
@@ -2067,14 +2065,14 @@ class Coral33Placer:
 
         # 1. getParlaySpecs (cached per Placer instance)
         if self._specs_cache is None:
-            self._specs_cache = await self.client.post_form(
+            self._specs_cache = await self.client.post_json(
                 "getParlaySpecs",
                 build_get_parlay_specs(self.client.customer_id, self.parlay_name),
             )
 
         # 2. getInfoParlay — payout multiplier for a 2-team card
         selects = f"{ev_leg.game_num}-{ev_leg.line_type}|{ev_leg.chosen_team_id}^0"
-        info = await self.client.post_form(
+        info = await self.client.post_json(
             "getInfoParlay",
             build_get_info_parlay(
                 customer_id=self.client.customer_id,
@@ -2096,7 +2094,7 @@ class Coral33Placer:
 
         # 3. checkWagerLineMulti — line snapshot + DELAY.sig
         position = int(time.time() * 1000) % 10**8   # client-side unique id
-        check = await self.client.post_form(
+        check = await self.client.post_json(
             "checkWagerLineMulti",
             build_check_wager_line_multi_parlay(
                 customer_id=self.client.customer_id,
@@ -2138,7 +2136,7 @@ class Coral33Placer:
             )
 
         # 4. insertWagerParlay — actually place
-        insert_resp = await self.client.post_form(
+        insert_resp = await self.client.post_json(
             "insertWagerParlay", insert_body
         )
         status = insert_resp.get("STATUS", {})
@@ -2150,7 +2148,7 @@ class Coral33Placer:
 
         # 5. getPendingByTicket — receipt confirmation
         try:
-            await self.client.post_form(
+            await self.client.post_json(
                 "getPendingByTicket",
                 build_get_pending_by_ticket(
                     agent_id=self.agent_id,
@@ -2172,9 +2170,9 @@ class Coral33Placer:
         )
 ```
 
-- [ ] **Step 4: Map `post_form` to `Coral33Client`'s existing operation router**
+- [ ] **Step 4: Add the five new operations to the `_OP_PATHS` map**
 
-The real `Coral33Client` already has a `post_form` method that routes by operation name and handles JWT auth + retries. Add the five new operations to its `_OP_PATHS` map (at the bottom of `client.py`):
+The real `Coral33Client` routes operation names → URL paths via `_OP_PATHS` (client.py:274–285). Both `post_form` and `post_json` consult this map. Add the new entries at the bottom of `client.py`:
 
 ```python
 _OP_PATHS = {
@@ -2226,11 +2224,55 @@ And populate them in the scrape loop where the existing balance fields are parse
 - [ ] **Step 3: Write the failing test**
 
 ```python
+# Append to server/tests/test_coral33_accounts_load.py
+import asyncio
+from unittest.mock import AsyncMock
+
 def test_account_snapshot_carries_placement_context(monkeypatch):
     """After a scrape, AccountSnapshot exposes the per-customer placement
     context fields the Coral33Placer needs."""
-    # Fixture: mock the getAccountInfo response shape
-    ...
+    from server.odds.books.coral33 import accounts as accts
+
+    cred = accts.AccountCredential(
+        customer_id="VR11606", password="p", label="Stanley",
+        proxy_url="http://u:p@h:1", max_parlay_stake=150,
+    )
+
+    # Mock Coral33Client.post_form to return a getAccountInfo response that
+    # includes the placement-context fields the HAR shows.
+    fake_account_info = {
+        "ACCOUNTINFO": {
+            "CurrentBalance": 500.0,
+            "AvailableBalance": 480.0,
+            "PendingWagerBalance": 20.0,
+            "FreePlayBalance": 0.0,
+            "CreditLimit": 1000.0,
+            "WagerLimit": 200.0,
+            "AgentID": "TYSONR",
+            "Store": "wiseguys",
+            "CustProfile": ".                   ",
+        }
+    }
+
+    async def fake_post_form(self, op, params=None):
+        if op == "getAccountInfo":
+            return fake_account_info
+        raise AssertionError(f"unscripted op in test: {op}")
+
+    monkeypatch.setattr(accts.Coral33Client, "post_form", fake_post_form)
+    # Skip the real authenticate
+    monkeypatch.setattr(accts.Coral33Client, "authenticate",
+                       AsyncMock(return_value=None))
+
+    scraper = accts.AccountsScraper([cred])
+    snap = asyncio.run(scraper._scrape_one(cred))   # whatever the existing
+                                                     # per-account fetch is named
+
+    assert snap.credential.customer_id == "VR11606"
+    assert snap.agent_id == "TYSONR"
+    assert snap.store == "wiseguys"
+    assert snap.cust_profile == ".                   "
+    assert snap.available_balance == 480.0
 ```
 
 - [ ] **Step 4: Run tests + commit**
@@ -2440,13 +2482,18 @@ async def test_dry_run_target_230_stanley_then_dixon(tmp_path):
         db_path=tmp_path / "cache.db",
         jitter=JitterDisabled,
     )
-    job_id = await orchestrator.handle_place(SidecarPlaceRequest(
-        ev_row_id="rid",
-        ev_leg=leg,
-        kelly_full_pct=0.046,        # produces $230 target at $10k × half
-        kelly_fraction="half",
-        bankroll=10000,
-    ))
+    job_id = uuid.uuid4().hex
+    returned = await orchestrator.handle_place(
+        SidecarPlaceRequest(
+            ev_row_id="rid",
+            ev_leg=leg,
+            kelly_full_pct=0.046,        # produces $230 target at $10k × half
+            kelly_fraction=KellyFraction.HALF,
+            bankroll=10000,
+        ),
+        job_id,
+    )
+    assert returned == job_id
     rows = orchestrator.audit.fetch_job(job_id)
     assert len(rows) == 2
     assert [r.picked_account for r in rows] == ["VR11606", "VR11601"]
@@ -2512,6 +2559,18 @@ class JitterRandom:
         await asyncio.sleep(random.uniform(self.low, self.high))
 
 
+def _payload_for_audit(result) -> dict | None:
+    """Pick whichever placement payload exists for the audit row.
+
+    - live success → accepted_payload (the actual server response)
+    - dry-run     → would_be_payload  (the payload we constructed)
+    - error path  → None              (caller passes result=None)
+    """
+    if result is None:
+        return None
+    return result.accepted_payload or result.would_be_payload
+
+
 class SidecarOrchestrator:
     def __init__(
         self,
@@ -2531,8 +2590,11 @@ class SidecarOrchestrator:
     def audit_conn(self) -> sqlite3.Connection:
         return sqlite3.connect(self.db_path)
 
-    async def handle_place(self, req: SidecarPlaceRequest) -> str:
-        job_id = uuid.uuid4().hex
+    async def handle_place(
+        self,
+        req: SidecarPlaceRequest,
+        job_id: str,             # caller-provided (route generates and returns it)
+    ) -> str:
         kelly_pct = kelly_to_pct(req.kelly_fraction, req.kelly_full_pct)
         target = round(kelly_pct * req.bankroll)
 
@@ -2645,10 +2707,7 @@ class SidecarOrchestrator:
             result=kind,
             ticket_number=str(result.ticket_number)
                           if result and result.ticket_number else None,
-            accepted_payload=json.dumps(
-                result.accepted_payload if result and result.accepted_payload
-                else result.would_be_payload if result else None
-            ),
+            accepted_payload=json.dumps(_payload_for_audit(result)),
             error_message=error_message,
         ))
 
@@ -2697,12 +2756,70 @@ Extend the test file with:
 
 ```python
 @pytest.mark.asyncio
-async def test_account_scoped_failure_skips_remaining_same_account_siblings(...):
-    """Target $250 against A=$300 cap $100 → A:$100, A:$100, A:$50.
+async def test_account_scoped_failure_skips_remaining_same_account_siblings(
+    tmp_path,
+):
+    """Target $250 against A=$300, cap $100 → A:$100, A:$100, A:$50.
     First A:$100 raises Coral33AuthError. Remaining A:* assignments are
-    recorded as 'error' with error_message='auth_failed', not retried."""
-    ...
+    recorded as 'error' without an HTTP attempt."""
+    from server.odds.books.coral33.client import Coral33AuthError
+
+    cred_a = AccountCredential(
+        "A", "pw", "AcctA", "http://p:p@h:1", max_parlay_stake=100,
+    )
+    pool = [AccountSnapshot(
+        credential=cred_a, available_balance=300.0,
+        agent_id="TYSONR", store="wiseguys",
+        cust_profile=".                   ",
+    )]
+
+    call_count = {"n": 0}
+
+    class FailingPlacer:
+        async def place_open_parlay(self, ev_leg, stake_dollars, live):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                raise Coral33AuthError("token rejected")
+            raise AssertionError(
+                "should not reach a second HTTP attempt after auth failure"
+            )
+
+    class FailingFactory:
+        def for_account(self, snapshot):
+            return FailingPlacer()
+
+    orchestrator = SidecarOrchestrator(
+        pool_provider=lambda: pool,
+        placer_factory=FailingFactory(),
+        mode="live",
+        db_path=tmp_path / "cache.db",
+        jitter=JitterDisabled(),
+    )
+    job_id = uuid.uuid4().hex
+    await orchestrator.handle_place(
+        SidecarPlaceRequest(
+            ev_row_id="rid",
+            ev_leg=make_leg(),
+            kelly_full_pct=0.05,    # target $250 at $10k × half
+            kelly_fraction=KellyFraction.HALF,
+            bankroll=10000,
+        ),
+        job_id,
+    )
+    rows = orchestrator.audit.fetch_job(job_id)
+
+    # Three split-siblings, but only ONE HTTP call was attempted
+    assert call_count["n"] == 1
+    assert len(rows) == 3
+    assert all(r.picked_account == "A" for r in rows)
+    assert all(r.result == "error" for r in rows)
+    # First row's error is the auth failure; the next two are the cascade
+    assert "token rejected" in rows[0].error_message
+    assert "auth_failed (account-scoped cascade)" in rows[1].error_message
+    assert "auth_failed (account-scoped cascade)" in rows[2].error_message
 ```
+
+> **Cascade semantics in the orchestrator:** the `_fire_one` loop catches account-scoped exceptions (`Coral33AuthError`, `Coral33ConnectionError`, balance-rejection responses), records `error` for the current assignment, AND records `error` rows for every remaining assignment on the same `customer_id` in the plan before continuing to the next distinct account. Implement this by partitioning `plan.assignments` by `customer_id` up front and processing each group as a unit; on the first failure inside a group, mark every remaining sibling as error without invoking the placer.
 
 - [ ] **Step 5: Commit**
 
@@ -2960,6 +3077,8 @@ def test_post_mode_flips_to_live():
 # server/api/sidecar.py
 from __future__ import annotations
 
+import uuid
+
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 
@@ -3021,22 +3140,9 @@ async def post_place(body: PlaceBody, background_tasks: BackgroundTasks):
     )
 ```
 
-- [ ] **Step 1.5: Refactor `SidecarOrchestrator.handle_place` to accept an external `job_id`**
+- [ ] **Step 1.5: Note — Task E2's `handle_place` already takes `job_id` as a parameter**
 
-`handle_place` currently generates `job_id = uuid.uuid4().hex` internally. The route needs to know the id before the BackgroundTask returns, so flip the dependency:
-
-```python
-async def handle_place(
-    self,
-    req: SidecarPlaceRequest,
-    job_id: str,          # provided by the caller
-) -> str:
-    # ...remove the internal uuid generation...
-    # ...all the rest is unchanged...
-    return job_id
-```
-
-Update the orchestrator tests in `server/tests/test_sidecar_placement.py` to pass a job_id explicitly: `await orchestrator.handle_place(req, uuid4().hex)`.
+The orchestrator implementation in Task E2 below is written with `handle_place(req: SidecarPlaceRequest, job_id: str)` from the start. The route here generates the uuid, returns it immediately, and passes it through to the background task. No mid-flight refactor needed.
 
 - [ ] **Step 3: Add `resolve_ev_row_to_leg` and `get_orchestrator` helpers**
 
@@ -3089,24 +3195,34 @@ def _make_placer_factory(): ...
 - [ ] **Step 4: Add GET endpoints**
 
 ```python
+def _audit_conn():
+    """One sqlite3 connection per call, properly closed via context manager.
+    Used by the read-only GET routes; the orchestrator opens its own."""
+    import sqlite3
+    return sqlite3.connect("server/cache.db")
+
+
 @router.get("/runs")
 def get_runs(limit: int = 100):
     from server.sidecar.audit import fetch_placements
-    import sqlite3
-    conn = sqlite3.connect("server/cache.db")
-    rows = fetch_placements(conn, limit=limit)
-    return [r.__dict__ for r in rows]
+    conn = _audit_conn()
+    try:
+        return [r.__dict__ for r in fetch_placements(conn, limit=limit)]
+    finally:
+        conn.close()
 
 
 @router.get("/runs/{job_id}")
 def get_run(job_id: str):
     from server.sidecar.audit import fetch_job
-    import sqlite3
-    conn = sqlite3.connect("server/cache.db")
-    rows = fetch_job(conn, job_id)
-    if not rows:
-        raise HTTPException(404)
-    return [r.__dict__ for r in rows]
+    conn = _audit_conn()
+    try:
+        rows = fetch_job(conn, job_id)
+        if not rows:
+            raise HTTPException(404)
+        return [r.__dict__ for r in rows]
+    finally:
+        conn.close()
 
 
 class ModeResponse(BaseModel):
