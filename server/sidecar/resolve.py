@@ -138,14 +138,18 @@ def _build_partial_leg_spec(LegSpec, parsed: dict, match: dict):
     sensible defaults; live mode (D4) will overwrite these from the raw
     cache row.
     """
-    # TODO(D3): replace placeholder defaults with cache-row lookups.
+    # Coral-side fields (sport_type, sport_sub_type, game_num, rot_num,
+    # numerator/denominator) are left empty/zero so the placer's
+    # _lookup_coral_context fills them via Get_LeagueLines2 at fire time.
+    # We DO populate the lookup-context fields below so the placer knows
+    # which game/team/market to look up.
     return LegSpec(
         sport_type="",
         sport_sub_type="",
         period="Game",
         line_type=_market_to_line_type(parsed["market_kind"]),
         game_num=0,
-        chosen_team_id="",
+        chosen_team_id=parsed["outcome_name"],
         rot_num=0,
         price_american=int(match.get("offered_price_american", 0)),
         price_decimal=_american_to_decimal(
@@ -162,6 +166,14 @@ def _build_partial_leg_spec(LegSpec, parsed: dict, match: dict):
         ),
         game_datetime="",
         description="",
+        # Lookup context — placer uses these to find the matching game
+        # in Coral33's Get_LeagueLines2 response.
+        sport_key=match.get("sport_key", ""),
+        home_team=match.get("home_team", ""),
+        away_team=match.get("away_team", ""),
+        market_kind=parsed["market_kind"],
+        outcome_name=parsed["outcome_name"],
+        point=parsed["point"],
     )
 
 

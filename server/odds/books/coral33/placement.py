@@ -233,9 +233,32 @@ class PlacementError(Exception):
 
 
 class Coral33Placer:
-    """Orchestrates the five-call open-spot parlay placement chain."""
+    """Orchestrates the five-call open-spot parlay placement chain.
+
+    Self-healing LegSpec: if the incoming leg is missing Coral-side
+    fields (game_num, rot_num, sport_type, …), the placer fetches them
+    just-in-time via Get_LeagueLines2 before running the five-call
+    chain. See _lookup_coral_context."""
 
     LIVE_ENV_VAR = "CORAL33_PLACEMENT_LIVE"
+
+    # Maps the cache's sport_key (e.g. "mlb") to Coral33's
+    # (sport_type, [sport_sub_types]) for the parlay tab.
+    # Mirrors server/config/coral33.toml's [sports.<key>] entries.
+    # Sub-types are tried in order; first match wins.
+    SPORT_KEY_TO_CORAL: dict[str, tuple[str, list[str]]] = {
+        "mlb":            ("BASEBALL",   ["MLB"]),
+        "baseball_ncaa":  ("BASEBALL",   ["NCAABASEBALL"]),
+        "asian_baseball": ("BASEBALL",   ["KBO", "NPB"]),
+        "nba":            ("BASKETBALL", ["NBA"]),
+        "wnba":           ("BASKETBALL", ["WNBA"]),
+        "nhl":            ("HOCKEY",     ["NHL"]),
+        "soccer":         ("SOCCER",     ["WORLD CUP", "PREMIER LEAGUE", "CHAMPIONS LEAGUE", "EUROPA"]),
+        "tennis":         ("TENNIS",     ["WTA MATCHUPS", "ATP MATCHUPS"]),
+        "boxing":         ("BOXING",     ["BOXING"]),
+        "ufc":            ("BOXING",     ["UFC"]),
+        "cricket":        ("CRICKET",    ["CRICKET"]),
+    }
 
     def __init__(
         self,
@@ -251,6 +274,191 @@ class Coral33Placer:
         self.cust_profile = cust_profile
         self.parlay_name = parlay_name
         self._specs_cache: dict | None = None
+        # Cache Get_LeagueLines2 responses for ~60s keyed by
+        # (sport_type, sport_sub_type, period). Repeat placements on the
+        # same sport within the window reuse the line catalog instead of
+        # re-hitting Coral33.
+        self._lines_cache: dict[tuple[str, str, str], tuple[float, dict]] = {}
+        self._LINES_TTL_SECONDS = 60.0
+
+    async def _fetch_lines(
+        self,
+        sport_type: str,
+        sport_sub_type: str,
+        period: str = "Game",
+    ) -> dict:
+        """Get_LeagueLines2 against the Parlay tab, cached for 60s.
+
+        Returns the raw response; caller picks the matching game from
+        response['Lines']. Uses post_form because the existing Coral33
+        client only has form-encoded Get_LeagueLines2 wiring; the
+        placement chain itself still uses post_json."""
+        key = (sport_type, sport_sub_type, period)
+        now = time.monotonic()
+        if key in self._lines_cache:
+            cached_at, payload = self._lines_cache[key]
+            if now - cached_at < self._LINES_TTL_SECONDS:
+                return payload
+        resp = await self.client.post_form("Get_LeagueLines2", {
+            "sportType": sport_type,
+            "sportSubType": sport_sub_type,
+            "period": period,
+            "hourFilter": 0,
+            "propDescription": "Game",
+            "wagerType": "Parlay",
+            "keyword": "",
+            "correlationID": "",
+            "periodNumber": 0,
+            "grouping": "",
+            "periods": 0,
+            "rotOrder": 0,
+            "placeLateFlag": False,
+            "RRO": 1,
+        })
+        self._lines_cache[key] = (now, resp)
+        return resp
+
+    @staticmethod
+    def _team_match(team_field: str, target: str) -> bool:
+        """Loose match between Coral33's TeamID and our cache's team name.
+
+        Coral pads / sometimes shortens names. We strip both sides and
+        check containment in either direction to handle e.g.
+        ``"Kansas City Royals"`` vs Coral's ``"Royals"`` or
+        ``"Chicago Cubs    "`` vs ``"Chicago Cubs"``."""
+        a = (team_field or "").strip().lower()
+        b = (target or "").strip().lower()
+        if not a or not b:
+            return False
+        return a == b or a in b or b in a
+
+    async def _lookup_coral_context(
+        self,
+        ev_leg: LegSpec,
+    ) -> LegSpec:
+        """If ``ev_leg`` is missing Coral-side fields (game_num, sport_type,
+        rot_num, …), populate them via Get_LeagueLines2 and return an
+        enriched LegSpec. Otherwise return the input unchanged.
+
+        Only handles moneyline (line_type='M') for now. Spread + total
+        placements need additional fields from Coral's response (SpreadAdj1,
+        TtlPtsAdj1, etc.) that we'll wire when first needed."""
+        from dataclasses import replace
+        if ev_leg.game_num > 0 and ev_leg.sport_type and ev_leg.rot_num > 0:
+            return ev_leg   # already populated, no lookup needed
+
+        if ev_leg.line_type != "M":
+            raise PlacementError(
+                f"placer self-heal only supports moneyline (line_type='M') "
+                f"for now; got line_type={ev_leg.line_type!r} on "
+                f"{ev_leg.outcome_name!r}. Spread/total lookup is TODO."
+            )
+
+        coral_mapping = self.SPORT_KEY_TO_CORAL.get(ev_leg.sport_key)
+        if coral_mapping is None:
+            raise PlacementError(
+                f"no Coral sport-type mapping for sport_key={ev_leg.sport_key!r}; "
+                f"add to Coral33Placer.SPORT_KEY_TO_CORAL"
+            )
+        sport_type, sub_types = coral_mapping
+
+        # Try each candidate sub-type until we find a matching game.
+        for sub_type in sub_types:
+            t0 = time.monotonic()
+            try:
+                lines_resp = await self._fetch_lines(
+                    sport_type, sub_type, "Game",
+                )
+            except Exception as ex:
+                logger.warning(
+                    "[placer %s] Get_LeagueLines2 %s/%s failed: %s",
+                    self.client.customer_id, sport_type, sub_type, ex,
+                )
+                continue
+            games = lines_resp.get("Lines") or []
+            logger.info(
+                "[placer %s] Get_LeagueLines2 %s/%s → %d games  %.0fms",
+                self.client.customer_id, sport_type, sub_type, len(games),
+                (time.monotonic() - t0) * 1000,
+            )
+
+            # Find the game by home + away team.
+            target_home = ev_leg.home_team
+            target_away = ev_leg.away_team
+            target_team = ev_leg.outcome_name  # who we bet on
+            match_game = None
+            for g in games:
+                t1 = g.get("Team1ID", "") or ""
+                t2 = g.get("Team2ID", "") or ""
+                # In Coral, Team1 = away, Team2 = home (confirmed from HAR).
+                if (
+                    (self._team_match(t1, target_away)
+                     or self._team_match(t1, target_home))
+                    and
+                    (self._team_match(t2, target_home)
+                     or self._team_match(t2, target_away))
+                ):
+                    match_game = g
+                    break
+            if match_game is None:
+                continue   # try next sub_type
+
+            # Determine which side is ours: Team1 or Team2.
+            if self._team_match(match_game.get("Team1ID", ""), target_team):
+                rot_num = match_game.get("Team1RotNum", 0)
+                price_american = match_game.get("MoneyLine1", 0)
+                price_decimal = match_game.get("MoneyLineDecimal1", 0.0)
+                price_num = match_game.get("MoneyLineNumerator1", 0)
+                price_den = match_game.get("MoneyLineDenominator1", 0)
+                chosen_team_id = (match_game.get("Team1ID") or "").strip()
+            elif self._team_match(match_game.get("Team2ID", ""), target_team):
+                rot_num = match_game.get("Team2RotNum", 0)
+                price_american = match_game.get("MoneyLine2", 0)
+                price_decimal = match_game.get("MoneyLineDecimal2", 0.0)
+                price_num = match_game.get("MoneyLineNumerator2", 0)
+                price_den = match_game.get("MoneyLineDenominator2", 0)
+                chosen_team_id = (match_game.get("Team2ID") or "").strip()
+            else:
+                raise PlacementError(
+                    f"found game {match_game.get('Team1ID')!r} vs "
+                    f"{match_game.get('Team2ID')!r} but neither matches "
+                    f"target team {target_team!r}"
+                )
+
+            logger.info(
+                "[placer %s] self-heal MATCH game_num=%d %s @ %+d  (sub_type=%s)",
+                self.client.customer_id, match_game.get("GameNum", 0),
+                chosen_team_id, price_american, sub_type,
+            )
+
+            return replace(
+                ev_leg,
+                sport_type=match_game.get("SportType",
+                                          sport_type.ljust(20)),
+                sport_sub_type=match_game.get("SportSubType",
+                                              sub_type.ljust(12)),
+                period="Game",
+                game_num=int(match_game.get("GameNum", 0)),
+                chosen_team_id=chosen_team_id,
+                rot_num=int(rot_num),
+                price_american=int(price_american),
+                price_decimal=float(price_decimal),
+                price_numerator=int(price_num),
+                price_denominator=int(price_den),
+                game_datetime=match_game.get("GameDateTime", ""),
+                description=(
+                    f"{sport_type.capitalize()} #{rot_num} "
+                    f"{chosen_team_id} {price_american:+d} - For Game "
+                ),
+            )
+
+        # No sub_type produced a match.
+        raise PlacementError(
+            f"could not find game {ev_leg.away_team!r} @ "
+            f"{ev_leg.home_team!r} in Coral33 Parlay tab for "
+            f"sport_key={ev_leg.sport_key!r} (tried {sub_types}). "
+            f"Line may have closed or sport mapping is wrong."
+        )
 
     async def place_open_parlay(
         self,
@@ -268,10 +476,23 @@ class Coral33Placer:
         logger.info(
             "[placer %s] place_open_parlay START "
             "leg=%s %+d (decimal=%.3f) stake=$%.2f mode=%s",
-            cust, ev_leg.chosen_team_id, ev_leg.price_american,
+            cust, ev_leg.chosen_team_id or ev_leg.outcome_name,
+            ev_leg.price_american,
             ev_leg.price_decimal, stake_dollars,
             "live" if live else "dry-run",
         )
+
+        # Self-heal: if resolve.py couldn't populate Coral-side fields
+        # (sport_type, game_num, rot_num), look them up via
+        # Get_LeagueLines2 now. No-op if the leg is already complete.
+        t_heal = time.monotonic()
+        ev_leg = await self._lookup_coral_context(ev_leg)
+        heal_ms = (time.monotonic() - t_heal) * 1000
+        if heal_ms > 5:  # log only when we actually did a lookup
+            logger.info(
+                "[placer %s] (0) self-heal LegSpec %.0fms",
+                cust, heal_ms,
+            )
 
         # 1. getParlaySpecs (cached per Placer instance)
         if self._specs_cache is None:

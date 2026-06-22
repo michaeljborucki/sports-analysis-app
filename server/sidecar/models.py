@@ -16,7 +16,14 @@ SplitStatus = Literal[
 @dataclass
 class LegSpec:
     """Minimal snapshot of the +EV leg at fire time. Mirrors the fields the
-    Coral33 insertWagerParlay payload requires per-leg."""
+    Coral33 insertWagerParlay payload requires per-leg.
+
+    Fields with `0` / `""` defaults are "Coral-side" details that the EV
+    scanner doesn't know — they get filled in by the placer via a
+    just-in-time Get_LeagueLines2 lookup (see Coral33Placer._lookup_coral_context).
+    The lookup context fields below (sport_key, home_team, away_team,
+    market_kind, outcome_name) carry just enough info from the EV row
+    for the placer to find the matching Coral game."""
     sport_type: str
     sport_sub_type: str
     period: str
@@ -32,6 +39,14 @@ class LegSpec:
     total_points: float = 0.0
     game_datetime: str = ""   # ISO-ish string from Coral's response
     description: str = ""     # e.g. "Soccer #225390 New Zealand +475 - For Game "
+    # --- Lookup context (set by resolve.py, used by Coral33Placer for
+    # the just-in-time fill if Coral-side fields above are unset). ---
+    sport_key: str = ""       # our cache key (e.g. "mlb", "nba", "soccer")
+    home_team: str = ""       # cache row's home_team
+    away_team: str = ""       # cache row's away_team
+    market_kind: str = ""     # 'h2h' | 'spreads' | 'totals' | …
+    outcome_name: str = ""    # cache row's outcome_name (e.g. "Chicago Cubs")
+    point: float | None = None  # cache row's outcome_point (None for h2h)
 
 
 @dataclass
