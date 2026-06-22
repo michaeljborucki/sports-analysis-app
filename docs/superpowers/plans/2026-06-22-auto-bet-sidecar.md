@@ -362,23 +362,24 @@ from pathlib import Path
 from server.sidecar.mode_store import SidecarMode, SidecarModeStore
 
 
-def test_default_is_dry_run(tmp_path: Path):
+def test_default_is_off(tmp_path: Path):
     store = SidecarModeStore(tmp_path / "sidecar_mode.json")
-    assert store.get() is SidecarMode.DRY_RUN
+    assert store.get() is SidecarMode.OFF
 
 
-def test_round_trip(tmp_path: Path):
-    store = SidecarModeStore(tmp_path / "sidecar_mode.json")
-    store.set(SidecarMode.LIVE)
-    # Re-open from disk
-    store2 = SidecarModeStore(tmp_path / "sidecar_mode.json")
-    assert store2.get() is SidecarMode.LIVE
+def test_round_trip_all_three_modes(tmp_path: Path):
+    p = tmp_path / "sidecar_mode.json"
+    store = SidecarModeStore(p)
+    for mode in (SidecarMode.OFF, SidecarMode.DRY_RUN, SidecarMode.LIVE):
+        store.set(mode)
+        # Re-open from disk
+        assert SidecarModeStore(p).get() is mode
 
 
-def test_missing_file_defaults(tmp_path: Path):
+def test_missing_file_defaults_to_off(tmp_path: Path):
     p = tmp_path / "sidecar_mode.json"
     # File never written
-    assert SidecarModeStore(p).get() is SidecarMode.DRY_RUN
+    assert SidecarModeStore(p).get() is SidecarMode.OFF
 
 
 def test_rejects_bogus_mode(tmp_path: Path):
@@ -392,11 +393,18 @@ def test_rejects_bogus_mode(tmp_path: Path):
 
 ```python
 # server/sidecar/mode_store.py
-"""Live/dry-run gate for the auto-bet sidecar.
+"""Three-state mode gate for the auto-bet sidecar.
 
-Mirrors server/odds/cache_mode.py exactly — own JSON file, own lock, default
-to safe value (dry-run) on missing file. The user must explicitly POST to
-flip to live; the system never auto-flips."""
+Mirrors server/odds/cache_mode.py — own JSON file, own lock, default to
+the safest value (off) on missing file. The user must explicitly POST to
+flip to dry-run or live; the system never auto-flips.
+
+  off      → no new placements (user-triggered or delta-tick).
+             In-flight BackgroundTasks finish; no successors run.
+  dry-run  → placements halt before the actual insertWagerParlay call;
+             delta tick still runs and fires dry-run placements
+             through the same path.
+  live     → real placements via insertWagerParlay."""
 from __future__ import annotations
 
 import json
@@ -407,11 +415,12 @@ from typing import Literal
 
 
 class SidecarMode(str, Enum):
+    OFF = "off"
     DRY_RUN = "dry-run"
     LIVE = "live"
 
 
-SidecarModeLiteral = Literal["dry-run", "live"]
+SidecarModeLiteral = Literal["off", "dry-run", "live"]
 
 
 class SidecarModeStore:
@@ -425,7 +434,7 @@ class SidecarModeStore:
                 data = json.load(f)
             return SidecarMode(data["mode"])
         except (FileNotFoundError, KeyError, ValueError):
-            return SidecarMode.DRY_RUN
+            return SidecarMode.OFF
 
     def set(self, mode: SidecarMode | SidecarModeLiteral) -> None:
         if isinstance(mode, str):
@@ -610,7 +619,7 @@ Run: `grep -n "CREATE TABLE\|CREATE INDEX" server/odds/cache.py | head -20`
 
 The new table joins the existing init pattern. Read 5-10 lines before/after the closest existing `CREATE TABLE` so the addition matches the existing style (idempotency: `CREATE TABLE IF NOT EXISTS`).
 
-- [ ] **Step 2: Add the table + indexes to the schema-init function**
+- [ ] **Step 2: Add both new tables + indexes to the schema-init function**
 
 ```sql
 CREATE TABLE IF NOT EXISTS sidecar_placements (
@@ -628,10 +637,25 @@ CREATE TABLE IF NOT EXISTS sidecar_placements (
   result           TEXT NOT NULL,
   ticket_number    TEXT,
   accepted_payload TEXT,
-  error_message    TEXT
+  error_message    TEXT,
+  trigger_source   TEXT NOT NULL DEFAULT 'user'    -- 'user' | 'delta_tick'
 );
 CREATE INDEX IF NOT EXISTS sidecar_placements_job_id ON sidecar_placements(job_id);
+CREATE INDEX IF NOT EXISTS sidecar_placements_ev_row_id ON sidecar_placements(ev_row_id);
 CREATE INDEX IF NOT EXISTS sidecar_placements_created_at ON sidecar_placements(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS sidecar_active_signals (
+  ev_row_id        TEXT PRIMARY KEY,
+  kelly_fraction   TEXT NOT NULL,
+  bankroll_at_arm  INTEGER NOT NULL,
+  commence_time    INTEGER NOT NULL,
+  total_placed     REAL NOT NULL DEFAULT 0,
+  first_armed_at   INTEGER NOT NULL,
+  last_checked_at  INTEGER,
+  last_delta_at    INTEGER,
+  last_target      REAL
+);
+CREATE INDEX IF NOT EXISTS sidecar_active_signals_commence ON sidecar_active_signals(commence_time);
 ```
 
 - [ ] **Step 3: Smoke-test the schema by booting the server**
@@ -2928,6 +2952,610 @@ git commit -m "feat(sidecar): orchestrator — splitter → loop → audit → S
 
 ---
 
+### Task E3: Off-mode gating in the orchestrator
+
+**Files:**
+- Modify: `server/sidecar/placement.py` (orchestrator `handle_place` entry guard)
+- Test: append to `server/tests/test_sidecar_placement.py`
+
+- [ ] **Step 1: Write the failing test**
+
+```python
+@pytest.mark.asyncio
+async def test_off_mode_refuses_new_jobs(audit_db):
+    """When mode is 'off', handle_place writes a refusal audit row,
+    emits an SSE signal_skipped event, and does NOT invoke the placer."""
+    pool = make_pool()
+    factory = FakePlacerFactory()
+    orchestrator = SidecarOrchestrator(
+        pool_provider=lambda: pool,
+        placer_factory=factory,
+        mode="off",
+        db_path=audit_db,
+        jitter=JitterDisabled(),
+    )
+    job_id = uuid.uuid4().hex
+    await orchestrator.handle_place(
+        SidecarPlaceRequest(
+            ev_row_id="rid", ev_leg=make_leg(),
+            kelly_full_pct=0.046,
+            kelly_fraction=KellyFraction.HALF,
+            bankroll=10000,
+        ),
+        job_id,
+    )
+    # No placer calls
+    assert not factory.placers
+    # One refusal audit row
+    conn = sqlite3.connect(audit_db)
+    try:
+        rows = audit.fetch_job(conn, job_id)
+    finally:
+        conn.close()
+    assert len(rows) == 1
+    assert rows[0].result == "no_eligible_account"   # reused; or add a new 'mode_off' result kind
+    assert "sidecar mode is off" in (rows[0].error_message or "")
+```
+
+- [ ] **Step 2: Add an `off`-gate at the top of `handle_place`**
+
+```python
+async def handle_place(self, req: SidecarPlaceRequest, job_id: str) -> str:
+    if self.mode == "off":
+        audit.insert_placement(self.audit_conn, audit.AuditRow(
+            placement_id=uuid.uuid4().hex,
+            job_id=job_id, created_at=int(time.time()),
+            ev_row_id=req.ev_row_id,
+            ev_leg=json.dumps(req.ev_leg.__dict__),
+            parlay_name="10 team",
+            kelly_fraction=req.kelly_fraction.value,
+            target_stake=0, stake=None,
+            mode="off",
+            picked_account=None,
+            result="no_eligible_account",
+            ticket_number=None, accepted_payload=None,
+            error_message="sidecar mode is off",
+            trigger_source=req.trigger_source,
+        ))
+        sse.emit_signal_skipped({
+            "job_id": job_id, "target_stake": 0, "reason": "mode_off",
+        })
+        return job_id
+    # ...existing body unchanged...
+```
+
+Note: `req.trigger_source` is a new field on `SidecarPlaceRequest`; add it as `"user" | "delta_tick"` with default `"user"`.
+
+- [ ] **Step 3: Add `trigger_source` to `SidecarPlaceRequest` and thread it through every audit-write call**
+
+In `_record_placement`, `_record_refusal`, `_record_partial`, and `_record_failure`, accept `trigger_source` from `req` and pass it into `AuditRow`. `AuditRow` itself needs a new field `trigger_source: str = "user"`.
+
+- [ ] **Step 4: Run tests + commit**
+
+```bash
+pytest server/tests/test_sidecar_placement.py -v -k "off_mode or test_dry_run_target_230"
+git add server/sidecar/placement.py server/sidecar/audit.py server/sidecar/models.py server/tests/test_sidecar_placement.py
+git commit -m "feat(sidecar): off-mode hard gate in orchestrator"
+```
+
+---
+
+### Task E4: Active-signals tracker — `arm()`, `update_total_placed()`, `list_active()`
+
+**Files:**
+- Create: `server/sidecar/active_signals.py`
+- Test: `server/tests/test_sidecar_active_signals.py`
+
+- [ ] **Step 1: Write the failing test**
+
+```python
+# server/tests/test_sidecar_active_signals.py
+import sqlite3
+import time
+import pytest
+from server.odds.cache import init_schema_on_path
+from server.sidecar.active_signals import (
+    arm_signal, update_total_placed, list_active, get_signal,
+)
+from server.sidecar.settings import KellyFraction
+
+
+@pytest.fixture
+def conn(tmp_path):
+    path = tmp_path / "cache.db"
+    init_schema_on_path(path)
+    c = sqlite3.connect(path)
+    yield c
+    c.close()
+
+
+def test_arm_signal_inserts_row(conn):
+    arm_signal(
+        conn, ev_row_id="rid-1", kelly_fraction=KellyFraction.HALF,
+        bankroll_at_arm=10000, commence_time=int(time.time()) + 3600,
+    )
+    sig = get_signal(conn, "rid-1")
+    assert sig.kelly_fraction == "half"
+    assert sig.bankroll_at_arm == 10000
+    assert sig.total_placed == 0
+
+
+def test_arm_signal_is_idempotent(conn):
+    """Calling arm twice on the same row_id does NOT reset total_placed."""
+    now = int(time.time())
+    arm_signal(conn, "rid-2", KellyFraction.HALF, 10000, now + 3600)
+    update_total_placed(conn, "rid-2", 130)
+    arm_signal(conn, "rid-2", KellyFraction.HALF, 10000, now + 3600)
+    assert get_signal(conn, "rid-2").total_placed == 130
+
+
+def test_list_active_filters_by_commence_time(conn):
+    now = int(time.time())
+    arm_signal(conn, "future", KellyFraction.HALF, 10000, now + 3600)
+    arm_signal(conn, "past", KellyFraction.HALF, 10000, now - 60)
+    active = list_active(conn, now=now)
+    ids = {s.ev_row_id for s in active}
+    assert "future" in ids
+    assert "past" not in ids
+
+
+def test_update_total_placed_accumulates(conn):
+    now = int(time.time())
+    arm_signal(conn, "rid-3", KellyFraction.HALF, 10000, now + 3600)
+    update_total_placed(conn, "rid-3", 100)
+    update_total_placed(conn, "rid-3", 30)
+    assert get_signal(conn, "rid-3").total_placed == 130
+```
+
+- [ ] **Step 2: Implement `server/sidecar/active_signals.py`**
+
+```python
+"""Active-signal tracker for the autonomous Kelly-delta re-fire loop.
+
+One row in sidecar_active_signals per (ev_row_id) currently being tracked.
+Inserted on first user-triggered placement; updated on every successful
+placement (user or delta-tick) to keep total_placed current; filtered by
+commence_time > now at tick scan time."""
+from __future__ import annotations
+
+import sqlite3
+import time
+from dataclasses import dataclass
+
+from server.sidecar.settings import KellyFraction
+
+
+@dataclass
+class ActiveSignal:
+    ev_row_id: str
+    kelly_fraction: str         # 'full' | 'half' | 'quarter'
+    bankroll_at_arm: int
+    commence_time: int
+    total_placed: float
+    first_armed_at: int
+    last_checked_at: int | None
+    last_delta_at: int | None
+    last_target: float | None
+
+
+def arm_signal(
+    conn: sqlite3.Connection,
+    ev_row_id: str,
+    kelly_fraction: KellyFraction,
+    bankroll_at_arm: int,
+    commence_time: int,
+) -> None:
+    """Idempotent — if the row already exists, leave total_placed alone."""
+    now = int(time.time())
+    conn.execute(
+        """
+        INSERT INTO sidecar_active_signals
+          (ev_row_id, kelly_fraction, bankroll_at_arm, commence_time,
+           total_placed, first_armed_at)
+        VALUES (?, ?, ?, ?, 0, ?)
+        ON CONFLICT(ev_row_id) DO NOTHING
+        """,
+        (ev_row_id, kelly_fraction.value, bankroll_at_arm,
+         commence_time, now),
+    )
+    conn.commit()
+
+
+def update_total_placed(
+    conn: sqlite3.Connection, ev_row_id: str, delta: float,
+) -> None:
+    """Atomically add `delta` dollars to total_placed."""
+    conn.execute(
+        "UPDATE sidecar_active_signals SET total_placed = total_placed + ? "
+        "WHERE ev_row_id = ?",
+        (float(delta), ev_row_id),
+    )
+    conn.commit()
+
+
+def list_active(
+    conn: sqlite3.Connection, *, now: int | None = None,
+) -> list[ActiveSignal]:
+    """Returns signals where commence_time > now (pre-game)."""
+    if now is None:
+        now = int(time.time())
+    cur = conn.execute(
+        "SELECT * FROM sidecar_active_signals WHERE commence_time > ? "
+        "ORDER BY commence_time ASC",
+        (now,),
+    )
+    return [_row(r, cur) for r in cur.fetchall()]
+
+
+def get_signal(
+    conn: sqlite3.Connection, ev_row_id: str,
+) -> ActiveSignal | None:
+    cur = conn.execute(
+        "SELECT * FROM sidecar_active_signals WHERE ev_row_id = ?",
+        (ev_row_id,),
+    )
+    r = cur.fetchone()
+    return _row(r, cur) if r else None
+
+
+def mark_checked(
+    conn: sqlite3.Connection, ev_row_id: str,
+    last_target: float | None, fired: bool,
+) -> None:
+    now = int(time.time())
+    if fired:
+        conn.execute(
+            "UPDATE sidecar_active_signals "
+            "SET last_checked_at = ?, last_target = ?, last_delta_at = ? "
+            "WHERE ev_row_id = ?",
+            (now, last_target, now, ev_row_id),
+        )
+    else:
+        conn.execute(
+            "UPDATE sidecar_active_signals "
+            "SET last_checked_at = ?, last_target = ? WHERE ev_row_id = ?",
+            (now, last_target, ev_row_id),
+        )
+    conn.commit()
+
+
+def _row(r, cur) -> ActiveSignal:
+    cols = [c[0] for c in cur.description]
+    return ActiveSignal(**dict(zip(cols, r)))
+```
+
+- [ ] **Step 3: Wire `arm_signal` into the orchestrator's `handle_place`**
+
+Right before `handle_place` returns successfully (after assignments fire), call `arm_signal(conn, req.ev_row_id, req.kelly_fraction, req.bankroll, ev_leg_commence_time)`. The `commence_time` comes from the leg lookup (`req.ev_leg.game_datetime` parsed to unix seconds).
+
+Right after each `placed` audit-row insertion (in `_record_placement`), call `update_total_placed(conn, req.ev_row_id, assignment.amount)`.
+
+- [ ] **Step 4: Run tests + commit**
+
+```bash
+pytest server/tests/test_sidecar_active_signals.py -v
+git add server/sidecar/active_signals.py server/sidecar/placement.py server/tests/test_sidecar_active_signals.py
+git commit -m "feat(sidecar): active-signal tracker — arm + total_placed + list"
+```
+
+---
+
+### Task E5: Delta tick — 60s autonomous re-fire scheduler
+
+**Files:**
+- Create: `server/sidecar/delta_tick.py`
+- Modify: `server/main.py` (register APScheduler job)
+- Test: `server/tests/test_sidecar_delta_tick.py`
+
+- [ ] **Step 1: Write the failing test**
+
+```python
+# server/tests/test_sidecar_delta_tick.py
+import asyncio
+import sqlite3
+import time
+import pytest
+from unittest.mock import patch
+
+from server.odds.cache import init_schema_on_path
+from server.sidecar import audit, active_signals
+from server.sidecar.delta_tick import run_delta_tick
+from server.sidecar.models import LegSpec
+from server.sidecar.settings import KellyFraction
+
+
+@pytest.fixture
+def db(tmp_path):
+    path = tmp_path / "cache.db"
+    init_schema_on_path(path)
+    return path
+
+
+def _arm(db_path, ev_row_id, total_placed, commence_in_seconds=3600):
+    conn = sqlite3.connect(db_path)
+    try:
+        active_signals.arm_signal(
+            conn, ev_row_id, KellyFraction.HALF, 10000,
+            int(time.time()) + commence_in_seconds,
+        )
+        active_signals.update_total_placed(conn, ev_row_id, total_placed)
+    finally:
+        conn.close()
+
+
+@pytest.mark.asyncio
+async def test_tick_fires_delta_when_kelly_grew(db, monkeypatch):
+    """Active signal at total_placed=$100, current Kelly target=$200.
+    Delta = $100, above $30 floor → fire a placement job for $100."""
+    _arm(db, "rid-grew", total_placed=100)
+
+    fired = []
+    async def fake_handle_place(req, job_id):
+        fired.append((req.ev_row_id, req.kelly_full_pct))
+        return job_id
+
+    leg = LegSpec(sport_type="X", sport_sub_type="Y", period="Game",
+                  line_type="M", game_num=1, chosen_team_id="T",
+                  rot_num=1, price_american=100, price_decimal=2.0,
+                  price_numerator=1, price_denominator=1)
+    monkeypatch.setattr(
+        "server.sidecar.delta_tick.resolve_ev_row_to_leg",
+        lambda rid: (leg, 0.04),     # full kelly 4% × $10k × half = $200
+    )
+    monkeypatch.setattr(
+        "server.sidecar.delta_tick.get_orchestrator",
+        lambda: type("O", (), {"handle_place": fake_handle_place,
+                               "mode": "live"})(),
+    )
+
+    await run_delta_tick(db_path=db)
+    assert len(fired) == 1
+    assert fired[0][0] == "rid-grew"
+
+
+@pytest.mark.asyncio
+async def test_tick_skips_when_delta_below_floor(db, monkeypatch):
+    """total_placed=$100, target=$110 → delta $10 < $30, do not fire."""
+    _arm(db, "rid-tiny", total_placed=100)
+
+    fired = []
+    async def fake_handle_place(req, job_id):
+        fired.append(req.ev_row_id)
+        return job_id
+
+    leg = LegSpec(sport_type="X", sport_sub_type="Y", period="Game",
+                  line_type="M", game_num=1, chosen_team_id="T",
+                  rot_num=1, price_american=100, price_decimal=2.0,
+                  price_numerator=1, price_denominator=1)
+    monkeypatch.setattr(
+        "server.sidecar.delta_tick.resolve_ev_row_to_leg",
+        lambda rid: (leg, 0.022),    # full kelly 2.2% × $10k × half = $110
+    )
+    monkeypatch.setattr(
+        "server.sidecar.delta_tick.get_orchestrator",
+        lambda: type("O", (), {"handle_place": fake_handle_place,
+                               "mode": "live"})(),
+    )
+    await run_delta_tick(db_path=db)
+    assert fired == []
+
+
+@pytest.mark.asyncio
+async def test_tick_skips_when_row_no_longer_in_ev_scanner(db, monkeypatch):
+    _arm(db, "rid-gone", total_placed=100)
+    monkeypatch.setattr(
+        "server.sidecar.delta_tick.resolve_ev_row_to_leg",
+        lambda rid: None,
+    )
+    fired = []
+    monkeypatch.setattr(
+        "server.sidecar.delta_tick.get_orchestrator",
+        lambda: type("O", (), {
+            "handle_place": lambda req, job_id: (fired.append(req.ev_row_id) or job_id),
+            "mode": "live",
+        })(),
+    )
+    await run_delta_tick(db_path=db)
+    assert fired == []
+
+
+@pytest.mark.asyncio
+async def test_tick_bails_in_off_mode(db, monkeypatch):
+    """When sidecar_mode is 'off', the tick exits without scanning."""
+    _arm(db, "rid-off", total_placed=100)
+    fired = []
+    monkeypatch.setattr(
+        "server.sidecar.delta_tick.resolve_ev_row_to_leg",
+        lambda rid: pytest.fail("should not have called resolve in off mode"),
+    )
+    monkeypatch.setattr(
+        "server.sidecar.delta_tick.get_orchestrator",
+        lambda: type("O", (), {"mode": "off",
+                               "handle_place": None})(),
+    )
+    await run_delta_tick(db_path=db)
+    # Pass if no failure was raised
+
+
+@pytest.mark.asyncio
+async def test_tick_skips_past_commence_time(db, monkeypatch):
+    """Signals whose game has started are filtered by list_active."""
+    _arm(db, "rid-live", total_placed=100, commence_in_seconds=-60)
+    fired = []
+    monkeypatch.setattr(
+        "server.sidecar.delta_tick.resolve_ev_row_to_leg",
+        lambda rid: pytest.fail("should not have called resolve"),
+    )
+    monkeypatch.setattr(
+        "server.sidecar.delta_tick.get_orchestrator",
+        lambda: type("O", (), {"handle_place": None, "mode": "live"})(),
+    )
+    await run_delta_tick(db_path=db)
+```
+
+- [ ] **Step 2: Implement `server/sidecar/delta_tick.py`**
+
+```python
+"""Autonomous Kelly-delta re-fire scheduler.
+
+Runs every 60 seconds via APScheduler. For each active signal where
+commence_time > now:
+
+  1. Resolve ev_row_id → (current LegSpec, current kelly_full_pct).
+  2. Compute current target = kelly_fraction × kelly_full_pct × bankroll_at_arm.
+  3. delta = current_target - total_placed.
+  4. If delta >= FLOOR ($30), enqueue a placement job for `delta` dollars.
+
+Bails early when sidecar_mode is 'off' so the kill-switch halts both
+user-triggered and autonomous activity."""
+from __future__ import annotations
+
+import asyncio
+import logging
+import sqlite3
+import uuid
+from pathlib import Path
+
+from server.sidecar import active_signals
+from server.sidecar.factory import get_orchestrator
+from server.sidecar.models import SidecarPlaceRequest
+from server.sidecar.resolve import resolve_ev_row_to_leg
+from server.sidecar.settings import KellyFraction, kelly_to_pct
+from server.sidecar.splitter import FLOOR
+
+
+logger = logging.getLogger(__name__)
+
+_signal_locks: dict[str, asyncio.Lock] = {}
+
+
+async def run_delta_tick(db_path: Path) -> None:
+    """One pass: scan active signals, fire deltas where applicable."""
+    orchestrator = get_orchestrator()
+    if orchestrator.mode == "off":
+        return
+
+    conn = sqlite3.connect(str(db_path))
+    try:
+        signals = active_signals.list_active(conn)
+    finally:
+        conn.close()
+
+    for sig in signals:
+        await _process_one(sig, db_path, orchestrator)
+
+
+async def _process_one(sig, db_path: Path, orchestrator) -> None:
+    """Per-signal lock + delta compute + maybe fire. The asyncio.Lock
+    prevents the next tick from firing a duplicate before the previous
+    job's total_placed write commits."""
+    lock = _signal_locks.setdefault(sig.ev_row_id, asyncio.Lock())
+    async with lock:
+        resolved = resolve_ev_row_to_leg(sig.ev_row_id)
+        if resolved is None:
+            # Row dropped out of /api/ev — skip this tick
+            conn = sqlite3.connect(str(db_path))
+            try:
+                active_signals.mark_checked(
+                    conn, sig.ev_row_id, last_target=None, fired=False,
+                )
+            finally:
+                conn.close()
+            return
+
+        leg, kelly_full_pct = resolved
+        kelly_pct = kelly_to_pct(KellyFraction(sig.kelly_fraction),
+                                 kelly_full_pct)
+        current_target = round(kelly_pct * sig.bankroll_at_arm)
+        delta = current_target - sig.total_placed
+
+        conn = sqlite3.connect(str(db_path))
+        try:
+            if delta < FLOOR:
+                active_signals.mark_checked(
+                    conn, sig.ev_row_id,
+                    last_target=current_target, fired=False,
+                )
+                return
+
+            logger.info(
+                "delta_tick: firing $%.0f delta on %s (was placed $%.0f, "
+                "target $%.0f)",
+                delta, sig.ev_row_id, sig.total_placed, current_target,
+            )
+            active_signals.mark_checked(
+                conn, sig.ev_row_id,
+                last_target=current_target, fired=True,
+            )
+        finally:
+            conn.close()
+
+        # Fire a fresh placement job for `delta` dollars. The orchestrator
+        # handles audit, SSE, splitter, the works.
+        req = SidecarPlaceRequest(
+            ev_row_id=sig.ev_row_id,
+            ev_leg=leg,
+            kelly_full_pct=kelly_full_pct,
+            kelly_fraction=KellyFraction(sig.kelly_fraction),
+            bankroll=sig.bankroll_at_arm,
+            trigger_source="delta_tick",
+            stake_override_dollars=int(delta),   # bypass kelly recompute in the orchestrator
+        )
+        await orchestrator.handle_place(req, uuid.uuid4().hex)
+```
+
+> **`stake_override_dollars`**: a new optional field on `SidecarPlaceRequest`. When set, the orchestrator skips the `kelly_pct × bankroll` calculation and uses this value as the splitter target directly. This is what makes delta-fires work: the delta tick has already computed the dollar delta; the orchestrator should split THAT amount, not the full Kelly target.
+
+- [ ] **Step 3: Add `stake_override_dollars` to `SidecarPlaceRequest` and consume it in `handle_place`**
+
+In `server/sidecar/models.py`:
+
+```python
+@dataclass
+class SidecarPlaceRequest:
+    ev_row_id: str
+    ev_leg: LegSpec
+    kelly_full_pct: float
+    kelly_fraction: KellyFraction
+    bankroll: int
+    trigger_source: str = "user"            # 'user' | 'delta_tick'
+    stake_override_dollars: int | None = None
+```
+
+In `handle_place`:
+
+```python
+if req.stake_override_dollars is not None:
+    target = req.stake_override_dollars
+else:
+    kelly_pct = kelly_to_pct(req.kelly_fraction, req.kelly_full_pct)
+    target = round(kelly_pct * req.bankroll)
+```
+
+- [ ] **Step 4: Register the tick in `server/main.py`**
+
+```python
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from server.sidecar.delta_tick import run_delta_tick
+
+scheduler = AsyncIOScheduler()   # or the existing app scheduler
+scheduler.add_job(
+    lambda: asyncio.create_task(run_delta_tick(Path("server/cache.db"))),
+    trigger="interval", seconds=60, id="sidecar_delta_tick",
+    coalesce=True, max_instances=1,
+)
+```
+
+- [ ] **Step 5: Run tests + commit**
+
+```bash
+pytest server/tests/test_sidecar_delta_tick.py -v
+git add server/sidecar/delta_tick.py server/sidecar/models.py server/sidecar/placement.py server/main.py server/tests/test_sidecar_delta_tick.py
+git commit -m "feat(sidecar): 60s delta-tick scheduler for autonomous Kelly re-firing"
+```
+
+---
+
 ## Phase F — API endpoints
 
 ### Task F0: Define `ev_row_id` format + add the field to `EVOpportunity`
@@ -3154,19 +3782,28 @@ def test_get_runs_returns_recent_jobs():
     assert isinstance(r.json(), list)
 
 
-def test_get_mode_default_is_dry_run():
+def test_get_mode_default_is_off():
     client = TestClient(app)
     r = client.get("/api/sidecar/mode")
-    assert r.json() == {"mode": "dry-run"}
+    assert r.json() == {"mode": "off"}
 
 
-def test_post_mode_flips_to_live():
+def test_post_mode_cycles_through_all_three():
     client = TestClient(app)
-    r = client.post("/api/sidecar/mode", json={"mode": "live"})
-    assert r.status_code == 200
-    assert client.get("/api/sidecar/mode").json() == {"mode": "live"}
-    # Restore
-    client.post("/api/sidecar/mode", json={"mode": "dry-run"})
+    for mode in ("dry-run", "live", "off"):
+        r = client.post("/api/sidecar/mode", json={"mode": mode})
+        assert r.status_code == 200
+        assert client.get("/api/sidecar/mode").json() == {"mode": mode}
+
+
+def test_place_returns_503_when_mode_is_off():
+    client = TestClient(app)
+    client.post("/api/sidecar/mode", json={"mode": "off"})
+    r = client.post("/api/sidecar/place", json={
+        "ev_row_id": "rid-X", "kelly_fraction": "half",
+    })
+    assert r.status_code == 503
+    assert "off" in r.json()["detail"]
 ```
 
 - [ ] **Step 2: Implement the router**
@@ -3201,6 +3838,13 @@ class PlaceResponse(BaseModel):
 
 @router.post("/place", status_code=202, response_model=PlaceResponse)
 async def post_place(body: PlaceBody, background_tasks: BackgroundTasks):
+    # Hard off-gate first — refuse before any work.
+    from pathlib import Path
+    from server.sidecar.mode_store import SidecarModeStore, SidecarMode
+    mode = SidecarModeStore(Path("server/config/sidecar_mode.json")).get()
+    if mode is SidecarMode.OFF:
+        raise HTTPException(503, detail="sidecar mode is off")
+
     # Resolve ev_row_id → LegSpec from the cache (sport-agnostic helper to add)
     from server.sidecar.resolve import resolve_ev_row_to_leg
     ev_leg, kelly_full_pct = resolve_ev_row_to_leg(body.ev_row_id) or (None, None)
@@ -3624,9 +4268,161 @@ Mirrors the existing /edges page filtered to `wager_filter=parlay&book=coral33&b
 
 Dense newest-first table. Rows sharing job_id get a subtle background tint and a "1/N, 2/N..." pill. Use `useSWR` to poll `/api/sidecar/runs` plus subscribe to `sidecar_placement` SSE to invalidate.
 
-- [ ] **Step 1: Implement the table**
+- [ ] **Step 1: Implement the table — columns include the new `trigger_source` badge (user / delta)**
 - [ ] **Step 2: SSE-driven invalidation**
 - [ ] **Step 3: Commit**
+
+---
+
+### Task H5: Mode toggle + ActiveSignals panel
+
+**Files:**
+- Create: `web/components/sidecar/ModeToggle.tsx`
+- Create: `web/components/sidecar/ActiveSignalsPanel.tsx`
+- Modify: `web/app/sidecar/page.tsx` (compose them into the layout)
+- Modify: `server/api/sidecar.py` (add `GET /api/sidecar/active-signals`)
+
+- [ ] **Step 1: Add the active-signals endpoint**
+
+```python
+# in server/api/sidecar.py
+
+@router.get("/active-signals")
+def get_active_signals():
+    from server.sidecar import active_signals
+    conn = _audit_conn()
+    try:
+        signals = active_signals.list_active(conn)
+        return [s.__dict__ for s in signals]
+    finally:
+        conn.close()
+```
+
+- [ ] **Step 2: Implement ModeToggle component**
+
+```tsx
+// web/components/sidecar/ModeToggle.tsx
+"use client";
+import useSWR from "swr";
+
+export function ModeToggle() {
+  const { data, mutate } = useSWR<{ mode: "off" | "dry-run" | "live" }>(
+    "/api/sidecar/mode",
+  );
+
+  async function flip(next: "off" | "dry-run" | "live") {
+    await fetch("/api/sidecar/mode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: next }),
+    });
+    mutate();
+  }
+
+  const current = data?.mode ?? "off";
+  return (
+    <div className="mode-toggle">
+      {(["off", "dry-run", "live"] as const).map(m => (
+        <button
+          key={m}
+          onClick={() => flip(m)}
+          className={`mode-btn ${m === current ? `active-${m}` : ""}`}
+        >
+          {m.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
+```
+
+CSS palette: `off` → muted gray (#6b7280), `dry-run` → muted yellow (#f5a524), `live` → saturated green (#2cb459). Active state inverts foreground/background; inactive shows just the label in `text-secondary`.
+
+- [ ] **Step 3: Implement ActiveSignalsPanel component**
+
+```tsx
+// web/components/sidecar/ActiveSignalsPanel.tsx
+"use client";
+import useSWR from "swr";
+
+interface ActiveSignal {
+  ev_row_id: string;
+  kelly_fraction: string;
+  bankroll_at_arm: number;
+  commence_time: number;
+  total_placed: number;
+  last_target: number | null;
+  last_delta_at: number | null;
+}
+
+export function ActiveSignalsPanel() {
+  const { data: signals } = useSWR<ActiveSignal[]>(
+    "/api/sidecar/active-signals",
+    { refreshInterval: 30000 },   // refresh twice per delta-tick cycle
+  );
+
+  const sorted = (signals ?? []).slice().sort((a, b) => {
+    const deltaA = (a.last_target ?? 0) - a.total_placed;
+    const deltaB = (b.last_target ?? 0) - b.total_placed;
+    return deltaB - deltaA;   // largest delta first
+  });
+
+  return (
+    <div className="active-signals">
+      <h2>Active signals ({sorted.length})</h2>
+      {sorted.map(sig => {
+        const delta = (sig.last_target ?? 0) - sig.total_placed;
+        const aboveFloor = delta >= 30;
+        return (
+          <div key={sig.ev_row_id} className="signal-card">
+            <div className="row-id">{sig.ev_row_id}</div>
+            <div className="kelly-frac">{sig.kelly_fraction}</div>
+            <div className="placed">${sig.total_placed.toFixed(0)} placed</div>
+            <div className={`delta ${aboveFloor ? "above-floor" : "below-floor"}`}>
+              Δ ${delta.toFixed(0)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 4: Compose into the page**
+
+```tsx
+// web/app/sidecar/page.tsx
+import { ModeToggle } from "@/components/sidecar/ModeToggle";
+import { ActiveSignalsPanel } from "@/components/sidecar/ActiveSignalsPanel";
+
+export default function SidecarPage() {
+  return (
+    <div className="page-grid sidecar-grid">
+      <header className="sidecar-header">
+        <h1>Sidecar</h1>
+        <ModeToggle />
+      </header>
+      <SignalFeed className="left" />
+      <ActiveSignalsPanel className="center" />
+      <AccountPoolGrid className="right" />
+      <RunLog className="bottom" />
+    </div>
+  );
+}
+```
+
+- [ ] **Step 5: Suppress the Auto-place button when mode is off**
+
+In `web/components/sidecar/AutoPlaceButton.tsx`, read `/api/sidecar/mode`; if `mode === "off"`, render `null`. (Or render a disabled state with a "sidecar is off" tooltip — slightly more discoverable.)
+
+- [ ] **Step 6: Commit**
+
+```bash
+cd web && npx tsc --noEmit
+git add web/components/sidecar/ModeToggle.tsx web/components/sidecar/ActiveSignalsPanel.tsx web/components/sidecar/AutoPlaceButton.tsx web/app/sidecar/page.tsx server/api/sidecar.py
+git commit -m "feat(web): three-state mode toggle + active-signals panel"
+```
 
 ---
 
@@ -3674,6 +4470,28 @@ async def handle_place(self, req):
 - [ ] Click Auto-place. Confirm. Verify the receipt sequence shows two rows over ~5–10s wall time (the jitter gap).
 - [ ] Two tickets land, on the lowest-balance and the next-lowest-balance accounts respectively.
 - [ ] Both wager-mirror rows surface in `bets` table.
+
+### Task I5: Off-mode hard-halt smoke
+
+- [ ] Flip mode to `live`. Initiate a multi-split placement (3+ assignments).
+- [ ] Immediately after the first assignment lands but before the second starts, flip the mode toggle to `off` via the UI.
+- [ ] Verify: the in-flight job completes (assignments 2 and 3 still fire after their jitter).
+- [ ] Verify: a fresh attempt to click Auto-place on another row returns 503 / shows "sidecar mode is off" — no new job spawned.
+- [ ] Verify: the next 60s delta-tick should NOT fire any deltas (check logs and `sidecar_placements` for new rows).
+- [ ] Flip back to `dry-run` and confirm activity resumes.
+
+### Task I6: Delta-tick autonomous re-fire smoke (dry-run)
+
+This validates the autonomous loop end-to-end without burning real money.
+
+- [ ] Set mode to `dry-run`. Set `sidecar_bankroll` to $10,000.
+- [ ] Find an EV row whose `kelly_full_pct × 10,000 × 0.5` is around $100 currently.
+- [ ] Click Auto-place. Confirm. Receipt shows dry-run placements for ~$100 split across the pool. `total_placed` for this `ev_row_id` should now be ~$100. `/sidecar`'s active-signals panel shows the new card.
+- [ ] Wait for the line to move (or, for testing, manually edit `sidecar_active_signals.total_placed` down to $40 to simulate Kelly having grown).
+- [ ] Wait up to 60 seconds for the next delta-tick.
+- [ ] Verify: a new placement row appears in the run log with `trigger_source = "delta"` and stake matching the delta amount.
+- [ ] Verify: `sidecar_active_signals.total_placed` is updated to reflect the new total.
+- [ ] Verify: `last_delta_at` timestamp on the active-signals card has updated.
 
 ---
 

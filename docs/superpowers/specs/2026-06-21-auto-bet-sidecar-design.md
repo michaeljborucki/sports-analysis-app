@@ -27,7 +27,8 @@ Today, the user manually logs into each account, picks the eligible one with eno
 - **Account ordering is lowest-balance-first.** The walk visits accounts in ascending balance order, draining each one's parlay capacity (multiple parlays as needed) before moving on. Stanley's $150 cap is honored only when Stanley happens to be the next-walked account; the splitter does NOT reorder to minimize parlay count.
 - Per-account requests route through a dedicated sticky residential proxy URL (one per account, static).
 - If the pool can't fund the full target even after splitting, the sidecar refuses to fire and pages the user to top up.
-- A `dry-run` / `live` master toggle in a dedicated `sidecar_mode.json` store is the sole guardrail, defaulted to `dry-run` and explicitly flipped by the user — mirrors the `cache_mode` pattern (`server/odds/cache_mode.py`, `server/config/cache_mode.json`) already established for the metered Odds API fetcher.
+- A **three-state** master toggle `off` / `dry-run` / `live` in a dedicated `sidecar_mode.json` store is the sole guardrail, defaulted to `off` and explicitly flipped by the user — mirrors the `cache_mode` pattern (`server/odds/cache_mode.py`, `server/config/cache_mode.json`) already established for the metered Odds API fetcher. **`off` is a hard kill-switch** intended for use while debugging live: no new user-triggered placements accepted, no background delta re-fires, no Auto-place affordance visible in the UI. In-flight `BackgroundTask`s already running when `off` is flipped run to completion (we don't leave Coral in a half-placed state); they just don't get successors.
+- **Autonomous Kelly-delta re-firing.** Once the user clicks Auto-place on a signal, the sidecar tracks it as an active signal and **autonomously fires additional placements as Kelly grows**. A background tick (every 60s) re-checks every active signal's current Kelly target; when `current_target - total_placed_for_this_signal >= $30` (the same per-parlay floor), the delta is enqueued as a new placement job that runs through the splitter, the picker, and the placement chain exactly like a user-triggered fire. Tracking stops when the event's `commence_time` passes; if the EV scanner stops surfacing the row mid-tracking, the tick simply skips it for that minute (could come back).
 
 ## Non-goals (v1)
 
@@ -38,6 +39,8 @@ Today, the user manually logs into each account, picks the eligible one with eno
 - **Below-floor rounding** (placing $30 when Kelly says $18). Sub-floor signals are skipped, not rounded up.
 - **Daily loss / count / stake caps, min-EV threshold, auto-quarantine of error-prone accounts.** Explicitly excluded per user decision. The `dry-run` / `live` toggle is the only guardrail.
 - **Refreshing account balances at fire time.** The sidecar trusts the existing accounts cache from `AccountsScraper`. Stale-balance edge cases land as `auth_failed` / `placement_timeout` / `insufficient_balance` and surface via the standard error path.
+- **Unwinding placed bets when Kelly shrinks.** If the line moves against you and current Kelly drops below `total_placed`, the sidecar does NOT void any placed parlays. New deltas just stop firing until Kelly grows past `total_placed + $30` again (could be never, that's fine).
+- **Per-signal stop conditions other than `commence_time`.** No Coral33-no-longer-best-price stop, no manual stop button, no automatic deactivation on drop-out. The only deactivation is the game starting. If the signal drops out of `/api/ev` briefly mid-game-day, the tick skips it; if it reappears later, tracking resumes.
 
 ## Architecture
 
@@ -278,10 +281,14 @@ Two new pieces of persisted state, deliberately split between two stores by sens
 **`server/config/sidecar_mode.json`** — dedicated store, mirrors `cache_mode` exactly:
 
 ```json
-{"mode": "dry-run"}
+{"mode": "off"}
 ```
 
-- `mode`: `"dry-run"` | `"live"`. Defaults to `"dry-run"`. Flipped via a dedicated `POST /api/sidecar/mode` endpoint (paralleling `POST /api/cache_mode`), which the UI exposes as a top-of-page toggle on `/sidecar`. Backed by a `SidecarModeStore` class modeled on `CacheModeStore` (`server/odds/cache_mode.py`). Memory rule: **never auto-flip `sidecar_mode` to `"live"`** — same protocol as `cache_mode`.
+- `mode`: `"off"` | `"dry-run"` | `"live"`. Defaults to `"off"`. Flipped via a dedicated `POST /api/sidecar/mode` endpoint (paralleling `POST /api/cache_mode`), which the UI exposes as a three-button toggle at the top of `/sidecar`. Backed by a `SidecarModeStore` class modeled on `CacheModeStore` (`server/odds/cache_mode.py`). Memory rule: **never auto-flip `sidecar_mode` to `"live"`** — same protocol as `cache_mode`. `"off"` mode behavior:
+  - `POST /api/sidecar/place` returns `503 Service Unavailable` with body `{"detail": "sidecar mode is off"}`.
+  - Auto-place button on `/edges` is hidden (or disabled with a tooltip).
+  - The 60s background re-fire tick exits early without scanning active signals.
+  - In-flight `BackgroundTask`s already running when `off` is flipped DO complete (jitter, all assignments). After they finish, no new jobs accept.
 
 **`server/config/user_settings.json`** — the existing user-settings store gains two routine keys:
 
@@ -325,6 +332,30 @@ CREATE INDEX sidecar_placements_created_at ON sidecar_placements(created_at DESC
 
 - **`partial_fill` rows** capture the residual the splitter couldn't allocate (e.g., target $200 but pool can only fund $80). One `partial_fill` row + N successful `placed` rows can co-exist under one `job_id`.
 - Audit-grade: every placement attempt (including refusals and dry-runs) lands here. Never deleted by code; user can `DELETE` manually.
+
+### Storage — second new table: `sidecar_active_signals`
+
+The autonomous re-fire loop needs persistent state surviving server restarts. One row per (`ev_row_id`) currently being tracked:
+
+```sql
+CREATE TABLE sidecar_active_signals (
+  ev_row_id         TEXT PRIMARY KEY,
+  kelly_fraction    TEXT NOT NULL,             -- 'full' | 'half' | 'quarter' — fraction the user selected
+  bankroll_at_arm   INTEGER NOT NULL,          -- $ snapshot when the signal was armed
+  commence_time     INTEGER NOT NULL,          -- unix s; tick stops re-firing once now > this
+  total_placed      REAL NOT NULL DEFAULT 0,   -- sum of every successful 'placed' / 'dry_run' stake on this ev_row_id
+  first_armed_at    INTEGER NOT NULL,          -- when the user originally clicked Auto-place
+  last_checked_at   INTEGER,                   -- updated on every tick scan, fire or not
+  last_delta_at     INTEGER,                   -- updated only when a delta fire actually happens
+  last_target       REAL                       -- the kelly_pct × bankroll value at the most recent tick
+);
+CREATE INDEX sidecar_active_signals_commence ON sidecar_active_signals(commence_time);
+```
+
+- Rows are **inserted** when a user-triggered placement succeeds for the first time (the orchestrator's `handle_place` finishes its loop AND `bankroll_at_arm` snapshot reflects the bankroll setting at arm time, so future bankroll edits don't retroactively change earlier-armed signals' targets).
+- Rows are **updated** by the re-fire tick on every minute it runs (`last_checked_at`) and by the orchestrator on every successful placement that ties to this `ev_row_id` (`total_placed += stake`).
+- Rows are **not deleted** automatically; rows with `commence_time < now` are filtered out at tick scan time. Stale rows accumulate but the table stays small (max one row per game per signal).
+- The orchestrator also writes through to `total_placed` after a delta-driven job lands, so the next tick sees the updated baseline.
 
 ### Data flow
 
@@ -373,6 +404,49 @@ Three new event types added to the existing broker (`server/api/stream.py`). All
 
 Reuses the existing `useLiveUpdates` hook in the Next.js app — no new transport wiring.
 
+### Autonomous Kelly-delta re-firing
+
+A 60-second APScheduler tick (registered alongside the existing fetchers in `main.py`) runs `delta_tick()`:
+
+```
+def delta_tick():
+    if sidecar_mode in ("off", ...): return     # bail early on hard kill
+    now = unix_now()
+    active = SELECT * FROM sidecar_active_signals WHERE commence_time > now
+    for signal in active:
+        leg, kelly_full_pct = resolve_ev_row_to_leg(signal.ev_row_id) or (None, None)
+        UPDATE sidecar_active_signals SET last_checked_at = now WHERE ev_row_id = signal.ev_row_id
+        if leg is None:
+            continue   # row dropped out of /api/ev this tick — try again next minute
+
+        current_kelly_pct = kelly_to_pct(signal.kelly_fraction, kelly_full_pct)
+        current_target_dollars = round(current_kelly_pct × signal.bankroll_at_arm)
+        delta = current_target_dollars - signal.total_placed
+        UPDATE sidecar_active_signals SET last_target = current_target_dollars
+
+        if delta < $30: continue   # below floor, skip
+        enqueue a placement job for `delta` dollars on this signal
+        UPDATE sidecar_active_signals SET last_delta_at = now
+```
+
+**Key design decisions:**
+
+- **`bankroll_at_arm` is frozen at the first placement** — this prevents "user changed bankroll setting, now every active signal re-targets and fires huge deltas next tick." If the user wants the new bankroll applied to existing active signals, they manually re-arm by clicking Auto-place again (which inserts a fresh row with the new bankroll). This matches the principle that bankroll edits should require deliberate user action per active signal.
+- **`kelly_fraction` is also frozen** — same reasoning. The user committed to a fraction at original-placement time.
+- **`total_placed` includes every successful placement** for this `ev_row_id` regardless of which job created it (initial or delta). The orchestrator increments it atomically (within a sqlite transaction) when each `placed` audit row lands.
+- **The delta-driven job is structurally identical to a user-triggered job**: same `ev_row_id`, same `kelly_fraction`, same orchestrator path, same splitter/picker/placer/SSE/audit flow. The only difference is the **trigger source field** in the audit row (new column `trigger_source TEXT NOT NULL DEFAULT 'user'` — `'user'` | `'delta_tick'`).
+- **Dry-run mode also fires delta ticks** — same as user-triggered, just halts at step 3 of the placement chain. This is critical for testing the autonomous loop without burning real money.
+- **Re-entry safety**: if a delta job is still in-flight when the next tick fires (e.g., 60s isn't long enough for a 4-split sequential placement at maxed-out jitter), the tick computes the delta against the row's CURRENT `total_placed` which doesn't yet include in-flight splits. To avoid double-firing, the tick takes a row-level lock (`UPDATE sidecar_active_signals SET ... WHERE ev_row_id = ? AND last_delta_at IS NOT ? RETURNING ...`) so concurrent ticks see consistent state. Or simpler: in-process per-signal asyncio lock that the tick acquires before computing delta and releases after the job is fully drained. Latter is simpler given we're in a single-process server.
+
+**Schema addition (deferred to a small migration step, not on the existing `sidecar_placements` until E2):**
+
+```sql
+ALTER TABLE sidecar_placements ADD COLUMN trigger_source TEXT NOT NULL DEFAULT 'user';
+-- 'user' | 'delta_tick'
+```
+
+The UI surfaces this on the run log as a small badge: "user" for user-triggered, "delta" for delta-triggered.
+
 ### Multi-parlay pacing
 
 When a single signal produces N > 1 parlays — whether stacked on the same account or spread across accounts — the BackgroundTask fires them **sequentially with a small jittered delay** between each (3–8 seconds, uniform random).
@@ -414,11 +488,13 @@ Click opens a confirm modal (NO open-leg picker — the open spot is server-side
 
 ### `/sidecar` — new top-nav page
 
-Pinned to the existing top-nav alongside `/odds`, `/edges`, `/accounts`. Three panels in the established Bloomberg-terminal palette (dark mode first, tabular figures for all $ values):
+Pinned to the existing top-nav alongside `/odds`, `/edges`, `/accounts`. Layout in the established Bloomberg-terminal palette (dark mode first, tabular figures for all $ values):
 
+- **Top bar — three-button mode toggle.** `Off` / `Dry-run` / `Live`. The active mode is highlighted (off = muted gray, dry-run = muted yellow, live = saturated green); the other two are subdued and clickable. Clicking a non-current button POSTs `/api/sidecar/mode` and the page re-fetches mode + active signals. The toggle is the most prominent affordance on the page during debugging. A small "stop sign" badge in the same row indicates "in-flight jobs running" when any `BackgroundTask` is mid-flight after an off-flip — the user knows the system is draining.
 - **Left — live signal feed.** Mirrors `/api/ev?wager_filter=parlay&book=coral33&best_price=1` with the same inline Auto-place button. Filterable by sport tab bar at the top.
+- **Center — active-signals panel.** One card per row in `sidecar_active_signals` where `commence_time > now`. Each card: event label + market + side, kelly_fraction badge, bankroll_at_arm, **total_placed** (large), current Kelly target, **delta-to-fire** (`current_target − total_placed`; green when `>= $30`, gray when below floor), `last_delta_at` timestamp. Cards sort by largest delta-to-fire first so pending re-fires are eyeball-able. Hovering a card opens a small inline placements list (every audit row tied to that `ev_row_id`).
 - **Right — account pool grid.** 7 cards, one per Coral33 sub-account. Each card: customer_id, label, current balance (large), available balance (smaller), today's bet count + stake total, last-used timestamp, a small dot indicator (green = last request succeeded, red = last 3 failed in a row, gray = no activity today). Cards sort by current balance ascending so the lowest-balance / next-to-fire account is at the top.
-- **Bottom — run log.** Recent placements newest-first as a dense table. Rows that share a `job_id` are grouped visually (subtle background tint + a small "1/3, 2/3, 3/3" pill in the leftmost column). Columns: job time, sport, event/market/side, stake, account, result badge, ticket #. Result badges: green `placed`, yellow `dry_run`, gray `no_eligible_account` / `below_minimum`, orange `partial_fill`, red `error` (with hover-tooltip for `error_message`).
+- **Bottom — run log.** Recent placements newest-first as a dense table. Rows that share a `job_id` are grouped visually (subtle background tint + a small "1/3, 2/3, 3/3" pill in the leftmost column). Columns: job time, sport, event/market/side, stake, account, result badge, ticket #, **trigger badge** (`user` vs `delta`). Result badges: green `placed`, yellow `dry_run`, gray `no_eligible_account` / `below_minimum`, orange `partial_fill`, red `error` (with hover-tooltip for `error_message`).
 
 ## Error handling
 
