@@ -564,6 +564,107 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sidecar/place": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Place */
+        post: operations["post_place_api_sidecar_place_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sidecar/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Runs
+         * @description Recent placements across all jobs, newest-first.
+         *
+         *     The dashboard's RunLog calls this once on mount and re-polls on
+         *     ``sidecar_placement`` SSE invalidations.
+         */
+        get: operations["get_runs_api_sidecar_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sidecar/runs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Run
+         * @description All placements for one job, oldest-first. 404 if the job_id has
+         *     no rows (either it's still pending or never existed).
+         */
+        get: operations["get_run_api_sidecar_runs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sidecar/mode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Mode */
+        get: operations["get_mode_api_sidecar_mode_get"];
+        put?: never;
+        /** Post Mode */
+        post: operations["post_mode_api_sidecar_mode_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sidecar/active-signals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Active Signals
+         * @description List active (pre-game) signals being tracked by the delta-tick
+         *     loop. Sourced from sidecar_active_signals. Empty when nothing is
+         *     armed.
+         */
+        get: operations["get_active_signals_api_sidecar_active_signals_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/kalshi/refresh": {
         parameters: {
             query?: never;
@@ -1423,6 +1524,16 @@ export interface components {
             /** Consensus Price American */
             consensus_price_american?: number | null;
         };
+        /** ModeBody */
+        ModeBody: {
+            /** Mode */
+            mode: string;
+        };
+        /** ModeResponse */
+        ModeResponse: {
+            /** Mode */
+            mode: string;
+        };
         /** OddsResponse */
         OddsResponse: {
             /** Games */
@@ -1536,6 +1647,22 @@ export interface components {
             last_checked_at: string;
             /** Bet Card Date */
             bet_card_date?: string | null;
+        };
+        /** PlaceBody */
+        PlaceBody: {
+            /** Ev Row Id */
+            ev_row_id: string;
+            /** Kelly Fraction */
+            kelly_fraction: string;
+        };
+        /** PlaceResponse */
+        PlaceResponse: {
+            /** Job Id */
+            job_id: string;
+            /** Plan Preview */
+            plan_preview?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** PolymarketRefreshResponse */
         PolymarketRefreshResponse: {
@@ -2579,6 +2706,180 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_place_api_sidecar_place_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_runs_api_sidecar_runs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_run_api_sidecar_runs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_mode_api_sidecar_mode_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModeResponse"];
+                };
+            };
+        };
+    };
+    post_mode_api_sidecar_mode_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModeBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_active_signals_api_sidecar_active_signals_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
                 };
             };
         };

@@ -1137,6 +1137,231 @@
         }
       }
     },
+    "/api/sidecar/place": {
+      "post": {
+        "tags": [
+          "sidecar"
+        ],
+        "summary": "Post Place",
+        "operationId": "post_place_api_sidecar_place_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sidecar/runs": {
+      "get": {
+        "tags": [
+          "sidecar"
+        ],
+        "summary": "Get Runs",
+        "description": "Recent placements across all jobs, newest-first.\n\nThe dashboard's RunLog calls this once on mount and re-polls on\n``sidecar_placement`` SSE invalidations.",
+        "operationId": "get_runs_api_sidecar_runs_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Get Runs Api Sidecar Runs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sidecar/runs/{job_id}": {
+      "get": {
+        "tags": [
+          "sidecar"
+        ],
+        "summary": "Get Run",
+        "description": "All placements for one job, oldest-first. 404 if the job_id has\nno rows (either it's still pending or never existed).",
+        "operationId": "get_run_api_sidecar_runs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Get Run Api Sidecar Runs  Job Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sidecar/mode": {
+      "get": {
+        "tags": [
+          "sidecar"
+        ],
+        "summary": "Get Mode",
+        "operationId": "get_mode_api_sidecar_mode_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModeResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "sidecar"
+        ],
+        "summary": "Post Mode",
+        "operationId": "post_mode_api_sidecar_mode_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sidecar/active-signals": {
+      "get": {
+        "tags": [
+          "sidecar"
+        ],
+        "summary": "Get Active Signals",
+        "description": "List active (pre-game) signals being tracked by the delta-tick\nloop. Sourced from sidecar_active_signals. Empty when nothing is\narmed.",
+        "operationId": "get_active_signals_api_sidecar_active_signals_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Get Active Signals Api Sidecar Active Signals Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/kalshi/refresh": {
       "post": {
         "summary": "Refresh",
@@ -3389,6 +3614,32 @@
         ],
         "title": "MarketOutcome"
       },
+      "ModeBody": {
+        "properties": {
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mode"
+        ],
+        "title": "ModeBody"
+      },
+      "ModeResponse": {
+        "properties": {
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mode"
+        ],
+        "title": "ModeResponse"
+      },
       "OddsResponse": {
         "properties": {
           "games": {
@@ -3702,6 +3953,50 @@
           "last_checked_at"
         ],
         "title": "PicksResponse"
+      },
+      "PlaceBody": {
+        "properties": {
+          "ev_row_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Ev Row Id"
+          },
+          "kelly_fraction": {
+            "type": "string",
+            "title": "Kelly Fraction"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ev_row_id",
+          "kelly_fraction"
+        ],
+        "title": "PlaceBody"
+      },
+      "PlaceResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "plan_preview": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Preview"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "PlaceResponse"
       },
       "PolymarketRefreshResponse": {
         "properties": {
