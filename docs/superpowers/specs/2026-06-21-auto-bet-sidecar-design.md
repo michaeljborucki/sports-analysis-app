@@ -262,7 +262,7 @@ def plan_splits(
 | $105 | A=$1000 balance, B=$1000 balance, standard caps | **A:$75, B:$30** | Naïve walk would leave a $5 sub-floor residual; peel-back reduces A's parlay by $25 and places $30 on B. |
 | $260 | A=$250 balance, B=$1000 balance, standard caps | **A:$100, A:$100, A:$30, B:$30** | Partial on A is shrunk from $50→$30 so the residual lands exactly on FLOOR for B. |
 | $130 | Stanley=$300 (cap $150), B=$1000 (cap $100); Stanley lowest balance | **Stanley:$130** | One parlay on Stanley fits cleanly under its $150 cap. |
-| $230 | Stanley lowest, then a standard at $1000 | **Stanley:$150, B:$80** | Drain Stanley's cap; carry residual to B. |
+| $230 | Stanley lowest (bal $300), then a standard at $1000 | **Stanley:$150, Stanley:$80** | Stanley's remaining $150 balance still covers the residual; the partial-step takes another parlay on Stanley before moving on. Consistent with the $300 + A=$250 example. |
 | $18 | any pool | `below_minimum` | Skipped. |
 | $200 | only one account has balance ≥ $30, balance $80 | `partial_fill` at $80 | User paged for top-up. |
 

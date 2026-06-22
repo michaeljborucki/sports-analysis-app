@@ -1090,13 +1090,17 @@ def test_target_130_stanley_lowest_balance_takes_alone():
     assert amounts == [("STANLEY", 130)]
 
 
-def test_target_230_stanley_then_standard():
+def test_target_230_stacks_on_stanley():
+    """Stanley's $300 balance covers a second parlay (Stanley cap=$150);
+    the partial-step takes the $80 residual on Stanley before moving on
+    to B. Consistent with the broader "drain balance before moving on"
+    principle."""
     stanley = _acct("STANLEY", 300, cap=150)
     other = _acct("B", 1000)
     plan = plan_splits(230, [stanley, other])
     assert plan.status == "planned"
     amounts = [(a.account.customer_id, a.amount) for a in plan.assignments]
-    assert amounts == [("STANLEY", 150), ("B", 80)]
+    assert amounts == [("STANLEY", 150), ("STANLEY", 80)]
 
 
 # --- refusals ---
@@ -2534,8 +2538,9 @@ def audit_db(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_dry_run_target_230_stanley_then_dixon(audit_db):
-    """Target $230 → Stanley($150) + Dixon($80), both as dry_run rows."""
+async def test_dry_run_target_230_stacks_on_stanley(audit_db):
+    """Target $230 → Stanley($150) + Stanley($80) (Stanley bal=500 covers
+    the $80 residual on a second parlay), both as dry_run rows."""
     pool = make_pool()
     leg = make_leg()
     orchestrator = SidecarOrchestrator(
@@ -2564,7 +2569,8 @@ async def test_dry_run_target_230_stanley_then_dixon(audit_db):
     finally:
         conn.close()
     assert len(rows) == 2
-    assert [r.picked_account for r in rows] == ["VR11606", "VR11601"]
+    # Stanley appears twice — same account, two parlays
+    assert [r.picked_account for r in rows] == ["VR11606", "VR11606"]
     assert [r.stake for r in rows] == [150, 80]
     assert all(r.result == "dry_run" for r in rows)
 ```
