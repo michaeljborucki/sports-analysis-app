@@ -64,6 +64,34 @@ def test_poll_skips_unknown_tickers(cache):
     asyncio.run(poll_kalshi_orderbooks(client=client, ingestor=ingestor, cache=cache))
 
 
+def test_poll_skips_tickers_with_recent_ws_update(cache):
+    """A ticker whose price came in via WS within `poll_interval_s` should
+    NOT trigger a REST get_orderbook call — the row was already bumped."""
+    import time
+    from server.odds.books.kalshi.orderbook_poller import poll_kalshi_orderbooks
+    cache.upsert([_template_for("e1", "BOS"), _template_for("e2", "OKC")])
+    ingestor = MagicMock()
+    ingestor.registered_tickers.return_value = ["KX-FRESH", "KX-STALE"]
+    ingestor._templates = {
+        "KX-FRESH": [(_template_for("e1", "BOS"), "yes")],
+        "KX-STALE": [(_template_for("e2", "OKC"), "yes")],
+    }
+    # KX-FRESH was updated 1s ago via WS → should be skipped
+    # KX-STALE has no recent WS update → should be polled
+    ingestor.last_ws_update = {"KX-FRESH": time.time() - 1.0}
+    client = MagicMock()
+    client.get_orderbook = AsyncMock(
+        return_value={"orderbook": {"yes": [[40, 100]], "no": [[55, 100]]}},
+    )
+    asyncio.run(poll_kalshi_orderbooks(
+        client=client, ingestor=ingestor, cache=cache,
+        poll_interval_s=60.0,
+    ))
+    # KX-STALE should have been polled exactly once; KX-FRESH skipped.
+    called_tickers = [c.args[0] for c in client.get_orderbook.call_args_list]
+    assert called_tickers == ["KX-STALE"]
+
+
 def test_poll_tolerates_client_failure(cache):
     from server.odds.books.kalshi.orderbook_poller import poll_kalshi_orderbooks
     cache.upsert([_template_for("e1", "BOS"), _template_for("e2", "OKC")])

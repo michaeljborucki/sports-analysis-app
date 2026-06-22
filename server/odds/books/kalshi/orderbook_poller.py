@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from datetime import datetime, timezone
 
 from ...cache import OddsCache
@@ -25,20 +26,43 @@ from .orderbook_depth import max_stake_for_side
 logger = logging.getLogger(__name__)
 
 _INTER_CALL_DELAY_S = 0.05
+# Default poll cadence (s). If the WS ingestor has updated a ticker
+# within this window, the REST orderbook poll is redundant — WS already
+# bumped the version this cycle. Caller can override to match its
+# scheduler interval.
+_DEFAULT_POLL_INTERVAL_S = 60.0
 
 
 async def poll_kalshi_orderbooks(
     *, client, ingestor, cache: OddsCache,
+    poll_interval_s: float = _DEFAULT_POLL_INTERVAL_S,
 ) -> int:
     """One sync cycle. Returns count of rows updated with non-null
     max_stake_dollars. Exceptions during a single market's poll are
-    logged + skipped; the rest of the batch continues."""
+    logged + skipped; the rest of the batch continues.
+
+    Tickers that received a WS ticker update within the last
+    ``poll_interval_s`` are skipped — the WS path already wrote a fresh
+    row this cycle, so a REST orderbook fetch would just churn a
+    duplicate version bump."""
     tickers = ingestor.registered_tickers()
     if not tickers:
         return 0
 
+    # last_ws_update is populated by KalshiTickerIngestor.process_ticker.
+    # Falls back to an empty dict on ingestors that don't expose it as a
+    # real dict (e.g. MagicMock fixtures that auto-generate attributes).
+    raw_lwu = getattr(ingestor, "last_ws_update", None)
+    last_ws_update: dict[str, float] = raw_lwu if isinstance(raw_lwu, dict) else {}
+    now_s = time.time()
+
     updated = 0
+    skipped = 0
     for ticker in tickers:
+        last = last_ws_update.get(ticker)
+        if last is not None and (now_s - last) < poll_interval_s:
+            skipped += 1
+            continue
         try:
             ob = await client.get_orderbook(ticker)
         except Exception:
@@ -80,5 +104,10 @@ async def poll_kalshi_orderbooks(
     if updated:
         logger.info(
             "kalshi orderbook poll: %d rows refreshed", updated,
+        )
+    if skipped:
+        logger.info(
+            "kalshi orderbook poll: skipped %d of %d tickers (recent WS)",
+            skipped, len(tickers),
         )
     return updated

@@ -48,6 +48,10 @@ class KalshiTickerIngestor:
         # REST safety net keeps it fresh, but we still hold the row for
         # bookkeeping / debugging)
         self._templates: dict[str, list[tuple[dict, str]]] = {}
+        # Per-ticker last-WS-update wall clock. Read by the 60s orderbook
+        # poller to skip tickers whose price already arrived via WS this
+        # cycle — see orderbook_poller.poll_kalshi_orderbooks.
+        self.last_ws_update: dict[str, float] = {}
         # Stats for /api/kalshi/status
         self.updates_total: int = 0
         self.unknown_market_msgs: int = 0
@@ -143,7 +147,11 @@ class KalshiTickerIngestor:
             return 0
 
         self.updates_total += len(rows_to_upsert)
-        self.last_update_at = time.time()
+        now = time.time()
+        self.last_update_at = now
+        # Tag this ticker as freshly priced so the orderbook poller can
+        # skip its REST round-trip on the next cycle.
+        self.last_ws_update[market_ticker] = now
         return len(rows_to_upsert)
 
     def registered_tickers(self) -> list[str]:
