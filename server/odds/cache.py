@@ -122,6 +122,53 @@ CREATE INDEX IF NOT EXISTS idx_bets_accepted ON bets(accepted_at);
 CREATE INDEX IF NOT EXISTS idx_bets_event    ON bets(event_id);
 CREATE INDEX IF NOT EXISTS idx_bets_book     ON bets(source_book);
 CREATE INDEX IF NOT EXISTS idx_bets_status   ON bets(status);
+
+-- Auto-bet sidecar: one row per placement attempt (live or dry-run, success
+-- or refusal). Audit-grade — never deleted by code. trigger_source records
+-- whether the user clicked Auto-place ('user') or the delta-tick loop fired
+-- a refresh ('delta_tick').
+CREATE TABLE IF NOT EXISTS sidecar_placements (
+  placement_id     TEXT PRIMARY KEY,
+  job_id           TEXT NOT NULL,
+  created_at       INTEGER NOT NULL,
+  ev_row_id        TEXT NOT NULL,
+  ev_leg           TEXT NOT NULL,
+  parlay_name      TEXT NOT NULL DEFAULT '10 team',
+  kelly_fraction   TEXT NOT NULL,
+  target_stake     REAL NOT NULL,
+  stake            REAL,
+  mode             TEXT NOT NULL,
+  picked_account   TEXT,
+  result           TEXT NOT NULL,
+  ticket_number    TEXT,
+  accepted_payload TEXT,
+  error_message    TEXT,
+  trigger_source   TEXT NOT NULL DEFAULT 'user'    -- 'user' | 'delta_tick'
+);
+CREATE INDEX IF NOT EXISTS sidecar_placements_job_id
+  ON sidecar_placements(job_id);
+CREATE INDEX IF NOT EXISTS sidecar_placements_ev_row_id
+  ON sidecar_placements(ev_row_id);
+CREATE INDEX IF NOT EXISTS sidecar_placements_created_at
+  ON sidecar_placements(created_at DESC);
+
+-- Auto-bet sidecar: one row per armed +EV signal currently in-flight. The
+-- delta-tick loop reads this table to know which rows to revisit; rows are
+-- inserted when the user arms a signal and removed when the signal expires
+-- (commence_time passed) or is manually cleared.
+CREATE TABLE IF NOT EXISTS sidecar_active_signals (
+  ev_row_id        TEXT PRIMARY KEY,
+  kelly_fraction   TEXT NOT NULL,
+  bankroll_at_arm  INTEGER NOT NULL,
+  commence_time    INTEGER NOT NULL,
+  total_placed     REAL NOT NULL DEFAULT 0,
+  first_armed_at   INTEGER NOT NULL,
+  last_checked_at  INTEGER,
+  last_delta_at    INTEGER,
+  last_target      REAL
+);
+CREATE INDEX IF NOT EXISTS sidecar_active_signals_commence
+  ON sidecar_active_signals(commence_time);
 """
 
 
