@@ -192,6 +192,57 @@ _MIGRATIONS = [
 ]
 
 
+def _init_schema(conn: sqlite3.Connection) -> None:
+    """Apply SCHEMA, idempotent migrations, and post-migration indexes.
+
+    Module-level so tests can spin up a temp DB with the full schema
+    without instantiating ``OddsCache`` (and without polluting the global
+    ``server/cache.db``). Called by both ``OddsCache.init`` and
+    ``init_schema_on_path``.
+    """
+    conn.executescript(SCHEMA)
+    # Apply idempotent migrations — tolerate "duplicate column" errors
+    # if an older schema has already been bumped.
+    for stmt in _MIGRATIONS:
+        try:
+            conn.execute(stmt)
+        except sqlite3.OperationalError as e:
+            if "duplicate column" not in str(e).lower():
+                raise
+    # Ensure indexes exist after migrations. These cover the hot
+    # access patterns the audit identified:
+    #   - purge_stale_rows() filters on fetched_at every main-tier
+    #     cycle; without this index it's a full table scan on a
+    #     100MB+ table every few minutes.
+    #   - all endpoint scanners filter by sport_key (existing) and
+    #     usually also by market_key / is_prop_market — composite
+    #     lets SQLite skip prop rows at the query stage.
+    #   - purge_finished_games() and the FUTURE_WINDOW filter on
+    #     commence_time run on every dashboard/odds request.
+    for idx_stmt in (
+        "CREATE INDEX IF NOT EXISTS idx_odds_sport ON odds_snapshot(sport_key)",
+        "CREATE INDEX IF NOT EXISTS idx_odds_fetched_at ON odds_snapshot(fetched_at)",
+        "CREATE INDEX IF NOT EXISTS idx_odds_sport_market ON odds_snapshot(sport_key, market_key)",
+        "CREATE INDEX IF NOT EXISTS idx_odds_commence_time ON odds_snapshot(commence_time)",
+    ):
+        conn.execute(idx_stmt)
+
+
+def init_schema_on_path(path) -> None:
+    """Initialize the cache schema at a given path.
+
+    Used by tests so each test gets a clean DB without touching the
+    global ``server/cache.db``. Accepts anything ``sqlite3.connect``
+    accepts (str or pathlib.Path).
+    """
+    conn = sqlite3.connect(str(path))
+    try:
+        _init_schema(conn)
+        conn.commit()
+    finally:
+        conn.close()
+
+
 class OddsCache:
     def __init__(self, path: Path):
         self.path = path
@@ -242,32 +293,7 @@ class OddsCache:
 
     def init(self) -> None:
         with self._conn() as c:
-            c.executescript(SCHEMA)
-            # Apply idempotent migrations — tolerate "duplicate column" errors
-            # if an older schema has already been bumped.
-            for stmt in _MIGRATIONS:
-                try:
-                    c.execute(stmt)
-                except sqlite3.OperationalError as e:
-                    if "duplicate column" not in str(e).lower():
-                        raise
-            # Ensure indexes exist after migrations. These cover the hot
-            # access patterns the audit identified:
-            #   - purge_stale_rows() filters on fetched_at every main-tier
-            #     cycle; without this index it's a full table scan on a
-            #     100MB+ table every few minutes.
-            #   - all endpoint scanners filter by sport_key (existing) and
-            #     usually also by market_key / is_prop_market — composite
-            #     lets SQLite skip prop rows at the query stage.
-            #   - purge_finished_games() and the FUTURE_WINDOW filter on
-            #     commence_time run on every dashboard/odds request.
-            for idx_stmt in (
-                "CREATE INDEX IF NOT EXISTS idx_odds_sport ON odds_snapshot(sport_key)",
-                "CREATE INDEX IF NOT EXISTS idx_odds_fetched_at ON odds_snapshot(fetched_at)",
-                "CREATE INDEX IF NOT EXISTS idx_odds_sport_market ON odds_snapshot(sport_key, market_key)",
-                "CREATE INDEX IF NOT EXISTS idx_odds_commence_time ON odds_snapshot(commence_time)",
-            ):
-                c.execute(idx_stmt)
+            _init_schema(c)
 
     def upsert(self, rows: Iterable[dict]) -> None:
         prepared = []
