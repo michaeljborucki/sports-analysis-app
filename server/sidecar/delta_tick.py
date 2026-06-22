@@ -24,6 +24,7 @@ import asyncio
 import logging
 import sqlite3
 import uuid
+import weakref
 from pathlib import Path
 
 from server.sidecar import active_signals
@@ -36,7 +37,26 @@ from server.sidecar.splitter import FLOOR
 
 logger = logging.getLogger(__name__)
 
-_signal_locks: dict[str, asyncio.Lock] = {}
+# WeakValueDictionary so locks self-evict once no caller holds them.
+# Without this, the dict grows unboundedly over uptime — every ev_row_id
+# we've ever ticked stays here forever (~200B/entry, never reclaimed).
+# As long as ANY caller holds a strong ref to the lock (i.e. inside
+# `async with lock`), it stays in the dict; once everyone drops it, the
+# next GC cycle reclaims it. asyncio.Lock is weak-referenceable.
+_signal_locks: weakref.WeakValueDictionary[str, asyncio.Lock] = (
+    weakref.WeakValueDictionary()
+)
+
+
+def _get_lock(ev_row_id: str) -> asyncio.Lock:
+    """Fetch-or-create the per-signal lock. The returned strong ref keeps
+    the lock alive in the dict for the duration of the caller's
+    `async with`; once dropped, the WeakValueDictionary lets it go."""
+    lock = _signal_locks.get(ev_row_id)
+    if lock is None:
+        lock = asyncio.Lock()
+        _signal_locks[ev_row_id] = lock
+    return lock
 
 
 async def run_delta_tick(db_path: Path) -> None:
@@ -60,7 +80,7 @@ async def _process_one(sig, db_path: Path, orchestrator) -> None:
 
     The asyncio.Lock prevents the next tick from firing a duplicate
     before the previous job's ``total_placed`` write commits."""
-    lock = _signal_locks.setdefault(sig.ev_row_id, asyncio.Lock())
+    lock = _get_lock(sig.ev_row_id)
     async with lock:
         resolved = resolve_ev_row_to_leg(sig.ev_row_id)
         if resolved is None:

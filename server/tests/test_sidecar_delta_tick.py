@@ -154,3 +154,25 @@ async def test_tick_skips_past_commence_time(db, monkeypatch):
         lambda: type("O", (), {"handle_place": None, "mode": "live"})(),
     )
     await run_delta_tick(db_path=db)
+
+
+def test_signal_locks_self_evict():
+    """The WeakValueDictionary backing _signal_locks must drop entries
+    once the caller releases the lock reference — otherwise the dict
+    grows unboundedly over uptime."""
+    import gc
+    from server.sidecar.delta_tick import _get_lock, _signal_locks
+
+    # Scoped block so the strong ref to the lock dies at end of block.
+    def make_and_drop():
+        lock = _get_lock("rid-evict-me")
+        assert "rid-evict-me" in _signal_locks
+        return lock  # caller drops this immediately
+
+    lock_ref = make_and_drop()
+    assert "rid-evict-me" in _signal_locks  # still held by lock_ref
+    del lock_ref
+    gc.collect()
+    # After GC of the last strong ref, the WeakValueDictionary entry
+    # should be gone.
+    assert "rid-evict-me" not in _signal_locks
