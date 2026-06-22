@@ -20,6 +20,7 @@ export const SECTIONS: Section[] = [
   { key: "props",     label: "Props",     scope: "per-sport" },
   { key: "picks",     label: "Picks",     scope: "per-sport" },
   { key: "edges",     label: "Edges",     scope: "global"    },
+  { key: "sidecar",   label: "Sidecar",   scope: "global"    },
   { key: "accounts",  label: "Accounts",  scope: "global"    },
   { key: "bets",      label: "Bets",      scope: "global"    },
   { key: "settings",  label: "Settings",  scope: "global"    },
