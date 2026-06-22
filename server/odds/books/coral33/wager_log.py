@@ -377,7 +377,7 @@ async def fetch_account_wager_log(
     Cost: weeks_back × 7 calls per account (~84 for 12 weeks). At 200ms/
     call that's ~17s per account, run-once-then-cache.
     """
-    client = Coral33Client(cred.customer_id, cred.password)
+    client = Coral33Client(cred.customer_id, cred.password, proxy_url=cred.proxy_url)
     try:
         await client.authenticate()
     except (Coral33AuthError, Coral33APIError) as e:
