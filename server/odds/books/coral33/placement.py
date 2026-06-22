@@ -209,3 +209,157 @@ def build_get_pending_by_ticket(
         "path": "/cloud/api/Report/getPendingByTicket",
         "RRO": 0,
     }
+
+
+# --- Coral33Placer -----------------------------------------------------------
+
+@dataclass
+class PlacementResult:
+    ticket_number: int | None
+    dry_run: bool
+    accepted_payload: dict | None
+    would_be_payload: dict | None     # set in dry-run; the body that WOULD have been sent
+    decimal_payout: float             # from getInfoParlay × leg's decimal odds
+    expected_win: float               # decimal_payout × stake - stake
+
+
+class PlacementError(Exception):
+    """Raised when the placement cannot proceed (sig missing, env gate, etc.)."""
+
+
+class Coral33Placer:
+    """Orchestrates the five-call open-spot parlay placement chain."""
+
+    LIVE_ENV_VAR = "CORAL33_PLACEMENT_LIVE"
+
+    def __init__(
+        self,
+        client: Any,                  # Coral33Client or FakeCoral33Client
+        agent_id: str,
+        store: str,
+        cust_profile: str,
+        parlay_name: str = "10 team",
+    ):
+        self.client = client
+        self.agent_id = agent_id
+        self.store = store
+        self.cust_profile = cust_profile
+        self.parlay_name = parlay_name
+        self._specs_cache: dict | None = None
+
+    async def place_open_parlay(
+        self,
+        ev_leg: LegSpec,
+        stake_dollars: float,
+        live: bool = False,
+    ) -> PlacementResult:
+        if live and os.environ.get(self.LIVE_ENV_VAR, "").lower() != "true":
+            raise PlacementError(
+                f"live placement requires {self.LIVE_ENV_VAR}=true"
+            )
+
+        # 1. getParlaySpecs (cached per Placer instance)
+        if self._specs_cache is None:
+            self._specs_cache = await self.client.post_json(
+                "getParlaySpecs",
+                build_get_parlay_specs(self.client.customer_id, self.parlay_name),
+            )
+
+        # 2. getInfoParlay — payout multiplier for a 2-team card
+        selects = f"{ev_leg.game_num}-{ev_leg.line_type}|{ev_leg.chosen_team_id}^0"
+        info = await self.client.post_json(
+            "getInfoParlay",
+            build_get_info_parlay(
+                customer_id=self.client.customer_id,
+                parlay_name=self.parlay_name,
+                teams=2,
+                selects=selects,
+            ),
+        )
+        two_team_card = next(
+            (c for c in info["INFO"]["CARD"] if c["GamesPicked"] == 2),
+            None,
+        )
+        if two_team_card is None:
+            raise PlacementError("getInfoParlay missing 2-team card row")
+        decimal_multiplier = two_team_card["MoneyLine"]
+        decimal_payout = ev_leg.price_decimal * decimal_multiplier
+        expected_win = decimal_payout * stake_dollars - stake_dollars
+        decimal_win_amount = ev_leg.price_decimal * stake_dollars - stake_dollars
+
+        # 3. checkWagerLineMulti — line snapshot + DELAY.sig
+        position = int(time.time() * 1000) % 10**8   # client-side unique id
+        check = await self.client.post_json(
+            "checkWagerLineMulti",
+            build_check_wager_line_multi_parlay(
+                customer_id=self.client.customer_id,
+                leg=ev_leg,
+                position=position,
+                risk_dollars=stake_dollars,
+                win_dollars=expected_win,
+            ),
+        )
+        delay = check.get("DELAY")
+        if not delay or "sig" not in delay:
+            raise PlacementError("checkWagerLineMulti returned no DELAY.sig")
+
+        # Build the insert payload regardless of mode (audit/preview)
+        doc_num = int(time.time() * 1000) % 10**8
+        insert_body = build_insert_wager_parlay(
+            customer_id=self.client.customer_id,
+            agent_id=self.agent_id,
+            store=self.store,
+            cust_profile=self.cust_profile,
+            leg=ev_leg,
+            stake_dollars=stake_dollars,
+            win_dollars=expected_win,
+            decimal_win_amount=decimal_win_amount,
+            parlay_name=self.parlay_name,
+            doc_num=doc_num,
+            delay=delay,
+        )
+
+        if not live:
+            # Dry-run: stop here, return the would-be payload
+            return PlacementResult(
+                ticket_number=None,
+                dry_run=True,
+                accepted_payload=None,
+                would_be_payload=insert_body,
+                decimal_payout=decimal_payout,
+                expected_win=expected_win,
+            )
+
+        # 4. insertWagerParlay — actually place
+        insert_resp = await self.client.post_json(
+            "insertWagerParlay", insert_body
+        )
+        status = insert_resp.get("STATUS", {})
+        if status.get("STATE") != 1 or "DOC" not in status:
+            raise PlacementError(
+                f"insertWagerParlay rejected: {insert_resp}"
+            )
+        ticket_number = int(status["DOC"])
+
+        # 5. getPendingByTicket — receipt confirmation
+        try:
+            await self.client.post_json(
+                "getPendingByTicket",
+                build_get_pending_by_ticket(
+                    agent_id=self.agent_id,
+                    customer_id=self.client.customer_id,
+                    ticket_number=ticket_number,
+                ),
+            )
+        except Exception:
+            # Receipt fetch is non-fatal — the bet landed.
+            pass
+
+        return PlacementResult(
+            ticket_number=ticket_number,
+            dry_run=False,
+            accepted_payload=insert_resp,
+            would_be_payload=None,
+            decimal_payout=decimal_payout,
+            expected_win=expected_win,
+        )
