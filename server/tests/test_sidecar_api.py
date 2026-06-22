@@ -304,6 +304,27 @@ def test_get_run_by_job_id_returns_rows(client, isolated_paths):
 
 
 # --------------------------------------------------------------------------
+# /settings
+# --------------------------------------------------------------------------
+
+def test_get_sidecar_settings_defaults(client, tmp_path, monkeypatch):
+    """With no overrides set, /api/sidecar/settings returns the documented
+    defaults: $10,000 bankroll, half-Kelly. Point the settings module at an
+    empty tmp file so we don't depend on the developer's local
+    user_settings.json having (or not having) sidecar_* keys."""
+    empty_settings = tmp_path / "empty_user_settings.json"
+    empty_settings.write_text("{}")
+    monkeypatch.setattr(
+        "server.sidecar.settings._settings_path",
+        lambda: empty_settings,
+    )
+
+    r = client.get("/api/sidecar/settings")
+    assert r.status_code == 200
+    assert r.json() == {"bankroll": 10000, "default_kelly": "half"}
+
+
+# --------------------------------------------------------------------------
 # /active-signals
 # --------------------------------------------------------------------------
 

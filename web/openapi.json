@@ -1335,6 +1335,28 @@
         }
       }
     },
+    "/api/sidecar/settings": {
+      "get": {
+        "tags": [
+          "sidecar"
+        ],
+        "summary": "Get Sidecar Settings",
+        "description": "Return the sidecar-specific user settings (bankroll + default\nKelly fraction). The /sidecar SignalFeed reads this to render the\nKelly-derived dollar stake on each row and the AutoPlace button\nlabel without opening the confirm modal.",
+        "operationId": "get_sidecar_settings_api_sidecar_settings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SidecarSettingsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/sidecar/active-signals": {
       "get": {
         "tags": [
@@ -4430,6 +4452,25 @@
           "reload_status"
         ],
         "title": "SettingsUpdateResponse"
+      },
+      "SidecarSettingsResponse": {
+        "properties": {
+          "bankroll": {
+            "type": "integer",
+            "title": "Bankroll"
+          },
+          "default_kelly": {
+            "type": "string",
+            "title": "Default Kelly"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bankroll",
+          "default_kelly"
+        ],
+        "title": "SidecarSettingsResponse",
+        "description": "Bankroll + default Kelly used by the sidecar dashboard.\n\nThese are stored as opaque extra keys in user_settings.json (the\nUserSettings dataclass deliberately ignores them \u2014 see Task B3), so we\nexpose them via a small dedicated endpoint rather than the general\n/api/settings response. The /sidecar SignalFeed reads this to display\nthe Kelly-derived dollar stake on each row + AutoPlace button label."
       },
       "SportModel": {
         "properties": {

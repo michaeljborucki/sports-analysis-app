@@ -1,9 +1,12 @@
 "use client";
 import { useState } from "react";
+import useSWR from "swr";
 import clsx from "clsx";
 import { Zap } from "lucide-react";
 
+import { fetchJson } from "@/lib/api";
 import { ConfirmModal } from "./ConfirmModal";
+import { kellyToPct, type SidecarSettingsResponse } from "./SignalFeed";
 
 export interface AutoPlaceButtonProps {
   evRowId: string;
@@ -33,6 +36,22 @@ export interface AutoPlaceButtonProps {
  */
 export function AutoPlaceButton(props: AutoPlaceButtonProps) {
   const [open, setOpen] = useState(false);
+
+  // Pull the sidecar bankroll + default Kelly so the button label can show
+  // the dollar stake the modal will default to. Hits the SWR cache when
+  // the SignalFeed has already fetched this same key — no extra round-trip.
+  const { data: settings } = useSWR<SidecarSettingsResponse>(
+    "/api/sidecar/settings",
+    fetchJson,
+    { refreshInterval: 60_000 },
+  );
+  const stake = settings
+    ? Math.round(
+        kellyToPct(settings.default_kelly, props.fullKellyPct) *
+          settings.bankroll,
+      )
+    : null;
+
   return (
     <>
       <button
@@ -53,7 +72,9 @@ export function AutoPlaceButton(props: AutoPlaceButtonProps) {
         title="Auto-place this +EV parlay via the sidecar"
       >
         <Zap size={10} aria-hidden />
-        Auto-place
+        {stake !== null
+          ? `Auto-place $${stake.toLocaleString()}`
+          : "Auto-place"}
       </button>
       {open && (
         <ConfirmModal

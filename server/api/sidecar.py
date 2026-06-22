@@ -38,7 +38,12 @@ from server.sidecar.audit import fetch_job, fetch_placements
 from server.sidecar.mode_store import SidecarMode
 from server.sidecar.models import SidecarPlaceRequest
 from server.sidecar.resolve import resolve_ev_row_to_leg
-from server.sidecar.settings import KellyFraction, get_bankroll, kelly_to_pct
+from server.sidecar.settings import (
+    KellyFraction,
+    get_bankroll,
+    get_default_kelly,
+    kelly_to_pct,
+)
 from server.sidecar.splitter import plan_splits
 
 
@@ -61,6 +66,20 @@ class ModeResponse(BaseModel):
 
 class ModeBody(BaseModel):
     mode: str  # 'off' | 'dry-run' | 'live'
+
+
+class SidecarSettingsResponse(BaseModel):
+    """Bankroll + default Kelly used by the sidecar dashboard.
+
+    These are stored as opaque extra keys in user_settings.json (the
+    UserSettings dataclass deliberately ignores them — see Task B3), so we
+    expose them via a small dedicated endpoint rather than the general
+    /api/settings response. The /sidecar SignalFeed reads this to display
+    the Kelly-derived dollar stake on each row + AutoPlace button label.
+    """
+
+    bankroll: int
+    default_kelly: str  # 'full' | 'half' | 'quarter'
 
 
 def _audit_conn() -> sqlite3.Connection:
@@ -219,6 +238,18 @@ def build_router() -> APIRouter:
         except Exception:  # noqa: BLE001
             logger.exception("failed to propagate new mode to orchestrator")
         return ModeResponse(mode=new_mode.value)
+
+    @router.get("/settings", response_model=SidecarSettingsResponse)
+    def get_sidecar_settings() -> SidecarSettingsResponse:
+        """Return the sidecar-specific user settings (bankroll + default
+        Kelly fraction). The /sidecar SignalFeed reads this to render the
+        Kelly-derived dollar stake on each row and the AutoPlace button
+        label without opening the confirm modal.
+        """
+        return SidecarSettingsResponse(
+            bankroll=get_bankroll(),
+            default_kelly=get_default_kelly().value,
+        )
 
     @router.get("/active-signals")
     def get_active_signals() -> list[dict]:

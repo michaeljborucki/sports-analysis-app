@@ -643,6 +643,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sidecar/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Sidecar Settings
+         * @description Return the sidecar-specific user settings (bankroll + default
+         *     Kelly fraction). The /sidecar SignalFeed reads this to render the
+         *     Kelly-derived dollar stake on each row and the AutoPlace button
+         *     label without opening the confirm modal.
+         */
+        get: operations["get_sidecar_settings_api_sidecar_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sidecar/active-signals": {
         parameters: {
             query?: never;
@@ -1825,6 +1848,22 @@ export interface components {
             /** Reload Status */
             reload_status: string;
         };
+        /**
+         * SidecarSettingsResponse
+         * @description Bankroll + default Kelly used by the sidecar dashboard.
+         *
+         *     These are stored as opaque extra keys in user_settings.json (the
+         *     UserSettings dataclass deliberately ignores them — see Task B3), so we
+         *     expose them via a small dedicated endpoint rather than the general
+         *     /api/settings response. The /sidecar SignalFeed reads this to display
+         *     the Kelly-derived dollar stake on each row + AutoPlace button label.
+         */
+        SidecarSettingsResponse: {
+            /** Bankroll */
+            bankroll: number;
+            /** Default Kelly */
+            default_kelly: string;
+        };
         /** SportModel */
         SportModel: {
             /** Key */
@@ -2858,6 +2897,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_sidecar_settings_api_sidecar_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SidecarSettingsResponse"];
                 };
             };
         };
