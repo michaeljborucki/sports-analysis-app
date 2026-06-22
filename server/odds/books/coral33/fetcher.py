@@ -45,6 +45,14 @@ CAPTCHA_BACKOFF = 300
 # fire of any sport past its second scheduled fire.
 _STARTUP_STAGGER = (0, max(15, min(60, CYCLE_INTERVAL)))
 
+# Coral33 has no published rate limit, but bursting subtype requests is the
+# fastest path to captcha gating. Cap concurrent Lines requests per fetcher
+# instance at 4 — large enough to parallelize 18 subtypes × 2 wager types
+# without each cycle stretching past CYCLE_INTERVAL, small enough that the
+# same account never has more than a handful of in-flight HTTP requests at
+# once (which is what the captcha heuristic appears to fingerprint on).
+_CORAL33_CONCURRENCY = 4
+
 
 def _row_key(row: dict) -> tuple:
     """Cache primary-key tuple — same shape OddsCache.upsert keys on so two
@@ -152,6 +160,11 @@ class Coral33Fetcher:
         # Observability for the Settings / manual-refresh UI.
         self._last_cycle_at: datetime | None = None
         self._last_cycle_rows: dict[str, int] = {}   # sport → row count
+        # Per-instance semaphore on Lines requests. Gates the inner
+        # `_safe_get_league_lines` so peak concurrent HTTP calls stays at
+        # _CORAL33_CONCURRENCY regardless of how many subtype-pairs are
+        # gathered above. Same shape as the Odds API fetcher's `self._sem`.
+        self._sem = asyncio.Semaphore(_CORAL33_CONCURRENCY)
 
     @property
     def is_running(self) -> bool:
@@ -281,12 +294,10 @@ class Coral33Fetcher:
         )
         if purged:
             logger.info("coral33 %s: purged %d live rows", sport_key, purged)
-        # Row-level TTL for dropped lines — applies to ALL books, not just
-        # coral33. Piggy-backing on coral33's cycle so it runs even if the
-        # Odds API fetcher is paused (manual Latest/Snapshot mode).
-        stale = self.cache.purge_stale_rows(now=now)
-        if stale:
-            logger.info("coral33 %s: purged %d stale rows (TTL)", sport_key, stale)
+        # Note: row-level TTL via `purge_stale_rows` used to run here AND in
+        # the Odds API fetcher's `_run_main`. It's now a single shared
+        # APScheduler job in `server/main.py` (id="purge_stale_rows", 60s
+        # interval) so we don't scan odds_snapshot 20+ times per minute.
 
         matcher = self._matcher()
         captcha_hit = False
@@ -298,14 +309,22 @@ class Coral33Fetcher:
             ingest_correlation: bool = False,
         ) -> int:
             """For each (sportType, subtype, period) tuple, hit coral33 with
-            wagerType=Straight AND wagerType=Parlay in parallel. Dedupe the
-            two normalized row sets by (event_id, market_key, outcome_name,
-            outcome_point) — rows present in both → wager_type='both', only
-            Straight → 'straight', only Parlay → 'parlay'. Then upsert once.
+            wagerType=Straight AND wagerType=Parlay. Dedupe the two normalized
+            row sets by (event_id, market_key, outcome_name, outcome_point) —
+            rows present in both → wager_type='both', only Straight →
+            'straight', only Parlay → 'parlay'. Then upsert once.
+
+            Subtype tuples are fanned out via `asyncio.gather`; the inner
+            `_safe_get_league_lines` calls all acquire `self._sem`, so peak
+            HTTP concurrency stays at _CORAL33_CONCURRENCY (4) regardless of
+            how many subtypes are scheduled. 18 subtypes × 2 wager types
+            takes 9-12 sem-bounded slots instead of ~36s serial.
             """
             nonlocal captcha_hit
-            tier_rows = 0
-            for sport_type, subtype, period in calls:
+
+            async def fetch_pair(
+                sport_type: str, subtype: str, period: str,
+            ) -> tuple[str, str, str, dict | None, dict | None]:
                 straight_data, parlay_data = await asyncio.gather(
                     self._safe_get_league_lines(
                         sport_type, subtype, period, "Straight", sport_key,
@@ -314,6 +333,23 @@ class Coral33Fetcher:
                         sport_type, subtype, period, "Parlay", sport_key,
                     ),
                 )
+                return sport_type, subtype, period, straight_data, parlay_data
+
+            pair_results = await asyncio.gather(
+                *(fetch_pair(s, sub, p) for s, sub, p in calls),
+                return_exceptions=True,
+            )
+
+            tier_rows = 0
+            for r in pair_results:
+                if isinstance(r, Exception):
+                    # Unexpected exception (anything that isn't
+                    # Coral33APIError, which _safe_get_league_lines
+                    # already swallows). Log and continue so one bad
+                    # subtype doesn't kill the cycle.
+                    logger.exception("coral33 pull_and_normalize tuple failed")
+                    continue
+                sport_type, subtype, period, straight_data, parlay_data = r
                 if straight_data is None and parlay_data is None:
                     continue
                 # Captcha on either pull aborts the whole tier — coral will
@@ -443,8 +479,9 @@ class Coral33Fetcher:
                 return None
             return self._correlation_index.get(correlation_id)
 
-        tier_rows = 0
-        for sport_type, subtype, period in sport_cfg.prop_calls:
+        async def fetch_pair(
+            sport_type: str, subtype: str, period: str,
+        ) -> tuple[str, str, str, dict | None, dict | None]:
             straight_data, parlay_data = await asyncio.gather(
                 self._safe_get_league_lines(
                     sport_type, subtype, period, "Straight", sport_key,
@@ -453,6 +490,21 @@ class Coral33Fetcher:
                     sport_type, subtype, period, "Parlay", sport_key,
                 ),
             )
+            return sport_type, subtype, period, straight_data, parlay_data
+
+        # Fan out subtype pairs; `_safe_get_league_lines` acquires
+        # `self._sem` so peak in-flight stays at _CORAL33_CONCURRENCY.
+        pair_results = await asyncio.gather(
+            *(fetch_pair(s, sub, p) for s, sub, p in sport_cfg.prop_calls),
+            return_exceptions=True,
+        )
+
+        tier_rows = 0
+        for r in pair_results:
+            if isinstance(r, Exception):
+                logger.exception("coral33 _pull_props tuple failed")
+                continue
+            sport_type, subtype, period, straight_data, parlay_data = r
             if straight_data is None and parlay_data is None:
                 continue
             if (
@@ -498,8 +550,9 @@ class Coral33Fetcher:
         team_to_score_first, yes_no_score_first_inning, spreads_reg_time,
         etc.) — the existing scanners ignore these keys until/unless we
         wire them in explicitly."""
-        tier_rows = 0
-        for sport_type, subtype, period, kind in sport_cfg.extra_calls:
+        async def fetch_pair(
+            sport_type: str, subtype: str, period: str, kind: str,
+        ) -> tuple[str, str, str, str, dict | None, dict | None]:
             straight_data, parlay_data = await asyncio.gather(
                 self._safe_get_league_lines(
                     sport_type, subtype, period, "Straight", sport_key,
@@ -508,6 +561,20 @@ class Coral33Fetcher:
                     sport_type, subtype, period, "Parlay", sport_key,
                 ),
             )
+            return sport_type, subtype, period, kind, straight_data, parlay_data
+
+        # Fan out extras-tuple pairs; `self._sem` caps in-flight HTTP.
+        pair_results = await asyncio.gather(
+            *(fetch_pair(s, sub, p, k) for s, sub, p, k in sport_cfg.extra_calls),
+            return_exceptions=True,
+        )
+
+        tier_rows = 0
+        for r in pair_results:
+            if isinstance(r, Exception):
+                logger.exception("coral33 _pull_extras tuple failed")
+                continue
+            sport_type, subtype, period, kind, straight_data, parlay_data = r
             if straight_data is None and parlay_data is None:
                 continue
             if (
@@ -553,17 +620,25 @@ class Coral33Fetcher:
     ) -> dict | None:
         """Wrap get_league_lines in a try/except so a single-mode failure
         (Parlay returning 500 while Straight is fine, etc.) doesn't kill the
-        whole tier — caller treats `None` as 'no data this side'."""
-        try:
-            return await self.client.get_league_lines(
-                sport_type, subtype, period, wager_type=wager_type,
-            )
-        except Coral33APIError as e:
-            logger.warning(
-                "coral33 %s %s/%s/%s [%s]: %s",
-                sport_key, sport_type, subtype, period, wager_type, e,
-            )
-            return None
+        whole tier — caller treats `None` as 'no data this side'.
+
+        Gated by `self._sem` so the number of in-flight Lines requests
+        across all gathered subtype × wager_type pairs stays at
+        _CORAL33_CONCURRENCY. Without this gate, gathering 18 subtypes ×
+        2 wager_types = 36 concurrent HTTP calls per cycle and Coral33's
+        captcha heuristic trips within minutes.
+        """
+        async with self._sem:
+            try:
+                return await self.client.get_league_lines(
+                    sport_type, subtype, period, wager_type=wager_type,
+                )
+            except Coral33APIError as e:
+                logger.warning(
+                    "coral33 %s %s/%s/%s [%s]: %s",
+                    sport_key, sport_type, subtype, period, wager_type, e,
+                )
+                return None
 
     async def refresh_now(self, sport_keys: list[str] | None = None) -> dict:
         """Trigger an immediate cycle for the given sports (or all configured

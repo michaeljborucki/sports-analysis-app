@@ -114,7 +114,7 @@ def create_app() -> FastAPI:
     # closing_lines row per outcome. The job is idempotent on the PK, so
     # re-captures within the window overwrite with the latest fair line.
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
-    from datetime import datetime as _dt, timezone as _tz
+    from datetime import datetime as _dt, timedelta as _td, timezone as _tz
     clv_scheduler = AsyncIOScheduler()
 
     def _capture_tick():
@@ -126,6 +126,20 @@ def create_app() -> FastAPI:
                 cache.purge_old_closing_lines(_dt.now(_tz.utc))
         except Exception:
             logging.exception("CLV capture tick failed")
+
+    def _purge_stale_rows_tick():
+        """Shared row-level TTL sweep. Used to run from BOTH the Odds API
+        fetcher (~13 sports) AND the coral33 fetcher (~7 sports) every 60s,
+        producing 20+ identical scans/min over the same odds_snapshot table.
+        Consolidated to a single 60s job so the table is scanned once per
+        minute instead of per-sport-per-fetcher.
+        """
+        try:
+            stale = cache.purge_stale_rows(now=_dt.now(_tz.utc))
+            if stale:
+                logging.info("purged %d stale rows (shared TTL)", stale)
+        except Exception:
+            logging.exception("purge_stale_rows tick failed")
 
     async def _wager_log_refresh_tick():
         """Re-pull the wager log so newly-placed bets appear without the
@@ -196,6 +210,14 @@ def create_app() -> FastAPI:
             # Polymarket is also public/no-auth. Always start in LIVE.
             polymarket_fetcher.start_all()
 
+            # Three 60s jobs (clv_capture, kalshi_orderbook_poll,
+            # sidecar_delta_tick) all used to fire on the same wall-clock
+            # second every minute, spiking the event loop's I/O queue.
+            # Stagger first-fire by 0s / 20s / 40s so each owns its own
+            # third of the minute. APScheduler keeps the offset by virtue
+            # of the next_run_time anchor + fixed interval.
+            now_utc = _dt.now(_tz.utc)
+
             # CLV capture only runs in LIVE — there's no point devigging
             # the frozen SNAPSHOT cache (would just freeze a single
             # closing-line snapshot to whatever the snapshot file says).
@@ -203,7 +225,24 @@ def create_app() -> FastAPI:
                 _capture_tick,
                 trigger="interval",
                 seconds=60,
+                next_run_time=now_utc,  # T+0s — stagger anchor
                 id="clv_capture",
+                replace_existing=True,
+                max_instances=1,
+            )
+
+            # Shared row-level TTL sweep — replaces the per-fetcher
+            # `purge_stale_rows` calls that previously ran from both the
+            # Odds API fetcher (~13 sports) and the coral33 fetcher (~7
+            # sports). One scan/min instead of 20+. Offset by 10s so it
+            # doesn't compete with the 0/20/40 stagger trio for the same
+            # loop slot.
+            clv_scheduler.add_job(
+                _purge_stale_rows_tick,
+                trigger="interval",
+                seconds=60,
+                next_run_time=now_utc + _td(seconds=10),
+                id="purge_stale_rows",
                 replace_existing=True,
                 max_instances=1,
             )
@@ -259,6 +298,7 @@ def create_app() -> FastAPI:
             clv_scheduler.add_job(
                 _kalshi_orderbook_tick,
                 trigger="interval", seconds=60,
+                next_run_time=now_utc + _td(seconds=20),  # T+20s stagger
                 id="kalshi_orderbook_poll",
                 replace_existing=True, max_instances=1,
             )
@@ -315,6 +355,7 @@ def create_app() -> FastAPI:
             clv_scheduler.add_job(
                 _sidecar_delta_tick_job,
                 trigger="interval", seconds=60,
+                next_run_time=now_utc + _td(seconds=40),  # T+40s stagger
                 id="sidecar_delta_tick",
                 replace_existing=True, max_instances=1, coalesce=True,
             )
@@ -336,10 +377,11 @@ def create_app() -> FastAPI:
 
             clv_scheduler.start()
             logging.info(
-                "CLV capture (60s) + wager-log refresh (30min) "
+                "CLV capture (60s, T+0) + purge_stale_rows (60s, T+10) "
+                "+ wager-log refresh (30min) "
                 "+ kalshi/polymarket portfolio sync (5min) "
-                "+ kalshi orderbook depth poll (60s) "
-                "+ sidecar delta tick (60s) schedulers started"
+                "+ kalshi orderbook depth poll (60s, T+20) "
+                "+ sidecar delta tick (60s, T+40) schedulers started"
             )
         else:
             logging.info(

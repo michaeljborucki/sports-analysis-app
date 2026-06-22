@@ -74,6 +74,14 @@ class FetcherRegistry:
         self._resolved_keys: dict[str, tuple[list[str], datetime]] = {}
         self._market_cfg: dict[str, MarketConfig] = {}
         self._event_sport_map: dict[str, str] = {}
+        # Single per-instance semaphore caps simultaneous in-flight Odds
+        # API requests across the WHOLE fetcher — main-tier sport-key fan-
+        # out, per-event tier event fan-out, props tier event fan-out, and
+        # refresh_all_now's tier-runner fan-out all acquire it. One shared
+        # cap is the only safe design: per-tier semaphores let parallel
+        # tier ticks collectively exceed the plan's req/sec limit and
+        # trigger 429 EXCEEDED_FREQ_LIMIT bans.
+        self._sem = asyncio.Semaphore(ODDS_API_CONCURRENCY)
 
     @property
     def is_running(self) -> bool:
@@ -175,6 +183,12 @@ class FetcherRegistry:
                 # `last_fetch_at` chip stale for 10-15 min stretches.
                 # 120s lets the next slot pick up the deferred firing.
                 misfire_grace_time=120,
+                # Jitter (matches Kalshi + coral33). Without it, all 27
+                # (sport × tier) jobs fire on the same wall-clock second
+                # at startup and drift in lockstep — bursting the Odds
+                # API's req/sec ceiling on cycle starts even though
+                # _sem caps concurrent requests.
+                jitter=30,
             )
             scheduled.append((sport, tier, interval))
         if not self.scheduler.running:
@@ -208,8 +222,8 @@ class FetcherRegistry:
     # ---------- Ad-hoc refresh ----------
 
     def refresh_all_now(self) -> dict:
-        """Fire every enabled tier once, in parallel, right now — independent
-        of the scheduled cadence. Fire-and-forget: returns a summary dict
+        """Fire every enabled tier once, right now — independent of the
+        scheduled cadence. Fire-and-forget: returns a summary dict
         immediately while the tasks run in the background. Used by the UI
         refresh button so the user can force a pull without waiting for the
         next 5-minute tick.
@@ -217,22 +231,42 @@ class FetcherRegistry:
         Safe to call while scheduled jobs are active — each tier runner
         writes via UPSERT, so concurrent pulls only cost a duplicate request
         at worst, they never corrupt the cache.
+
+        Concurrency note: ~27 tiers × N events fan out to hundreds of
+        Odds API requests. `self._sem` already caps the in-flight HTTP
+        count, but we ALSO cap the number of concurrent TIER-RUNNERS at
+        ODDS_API_CONCURRENCY so we don't queue 100+ semaphore-waiters at
+        once (which would make every refresh click take 30s+ to drain).
         """
         enabled = self.all_enabled_tiers()
         if not enabled:
             return {"status": "no_tiers_enabled", "triggered": []}
         if not self.config.odds_api_key:
             return {"status": "no_api_key", "triggered": []}
+
+        # Outer cap on simultaneous tier-runner tasks. Reuses the same
+        # value as `_sem` — small enough to keep the request queue
+        # tractable, large enough to actually parallelize across sports.
+        runner_sem = asyncio.Semaphore(ODDS_API_CONCURRENCY)
+
+        async def _bounded(sport: Sport, tier: TierConfig) -> None:
+            async with runner_sem:
+                try:
+                    await self._tier_runner(sport, tier)()
+                except Exception:
+                    logger.exception(
+                        "refresh_all_now: tier %s:%s failed",
+                        sport.key, tier.name,
+                    )
+
         triggered: list[str] = []
         for sport, tier in enabled:
-            runner = self._tier_runner(sport, tier)
-            # create_task schedules on the running event loop; returns
-            # before the task actually executes. The task completes or
-            # errors in the background; errors are already logged inside
-            # each tier runner.
-            asyncio.create_task(runner())
+            asyncio.create_task(_bounded(sport, tier))
             triggered.append(f"{sport.key}:{tier.name}")
-        logger.info("refresh_all_now: triggered %d tiers", len(triggered))
+        logger.info(
+            "refresh_all_now: triggered %d tiers (outer cap=%d)",
+            len(triggered), ODDS_API_CONCURRENCY,
+        )
         return {"status": "triggered", "triggered": triggered}
 
     # ---------- Tier runners ----------
@@ -304,35 +338,62 @@ class FetcherRegistry:
             logger.warning("No Odds API keys active for %s — skipping", sport.key)
             return
         now = datetime.now(timezone.utc)
+
+        # Fan out across sport keys (tennis has 4-8 ATP/WTA tournament
+        # keys; soccer has ~12 league keys). Serial iteration cost 3s+
+        # of wall time per cycle even when each key returns in <500ms.
+        # Same `self._sem` as per-event/props tiers, so cross-tier
+        # concurrency stays under ODDS_API_CONCURRENCY.
+        async def fetch_one(api_key: str) -> tuple[int, dict, list[dict]]:
+            async with self._sem:
+                try:
+                    games, rate = await self.client.fetch_game_level(
+                        sport_key=api_key,
+                        markets=tier.markets,
+                        regions=tier.regions,
+                    )
+                except OddsAPIError as e:
+                    logger.warning("main %s key %s: %s", sport.key, api_key, e)
+                    self._last_error[f"{sport.key}:main"] = str(e)
+                    return 0, {}, []
+            rows = normalize_odds_response(
+                games, fetched_at=now, sport_key=sport.key
+            )
+            if rows:
+                # Cache upsert is GIL-bound sqlite, safe to call from the
+                # task body — lands rows as each key resolves rather than
+                # buffering until the whole batch completes.
+                self.cache.upsert(rows)
+            return len(rows), rate or {}, games
+
+        results = await asyncio.gather(
+            *(fetch_one(k) for k in keys), return_exceptions=True,
+        )
+
         total = 0
         last_rate: dict = {}
-        for api_key in keys:
-            try:
-                games, rate = await self.client.fetch_game_level(
-                    sport_key=api_key, markets=tier.markets, regions=tier.regions
+        for idx, r in enumerate(results):
+            if isinstance(r, Exception):
+                # An OddsAPIError is already logged + caught inside
+                # fetch_one; anything reaching here is an unexpected
+                # exception (normalize bug, OOM, etc.). Don't kill the
+                # cycle — log and continue so a single bad key doesn't
+                # block the others.
+                logger.exception(
+                    "main %s key %s: unexpected error", sport.key, keys[idx],
                 )
-                last_rate = rate or last_rate
-                rows = normalize_odds_response(
-                    games, fetched_at=now, sport_key=sport.key
-                )
-                if rows:
-                    self.cache.upsert(rows)
-                    total += len(rows)
-                # Remember which tournament each event belongs to, for
-                # per-event fetches later.
-                for game in games:
-                    if isinstance(game, dict) and game.get("id"):
-                        self._event_sport_map[game["id"]] = api_key
-            except OddsAPIError as e:
-                logger.warning("main %s key %s: %s", sport.key, api_key, e)
-                self._last_error[f"{sport.key}:main"] = str(e)
+                continue
+            n_rows, rate, games = r
+            total += n_rows
+            if rate:
+                last_rate = rate
+            # Remember which tournament each event belongs to, for
+            # per-event fetches later.
+            for game in games:
+                if isinstance(game, dict) and game.get("id"):
+                    self._event_sport_map[game["id"]] = keys[idx]
+
         self.cache.purge_finished_games(now=now)
-        # Row-level TTL — clears rows whose book stopped posting (UPSERT
-        # alone never removes them). Runs piggy-backed on each main-tier
-        # cycle so it's frequent without a separate scheduler.
-        stale = self.cache.purge_stale_rows(now=now)
-        if stale:
-            logger.info("purged %d stale rows (fetched_at older than TTL)", stale)
         # Stamp freshness regardless of whether the API returned rate-limit
         # headers — without this, the UI's "stale Nm" chip drifts arbitrarily
         # far when the API drops headers (cached responses, edge errors, etc.)
@@ -356,9 +417,8 @@ class FetcherRegistry:
         resolved_fallback = await self._resolve_keys(sport)
 
         # Per-event fetch: returns (rows_appended_count, rate_info). Wrapped
-        # in a semaphore so we cap simultaneous in-flight Odds API requests.
-        sem = asyncio.Semaphore(ODDS_API_CONCURRENCY)
-
+        # in `self._sem` so we cap simultaneous in-flight Odds API requests
+        # ACROSS the whole fetcher (main + per-event + props).
         async def fetch_one(ev: dict) -> tuple[int, dict]:
             event_id = ev["event_id"]
             api_key = self._event_sport_map.get(event_id)
@@ -366,7 +426,7 @@ class FetcherRegistry:
                 if not resolved_fallback:
                     return 0, {}
                 api_key = resolved_fallback[0]
-            async with sem:
+            async with self._sem:
                 try:
                     data, rate = await self.client.fetch_event_markets(
                         sport_key=api_key,
@@ -432,8 +492,8 @@ class FetcherRegistry:
         # Same parallelism pattern as _run_per_event — props payloads are
         # the largest of any tier (a 12-market call on a big NBA slate can
         # be 100 KB+), so concurrency here has the biggest wall-clock impact.
-        sem = asyncio.Semaphore(ODDS_API_CONCURRENCY)
-
+        # Shares `self._sem` with main + per-event tiers — the cap is global
+        # across the fetcher, not per-tier.
         async def fetch_one(ev: dict) -> tuple[int, dict]:
             event_id = ev["event_id"]
             api_key = self._event_sport_map.get(event_id)
@@ -441,7 +501,7 @@ class FetcherRegistry:
                 if not resolved_fallback:
                     return 0, {}
                 api_key = resolved_fallback[0]
-            async with sem:
+            async with self._sem:
                 try:
                     data, rate = await self.client.fetch_event_markets(
                         sport_key=api_key,
