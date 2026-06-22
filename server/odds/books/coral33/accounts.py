@@ -38,6 +38,8 @@ class AccountCredential:
     customer_id: str
     password: str
     label: str | None = None
+    proxy_url: str | None = None
+    max_parlay_stake: int = 100   # standard cap; Stanley overrides to 150
 
 
 @dataclass
@@ -173,9 +175,11 @@ def load_account_credentials() -> list[AccountCredential]:
             entries = json.loads(raw)
             return [
                 AccountCredential(
-                    customer_id=e["customer_id"],
+                    customer_id=e["customer_id"].strip(),
                     password=e["password"],
                     label=e.get("label"),
+                    proxy_url=e.get("proxy_url"),
+                    max_parlay_stake=int(e.get("max_parlay_stake", 100)),
                 )
                 for e in entries
                 if e.get("customer_id") and e.get("password")
