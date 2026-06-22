@@ -83,6 +83,11 @@ class AccountSnapshotModel(BaseModel):
     wagers: WagerSummaryModel
     pending_wagers: list[PendingWagerModel] = []
     error: str | None = None
+    # Per-account parlay cap (dollars). Defaults to 100; Stanley currently
+    # overrides to 150. Sourced from AccountCredential.max_parlay_stake (A1
+    # commit 1465422) so the frontend ConfirmModal can show the right max
+    # stake instead of falling back to a hardcoded $100.
+    max_parlay_stake: int = 100
 
 
 class AccountsRollupModel(BaseModel):
@@ -97,9 +102,27 @@ class AccountsRollupModel(BaseModel):
     account_count: int
 
 
-def _to_model(rollup: AccountsRollup, account_count: int) -> AccountsRollupModel:
+def _to_model(
+    rollup: AccountsRollup,
+    account_count: int,
+    credentials: list | None = None,
+) -> AccountsRollupModel:
+    # max_parlay_stake lives on AccountCredential (not on the runtime
+    # AccountSnapshot), so we join it back in by customer_id here. Missing
+    # creds fall back to the model default (100).
+    cap_by_cid: dict[str, int] = {}
+    if credentials is not None:
+        cap_by_cid = {c.customer_id: c.max_parlay_stake for c in credentials}
+
+    def _snap_to_model(s) -> AccountSnapshotModel:
+        m = AccountSnapshotModel.model_validate(s, from_attributes=True)
+        cap = cap_by_cid.get(s.customer_id)
+        if cap is not None:
+            m.max_parlay_stake = cap
+        return m
+
     return AccountsRollupModel(
-        snapshots=[AccountSnapshotModel.model_validate(s, from_attributes=True) for s in rollup.snapshots],
+        snapshots=[_snap_to_model(s) for s in rollup.snapshots],
         refreshed_at=rollup.refreshed_at,
         refreshing=rollup.refreshing,
         total_current_balance=rollup.total_current_balance,
@@ -190,7 +213,11 @@ def build_router(
 
     @router.get("/api/coral33/accounts", response_model=AccountsRollupModel)
     async def get_accounts() -> AccountsRollupModel:
-        return _to_model(scraper.cached(), len(scraper.credentials))
+        return _to_model(
+            scraper.cached(),
+            len(scraper.credentials),
+            credentials=scraper.credentials,
+        )
 
     @router.post(
         "/api/coral33/accounts/refresh",
