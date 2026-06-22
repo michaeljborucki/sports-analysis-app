@@ -6,7 +6,11 @@ import { useLiveUpdates } from "./use-live-updates";
 
 const base: SWRConfiguration = {
   fetcher: fetchJson,
-  revalidateOnFocus: true,
+  // SSE push (see useLiveUpdates) is the single source of freshness.
+  // Refocus revalidation would re-fire EVERY mounted hook on every tab
+  // switch — a duplicate trigger that costs an avalanche of fetches with
+  // no benefit. Keep it off.
+  revalidateOnFocus: false,
   keepPreviousData: true,
   dedupingInterval: 5_000,
 };
