@@ -77,7 +77,7 @@ function prettyLabel(s: ActiveSignal): string {
 
 export function ActiveSignalsPanel() {
   const { data, isLoading, error } = useSWR<ActiveSignalsResponse>(
-    "/api/sidecar/active",
+    "/api/sidecar/active-signals",
     fetchJson,
     { refreshInterval: 10_000 },
   );
@@ -114,7 +114,7 @@ export function ActiveSignalsPanel() {
       {error && (
         <div className="text-price-down text-xs flex items-center gap-1.5 px-1 py-3">
           <AlertCircle size={12} aria-hidden />
-          /api/sidecar/active unreachable (Phase F endpoint pending?)
+          /api/sidecar/active-signals unreachable (Phase F endpoint pending?)
         </div>
       )}
       {!isLoading && !error && cards.length === 0 && (
