@@ -174,11 +174,20 @@ async def test_place_open_parlay_runs_five_calls_in_order(new_zealand_leg):
         os.environ.pop("CORAL33_PLACEMENT_LIVE", None)
     assert isinstance(result, PlacementResult)
     assert result.ticket_number == 1471133392
-    # Five-call sequence in exact order
-    assert [op for op, _ in client.posts] == [
-        "getParlaySpecs", "getInfoParlay", "checkWagerLineMulti",
-        "insertWagerParlay", "getPendingByTicket",
-    ]
+    # Synchronous chain: getParlaySpecs (cached after first), then
+    # getInfoParlay + checkWagerLineMulti in parallel (order between them
+    # is not deterministic — both fire concurrently via asyncio.gather),
+    # then insertWagerParlay. getPendingByTicket is now fire-and-forget
+    # so it may or may not have landed by the time we observe.
+    posts_sync = [op for op, _ in client.posts if op != "getPendingByTicket"]
+    assert posts_sync[0] == "getParlaySpecs"
+    assert set(posts_sync[1:3]) == {"getInfoParlay", "checkWagerLineMulti"}
+    assert posts_sync[3] == "insertWagerParlay"
+    # Yield once so the background getPendingByTicket task can fire,
+    # then verify it lands.
+    import asyncio as _asyncio
+    await _asyncio.sleep(0)
+    assert "getPendingByTicket" in [op for op, _ in client.posts]
 
 
 @pytest.mark.asyncio

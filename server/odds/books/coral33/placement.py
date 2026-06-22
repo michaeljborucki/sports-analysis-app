@@ -18,12 +18,17 @@ See docs/superpowers/specs/2026-06-21-auto-bet-sidecar-design.md.
 """
 from __future__ import annotations
 
+import asyncio
+import logging
 import os
 import time
 from dataclasses import dataclass
 from typing import Any
 
 from server.sidecar.models import LegSpec
+
+
+logger = logging.getLogger(__name__)
 
 
 CUSTOMER_ID_WIDTH = 10
@@ -258,24 +263,69 @@ class Coral33Placer:
                 f"live placement requires {self.LIVE_ENV_VAR}=true"
             )
 
+        t_start = time.monotonic()
+        cust = self.client.customer_id
+        logger.info(
+            "[placer %s] place_open_parlay START "
+            "leg=%s %+d (decimal=%.3f) stake=$%.2f mode=%s",
+            cust, ev_leg.chosen_team_id, ev_leg.price_american,
+            ev_leg.price_decimal, stake_dollars,
+            "live" if live else "dry-run",
+        )
+
         # 1. getParlaySpecs (cached per Placer instance)
         if self._specs_cache is None:
+            t0 = time.monotonic()
             self._specs_cache = await self.client.post_json(
                 "getParlaySpecs",
-                build_get_parlay_specs(self.client.customer_id, self.parlay_name),
+                build_get_parlay_specs(cust, self.parlay_name),
             )
+            logger.info(
+                "[placer %s] (1) getParlaySpecs OK  %.0fms",
+                cust, (time.monotonic() - t0) * 1000,
+            )
+        else:
+            logger.info("[placer %s] (1) getParlaySpecs CACHED", cust)
 
-        # 2. getInfoParlay — payout multiplier for a 2-team card
+        # 2 + 3. getInfoParlay AND checkWagerLineMulti in PARALLEL.
+        # They're independent: getInfoParlay returns the parlay-card
+        # payout multiplier, checkWagerLineMulti returns the current line
+        # snapshot + DELAY.sig. Running them concurrently saves one full
+        # network round-trip (typically 200-400ms via residential proxy).
         selects = f"{ev_leg.game_num}-{ev_leg.line_type}|{ev_leg.chosen_team_id}^0"
-        info = await self.client.post_json(
-            "getInfoParlay",
-            build_get_info_parlay(
-                customer_id=self.client.customer_id,
-                parlay_name=self.parlay_name,
-                teams=2,
-                selects=selects,
+        position = int(time.time() * 1000) % 10**8
+
+        t_par = time.monotonic()
+        info, check = await asyncio.gather(
+            self.client.post_json(
+                "getInfoParlay",
+                build_get_info_parlay(
+                    customer_id=cust,
+                    parlay_name=self.parlay_name,
+                    teams=2,
+                    selects=selects,
+                ),
+            ),
+            self.client.post_json(
+                "checkWagerLineMulti",
+                build_check_wager_line_multi_parlay(
+                    customer_id=cust,
+                    leg=ev_leg,
+                    position=position,
+                    risk_dollars=stake_dollars,
+                    # win_dollars is filled in below after we have the
+                    # multiplier — but checkWagerLineMulti only validates
+                    # against risk; the win field is informational. Pass
+                    # the placed-leg win as a conservative estimate.
+                    win_dollars=ev_leg.price_decimal * stake_dollars - stake_dollars,
+                ),
             ),
         )
+        logger.info(
+            "[placer %s] (2+3) getInfoParlay+checkWagerLineMulti PARALLEL %.0fms",
+            cust, (time.monotonic() - t_par) * 1000,
+        )
+
         two_team_card = next(
             (c for c in info["INFO"]["CARD"] if c["GamesPicked"] == 2),
             None,
@@ -287,18 +337,6 @@ class Coral33Placer:
         expected_win = decimal_payout * stake_dollars - stake_dollars
         decimal_win_amount = ev_leg.price_decimal * stake_dollars - stake_dollars
 
-        # 3. checkWagerLineMulti — line snapshot + DELAY.sig
-        position = int(time.time() * 1000) % 10**8   # client-side unique id
-        check = await self.client.post_json(
-            "checkWagerLineMulti",
-            build_check_wager_line_multi_parlay(
-                customer_id=self.client.customer_id,
-                leg=ev_leg,
-                position=position,
-                risk_dollars=stake_dollars,
-                win_dollars=expected_win,
-            ),
-        )
         delay = check.get("DELAY")
         if not delay or "sig" not in delay:
             raise PlacementError("checkWagerLineMulti returned no DELAY.sig")
@@ -320,7 +358,11 @@ class Coral33Placer:
         )
 
         if not live:
-            # Dry-run: stop here, return the would-be payload
+            logger.info(
+                "[placer %s] DRY-RUN halt; total %.0fms (would-be ticket on $%.2f, win=$%.2f)",
+                cust, (time.monotonic() - t_start) * 1000,
+                stake_dollars, expected_win,
+            )
             return PlacementResult(
                 ticket_number=None,
                 dry_run=True,
@@ -331,29 +373,55 @@ class Coral33Placer:
             )
 
         # 4. insertWagerParlay — actually place
+        t4 = time.monotonic()
         insert_resp = await self.client.post_json(
             "insertWagerParlay", insert_body
         )
         status = insert_resp.get("STATUS", {})
         if status.get("STATE") != 1 or "DOC" not in status:
+            logger.error(
+                "[placer %s] (4) insertWagerParlay REJECTED %.0fms — response=%s",
+                cust, (time.monotonic() - t4) * 1000, insert_resp,
+            )
             raise PlacementError(
                 f"insertWagerParlay rejected: {insert_resp}"
             )
         ticket_number = int(status["DOC"])
+        logger.info(
+            "[placer %s] (4) insertWagerParlay PLACED %.0fms ticket=#%d win=$%.2f stake=$%.2f",
+            cust, (time.monotonic() - t4) * 1000,
+            ticket_number, expected_win, stake_dollars,
+        )
 
-        # 5. getPendingByTicket — receipt confirmation
-        try:
-            await self.client.post_json(
-                "getPendingByTicket",
-                build_get_pending_by_ticket(
-                    agent_id=self.agent_id,
-                    customer_id=self.client.customer_id,
-                    ticket_number=ticket_number,
-                ),
-            )
-        except Exception:
-            # Receipt fetch is non-fatal — the bet landed.
-            pass
+        # 5. getPendingByTicket — fire-and-forget receipt confirmation.
+        # We already have the ticket # from insertWagerParlay; the receipt
+        # call is just for the audit's accepted_payload. Don't block the
+        # response on it — schedule and let it run in the background.
+        async def _fire_receipt_poll():
+            try:
+                await self.client.post_json(
+                    "getPendingByTicket",
+                    build_get_pending_by_ticket(
+                        agent_id=self.agent_id,
+                        customer_id=cust,
+                        ticket_number=ticket_number,
+                    ),
+                )
+                logger.debug(
+                    "[placer %s] (5) getPendingByTicket OK for ticket=#%d",
+                    cust, ticket_number,
+                )
+            except Exception as ex:
+                logger.debug(
+                    "[placer %s] (5) getPendingByTicket failed (non-fatal): %s",
+                    cust, ex,
+                )
+        asyncio.create_task(_fire_receipt_poll())
+
+        logger.info(
+            "[placer %s] place_open_parlay DONE total %.0fms ticket=#%d",
+            cust, (time.monotonic() - t_start) * 1000, ticket_number,
+        )
 
         return PlacementResult(
             ticket_number=ticket_number,

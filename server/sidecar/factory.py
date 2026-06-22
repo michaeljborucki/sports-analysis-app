@@ -116,7 +116,10 @@ def set_orchestrator(orch: SidecarOrchestrator) -> None:
 
 def _load_pool() -> list[AccountSnapshot]:
     """Build the splitter's pool snapshot from the latest AccountsScraper
-    roll-up. Skips accounts in error state so they don't poison the splitter.
+    roll-up. Skips:
+      - accounts in error state (would poison the splitter)
+      - accounts without a proxy_url configured (these are read-only
+        /accounts-page entries — explicitly NOT in the sidecar pool)
     """
     if _scraper is None:
         return []
@@ -130,6 +133,16 @@ def _load_pool() -> list[AccountSnapshot]:
         if cred is None:
             # Snapshot for an account we no longer have credentials for —
             # skip rather than crash; the next env reload will sync up.
+            continue
+        if not cred.proxy_url:
+            # Sidecar requires per-account residential proxy. Accounts
+            # without one (e.g., the user's personal account VR12509) are
+            # surfaced on /accounts but excluded from the sidecar pool so
+            # they can't be picked by the splitter.
+            logger.debug(
+                "sidecar pool: skipping %s (no proxy_url)",
+                cred.customer_id,
+            )
             continue
         out.append(AccountSnapshot(
             credential=cred,

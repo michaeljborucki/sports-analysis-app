@@ -149,6 +149,13 @@ class SidecarOrchestrator:
         # Tests can leave this None — the orchestrator will skip the
         # refresh step rather than reach into FastAPI.
         self._refresh_hook = refresh_accounts
+        # Per-account placer cache. Hoisted from per-job to per-orchestrator
+        # so subsequent placements on the same account reuse the JWT +
+        # proxied AsyncSession + cached getParlaySpecs. Saves ~500ms-1s of
+        # re-auth round-trip per follow-up placement.
+        # Keyed by customer_id; each Coral33Placer wraps one Coral33Client
+        # with that account's proxy. Cleared by reset().
+        self._placers: dict[str, Any] = {}
 
     @property
     def audit_conn(self) -> sqlite3.Connection:
@@ -230,7 +237,9 @@ class SidecarOrchestrator:
 
             # --- Placement loop ----------------------------------------
             # Per-account session reuse + account-scoped failure cascade.
-            placers: dict[str, Any] = {}
+            # Pull from the instance-level placer cache so repeat jobs
+            # reuse Coral33Client + JWT + getParlaySpecs result.
+            placers: dict[str, Any] = self._placers
             burned_accounts: set[str] = set()
 
             total = len(plan.assignments)
