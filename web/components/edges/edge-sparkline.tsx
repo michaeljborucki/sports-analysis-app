@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+
 /**
  * Small inline sparkline for edge % over the last ~15 minutes.
  *
@@ -74,7 +76,7 @@ const W = 40;
 const H = 12;
 const PAD_Y = 1.5;
 
-export function EdgeSparkline({
+function EdgeSparklineImpl({
   seedKey,
   currentEdge,
   width = W,
@@ -149,3 +151,11 @@ export function EdgeSparkline({
     </svg>
   );
 }
+
+/**
+ * Memoised: all props are primitives (string seedKey, number currentEdge,
+ * optional numeric dimensions). The hash + walk + min/max(...series) work
+ * is non-trivial and pure on these inputs, so shallow equality is a strict
+ * win — at 300+ rows × SWR ticks this was the dominant Edges-page cost.
+ */
+export const EdgeSparkline = memo(EdgeSparklineImpl);
