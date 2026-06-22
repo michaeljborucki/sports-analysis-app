@@ -135,6 +135,20 @@ def _broadcast(event: dict[str, Any]) -> None:
         logger.debug("SSE: dropped event for %d slow subscriber(s)", dropped)
 
 
+def publish(event: dict[str, Any]) -> None:
+    """Broadcast a typed event to every subscriber IMMEDIATELY.
+
+    Distinct from mark_dirty(), which is the dumb-tick coalescing path used
+    by cache writers. Callers (currently: the sidecar orchestrator) own the
+    event shape — convention is to set event['type'] so consumers can
+    discriminate. The SSE writer in server/api/stream.py emits whatever
+    dict it receives, so no parser changes are needed.
+    """
+    if "type" not in event:
+        raise ValueError("publish() event must carry a 'type' field")
+    _broadcast(event)
+
+
 async def flush_loop() -> None:
     """Background task: every FLUSH_INTERVAL_S, broadcast ONE tick if
     any mark_dirty() calls have occurred since the previous flush.
