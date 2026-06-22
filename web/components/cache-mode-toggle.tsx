@@ -75,7 +75,10 @@ export function CacheModeToggle() {
   const { data, mutate } = useSWR<CacheModeStatus>(
     "/api/cache-mode",
     fetchJson,
-    { refreshInterval: 5_000 },
+    // Low-change-rate state (the user flips this rarely, by hand).
+    // 30s is plenty to surface a flip from another tab; 5s was just
+    // wasted requests.
+    { refreshInterval: 30_000 },
   );
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);

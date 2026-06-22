@@ -39,7 +39,9 @@ export function ModeToggle() {
   const { data, mutate, isLoading } = useSWR<ModeResponse>(
     "/api/sidecar/mode",
     fetchJson,
-    { refreshInterval: 5_000 },
+    // Mode flips are deliberate human actions; 30s is plenty to pick up
+    // a cross-tab flip. 5s was needless polling pressure.
+    { refreshInterval: 30_000 },
   );
   const [busy, setBusy] = useState<SidecarMode | null>(null);
   const [err, setErr] = useState<string | null>(null);

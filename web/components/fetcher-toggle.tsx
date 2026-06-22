@@ -8,7 +8,9 @@ import { apiPaths, fetchJson, type FetcherStatus } from "@/lib/api";
 
 export function FetcherToggle() {
   const { data, mutate } = useSWR<FetcherStatus>(apiPaths.health, {
-    refreshInterval: 5_000,
+    // Low-change-rate state — surfaced if another tab flips it. 30s is
+    // far more than enough; 5s was background noise.
+    refreshInterval: 30_000,
   });
   const [busy, setBusy] = useState(false);
 

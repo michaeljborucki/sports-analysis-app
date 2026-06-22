@@ -126,7 +126,8 @@ export function ConfirmModal({
   const { data: modeData } = useSWR<SidecarModeResponse>(
     "/api/sidecar/mode",
     fetchJson,
-    { refreshInterval: 5_000 },
+    // This is a display-only read inside the modal; 30s is plenty.
+    { refreshInterval: 30_000 },
   );
 
   // Kelly fraction is derived from user settings until the user clicks a
