@@ -13,6 +13,7 @@ declare const test: (name: string, fn: () => void) => void;
 declare const expect: (actual: unknown) => {
   toBe(expected: unknown): void;
   toEqual(expected: unknown): void;
+  toBeLessThanOrEqual(expected: number): void;
 };
 
 import { planSplits, FLOOR, AccountSnapshot } from "../splitter";
@@ -115,4 +116,18 @@ test("partial_fill: only acct has 80, requested 200", () => {
 // Sanity: FLOOR is exported and is 30 (so callers can reference it).
 test("FLOOR constant is 30", () => {
   expect(FLOOR).toBe(30);
+});
+
+// Regression: Hypothesis (Python) caught the peel-back over-spending a
+// drained account because the `alt` lookup checked the immutable snapshot
+// balance instead of the running balance. Mirror that guard here.
+test("target 131 — peel-back does not over-spend drained account", () => {
+  const plan = planSplits(131, [acct("A0", 30), acct("A1", 100)]);
+  // Property: each account's total ≤ its original balance
+  const byAcct: Record<string, number> = {};
+  for (const a of plan.assignments) {
+    byAcct[a.account.customer_id] = (byAcct[a.account.customer_id] ?? 0) + a.amount;
+  }
+  expect(byAcct["A0"] ?? 0).toBeLessThanOrEqual(30);
+  expect(byAcct["A1"] ?? 0).toBeLessThanOrEqual(100);
 });

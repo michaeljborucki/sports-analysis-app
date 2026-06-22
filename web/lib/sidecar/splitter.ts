@@ -69,12 +69,17 @@ export function planSplits(
 
   const assignments: SplitAssignment[] = [];
   let remaining = target;
+  // Track remaining per-account balance so peel-back can avoid drained
+  // accounts even though AccountSnapshot.available_balance is immutable.
+  const running: Record<string, number> = {};
+  for (const a of eligible) {
+    running[a.customer_id] = Math.trunc(a.available_balance);
+  }
 
   for (const account of eligible) {
     if (remaining === 0) break;
 
-    // Python uses int(account.available_balance); mirror that truncation.
-    let balance = Math.trunc(account.available_balance);
+    let balance = running[account.customer_id];
     const cap = account.max_parlay_stake;
 
     // Pack full-cap parlays on this account.
@@ -84,11 +89,15 @@ export function planSplits(
       remaining -= cap;
     }
 
-    if (remaining === 0) break;
+    if (remaining === 0) {
+      running[account.customer_id] = balance;
+      break;
+    }
 
     // Try one partial parlay on this account.
     const partial = Math.min(balance, remaining, cap);
     if (partial < FLOOR) {
+      running[account.customer_id] = balance;
       continue;
     }
     const newRemaining = remaining - partial;
@@ -105,10 +114,12 @@ export function planSplits(
         remaining = FLOOR;
       }
     }
+    running[account.customer_id] = balance;
   }
 
   // Final peel-back: reduce last assignment by (FLOOR - remaining) and
-  // place a fresh FLOOR-sized bet on the next-cheapest non-same account.
+  // place a fresh FLOOR-sized bet on the next-cheapest non-same account
+  // that still has FLOOR of remaining (not just original) balance.
   if (remaining > 0 && remaining < FLOOR && assignments.length > 0) {
     const last = assignments[assignments.length - 1];
     const deficit = FLOOR - remaining;
@@ -116,7 +127,7 @@ export function planSplits(
       const alt = eligible.find(
         (a) =>
           a.customer_id !== last.account.customer_id &&
-          a.available_balance >= FLOOR,
+          (running[a.customer_id] ?? 0) >= FLOOR,
       );
       if (alt !== undefined) {
         last.amount -= deficit;
