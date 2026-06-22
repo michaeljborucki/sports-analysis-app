@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import clsx from "clsx";
 import { bookInfo } from "@/lib/books";
 
@@ -49,35 +50,36 @@ export function BookLogo({
       ? { h: 16, w: 28, textSize: "text-[9px]" }
       : { h: 20, w: 36, textSize: "text-[10px]" };
 
-  // Full color in every mode — the user wants brand-recognizable headers.
-  // The old monochrome-on-header treatment (from competitor research) is
-  // available if we ever re-introduce it.
-  const filter: string | undefined = undefined;
-
   if (hasLogo) {
     const src = `/logos/${info.domain}.png`;
+    // Logos are bundled under /public/logos/*.png. Most are 128×128
+    // squares; a few (caesars, etc.) are 48×48. The container is
+    // intentionally asymmetric (16×28 / 20×36) so brand artwork sits in
+    // a compact pill alongside other UI. Using `fill` + `objectFit:
+    // contain` lets `next/image` request an optimised variant sized to
+    // the rendered slot and lets the browser preserve aspect ratio
+    // without distortion across the asymmetric box. The parent span
+    // already has fixed `height`/`width`, which next/image's `fill`
+    // requires (it positions the inner img absolutely against the
+    // nearest positioned ancestor — we set `position: relative`
+    // explicitly for that).
     return (
       <span
         title={info.name}
         className={clsx(
           "inline-flex items-center justify-center rounded-sm overflow-hidden",
-          className
+          className,
         )}
-        style={{ height: size.h, width: size.w }}
+        style={{ height: size.h, width: size.w, position: "relative" }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={src}
           alt={info.name}
+          fill
+          sizes={`${size.w}px`}
           loading="lazy"
-          decoding="async"
           onError={() => setImgFailed(true)}
-          style={{
-            maxWidth: "100%",
-            maxHeight: "100%",
-            objectFit: "contain",
-            filter,
-          }}
+          style={{ objectFit: "contain" }}
         />
       </span>
     );
