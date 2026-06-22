@@ -287,8 +287,27 @@ class OddsCache:
             pass
 
     def _conn(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.path, detect_types=sqlite3.PARSE_DECLTYPES)
+        conn = sqlite3.connect(
+            self.path,
+            detect_types=sqlite3.PARSE_DECLTYPES,
+            # 10s busy timeout (default is 5s). With WAL the contention
+            # window is much smaller but readers can still wait during
+            # the brief commit/checkpoint windows; 10s is plenty.
+            timeout=10.0,
+        )
         conn.row_factory = sqlite3.Row
+        # Per-connection PRAGMAs. journal_mode=WAL is persistent across
+        # connections (it's a database property, not per-connection), but
+        # setting it here guarantees it on a fresh DB. The rest are
+        # per-connection and must be set every time.
+        cur = conn.cursor()
+        cur.execute("PRAGMA journal_mode=WAL")          # readers never block writers
+        cur.execute("PRAGMA synchronous=NORMAL")        # safe under WAL; 2-3× faster commits
+        cur.execute("PRAGMA cache_size=-65536")         # 64 MB page cache (was 8 MB)
+        cur.execute("PRAGMA mmap_size=268435456")       # 256 MB mmap window
+        cur.execute("PRAGMA temp_store=MEMORY")         # closest-line ORDER BY uses temp btrees
+        cur.execute("PRAGMA wal_autocheckpoint=1000")   # checkpoint every 1000 pages (~4MB)
+        cur.close()
         return conn
 
     def init(self) -> None:
