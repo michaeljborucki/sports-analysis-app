@@ -16,10 +16,13 @@ Today, the user manually logs into each account, picks the eligible one with eno
 
 - One-click placement of a 2-leg parlay (one +EV leg surfaced by the scanner + one user-picked open leg) on Coral33 from `/edges`.
 - Stake is computed from a user-set static bankroll × the chosen Kelly fraction. Default bankroll **$10,000**; default Kelly fraction **half**. (Modal also exposes Full and Quarter.)
-- **Per-account parlay maximum is a hard constraint.** Standard accounts cap at **$100/parlay**; the Ryan Stanley account caps at **$150/parlay**. The cap travels with each account in `CORAL33_ACCOUNTS` env JSON (`max_parlay_stake` field).
-- **When the Kelly target exceeds a single account's cap, the sidecar splits the target across multiple accounts as multiple separate parlays.** Example: target $300 → three $100 bets on three different accounts. Example: target $105 → $75 + $30 (NOT $100 + $5, because $5 < $30 floor).
-- **Per-split floor: $30.** No individual placement is allowed to be smaller than $30. If the residual after capping would fall under the floor, the splitter pulls dollars back from the prior placement to bring the tail up to $30 (see Splitter algorithm). If the entire Kelly target itself is below $30, the signal is skipped and logged.
-- **Account selection within each split is lowest-balance-first.** Stanley's $150 cap is honored only when Stanley happens to be the next-picked account. The picker does NOT prefer Stanley to minimize split count.
+- **Per-parlay maximum stake is a hard constraint per account.** Standard accounts cap at **$100/parlay**; the Ryan Stanley account caps at **$150/parlay**. The cap travels with each account in `CORAL33_ACCOUNTS` env JSON (`max_parlay_stake` field). The cap is per-parlay, NOT per-account-per-signal: **the same account may take multiple separate parlays** for one signal if its balance covers them.
+- **When the Kelly target exceeds a single parlay's cap, the sidecar fans out across multiple parlays** — stacking on the same account as long as the account's balance covers each successive parlay, then moving to the next account. Examples:
+  - Target $300, account A has $250 balance → **A: $100, A: $100, A: $50, B: $50** (3 parlays on A drain its balance, then 1 parlay on B for the remainder).
+  - Target $300, account A has $500 balance → **A: $100, A: $100, A: $100** (3 parlays all on A; B never used).
+  - Target $105, account A has high balance → **A: $75, B: $30** (NOT A: $100 + leftover $5; the floor forces a peel-back).
+- **Per-parlay floor: $30.** No individual parlay placement is allowed to be smaller than $30. If a planned tail residual would fall under $30, the splitter peels dollars back from a prior parlay to bring the tail up to exactly $30 (see Splitter algorithm). If the entire Kelly target itself is below $30, the signal is skipped and logged.
+- **Account ordering is lowest-balance-first.** The walk visits accounts in ascending balance order, draining each one's parlay capacity (multiple parlays as needed) before moving on. Stanley's $150 cap is honored only when Stanley happens to be the next-walked account; the splitter does NOT reorder to minimize parlay count.
 - Per-account requests route through a dedicated sticky residential proxy URL (one per account, static).
 - If the pool can't fund the full target even after splitting, the sidecar refuses to fire and pages the user to top up.
 - A `dry-run` / `live` master toggle in a dedicated `sidecar_mode.json` store is the sole guardrail, defaulted to `dry-run` and explicitly flipped by the user — mirrors the `cache_mode` pattern (`server/odds/cache_mode.py`, `server/config/cache_mode.json`) already established for the metered Odds API fetcher.
@@ -109,55 +112,83 @@ The existing `CORAL33_ACCOUNTS` env JSON is extended with **two** new per-entry 
 ### Splitter rule
 
 ```python
-MIN_SPLIT = 30   # dollars; no individual placement smaller than this
+FLOOR = 30   # dollars; no individual parlay smaller than this
 
 def plan_splits(
     target: int,                     # dollars, rounded
     accounts: list[AccountSnapshot], # full pool snapshot with credentials
 ) -> SplitPlan:
-    """Returns SplitPlan(assignments, status) where:
-      - assignments is a list of (account, amount) tuples, sum == target on success,
-      - status is one of: planned, below_minimum, no_eligible_account, partial_fill."""
-    if target < MIN_SPLIT:
-        return SplitPlan(assignments=[], status="below_minimum",
-                         target=target)
+    """Multi-parlay-per-account walk. Lowest balance first; drain each account
+    by stacking max-cap parlays; take one partial if it fits; peel back the
+    last parlay if the residual would be sub-floor."""
+    if target < FLOOR:
+        return SplitPlan(assignments=[], status="below_minimum", target=target)
 
-    # Eligible = balance covers at least one split's worth.
     eligible = sorted(
-        [a for a in accounts if a.available_balance >= MIN_SPLIT],
+        [a for a in accounts if a.available_balance >= FLOOR],
         key=lambda a: a.available_balance,
     )
     if not eligible:
         return SplitPlan(assignments=[], status="no_eligible_account",
                          target=target)
 
-    assignments: list[SplitAssignment] = []
+    assignments: list[SplitAssignment] = []   # list of {account, amount}
     remaining = target
 
     for account in eligible:
         if remaining == 0:
             break
-        cap = min(account.max_parlay_stake, int(account.available_balance))
-        if remaining > cap:
-            # Full assignment; more to come on next account
+        balance = account.available_balance
+        cap = account.max_parlay_stake
+
+        # 1. Stack full-cap parlays while the account can fund another
+        #    AND the target still needs another full-cap parlay.
+        while balance >= cap and remaining >= cap:
             assignments.append(SplitAssignment(account, cap))
+            balance -= cap
             remaining -= cap
-        elif remaining >= MIN_SPLIT:
-            # Final assignment fits cleanly
-            assignments.append(SplitAssignment(account, remaining))
-            remaining = 0
-        else:
-            # 0 < remaining < MIN_SPLIT — pull back from previous
-            if assignments:
-                pull_back = MIN_SPLIT - remaining
-                prev = assignments[-1]
-                if prev.amount - pull_back >= MIN_SPLIT:
-                    prev.amount -= pull_back
-                    assignments.append(SplitAssignment(account, MIN_SPLIT))
-                    remaining = 0
-                    break
-            # Can't satisfy MIN_SPLIT on tail; drop residual
+
+        if remaining == 0:
             break
+
+        # 2. Try one partial parlay on this account.
+        partial = min(balance, remaining, cap)
+        if partial < FLOOR:
+            continue   # this account has too little headroom for another parlay
+        new_remaining = remaining - partial
+        if new_remaining == 0 or new_remaining >= FLOOR:
+            assignments.append(SplitAssignment(account, partial))
+            balance -= partial
+            remaining = new_remaining
+        else:
+            # 0 < new_remaining < FLOOR. Shrink this partial so the residual
+            # lands exactly on FLOOR, which the next account can take cleanly.
+            adjusted = partial - (FLOOR - new_remaining)
+            if adjusted >= FLOOR:
+                assignments.append(SplitAssignment(account, adjusted))
+                balance -= adjusted
+                remaining = FLOOR
+
+    # 3. Final peel-back. If we exited the loop with a sub-floor residual,
+    #    try reducing the most recent parlay by (FLOOR - remaining) and
+    #    placing the FLOOR on the next-cheapest account that has FLOOR free
+    #    (different account from the one we peeled from — keeps the bet on
+    #    a fresh proxy and avoids stacking yet another parlay on a draining
+    #    account).
+    if 0 < remaining < FLOOR and assignments:
+        last = assignments[-1]
+        deficit = FLOOR - remaining
+        if last.amount - deficit >= FLOOR:
+            alt = next(
+                (a for a in eligible
+                 if a.customer_id != last.account.customer_id
+                 and a.available_balance >= FLOOR),
+                None,
+            )
+            if alt is not None:
+                last.amount -= deficit
+                assignments.append(SplitAssignment(alt, FLOOR))
+                remaining = 0
 
     status = "planned" if remaining == 0 else "partial_fill"
     return SplitPlan(assignments=assignments, status=status, target=target)
@@ -165,23 +196,24 @@ def plan_splits(
 
 **Worked examples (validating against user-stated cases):**
 
-| Target | Pool snapshot | Result |
-|--------|---------------|--------|
-| $300 | three standard accounts (cap $100 each), each balance ≥ $100 | $100 + $100 + $100 across three accounts |
-| $105 | two standard accounts (cap $100 each), each balance ≥ $100 | $75 + $30 (pull-back from naive $100 + $5) |
-| $130 | Stanley (cap $150) is lowest balance, others above | $130 on Stanley alone |
-| $130 | Stanley above; lowest standard account has $500 balance | $100 (standard) + $30 (next-lowest) |
-| $230 | Stanley lowest, then standard, then standard | $150 (Stanley) + $80 (next-lowest) |
-| $18 | any pool | `below_minimum`; signal skipped |
-| $200 | only one account has balance ≥ $30 (others empty), that account has $80 | `partial_fill` at $80; user paged |
+| Target | Pool snapshot | Result | Why |
+|--------|---------------|--------|-----|
+| $300 | A=$250 balance, B=$500 balance, standard caps | **A:$100, A:$100, A:$50, B:$50** | Stack on A until balance drained; carry the $50 residual to B. |
+| $300 | A=$500 balance, B=$500 balance, standard caps | **A:$100, A:$100, A:$100** | All three parlays fit on A; B never visited. |
+| $105 | A=$1000 balance, B=$1000 balance, standard caps | **A:$75, B:$30** | Naïve walk would leave a $5 sub-floor residual; peel-back reduces A's parlay by $25 and places $30 on B. |
+| $260 | A=$250 balance, B=$1000 balance, standard caps | **A:$100, A:$100, A:$30, B:$30** | Partial on A is shrunk from $50→$30 so the residual lands exactly on FLOOR for B. |
+| $130 | Stanley=$300 (cap $150), B=$1000 (cap $100); Stanley lowest balance | **Stanley:$130** | One parlay on Stanley fits cleanly under its $150 cap. |
+| $230 | Stanley lowest, then a standard at $1000 | **Stanley:$150, B:$80** | Drain Stanley's cap; carry residual to B. |
+| $18 | any pool | `below_minimum` | Skipped. |
+| $200 | only one account has balance ≥ $30, balance $80 | `partial_fill` at $80 | User paged for top-up. |
 
 **Property checks the unit tests must enforce:**
 
 1. `sum(a.amount for a in plan.assignments) == target` when `status == "planned"`.
-2. Every `a.amount >= MIN_SPLIT` in every plan.
-3. Every `a.amount <= min(account.max_parlay_stake, account.available_balance)`.
-4. No account appears twice in one plan.
-5. Account selection within the plan is ascending by `available_balance` at the time of planning.
+2. Every `a.amount >= FLOOR` in every plan.
+3. Every `a.amount <= account.max_parlay_stake` (per-parlay cap honored).
+4. The **sum** of amounts per `account.customer_id` in a plan is `<= account.available_balance` (no account is over-spent across its multiple parlays).
+5. Account ordering of first-appearance in the assignments list is ascending by `available_balance` at the time of planning.
 
 ### Configuration shape
 
@@ -279,9 +311,15 @@ Three new event types added to the existing broker (`server/api/stream.py`). All
 
 Reuses the existing `useLiveUpdates` hook in the Next.js app — no new transport wiring.
 
-### Multi-split pacing
+### Multi-parlay pacing
 
-When a single signal produces N > 1 placements, the BackgroundTask fires them **sequentially with a small jittered delay** between each (3–8 seconds, uniform random). Rationale: N separate parlays on the same +EV leg arriving at Coral via N different proxied sessions within milliseconds is the most fraud-team-friendly synchronization pattern available. A 3–8s gap looks like distinct sessions placing distinct bets. Single-split jobs fire immediately (no gap because there's nothing to disguise). Total wall time for N=3 is ~10–25s — acceptable for parlays where line decay is measured in tens of seconds.
+When a single signal produces N > 1 parlays — whether stacked on the same account or spread across accounts — the BackgroundTask fires them **sequentially with a small jittered delay** between each (3–8 seconds, uniform random).
+
+Rationale: even on a single account, three identical parlays arriving inside one second is an obvious automation fingerprint. The same gap that disguises multi-account placements also looks like a human re-typing the next slip on the same account. Single-parlay jobs fire immediately (no gap because there's nothing to disguise).
+
+Total wall time for N=3 is ~10–25s — acceptable for parlays where line decay is measured in tens of seconds.
+
+When consecutive assignments land on the same account, the sidecar **reuses the open `Coral33Client` session** (single JWT, single proxied connection) rather than re-authenticating per parlay. The jitter still applies, but the client lifecycle is per-account, not per-parlay.
 
 ## UI surface
 
@@ -324,15 +362,17 @@ Failure modes are categorized as **pre-flight** (caught before any HTTP fires) o
 | `below_minimum` | Splitter returns `status='below_minimum'` (target < $30) | SSE `sidecar_signal_skipped`; modal shows "Below $30 floor" banner. No placement. |
 | `no_eligible_account` | Splitter returns `status='no_eligible_account'` (no account has ≥$30 available) | SSE `sidecar_topup_required` with `max_fundable=0`; modal shows top-up banner. No placement. |
 
-### Per-placement failures (one row per failed assignment; sibling assignments in the same job continue)
+### Per-placement failures (one row per failed assignment)
 
-| Mode | Trigger | Behavior |
-|---|---|---|
-| `auth_failed` | `client.authenticate()` raises `Coral33AuthError` | Mark this assignment failed, **do not retry on a different account** (the splitter already allocated the target across the pool — re-picking would change the plan mid-flight). Surface to modal/log. Other assignments in the job continue. |
-| `line_changed` | Coral returns a price-changed error from `place_parlay` | Abort THIS assignment. Write `error` with the diff in `error_message`. **No auto-accept**. Other assignments in the job continue (they will hit the same price change; expected). |
-| `insufficient_balance` | Coral rejects the bet citing balance | The accounts cache was stale. Write `error`. Other assignments continue. |
-| `placement_timeout` | No response in 20s on `place_parlay` | Write `error`. Surface "verify manually" — placement state ambiguous; `POST /api/coral33/accounts/refresh` will resolve. Other assignments continue. |
-| `proxy_failure` | `curl_cffi` raises a connection error before the request body sends | Write `error`. Other assignments continue. |
+The behavior depends on whether the failure is **account-scoped** (will repeat for every sibling assignment on the same account) or **parlay-scoped** (specific to this one parlay request).
+
+| Mode | Scope | Trigger | Behavior |
+|---|---|---|---|
+| `auth_failed` | account-scoped | `client.authenticate()` raises `Coral33AuthError` | Mark this assignment failed. **Skip all remaining sibling assignments queued for the SAME account** (they would fail identically). Continue with assignments on other accounts. |
+| `proxy_failure` | account-scoped | `curl_cffi` raises a connection error before the request body sends | Same as `auth_failed`: skip remaining same-account siblings; continue with other accounts. |
+| `line_changed` | parlay-scoped (but signal-correlated) | Coral returns a price-changed error | Abort THIS parlay. Write `error` with the price diff. **Stop the entire job** — every sibling assignment will hit the same line change. Emit `sidecar_partial_fill` with whatever has already landed. **No auto-accept**. |
+| `insufficient_balance` | account-scoped | Coral rejects the bet citing balance | The accounts cache was stale, OR a prior sibling on this account drained it more than expected. Mark failed; skip remaining same-account siblings; continue with other accounts. |
+| `placement_timeout` | parlay-scoped | No response in 20s on `place_parlay` | Write `error`. Surface "verify manually" — placement state ambiguous; `POST /api/coral33/accounts/refresh` will resolve. **Continue with the next assignment** (the user may want partial coverage even if this one is unclear). |
 
 ### Post-loop status
 
@@ -340,7 +380,11 @@ Failure modes are categorized as **pre-flight** (caught before any HTTP fires) o
 |---|---|---|
 | `partial_fill` | Splitter planned `status='partial_fill'` (pool short of target) OR one+ assignments errored | SSE `sidecar_partial_fill` with `filled_stake = sum(placed)` and `unfilled_stake = target - filled_stake`. Run-log row tagged orange. |
 
-**Key change vs the original spec:** per-placement failures **do not re-pick** to a different account. The splitter computed a plan up front; retrying with a different account would mean re-running the splitter mid-job, which can produce a smaller-than-allowed assignment if the only remaining eligible account is below the original assignment's amount. Simpler and safer to surface the failure and let the user re-fire manually if they want full coverage.
+**Key principles:**
+
+- Per-placement failures **do not re-pick** to a different account or re-run the splitter mid-job. Retrying mid-flight can produce an over-floor / under-cap violation if the remaining pool can't host the new amount. Simpler: surface the failure and let the user re-fire if they want full coverage.
+- **Account-scoped failures cascade** within the job: if account A's first parlay fails on auth, parlays 2 and 3 queued on A also get marked `error` and skipped without an attempt. This avoids burning 3 placement attempts on a known-broken session.
+- **`line_changed` halts the whole job.** Every sibling parlay is on the same +EV leg, so the price change applies to all of them. Continuing would just produce N copies of the same error.
 
 ## Testing strategy
 
@@ -355,8 +399,11 @@ Failure modes are categorized as **pre-flight** (caught before any HTTP fires) o
 ### Integration
 
 - `FakeCoral33Client` (test fixture) records every `place_parlay` call. End-to-end through `POST /api/sidecar/place` proves: dry-run is a no-op (no client construction even when assignments exist), live calls the client with the right payload per assignment, all SSE events fire on the right paths in the right order, audit rows land grouped by `job_id`.
-- **Multi-split end-to-end test:** target $230 against a fixture pool (Stanley lowest balance, then two standards) produces two assignments, two `place_parlay` calls, two `placed` audit rows under one `job_id`, and the modal receipt sequence is observable in the SSE stream.
+- **Stacked-on-one-account end-to-end test:** target $250 against a fixture pool where account A has $260 balance produces three assignments (A:$100, A:$100, A:$50) all on the same `Coral33Client` session, three `placed` audit rows under one `job_id` with the same `picked_account`.
+- **Cross-account end-to-end test:** target $300 against (A:$250, B:$500) produces A:$100, A:$100, A:$50, B:$50 — four assignments, two distinct client sessions, four `placed` rows.
+- **Account-scoped cascade test:** target $230 split as Stanley:$150, B:$80 — Stanley's auth fails on first attempt; the test confirms the splitter does NOT retry on Stanley for a hypothetical second sibling (there isn't one here; but in a target $250 case with Stanley:$150 + Stanley:$30 wait — Stanley's cap is $150, so 250 would be Stanley:$150 + B:$100; that doesn't stack on Stanley. Use a different fixture: target $250 against A=$300 balance cap $100 → A:$100, A:$100, A:$50; if first A:$100 auth-fails, both other A assignments are marked `error` without an HTTP attempt).
 - **Partial-fill end-to-end test:** target $300 against a pool that can only fund $130 → one `placed` row + one `partial_fill` row + `sidecar_partial_fill` SSE.
+- **Peel-back test:** target $105 against (A:$1000, B:$1000) produces A:$75, B:$30 — verify the partial on A is the peel-back result, not a naive $100.
 - Splitter integration with `AccountsScraper`'s cache shape — confirms the splitter reads the same dataclasses the UI sees and that `max_parlay_stake` round-trips from env → credential → cache → splitter.
 
 ### Manual smoke (one-time, against the real captured endpoint)
