@@ -340,3 +340,68 @@ def test_determine_side_total_maps_over_under_to_side():
     assert Coral33Placer._determine_side(g, "Under", leg_T) == 2
     assert Coral33Placer._determine_side(g, "over", leg_T) == 1   # case-insensitive
     assert Coral33Placer._determine_side(g, "Nope", leg_T) is None
+
+
+# --- Alt-line / point-match tests --------------------------------------
+
+def test_strip_alt_suffix_handles_common_patterns():
+    """Coral33's ALT LINE tab suffixes team names with ' Alt RL',
+    ' Alt PL', etc. The placer's team match must strip these so 'Orioles
+    Alt RL' matches our cache's bare 'Baltimore Orioles'."""
+    from server.odds.books.coral33.placement import Coral33Placer
+    assert Coral33Placer._strip_alt_suffix("Orioles Alt RL") == "Orioles"
+    assert Coral33Placer._strip_alt_suffix("Lakers Alt PL") == "Lakers"
+    assert Coral33Placer._strip_alt_suffix("Bruins Alt MoneyLine") == "Bruins"
+    assert Coral33Placer._strip_alt_suffix("Plain Team") == "Plain Team"
+    assert Coral33Placer._strip_alt_suffix("") == ""
+
+
+def test_team_match_works_through_alt_suffix():
+    """Loose match must succeed for an ALT LINE entry whose team name
+    has ' Alt RL' tacked on."""
+    from server.odds.books.coral33.placement import Coral33Placer
+    # Cache name: "Baltimore Orioles"; ALT LINE entry: "Orioles Alt RL"
+    assert Coral33Placer._team_match("Orioles Alt RL", "Baltimore Orioles")
+    assert Coral33Placer._team_match("Angels Alt RL", "Los Angeles Angels")
+
+
+def test_point_matches_per_line_type():
+    """_point_matches must enforce spread/total point equality (within
+    0.01) for S/T, and always-True for M."""
+    from server.odds.books.coral33.placement import Coral33Placer
+    m = LegSpec(sport_type="", sport_sub_type="", period="Game",
+                line_type="M", game_num=0, chosen_team_id="", rot_num=0,
+                price_american=0, price_decimal=0.0,
+                price_numerator=0, price_denominator=0)
+    assert Coral33Placer._point_matches(m, {"spread": 0, "total_points": 0})
+
+    s = LegSpec(sport_type="", sport_sub_type="", period="Game",
+                line_type="S", game_num=0, chosen_team_id="", rot_num=0,
+                price_american=0, price_decimal=0.0,
+                price_numerator=0, price_denominator=0,
+                spread=-1.5)
+    assert Coral33Placer._point_matches(s, {"spread": -1.5, "total_points": 0})
+    assert not Coral33Placer._point_matches(s, {"spread": +1.5, "total_points": 0})
+
+    t = LegSpec(sport_type="", sport_sub_type="", period="Game",
+                line_type="T", game_num=0, chosen_team_id="", rot_num=0,
+                price_american=0, price_decimal=0.0,
+                price_numerator=0, price_denominator=0,
+                total_points=8.5)
+    assert Coral33Placer._point_matches(t, {"spread": 0, "total_points": 8.5})
+    assert not Coral33Placer._point_matches(t, {"spread": 0, "total_points": 9.0})
+
+
+def test_sport_key_to_coral_has_alt_subtypes_for_mlb_nba_nhl():
+    """Big-3 US team sports must have ALT LINE subtypes mapped so the
+    placer can fall through to them on alt spread/total bets."""
+    from server.odds.books.coral33.placement import Coral33Placer
+    mlb = Coral33Placer.SPORT_KEY_TO_CORAL["mlb"]
+    assert mlb[2] == ["MLB ALT LINE"]
+    nba = Coral33Placer.SPORT_KEY_TO_CORAL["nba"]
+    assert nba[2] == ["NBA ALT LINE"]
+    nhl = Coral33Placer.SPORT_KEY_TO_CORAL["nhl"]
+    assert nhl[2] == ["HOCKEY ALTER"]
+    # Sports without alt subtypes — empty list (not None)
+    assert Coral33Placer.SPORT_KEY_TO_CORAL["soccer"][2] == []
+    assert Coral33Placer.SPORT_KEY_TO_CORAL["tennis"][2] == []

@@ -21,6 +21,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -243,21 +244,28 @@ class Coral33Placer:
     LIVE_ENV_VAR = "CORAL33_PLACEMENT_LIVE"
 
     # Maps the cache's sport_key (e.g. "mlb") to Coral33's
-    # (sport_type, [sport_sub_types]) for the parlay tab.
+    # (sport_type, [main_sub_types], [alt_sub_types]) for the parlay tab.
     # Mirrors server/config/coral33.toml's [sports.<key>] entries.
-    # Sub-types are tried in order; first match wins.
-    SPORT_KEY_TO_CORAL: dict[str, tuple[str, list[str]]] = {
-        "mlb":            ("BASEBALL",   ["MLB"]),
-        "baseball_ncaa":  ("BASEBALL",   ["NCAABASEBALL"]),
-        "asian_baseball": ("BASEBALL",   ["KBO", "NPB"]),
-        "nba":            ("BASKETBALL", ["NBA"]),
-        "wnba":           ("BASKETBALL", ["WNBA"]),
-        "nhl":            ("HOCKEY",     ["NHL"]),
-        "soccer":         ("SOCCER",     ["WORLD CUP", "PREMIER LEAGUE", "CHAMPIONS LEAGUE", "EUROPA"]),
-        "tennis":         ("TENNIS",     ["WTA MATCHUPS", "ATP MATCHUPS"]),
-        "boxing":         ("BOXING",     ["BOXING"]),
-        "ufc":            ("BOXING",     ["UFC"]),
-        "cricket":        ("CRICKET",    ["CRICKET"]),
+    #
+    # MAIN subtypes carry the mainline (single h2h + the canonical
+    # spread/total per game). ALT subtypes carry alternate spreads/totals
+    # — one game appears as MULTIPLE entries (e.g. Orioles -1.5 AND
+    # Orioles -2.5 are separate entries with separate GameNums). For
+    # moneyline placements we only query MAIN; for spread/total, we walk
+    # MAIN first and fall through to ALT if the point doesn't match.
+    SPORT_KEY_TO_CORAL: dict[str, tuple[str, list[str], list[str]]] = {
+        # sport_key       sport_type    main_sub_types          alt_sub_types
+        "mlb":            ("BASEBALL",   ["MLB"],                ["MLB ALT LINE"]),
+        "baseball_ncaa":  ("BASEBALL",   ["NCAABASEBALL"],       []),
+        "asian_baseball": ("BASEBALL",   ["KBO", "NPB"],         []),
+        "nba":            ("BASKETBALL", ["NBA"],                ["NBA ALT LINE"]),
+        "wnba":           ("BASKETBALL", ["WNBA"],               []),
+        "nhl":            ("HOCKEY",     ["NHL"],                ["HOCKEY ALTER"]),
+        "soccer":         ("SOCCER",     ["WORLD CUP", "PREMIER LEAGUE", "CHAMPIONS LEAGUE", "EUROPA"], []),
+        "tennis":         ("TENNIS",     ["WTA MATCHUPS", "ATP MATCHUPS"], []),
+        "boxing":         ("BOXING",     ["BOXING"],             []),
+        "ufc":            ("BOXING",     ["UFC"],                []),
+        "cricket":        ("CRICKET",    ["CRICKET"],            []),
     }
 
     def __init__(
@@ -318,6 +326,16 @@ class Coral33Placer:
         self._lines_cache[key] = (now, resp)
         return resp
 
+    # Strips Coral's alt-line team suffixes so matching works against our
+    # cache names. Matches "Orioles Alt RL", "Lakers Alt PL", "Bruins Alt
+    # MoneyLine", etc. — anything after " Alt" up to end of string.
+    _ALT_SUFFIX_RE = re.compile(r"\s+Alt(\s+.+)?$", flags=re.IGNORECASE)
+
+    @staticmethod
+    def _strip_alt_suffix(name: str) -> str:
+        """Remove Coral's ' Alt …' team suffix used in ALT LINE tabs."""
+        return Coral33Placer._ALT_SUFFIX_RE.sub("", (name or "")).strip()
+
     @staticmethod
     def _team_match(team_field: str, target: str) -> bool:
         """Loose match between Coral33's TeamID and our cache's team name.
@@ -325,12 +343,31 @@ class Coral33Placer:
         Coral pads / sometimes shortens names. We strip both sides and
         check containment in either direction to handle e.g.
         ``"Kansas City Royals"`` vs Coral's ``"Royals"`` or
-        ``"Chicago Cubs    "`` vs ``"Chicago Cubs"``."""
-        a = (team_field or "").strip().lower()
+        ``"Chicago Cubs    "`` vs ``"Chicago Cubs"``. Also strips Coral's
+        ALT LINE ``" Alt RL"`` / ``" Alt PL"`` suffixes so alt-line
+        entries match the cache's bare team name."""
+        a = Coral33Placer._strip_alt_suffix(team_field).lower()
         b = (target or "").strip().lower()
         if not a or not b:
             return False
         return a == b or a in b or b in a
+
+    @staticmethod
+    def _point_matches(ev_leg: LegSpec, extra_fields: dict) -> bool:
+        """Does this Coral entry's spread / total point match what the EV
+        row recorded? For moneyline, always True (no point to match)."""
+        if ev_leg.line_type == "M":
+            return True
+        if ev_leg.line_type == "S":
+            return abs(
+                float(extra_fields["spread"]) - float(ev_leg.spread)
+            ) <= 0.01
+        if ev_leg.line_type == "T":
+            return abs(
+                float(extra_fields["total_points"])
+                - float(ev_leg.total_points)
+            ) <= 0.01
+        return False
 
     @staticmethod
     def _determine_side(
@@ -447,10 +484,28 @@ class Coral33Placer:
                 f"no Coral sport-type mapping for sport_key={ev_leg.sport_key!r}; "
                 f"add to Coral33Placer.SPORT_KEY_TO_CORAL"
             )
-        sport_type, sub_types = coral_mapping
+        sport_type, main_sub_types, alt_sub_types = coral_mapping
 
-        # Try each candidate sub-type until we find a matching game.
-        for sub_type in sub_types:
+        # Walk MAIN sub-types first. For S/T, fall through to ALT sub-types
+        # when MAIN's spread/total doesn't match the EV row's point — this
+        # is how we cover both the mainline (-1.5 on the favorite) AND its
+        # alternate variants (-2.5, +1.5, etc.), which Coral splits into
+        # separate ALT LINE entries with distinct GameNums.
+        sub_types_to_try = (
+            main_sub_types if ev_leg.line_type == "M"
+            else main_sub_types + alt_sub_types
+        )
+
+        target_home = ev_leg.home_team
+        target_away = ev_leg.away_team
+        target_team = ev_leg.outcome_name   # who we bet on
+
+        # Collect mismatch info so the final error message can name what
+        # Coral DID have if no entry matched the user's point.
+        last_seen_point: float | None = None
+        last_seen_label: str = ""
+
+        for sub_type in sub_types_to_try:
             t0 = time.monotonic()
             try:
                 lines_resp = await self._fetch_lines(
@@ -464,71 +519,51 @@ class Coral33Placer:
                 continue
             games = lines_resp.get("Lines") or []
             logger.info(
-                "[placer %s] Get_LeagueLines2 %s/%s → %d games  %.0fms",
+                "[placer %s] Get_LeagueLines2 %s/%s → %d entries  %.0fms",
                 self.client.customer_id, sport_type, sub_type, len(games),
                 (time.monotonic() - t0) * 1000,
             )
 
-            # Find the game by home + away team.
-            target_home = ev_leg.home_team
-            target_away = ev_leg.away_team
-            target_team = ev_leg.outcome_name  # who we bet on
+            # For ALT subtypes the same game appears multiple times with
+            # different Spread / TotalPoints, so we walk ALL team-matching
+            # entries, not just the first one. The first entry whose point
+            # matches the EV row's point wins.
             match_game = None
+            extra_fields = None
             for g in games:
                 t1 = g.get("Team1ID", "") or ""
                 t2 = g.get("Team2ID", "") or ""
-                # In Coral, Team1 = away, Team2 = home (confirmed from HAR).
-                if (
+                # In Coral, Team1 = away, Team2 = home (HAR-confirmed).
+                if not (
                     (self._team_match(t1, target_away)
                      or self._team_match(t1, target_home))
                     and
                     (self._team_match(t2, target_home)
                      or self._team_match(t2, target_away))
                 ):
+                    continue
+                side = self._determine_side(g, target_team, ev_leg)
+                if side is None:
+                    continue
+                ef = self._extract_price_fields(g, side, ev_leg)
+                if self._point_matches(ev_leg, ef):
                     match_game = g
+                    extra_fields = ef
                     break
+                # Remember the closest mismatch for diagnostic error
+                if ev_leg.line_type == "S":
+                    last_seen_point = float(ef["spread"])
+                    last_seen_label = ef["chosen_team_id"]
+                elif ev_leg.line_type == "T":
+                    last_seen_point = float(ef["total_points"])
+                    last_seen_label = ef["chosen_team_id"]
+
             if match_game is None:
-                continue   # try next sub_type
+                continue   # try next sub_type (alt fallback)
 
-            # Determine which side is ours (Team1 vs Team2) then extract
-            # the line-type-specific price + point fields.
-            side = self._determine_side(match_game, target_team, ev_leg)
-            if side is None:
-                raise PlacementError(
-                    f"found game {match_game.get('Team1ID')!r} vs "
-                    f"{match_game.get('Team2ID')!r} but couldn't determine "
-                    f"the side for line_type={ev_leg.line_type!r} "
-                    f"target={target_team!r}"
-                )
-
-            extra_fields = self._extract_price_fields(
-                match_game, side, ev_leg,
-            )
             chosen_team_id = extra_fields["chosen_team_id"]
             rot_num = extra_fields["rot_num"]
             price_american = extra_fields["price_american"]
-
-            # Line-moved check: refuse to place if the spread/total Coral
-            # currently offers differs from what the EV row captured. Better
-            # to fail loudly than to silently place an inverted bet (e.g.
-            # user picked "Reds -1.5" but Coral now shows "Reds +1.5" —
-            # those are totally different bets at totally different prices).
-            if ev_leg.line_type == "S":
-                coral_spread = float(extra_fields["spread"])
-                if abs(coral_spread - float(ev_leg.spread)) > 0.01:
-                    raise PlacementError(
-                        f"line moved: requested spread {ev_leg.spread:+g} for "
-                        f"{chosen_team_id} but Coral now offers "
-                        f"{coral_spread:+g}. Refresh the EV row and re-fire."
-                    )
-            elif ev_leg.line_type == "T":
-                coral_total = float(extra_fields["total_points"])
-                if abs(coral_total - float(ev_leg.total_points)) > 0.01:
-                    raise PlacementError(
-                        f"line moved: requested total {ev_leg.total_points:g} "
-                        f"({chosen_team_id}) but Coral now offers "
-                        f"{coral_total:g}. Refresh the EV row and re-fire."
-                    )
 
             logger.info(
                 "[placer %s] self-heal MATCH game_num=%d %s "
@@ -567,19 +602,42 @@ class Coral33Placer:
                     extra_fields.get("total_points", ev_leg.total_points)
                 ),
                 game_datetime=match_game.get("GameDateTime", ""),
+                # Description uses the bare team name (strip "Alt RL" etc.)
+                # for readability in audit logs + the UI. The on-the-wire
+                # chosen_team_id keeps Coral's exact string since their
+                # backend may bind it to the alt rot_num.
                 description=(
                     f"{sport_type.capitalize()} #{rot_num} "
-                    f"{chosen_team_id}{desc_point} "
+                    f"{self._strip_alt_suffix(chosen_team_id)}{desc_point} "
                     f"{price_american:+d} - For Game "
                 ),
             )
 
-        # No sub_type produced a match.
+        # No sub_type produced a point-matching entry. Build a precise
+        # error message based on whether we saw the team at all.
+        if last_seen_point is not None:
+            # We found the team but the point didn't match — line moved.
+            if ev_leg.line_type == "S":
+                raise PlacementError(
+                    f"line moved: requested spread {ev_leg.spread:+g} for "
+                    f"{ev_leg.outcome_name} but Coral now offers "
+                    f"{last_seen_point:+g} ({last_seen_label}) on main + "
+                    f"any alt tabs ({alt_sub_types or 'none configured'}). "
+                    f"Refresh the EV row and re-fire."
+                )
+            if ev_leg.line_type == "T":
+                raise PlacementError(
+                    f"line moved: requested total {ev_leg.total_points:g} "
+                    f"({ev_leg.outcome_name}) but Coral now offers "
+                    f"{last_seen_point:g} on main + any alt tabs "
+                    f"({alt_sub_types or 'none configured'}). "
+                    f"Refresh the EV row and re-fire."
+                )
         raise PlacementError(
             f"could not find game {ev_leg.away_team!r} @ "
             f"{ev_leg.home_team!r} in Coral33 Parlay tab for "
-            f"sport_key={ev_leg.sport_key!r} (tried {sub_types}). "
-            f"Line may have closed or sport mapping is wrong."
+            f"sport_key={ev_leg.sport_key!r} (tried main={main_sub_types}, "
+            f"alt={alt_sub_types}). Line may have closed or sport mapping is wrong."
         )
 
     async def place_open_parlay(
