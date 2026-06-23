@@ -64,12 +64,24 @@ def _normalize_team(
     n = re.sub(r"[^a-z0-9 ]+", " ", n)
     n = re.sub(r"\s+", " ", n).strip()
     if sport_key == "tennis":
+        # Coral33's tennis name format is INCONSISTENT in how it handles
+        # middle tokens:
+        #   "Eva Lys"                      → "E Lys"               (2-tok)
+        #   "Elena Gabriela Ruse"          → "E Ruse"              (middle dropped)
+        #   "Thiago Agustin Tirante"       → "T A Tirante"         (middle initial kept)
+        #   "Pablo Carreno Busta"          → "P Carreno Busta"     (compound surname kept)
+        # Reducing BOTH sides to "<first-initial> <last-token>" is the
+        # common denominator that aligns all four shapes:
+        #   E Ruse                ↔ Elena Gabriela Ruse   → "e ruse"
+        #   T A Tirante           ↔ Thiago Tirante        → "t tirante"
+        #   P Carreno Busta       ↔ Pablo Carreno Busta   → "p busta"
+        # Edge risk: two players sharing initial + last surname collide
+        # (e.g. "D Galan" could mean Daniel or Diego). Disambiguation
+        # via time-window match still applies; add team_aliases for
+        # specific collisions when they surface.
         tokens = n.split(" ")
-        if len(tokens) >= 2 and len(tokens[0]) > 1:
-            # "pablo carreno busta" → "p carreno busta" so it aligns with
-            # coral33's already-abbreviated "p carreno busta".
-            tokens[0] = tokens[0][0]
-            n = " ".join(tokens)
+        if len(tokens) >= 2:
+            n = f"{tokens[0][0]} {tokens[-1]}"
     return aliases.get(n, n)
 
 

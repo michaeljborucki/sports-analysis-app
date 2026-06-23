@@ -34,7 +34,7 @@ def test_exact_match():
         away="Portland Trail Blazers",
         commence=datetime(2026, 4, 19, 19, 0, tzinfo=timezone.utc),
     )
-    assert eid == "abc123"
+    assert eid is not None and eid["event_id"] == "abc123"
 
 
 def test_reversed_home_away_still_matches():
@@ -47,7 +47,7 @@ def test_reversed_home_away_still_matches():
         away="San Antonio Spurs",
         commence=datetime(2026, 4, 19, 19, 0, tzinfo=timezone.utc),
     )
-    assert eid == "abc123"
+    assert eid is not None and eid["event_id"] == "abc123"
 
 
 def test_case_and_punctuation_ignored():
@@ -58,7 +58,7 @@ def test_case_and_punctuation_ignored():
         away="portland trail  blazers",
         commence=datetime(2026, 4, 19, 19, 0, tzinfo=timezone.utc),
     )
-    assert eid == "abc123"
+    assert eid is not None and eid["event_id"] == "abc123"
 
 
 def test_time_window_accepts_small_drift():
@@ -69,7 +69,7 @@ def test_time_window_accepts_small_drift():
         away="Portland Trail Blazers",
         commence=datetime(2026, 4, 19, 19, 7, tzinfo=timezone.utc),  # +7 min
     )
-    assert eid == "abc123"
+    assert eid is not None and eid["event_id"] == "abc123"
 
 
 def test_time_window_rejects_large_drift():
@@ -98,7 +98,7 @@ def test_alias_map_resolves_name_mismatch():
                                   team_aliases={"nba": {"la clippers": "los angeles clippers"}})
     eid = matcher.match("nba", home="LA Clippers", away="Golden State Warriors",
                         commence=datetime(2026, 4, 19, 20, 0, tzinfo=timezone.utc))
-    assert eid == "lac1"
+    assert eid is not None and eid["event_id"] == "lac1"
 
 
 def test_no_match_returns_none():
@@ -112,7 +112,7 @@ def test_naive_datetime_treated_as_utc():
     m = Coral33EventMatcher(_stub)
     eid = m.match("nba", home="San Antonio Spurs", away="Portland Trail Blazers",
                   commence=datetime(2026, 4, 19, 19, 0))  # tz-naive
-    assert eid == "abc123"
+    assert eid is not None and eid["event_id"] == "abc123"
 
 
 def test_picks_closest_event_when_multiple_match():
@@ -127,4 +127,37 @@ def test_picks_closest_event_when_multiple_match():
     m = Coral33EventMatcher(lambda s: events)
     eid = m.match("nba", home="A", away="B",
                   commence=datetime(2026, 4, 19, 19, 7, tzinfo=timezone.utc))
-    assert eid == "late"  # 2 min off vs 17 min off
+    assert eid is not None and eid["event_id"] == "late"  # 2 min off vs 17 min off
+
+
+# --- Tennis name normalization regression tests ---
+
+import pytest
+from server.odds.books.coral33.event_matcher import _normalize_team
+
+
+@pytest.mark.parametrize("coral,odds_api,expected_norm", [
+    # 2-token (simple) — common WTA case
+    ("E Lys",           "Eva Lys",                "e lys"),
+    ("E Navarro",       "Emma Navarro",           "e navarro"),
+    # 3-token Odds API with middle name dropped by Coral
+    # (Elena Gabriela Ruse → "E Ruse" on Coral)
+    ("E Ruse",          "Elena Gabriela Ruse",    "e ruse"),
+    # 3-token Coral with middle initial vs 2-token Odds API
+    # (Thiago Tirante → "T A Tirante" on Coral)
+    ("T A Tirante",     "Thiago Tirante",         "t tirante"),
+    # Compound surname kept on both sides → match on last token only
+    # (Pablo Carreno Busta → "P Carreno Busta" on Coral, full on Odds API)
+    ("P Carreno Busta", "Pablo Carreno Busta",    "p busta"),
+])
+def test_tennis_normalizer_handles_inconsistent_coral_formats(
+    coral, odds_api, expected_norm,
+):
+    """Coral33 abbreviates tennis names inconsistently — sometimes drops
+    middle names, sometimes keeps middle initials, sometimes keeps
+    compound surnames. Reducing both sides to "<first-initial>
+    <last-token>" is the common denominator. Regression test for the
+    fix that landed when ATP and most multi-token WTA matches were
+    silently orphaning."""
+    assert _normalize_team(coral, {}, "tennis") == expected_norm
+    assert _normalize_team(odds_api, {}, "tennis") == expected_norm
