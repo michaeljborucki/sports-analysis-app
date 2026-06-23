@@ -332,6 +332,94 @@ class Coral33Placer:
             return False
         return a == b or a in b or b in a
 
+    @staticmethod
+    def _determine_side(
+        match_game: dict,
+        target_team: str,
+        ev_leg: LegSpec,
+    ) -> int | None:
+        """Which side of the matched Coral game are we betting on?
+        Returns 1 (Team1) or 2 (Team2), or None if undeterminable.
+
+        For moneylines + spreads, the target is a team name; we match by
+        team. For totals, the target is 'Over' or 'Under' — there's no
+        team to match, so we map to side=1 for Over and side=2 for
+        Under (Coral's convention: TtlPtsAdj1 = Over, TtlPtsAdj2 = Under,
+        confirmed in HAR fixture)."""
+        if ev_leg.line_type == "T":
+            ot = (target_team or "").strip().lower()
+            if ot == "over":
+                return 1
+            if ot == "under":
+                return 2
+            return None
+        # M or S: identify by team name
+        if Coral33Placer._team_match(
+            match_game.get("Team1ID", ""), target_team,
+        ):
+            return 1
+        if Coral33Placer._team_match(
+            match_game.get("Team2ID", ""), target_team,
+        ):
+            return 2
+        return None
+
+    @staticmethod
+    def _extract_price_fields(
+        match_game: dict,
+        side: int,                # 1 or 2
+        ev_leg: LegSpec,
+    ) -> dict:
+        """Pull the price + point fields appropriate to ev_leg.line_type
+        from the matched Coral game. Returns a dict the caller splats into
+        the LegSpec via dataclasses.replace."""
+        # Team identification — Team1 / Team2 fields exist in all three
+        # market types since Coral keys everything off rotation numbers.
+        team_id = (match_game.get(f"Team{side}ID") or "").strip()
+        rot_num = match_game.get(f"Team{side}RotNum", 0)
+
+        line_type = ev_leg.line_type
+        if line_type == "M":
+            return {
+                "chosen_team_id": team_id,
+                "rot_num": rot_num,
+                "price_american": match_game.get(f"MoneyLine{side}", 0),
+                "price_decimal":  match_game.get(f"MoneyLineDecimal{side}", 0.0),
+                "price_numerator":  match_game.get(f"MoneyLineNumerator{side}", 0),
+                "price_denominator": match_game.get(f"MoneyLineDenominator{side}", 0),
+                "spread": 0.0,
+                "total_points": 0.0,
+            }
+        if line_type == "S":
+            # Coral's `Spread` field is signed from Team1's perspective.
+            # Team1 spread = +Spread; Team2 spread = -Spread.
+            spread_team1 = match_game.get("Spread") or 0.0
+            spread = float(spread_team1) if side == 1 else -float(spread_team1)
+            return {
+                "chosen_team_id": team_id,
+                "rot_num": rot_num,
+                "price_american": match_game.get(f"SpreadAdj{side}", 0),
+                "price_decimal":  match_game.get(f"SpreadDecimal{side}", 0.0),
+                "price_numerator":  match_game.get(f"SpreadNumerator{side}", 0),
+                "price_denominator": match_game.get(f"SpreadDenominator{side}", 0),
+                "spread": spread,
+                "total_points": 0.0,
+            }
+        # line_type == "T" — totals (Over / Under)
+        # Coral's convention: TtlPtsAdj1 = Over, TtlPtsAdj2 = Under.
+        # The "chosen_team_id" for a total is literally "Over"/"Under";
+        # we use rot_num from the corresponding side (rot1 / rot2).
+        return {
+            "chosen_team_id": "Over" if side == 1 else "Under",
+            "rot_num": rot_num,
+            "price_american": match_game.get(f"TtlPtsAdj{side}", 0),
+            "price_decimal":  match_game.get(f"TtlPointsDecimal{side}", 0.0),
+            "price_numerator":  match_game.get(f"TtlPointsNumerator{side}", 0),
+            "price_denominator": match_game.get(f"TtlPointsDenominator{side}", 0),
+            "spread": 0.0,
+            "total_points": float(match_game.get("TotalPoints") or 0.0),
+        }
+
     async def _lookup_coral_context(
         self,
         ev_leg: LegSpec,
@@ -340,18 +428,17 @@ class Coral33Placer:
         rot_num, …), populate them via Get_LeagueLines2 and return an
         enriched LegSpec. Otherwise return the input unchanged.
 
-        Only handles moneyline (line_type='M') for now. Spread + total
-        placements need additional fields from Coral's response (SpreadAdj1,
-        TtlPtsAdj1, etc.) that we'll wire when first needed."""
+        Handles all three line types — moneyline (M), spread (S), and
+        total (T) — each pulling its specific price/point fields from
+        Coral's response."""
         from dataclasses import replace
         if ev_leg.game_num > 0 and ev_leg.sport_type and ev_leg.rot_num > 0:
             return ev_leg   # already populated, no lookup needed
 
-        if ev_leg.line_type != "M":
+        if ev_leg.line_type not in ("M", "S", "T"):
             raise PlacementError(
-                f"placer self-heal only supports moneyline (line_type='M') "
-                f"for now; got line_type={ev_leg.line_type!r} on "
-                f"{ev_leg.outcome_name!r}. Spread/total lookup is TODO."
+                f"unsupported line_type={ev_leg.line_type!r}; "
+                f"expected one of 'M' (moneyline), 'S' (spread), 'T' (total)"
             )
 
         coral_mapping = self.SPORT_KEY_TO_CORAL.get(ev_leg.sport_key)
@@ -403,33 +490,63 @@ class Coral33Placer:
             if match_game is None:
                 continue   # try next sub_type
 
-            # Determine which side is ours: Team1 or Team2.
-            if self._team_match(match_game.get("Team1ID", ""), target_team):
-                rot_num = match_game.get("Team1RotNum", 0)
-                price_american = match_game.get("MoneyLine1", 0)
-                price_decimal = match_game.get("MoneyLineDecimal1", 0.0)
-                price_num = match_game.get("MoneyLineNumerator1", 0)
-                price_den = match_game.get("MoneyLineDenominator1", 0)
-                chosen_team_id = (match_game.get("Team1ID") or "").strip()
-            elif self._team_match(match_game.get("Team2ID", ""), target_team):
-                rot_num = match_game.get("Team2RotNum", 0)
-                price_american = match_game.get("MoneyLine2", 0)
-                price_decimal = match_game.get("MoneyLineDecimal2", 0.0)
-                price_num = match_game.get("MoneyLineNumerator2", 0)
-                price_den = match_game.get("MoneyLineDenominator2", 0)
-                chosen_team_id = (match_game.get("Team2ID") or "").strip()
-            else:
+            # Determine which side is ours (Team1 vs Team2) then extract
+            # the line-type-specific price + point fields.
+            side = self._determine_side(match_game, target_team, ev_leg)
+            if side is None:
                 raise PlacementError(
                     f"found game {match_game.get('Team1ID')!r} vs "
-                    f"{match_game.get('Team2ID')!r} but neither matches "
-                    f"target team {target_team!r}"
+                    f"{match_game.get('Team2ID')!r} but couldn't determine "
+                    f"the side for line_type={ev_leg.line_type!r} "
+                    f"target={target_team!r}"
                 )
 
-            logger.info(
-                "[placer %s] self-heal MATCH game_num=%d %s @ %+d  (sub_type=%s)",
-                self.client.customer_id, match_game.get("GameNum", 0),
-                chosen_team_id, price_american, sub_type,
+            extra_fields = self._extract_price_fields(
+                match_game, side, ev_leg,
             )
+            chosen_team_id = extra_fields["chosen_team_id"]
+            rot_num = extra_fields["rot_num"]
+            price_american = extra_fields["price_american"]
+
+            # Line-moved check: refuse to place if the spread/total Coral
+            # currently offers differs from what the EV row captured. Better
+            # to fail loudly than to silently place an inverted bet (e.g.
+            # user picked "Reds -1.5" but Coral now shows "Reds +1.5" —
+            # those are totally different bets at totally different prices).
+            if ev_leg.line_type == "S":
+                coral_spread = float(extra_fields["spread"])
+                if abs(coral_spread - float(ev_leg.spread)) > 0.01:
+                    raise PlacementError(
+                        f"line moved: requested spread {ev_leg.spread:+g} for "
+                        f"{chosen_team_id} but Coral now offers "
+                        f"{coral_spread:+g}. Refresh the EV row and re-fire."
+                    )
+            elif ev_leg.line_type == "T":
+                coral_total = float(extra_fields["total_points"])
+                if abs(coral_total - float(ev_leg.total_points)) > 0.01:
+                    raise PlacementError(
+                        f"line moved: requested total {ev_leg.total_points:g} "
+                        f"({chosen_team_id}) but Coral now offers "
+                        f"{coral_total:g}. Refresh the EV row and re-fire."
+                    )
+
+            logger.info(
+                "[placer %s] self-heal MATCH game_num=%d %s "
+                "line_type=%s @ %+d  (sub_type=%s)",
+                self.client.customer_id, match_game.get("GameNum", 0),
+                chosen_team_id, ev_leg.line_type, price_american, sub_type,
+            )
+
+            # Build the description in Coral's canonical form. The
+            # point-suffix differs by line type — included between the
+            # team and the price for spreads/totals so it matches Coral's
+            # HAR-captured format.
+            desc_point = ""
+            if ev_leg.line_type == "S":
+                desc_point = f" {extra_fields['spread']:+g}"
+            elif ev_leg.line_type == "T":
+                # Coral renders e.g. "Over 8.5" or "Under 8.5"
+                desc_point = f" {extra_fields['total_points']:g}"
 
             return replace(
                 ev_leg,
@@ -442,13 +559,18 @@ class Coral33Placer:
                 chosen_team_id=chosen_team_id,
                 rot_num=int(rot_num),
                 price_american=int(price_american),
-                price_decimal=float(price_decimal),
-                price_numerator=int(price_num),
-                price_denominator=int(price_den),
+                price_decimal=float(extra_fields["price_decimal"]),
+                price_numerator=int(extra_fields["price_numerator"]),
+                price_denominator=int(extra_fields["price_denominator"]),
+                spread=float(extra_fields.get("spread", ev_leg.spread)),
+                total_points=float(
+                    extra_fields.get("total_points", ev_leg.total_points)
+                ),
                 game_datetime=match_game.get("GameDateTime", ""),
                 description=(
                     f"{sport_type.capitalize()} #{rot_num} "
-                    f"{chosen_team_id} {price_american:+d} - For Game "
+                    f"{chosen_team_id}{desc_point} "
+                    f"{price_american:+d} - For Game "
                 ),
             )
 

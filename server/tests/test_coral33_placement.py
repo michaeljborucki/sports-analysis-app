@@ -245,3 +245,98 @@ async def test_live_requires_env_var(new_zealand_leg, monkeypatch):
         await placer.place_open_parlay(
             ev_leg=new_zealand_leg, stake_dollars=10, live=True,
         )
+
+
+# --- Spread + total self-heal tests -------------------------------------
+
+def _fake_game_with_spread_and_total() -> dict:
+    """Mirrors the shape Get_LeagueLines2 returns. Team1=away convention."""
+    return {
+        "GameNum": 619139524,
+        "Team1ID": "Cincinnati Reds",
+        "Team1RotNum": 954,
+        "Team2ID": "Milwaukee Brewers",
+        "Team2RotNum": 953,
+        "MoneyLine1": +110, "MoneyLineDecimal1": 2.10,
+        "MoneyLineNumerator1": 11, "MoneyLineDenominator1": 10,
+        "MoneyLine2": -130, "MoneyLineDecimal2": 1.77,
+        "MoneyLineNumerator2": 10, "MoneyLineDenominator2": 13,
+        "Spread": -1.5,         # signed from Team1's perspective
+        "SpreadAdj1": -110, "SpreadDecimal1": 1.909,
+        "SpreadNumerator1": 10, "SpreadDenominator1": 11,
+        "SpreadAdj2": -110, "SpreadDecimal2": 1.909,
+        "SpreadNumerator2": 10, "SpreadDenominator2": 11,
+        "TotalPoints": 8.5,
+        "TtlPtsAdj1": -105, "TtlPointsDecimal1": 1.952,
+        "TtlPointsNumerator1": 20, "TtlPointsDenominator1": 21,
+        "TtlPtsAdj2": -115, "TtlPointsDecimal2": 1.87,
+        "TtlPointsNumerator2": 20, "TtlPointsDenominator2": 23,
+        "SportType": "Baseball            ",
+        "SportSubType": "MLB         ",
+        "GameDateTime": "2026-06-23 19:10:01.000",
+    }
+
+
+def test_extract_price_fields_moneyline():
+    """Side determination + price extraction for h2h."""
+    from server.odds.books.coral33.placement import Coral33Placer
+    g = _fake_game_with_spread_and_total()
+    leg = LegSpec(sport_type="", sport_sub_type="", period="Game",
+                  line_type="M", game_num=0, chosen_team_id="", rot_num=0,
+                  price_american=0, price_decimal=0.0,
+                  price_numerator=0, price_denominator=0)
+    # Team1 side: Cincinnati Reds
+    out = Coral33Placer._extract_price_fields(g, side=1, ev_leg=leg)
+    assert out["chosen_team_id"] == "Cincinnati Reds"
+    assert out["rot_num"] == 954
+    assert out["price_american"] == +110
+
+
+def test_extract_price_fields_spread_team1_takes_signed_value():
+    """Team1 spread = +Spread; Team2 spread = -Spread (Coral signs from
+    Team1's perspective)."""
+    from server.odds.books.coral33.placement import Coral33Placer
+    g = _fake_game_with_spread_and_total()  # Spread = -1.5
+    leg_S = LegSpec(sport_type="", sport_sub_type="", period="Game",
+                    line_type="S", game_num=0, chosen_team_id="", rot_num=0,
+                    price_american=0, price_decimal=0.0,
+                    price_numerator=0, price_denominator=0)
+    side1 = Coral33Placer._extract_price_fields(g, side=1, ev_leg=leg_S)
+    side2 = Coral33Placer._extract_price_fields(g, side=2, ev_leg=leg_S)
+    assert side1["spread"] == -1.5    # Reds -1.5 (Team1 is favored)
+    assert side2["spread"] == +1.5    # Brewers +1.5
+    assert side1["price_american"] == -110
+    assert side2["price_american"] == -110
+
+
+def test_extract_price_fields_total_over_under_mapping():
+    """Side=1 → Over, Side=2 → Under (Coral convention)."""
+    from server.odds.books.coral33.placement import Coral33Placer
+    g = _fake_game_with_spread_and_total()
+    leg_T = LegSpec(sport_type="", sport_sub_type="", period="Game",
+                    line_type="T", game_num=0, chosen_team_id="", rot_num=0,
+                    price_american=0, price_decimal=0.0,
+                    price_numerator=0, price_denominator=0,
+                    total_points=8.5)
+    over = Coral33Placer._extract_price_fields(g, side=1, ev_leg=leg_T)
+    under = Coral33Placer._extract_price_fields(g, side=2, ev_leg=leg_T)
+    assert over["chosen_team_id"] == "Over"
+    assert over["total_points"] == 8.5
+    assert over["price_american"] == -105
+    assert under["chosen_team_id"] == "Under"
+    assert under["total_points"] == 8.5
+    assert under["price_american"] == -115
+
+
+def test_determine_side_total_maps_over_under_to_side():
+    """Side=1 for 'Over', side=2 for 'Under', None for anything else."""
+    from server.odds.books.coral33.placement import Coral33Placer
+    g = _fake_game_with_spread_and_total()
+    leg_T = LegSpec(sport_type="", sport_sub_type="", period="Game",
+                    line_type="T", game_num=0, chosen_team_id="", rot_num=0,
+                    price_american=0, price_decimal=0.0,
+                    price_numerator=0, price_denominator=0)
+    assert Coral33Placer._determine_side(g, "Over", leg_T) == 1
+    assert Coral33Placer._determine_side(g, "Under", leg_T) == 2
+    assert Coral33Placer._determine_side(g, "over", leg_T) == 1   # case-insensitive
+    assert Coral33Placer._determine_side(g, "Nope", leg_T) is None
