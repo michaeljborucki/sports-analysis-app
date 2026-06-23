@@ -1,33 +1,34 @@
 "use client";
+import { useState } from "react";
 import { FreshnessChip } from "@/components/freshness-chip";
 
-import { AccountPoolGrid } from "@/components/sidecar/AccountPoolGrid";
+import {
+  AccountPickerGrid,
+  type SelectedAccount,
+} from "@/components/sidecar/AccountPickerGrid";
 import { SignalFeed } from "@/components/sidecar/SignalFeed";
 import { RunLog } from "@/components/sidecar/RunLog";
 import { ModeToggle } from "@/components/sidecar/ModeToggle";
 import { ActiveSignalsPanel } from "@/components/sidecar/ActiveSignalsPanel";
 
 /**
- * /sidecar — the auto-bet sidecar dashboard.
+ * /sidecar — account-first auto-bet dashboard.
  *
- * Layout (Bloomberg-terminal style, three-column workspace):
- *   ┌────────────── header (title + ModeToggle + FreshnessChip) ──────────────┐
- *   │                                                                          │
- *   │  ┌────────────────┐  ┌────────────────────┐  ┌──────────────────────┐  │
- *   │  │   SignalFeed   │  │ ActiveSignalsPanel │  │   AccountPoolGrid    │  │
- *   │  │   (left, lg)   │  │  (center, target)  │  │   (right, 7 cards)   │  │
- *   │  │                │  │                    │  │                      │  │
- *   │  └────────────────┘  └────────────────────┘  └──────────────────────┘  │
- *   │                                                                          │
- *   │  ┌──────────────────────────── RunLog ────────────────────────────────┐ │
- *   │  └────────────────────────────────────────────────────────────────────┘ │
- *   └──────────────────────────────────────────────────────────────────────────┘
+ * Workflow:
+ *   1) User picks one account from the AccountPickerGrid (top).
+ *   2) The bet feed renders, each row showing a one-click PLACE button
+ *      that fires immediately against the pinned account. The splitter
+ *      stacks multi-parlays on that account (each at its cap) up to the
+ *      Kelly target.
+ *   3) Signals armed in this flow inherit `armed_customer_id`, so the
+ *      autonomous delta-tick re-fires future top-ups on the same account.
  *
- * The page composes the five H1-H5 components — no business logic lives
- * here. Each component owns its own SWR fetch and refresh cadence; cache
- * mode + visible-books prefs flow through the usual SwrProvider context.
+ * Until an account is picked, the bet feed stays hidden so the workflow
+ * reads strictly top-down.
  */
 export default function SidecarPage() {
+  const [selected, setSelected] = useState<SelectedAccount | null>(null);
+
   return (
     <div className="flex flex-col gap-4">
       <header className="flex items-end justify-between gap-4 flex-wrap">
@@ -36,7 +37,7 @@ export default function SidecarPage() {
             Sidecar
           </h1>
           <span className="text-xs text-text-3 tabular hidden sm:inline">
-            coral33 auto-place · sequential placements with jitter
+            account-first · coral33 · one-click parlay
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -45,26 +46,32 @@ export default function SidecarPage() {
         </div>
       </header>
 
-      {/* Three-column workspace.
-          - SignalFeed (left, 5/12)  — actionable +EV parlay-eligible rows
-          - ActiveSignalsPanel (center, 4/12) — armed signals + delta gauge
-          - AccountPoolGrid (right, 3/12) — pool drain order
-          On md/sm screens the columns stack in source order. */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-5 order-1">
-          <SignalFeed />
-        </div>
-        <div className="lg:col-span-4 order-2">
-          <ActiveSignalsPanel />
-        </div>
-        <div className="lg:col-span-3 order-3">
-          <AccountPoolGrid />
-        </div>
-      </div>
+      {/* STEP 1: pick an account */}
+      <AccountPickerGrid selected={selected} onSelect={setSelected} />
 
-      {/* Run log spans the full width — placements per job often expand
-          to 4-5 rows each, and a wide layout reads cleanly at the dense
-          /accounts row height without truncating ev_row_id. */}
+      {/* STEP 2: bets show up only after a pick */}
+      {selected ? (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div className="lg:col-span-8 order-1">
+            <SignalFeed selectedAccount={selected} />
+          </div>
+          <div className="lg:col-span-4 order-2">
+            <ActiveSignalsPanel />
+          </div>
+        </div>
+      ) : (
+        <div className="border border-dashed border-border-subtle rounded-md bg-bg-0 px-4 py-8 text-center">
+          <p className="text-text-2 text-sm">
+            Pick an account above to see eligible +EV parlay signals.
+          </p>
+          <p className="text-text-3 text-xs mt-1">
+            Each placement will fire on the selected account at its
+            per-parlay cap; the splitter stacks multi-parlays if Kelly
+            target exceeds the cap.
+          </p>
+        </div>
+      )}
+
       <RunLog />
     </div>
   );

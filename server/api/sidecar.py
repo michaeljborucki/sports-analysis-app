@@ -53,6 +53,12 @@ logger = logging.getLogger(__name__)
 class PlaceBody(BaseModel):
     ev_row_id: str = Field(..., min_length=1)
     kelly_fraction: str  # 'full' | 'half' | 'quarter'
+    # Account-first /sidecar flow: when the user has picked an account
+    # before clicking PLACE, the UI sends its customer_id here. The
+    # splitter then constrains to just that account and stacks multi-
+    # parlays on it (each at the account's max_parlay_stake) up to the
+    # Kelly target. Omit / null = legacy pool-wide splitter behavior.
+    customer_id: str | None = None
 
 
 class PlaceResponse(BaseModel):
@@ -150,6 +156,7 @@ def build_router() -> APIRouter:
             kelly_full_pct=kelly_full_pct,
             kelly_fraction=fraction,
             bankroll=bankroll,
+            customer_id=body.customer_id,
         )
 
         # 4) Pre-compute the plan preview SYNCHRONOUSLY so the UI's confirm
@@ -159,7 +166,7 @@ def build_router() -> APIRouter:
         try:
             target = int(round(kelly_to_pct(fraction, kelly_full_pct) * bankroll))
             pool = orchestrator.pool_provider()
-            plan = plan_splits(target, pool)
+            plan = plan_splits(target, pool, pinned_customer_id=body.customer_id)
             plan_preview: dict[str, Any] = {
                 "target": plan.target,
                 "status": plan.status,
@@ -251,11 +258,89 @@ def build_router() -> APIRouter:
             default_kelly=get_default_kelly().value,
         )
 
+    @router.get("/accounts")
+    def get_sidecar_accounts() -> dict:
+        """Pool-eligible accounts only — the canonical picker source.
+
+        Identity comes from the same ``pool_provider`` the splitter uses
+        (factory.py: filters out accounts in error or without a proxy),
+        rich display data (player_name, wager counts, balances) is
+        joined from the shared coral33 accounts rollup.
+
+        Returns ``{"snapshots": [...]}``. Each snapshot is a subset of
+        the /api/coral33/accounts row + an explicit ``max_parlay_stake``
+        sourced from the credential file (not the cached rollup) so
+        Stanley's $150 cap propagates without depending on Phase-A
+        plumbing.
+        """
+        orchestrator = factory.get_orchestrator()
+        try:
+            pool = orchestrator.pool_provider()
+        except Exception:  # noqa: BLE001
+            logger.exception("sidecar pool_provider failed")
+            return {"snapshots": []}
+
+        # Pull the rich rollup the scraper already maintains for the
+        # /accounts page so the UI gets player_name + wager counts
+        # without a second fetch.
+        rich_by_id: dict = {}
+        try:
+            scraper = factory._scraper  # noqa: SLF001 — shared singleton
+            if scraper is not None:
+                for s in scraper.cached().snapshots:
+                    rich_by_id[s.customer_id] = s
+        except Exception:  # noqa: BLE001
+            logger.exception("sidecar accounts: rollup lookup failed")
+
+        out = []
+        for snap in pool:
+            r = rich_by_id.get(snap.customer_id)
+            out.append({
+                "customer_id": snap.customer_id,
+                "label": getattr(r, "label", "") if r else "",
+                "player_name": getattr(r, "player_name", None) if r else None,
+                "current_balance": (
+                    float(getattr(r, "current_balance", 0)) if r else 0.0
+                ),
+                "available_balance": float(snap.available_balance),
+                "pending_wager_balance": (
+                    float(getattr(r, "pending_wager_balance", 0))
+                    if r else 0.0
+                ),
+                "max_parlay_stake": snap.credential.max_parlay_stake,
+                "wagers": {
+                    "open_count": (
+                        getattr(getattr(r, "wagers", None), "open_count", 0)
+                        if r else 0
+                    ),
+                    "open_amount_risked": (
+                        float(getattr(getattr(r, "wagers", None),
+                                      "open_amount_risked", 0))
+                        if r else 0.0
+                    ),
+                    "parlay_count": (
+                        getattr(getattr(r, "wagers", None),
+                                "parlay_count", 0)
+                        if r else 0
+                    ),
+                    "straight_count": (
+                        getattr(getattr(r, "wagers", None),
+                                "straight_count", 0)
+                        if r else 0
+                    ),
+                },
+                "error": None,
+            })
+        return {"snapshots": out, "account_count": len(out)}
+
     @router.get("/active-signals")
-    def get_active_signals() -> list[dict]:
-        """List active (pre-game) signals being tracked by the delta-tick
-        loop. Sourced from sidecar_active_signals. Empty when nothing is
-        armed.
+    def get_active_signals() -> dict:
+        """List active (pre-game) signals tracked by the delta-tick loop.
+
+        Returns ``{"signals": [...]}`` so the frontend can extend the
+        shape without churn (vs a bare list). Each signal includes
+        ``armed_customer_id`` — the customer_id the user pinned at arm
+        time, or NULL for pre-account-first signals.
         """
         # Lazy import — the active_signals module is part of the same
         # package, but importing at module load creates a circular hint
@@ -265,7 +350,7 @@ def build_router() -> APIRouter:
         conn = _audit_conn()
         try:
             signals = active_signals.list_active(conn)
-            return [s.__dict__ for s in signals]
+            return {"signals": [s.__dict__ for s in signals]}
         finally:
             conn.close()
 

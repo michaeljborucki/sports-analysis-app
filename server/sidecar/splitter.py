@@ -18,10 +18,22 @@ FLOOR = 30   # dollars; no individual parlay smaller than this
 def plan_splits(
     target: int,
     accounts: list[AccountSnapshot],
+    pinned_customer_id: str | None = None,
 ) -> SplitPlan:
+    """Plan a placement.
+
+    ``pinned_customer_id`` (account-first /sidecar flow) constrains the
+    candidate pool to that one account. Within that constraint the same
+    multi-parlay-per-account stacking logic runs: pack full-cap parlays
+    until balance runs out, take one partial, peel back if the residual
+    would drop below the floor. Cross-account peel-back is suppressed —
+    a pinned plan never spills into a second account.
+    """
     if target < FLOOR:
         return SplitPlan(assignments=[], status="below_minimum", target=target)
 
+    if pinned_customer_id is not None:
+        accounts = [a for a in accounts if a.customer_id == pinned_customer_id]
     eligible = sorted(
         [a for a in accounts if a.available_balance >= FLOOR],
         key=lambda a: a.available_balance,
@@ -77,7 +89,9 @@ def plan_splits(
     # Final peel-back: reduce last assignment by (FLOOR - remaining) and
     # place a fresh FLOOR-sized bet on the next-cheapest non-same account
     # that still has FLOOR of remaining (not just original) balance.
-    if 0 < remaining < FLOOR and assignments:
+    # Pinned plans cannot peel back to another account — by construction
+    # there isn't one.
+    if pinned_customer_id is None and 0 < remaining < FLOOR and assignments:
         last = assignments[-1]
         deficit = FLOOR - remaining
         if last.amount - deficit >= FLOOR:

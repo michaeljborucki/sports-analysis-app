@@ -99,3 +99,9 @@ class SidecarPlaceRequest:
     # Delta-tick path uses this to bypass Kelly recompute; user-triggered
     # placements leave it None.
     stake_override_dollars: int | None = None
+    # Pin the placement to one customer_id. Set by the account-first UI on
+    # the /sidecar page and by the delta-tick when re-firing on the
+    # originally-armed account. None = legacy splitter behavior across the
+    # whole pool. When set, the splitter filters the pool to this single
+    # account and stacks multi-parlays on it (each at the account's cap).
+    customer_id: str | None = None

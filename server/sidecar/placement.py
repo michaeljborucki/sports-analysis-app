@@ -202,7 +202,7 @@ class SidecarOrchestrator:
 
         target = _target_for(req)
         pool = self.pool_provider()
-        plan = plan_splits(target, pool)
+        plan = plan_splits(target, pool, pinned_customer_id=req.customer_id)
 
         conn = self.audit_conn
         try:
@@ -401,6 +401,7 @@ class SidecarOrchestrator:
                     kelly_fraction=req.kelly_fraction,
                     bankroll_at_arm=req.bankroll,
                     commence_time=commence_ts,
+                    armed_customer_id=req.customer_id,
                 )
             active_signals.update_total_placed(
                 conn, req.ev_row_id, float(stake),

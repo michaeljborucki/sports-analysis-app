@@ -14,6 +14,8 @@ import { useVisibleBooks } from "@/lib/use-visible-books";
 import { formatAmerican } from "@/lib/format";
 import { fromEv, marketLabel, sideLabel, commenceLabel } from "@/lib/edges";
 import { AutoPlaceButton } from "./AutoPlaceButton";
+import { InlinePlaceButton } from "./InlinePlaceButton";
+import type { SelectedAccount } from "./AccountPickerGrid";
 
 /**
  * Sidecar settings shape returned by /api/sidecar/settings. Kept locally
@@ -85,7 +87,14 @@ const SIDECAR_STAKE_FLOOR = 30;
  * fire a placement straight from the dashboard without bouncing to
  * /edges. Sorted by EV % descending.
  */
-export function SignalFeed() {
+export function SignalFeed({
+  selectedAccount = null,
+}: {
+  /** When set, the bet rows render a one-click InlinePlaceButton pinned
+   *  to this account (account-first /sidecar flow). When null, falls
+   *  back to the modal-based AutoPlaceButton (legacy /edges flow). */
+  selectedAccount?: SelectedAccount | null;
+} = {}) {
   const { visible } = useVisibleBooks();
   const booksSorted = useMemo(() => [...visible].sort(), [visible]);
 
@@ -186,6 +195,7 @@ export function SignalFeed() {
                     key={`${op.ev_row_id}-${i}`}
                     op={op}
                     settings={settings}
+                    selectedAccount={selectedAccount}
                   />
                 ))}
               </tbody>
@@ -200,9 +210,11 @@ export function SignalFeed() {
 function SignalRow({
   op,
   settings,
+  selectedAccount,
 }: {
   op: EVOpportunity;
   settings: SidecarSettingsResponse | undefined;
+  selectedAccount: SelectedAccount | null;
 }) {
   // Reuse the unified-edges labels so the dashboard reads identically to
   // /edges. fromEv() returns a fully-flattened opportunity; we hand it
@@ -280,15 +292,26 @@ function SignalRow({
         {commenceLabel(op.commence_time)}
       </td>
       <td className="px-2 py-1.5 align-top text-right">
-        <AutoPlaceButton
-          evRowId={op.ev_row_id}
-          sportKey={op.sport_key}
-          marketLabel={mLabel}
-          sideLabel={sLabel}
-          offeredPriceAmerican={op.offered_price_american}
-          evPct={op.ev_pct}
-          fullKellyPct={op.kelly_full_pct}
-        />
+        {selectedAccount ? (
+          <InlinePlaceButton
+            evRowId={op.ev_row_id}
+            fullKellyPct={op.kelly_full_pct}
+            customerId={selectedAccount.customer_id}
+            accountCap={selectedAccount.max_parlay_stake}
+            availableBalance={selectedAccount.available_balance}
+            accountLabel={selectedAccount.label}
+          />
+        ) : (
+          <AutoPlaceButton
+            evRowId={op.ev_row_id}
+            sportKey={op.sport_key}
+            marketLabel={mLabel}
+            sideLabel={sLabel}
+            offeredPriceAmerican={op.offered_price_american}
+            evPct={op.ev_pct}
+            fullKellyPct={op.kelly_full_pct}
+          />
+        )}
       </td>
     </tr>
   );

@@ -24,6 +24,9 @@ class ActiveSignal:
     last_checked_at: int | None
     last_delta_at: int | None
     last_target: float | None
+    # NULL for pre-account-first signals; delta-tick falls back to the
+    # legacy splitter when this is None.
+    armed_customer_id: str | None = None
 
 
 def arm_signal(
@@ -32,19 +35,30 @@ def arm_signal(
     kelly_fraction: KellyFraction,
     bankroll_at_arm: int,
     commence_time: int,
+    armed_customer_id: str | None = None,
 ) -> None:
-    """Idempotent — if the row already exists, leave total_placed alone."""
+    """Idempotent on the (ev_row_id) PK.
+
+    If the row already exists with NULL ``armed_customer_id`` and a
+    customer_id is supplied here, the existing row is upgraded to the
+    new value. This handles the case where a row was armed by a
+    pre-account-first placement and the user later places again with
+    an explicit account selection — the delta-tick should follow the
+    new pin from that point on. We never CHANGE a non-NULL pin to a
+    different one: keeping that immutable preserves the invariant that
+    a signal lives on exactly one account once chosen."""
     now = int(time.time())
     conn.execute(
         """
         INSERT INTO sidecar_active_signals
           (ev_row_id, kelly_fraction, bankroll_at_arm, commence_time,
-           total_placed, first_armed_at)
-        VALUES (?, ?, ?, ?, 0, ?)
-        ON CONFLICT(ev_row_id) DO NOTHING
+           total_placed, first_armed_at, armed_customer_id)
+        VALUES (?, ?, ?, ?, 0, ?, ?)
+        ON CONFLICT(ev_row_id) DO UPDATE SET
+          armed_customer_id = COALESCE(armed_customer_id, excluded.armed_customer_id)
         """,
         (ev_row_id, kelly_fraction.value, bankroll_at_arm,
-         commence_time, now),
+         commence_time, now, armed_customer_id),
     )
     conn.commit()
 

@@ -132,3 +132,53 @@ def test_invariants_hold_for_arbitrary_inputs(target, balances, caps):
         bal = next(b for b, acc in zip(balances, pool)
                    if acc.customer_id == cust)
         assert total <= bal
+
+
+# --- Pinned customer_id (account-first /sidecar flow) ---
+
+def test_pinned_constrains_pool_to_one_account():
+    """Pinning B forces the plan onto B even though A has the lowest
+    balance (which the legacy splitter would prefer)."""
+    pool = [_acct("A", 250), _acct("B", 1000)]
+    plan = plan_splits(200, pool, pinned_customer_id="B")
+    assert plan.status == "planned"
+    used = {a.account.customer_id for a in plan.assignments}
+    assert used == {"B"}
+    assert sum(a.amount for a in plan.assignments) == 200
+
+
+def test_pinned_stacks_multi_parlay_at_cap():
+    """Target $300, pinned account cap $100 → three $100 parlays on it."""
+    pool = [_acct("A", 100), _acct("B", 500)]
+    plan = plan_splits(300, pool, pinned_customer_id="B")
+    amounts = [(a.account.customer_id, a.amount) for a in plan.assignments]
+    assert amounts == [("B", 100), ("B", 100), ("B", 100)]
+
+
+def test_pinned_below_floor_returns_no_eligible_account():
+    """Pinned account has $20 (< $30 floor): no eligible accounts."""
+    pool = [_acct("A", 20), _acct("B", 1000)]
+    plan = plan_splits(100, pool, pinned_customer_id="A")
+    assert plan.status == "no_eligible_account"
+    assert plan.assignments == []
+
+
+def test_pinned_partial_fill_does_not_peel_to_other_account():
+    """Target $130 on a pinned $100 account: partial $100 + no peel-back
+    to the second account. Legacy splitter would peel back; pinned must
+    not."""
+    pool = [_acct("A", 100, cap=100), _acct("B", 1000)]
+    plan = plan_splits(130, pool, pinned_customer_id="A")
+    used = {a.account.customer_id for a in plan.assignments}
+    assert used == {"A"}
+    assert plan.status == "partial_fill"
+    assert sum(a.amount for a in plan.assignments) == 100
+    assert plan.unfilled == 30
+
+
+def test_pinned_unknown_customer_id_returns_no_eligible_account():
+    """Pinning a customer_id that's not in the pool resolves to empty."""
+    pool = [_acct("A", 500), _acct("B", 500)]
+    plan = plan_splits(100, pool, pinned_customer_id="MISSING")
+    assert plan.status == "no_eligible_account"
+    assert plan.assignments == []

@@ -34,6 +34,9 @@ interface ActiveSignal {
   last_target: number | null;
   /** Optional pretty label the server may include for cleaner UI. */
   label?: string | null;
+  /** Account-first /sidecar flow tag: which Coral33 customer_id the
+   *  signal is pinned to. NULL for pre-account-first armed signals. */
+  armed_customer_id?: string | null;
 }
 
 interface ActiveSignalsResponse {
@@ -165,12 +168,22 @@ function ActiveSignalCard({
             {signal.ev_row_id}
           </div>
         </div>
-        <span
-          className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[9px] font-semibold tracking-wider uppercase text-accent bg-accent/15 shrink-0"
-          title={`Kelly fraction at arm time: ${signal.kelly_fraction}`}
-        >
-          {signal.kelly_fraction}
-        </span>
+        <div className="flex flex-col items-end gap-0.5 shrink-0">
+          <span
+            className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[9px] font-semibold tracking-wider uppercase text-accent bg-accent/15"
+            title={`Kelly fraction at arm time: ${signal.kelly_fraction}`}
+          >
+            {signal.kelly_fraction}
+          </span>
+          {signal.armed_customer_id && (
+            <span
+              className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[9px] font-semibold tracking-wider uppercase text-violet-accent bg-violet-accent/15"
+              title={`Delta-tick top-ups pinned to ${signal.armed_customer_id}`}
+            >
+              {signal.armed_customer_id}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-4 gap-2">

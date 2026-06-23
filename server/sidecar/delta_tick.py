@@ -139,5 +139,11 @@ async def _process_one(sig, db_path: Path, orchestrator) -> None:
             # Bypass the orchestrator's Kelly recompute — we already
             # computed the dollar delta, the splitter should fill THAT.
             stake_override_dollars=int(delta),
+            # Account-first signals carry an armed_customer_id from the
+            # original placement. Pin the delta-fire to that same account
+            # so the autonomous loop never drifts to a different one mid-
+            # signal. Pre-account-first signals leave this NULL and the
+            # splitter falls back to the legacy lowest-balance pick.
+            customer_id=sig.armed_customer_id,
         )
         await orchestrator.handle_place(req, uuid.uuid4().hex)

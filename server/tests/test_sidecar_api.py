@@ -331,7 +331,7 @@ def test_get_sidecar_settings_defaults(client, tmp_path, monkeypatch):
 def test_active_signals_empty_by_default(client):
     r = client.get("/api/sidecar/active-signals")
     assert r.status_code == 200
-    assert r.json() == []
+    assert r.json() == {"signals": []}
 
 
 def test_active_signals_returns_armed_signal(client, isolated_paths):
@@ -344,14 +344,18 @@ def test_active_signals_returns_armed_signal(client, isolated_paths):
             bankroll_at_arm=10000,
             # Far-future so the list_active() filter doesn't drop it
             commence_time=int(time.time()) + 86400,
+            armed_customer_id="VR11605",
         )
     finally:
         conn.close()
 
     r = client.get("/api/sidecar/active-signals")
     assert r.status_code == 200
-    signals = r.json()
+    payload = r.json()
+    signals = payload["signals"]
     assert len(signals) == 1
     assert signals[0]["ev_row_id"] == "619136397|h2h|new_zealand"
     assert signals[0]["kelly_fraction"] == "half"
     assert signals[0]["bankroll_at_arm"] == 10000
+    # Account-first signals carry the pinned customer_id.
+    assert signals[0]["armed_customer_id"] == "VR11605"

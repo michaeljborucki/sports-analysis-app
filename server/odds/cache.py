@@ -179,15 +179,20 @@ CREATE INDEX IF NOT EXISTS sidecar_placements_created_at
 -- inserted when the user arms a signal and removed when the signal expires
 -- (commence_time passed) or is manually cleared.
 CREATE TABLE IF NOT EXISTS sidecar_active_signals (
-  ev_row_id        TEXT PRIMARY KEY,
-  kelly_fraction   TEXT NOT NULL,
-  bankroll_at_arm  INTEGER NOT NULL,
-  commence_time    INTEGER NOT NULL,
-  total_placed     REAL NOT NULL DEFAULT 0,
-  first_armed_at   INTEGER NOT NULL,
-  last_checked_at  INTEGER,
-  last_delta_at    INTEGER,
-  last_target      REAL
+  ev_row_id          TEXT PRIMARY KEY,
+  kelly_fraction     TEXT NOT NULL,
+  bankroll_at_arm    INTEGER NOT NULL,
+  commence_time      INTEGER NOT NULL,
+  total_placed       REAL NOT NULL DEFAULT 0,
+  first_armed_at     INTEGER NOT NULL,
+  last_checked_at    INTEGER,
+  last_delta_at      INTEGER,
+  last_target        REAL,
+  -- Pinned account for the autonomous delta-tick: when the user armed
+  -- the signal via the account-first /sidecar flow, future top-ups must
+  -- fire on the SAME account (not splitter-picked). NULL = pre-account-
+  -- first signal; delta-tick falls back to legacy splitter for it.
+  armed_customer_id  TEXT
 );
 CREATE INDEX IF NOT EXISTS sidecar_active_signals_commence
   ON sidecar_active_signals(commence_time);
@@ -211,6 +216,10 @@ _MIGRATIONS = [
     # rows (no depth data) and pre-migration rows; populated by the
     # Polymarket WS ingest path and the Kalshi orderbook poller.
     "ALTER TABLE odds_snapshot ADD COLUMN max_stake_dollars REAL",
+    # 0.6: account-first sidecar — pin signals to the customer_id the
+    # user picked at arm time. Existing rows (pre-account-first) keep
+    # NULL and the delta-tick falls back to the legacy splitter for them.
+    "ALTER TABLE sidecar_active_signals ADD COLUMN armed_customer_id TEXT",
 ]
 
 

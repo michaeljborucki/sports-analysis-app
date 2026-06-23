@@ -675,9 +675,12 @@ export interface paths {
         };
         /**
          * Get Active Signals
-         * @description List active (pre-game) signals being tracked by the delta-tick
-         *     loop. Sourced from sidecar_active_signals. Empty when nothing is
-         *     armed.
+         * @description List active (pre-game) signals tracked by the delta-tick loop.
+         *
+         *     Returns ``{"signals": [...]}`` so the frontend can extend the
+         *     shape without churn (vs a bare list). Each signal includes
+         *     ``armed_customer_id`` — the customer_id the user pinned at arm
+         *     time, or NULL for pre-account-first signals.
          */
         get: operations["get_active_signals_api_sidecar_active_signals_get"];
         put?: never;
@@ -1677,6 +1680,8 @@ export interface components {
             ev_row_id: string;
             /** Kelly Fraction */
             kelly_fraction: string;
+            /** Customer Id */
+            customer_id?: string | null;
         };
         /** PlaceResponse */
         PlaceResponse: {
@@ -2938,7 +2943,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         [key: string]: unknown;
-                    }[];
+                    };
                 };
             };
         };
