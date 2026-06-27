@@ -15,10 +15,21 @@ export function CellFlash({
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const last = useRef<number | null>(null);
+  // Hold the in-flight flash so we can cancel it before starting the next one.
+  // Without this, LIVE mode (a price tick ~every second) stacks a fresh 4.5s
+  // animation on every change while the previous ones are never released —
+  // and with `fill: forwards` those finished animations stay retained rather
+  // than GC'd. Over hours × hundreds of cells that leaks tens of thousands of
+  // Animation objects and eventually OOMs the tab.
+  const anim = useRef<Animation | null>(null);
 
   useEffect(() => {
     if (last.current !== null && last.current !== value && ref.current) {
-      ref.current.animate(
+      anim.current?.cancel();
+      // No `fill` — the final keyframe is fully transparent, which already
+      // matches the element's resting background, so the animation can be
+      // discarded the instant it finishes (nothing to hold forward).
+      anim.current = ref.current.animate(
         [
           { backgroundColor: "rgba(245,165,36,0.45)", offset: 0 },
           { backgroundColor: "rgba(245,165,36,0.30)", offset: 0.12 },
@@ -26,11 +37,17 @@ export function CellFlash({
           { backgroundColor: "rgba(245,165,36,0.05)", offset: 0.65 },
           { backgroundColor: "rgba(245,165,36,0.00)", offset: 1 },
         ],
-        { duration: 4500, easing: "linear", fill: "forwards" }
+        { duration: 4500, easing: "linear" }
       );
     }
     last.current = value;
   }, [value]);
+
+  // Cancel any in-flight flash when the cell unmounts (grid re-renders swap
+  // cells constantly as games/markets change) so nothing dangles.
+  useEffect(() => {
+    return () => anim.current?.cancel();
+  }, []);
 
   return (
     <span

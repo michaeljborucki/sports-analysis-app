@@ -106,6 +106,7 @@ export function useLiveUpdates(): void {
 
     let es: EventSource | null = null;
     let closed = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
     const handleScopedEvent = (type: string) => {
       const prefixes = TYPE_TO_PREFIXES[type];
@@ -120,6 +121,11 @@ export function useLiveUpdates(): void {
 
     const connect = () => {
       if (closed) return;
+      // Tear down any prior connection before opening a new one. The browser
+      // can fire `onerror` repeatedly and our manual reconnect could otherwise
+      // leave the old EventSource (with its listeners) dangling — a slow leak
+      // of connections + handlers across the tab's lifetime.
+      es?.close();
       es = new EventSource(url);
 
       // Initial connect OR reconnect — both invalidate everything.
@@ -144,9 +150,14 @@ export function useLiveUpdates(): void {
         // server is genuinely gone, we want to fail loudly in the
         // console for debugging but NOT crash the app.
         if (es?.readyState === EventSource.CLOSED) {
-          // Browser gave up — manual reconnect after a short delay.
-          if (!closed) {
-            setTimeout(connect, 2_000);
+          // Browser gave up — manual reconnect after a short delay. Guard
+          // against stacking multiple pending reconnects if onerror fires
+          // repeatedly before the timer elapses.
+          if (!closed && reconnectTimer === null) {
+            reconnectTimer = setTimeout(() => {
+              reconnectTimer = null;
+              connect();
+            }, 2_000);
           }
         }
       };
@@ -155,6 +166,7 @@ export function useLiveUpdates(): void {
     connect();
     return () => {
       closed = true;
+      if (reconnectTimer !== null) clearTimeout(reconnectTimer);
       es?.close();
     };
   }, []); // intentionally no deps — subscription is process-lifetime
