@@ -81,3 +81,12 @@ def test_openapi_schema_accessible(app):
     assert "/api/picks/{sport}" in paths
     assert "/api/props/{sport}" in paths
     assert "/api/sports" in paths
+
+
+def test_openapi_game_includes_league_metadata(app):
+    with TestClient(app) as c:
+        r = c.get("/openapi.json")
+    assert r.status_code == 200
+    game = r.json()["components"]["schemas"]["Game"]
+    assert "league_key" in game["properties"]
+    assert "league_title" in game["properties"]

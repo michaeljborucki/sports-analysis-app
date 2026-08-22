@@ -3110,6 +3110,28 @@
             "title": "Sport Key",
             "default": "mlb"
           },
+          "league_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "League Key"
+          },
+          "league_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "League Title"
+          },
           "home_team": {
             "type": "string",
             "title": "Home Team"

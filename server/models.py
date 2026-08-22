@@ -29,6 +29,8 @@ class Market(BaseModel):
 class Game(BaseModel):
     event_id: str
     sport_key: str = "mlb"
+    league_key: str | None = None
+    league_title: str | None = None
     home_team: str
     away_team: str
     commence_time: datetime
