@@ -315,6 +315,41 @@ def test_purge_live_rows_default_grace_is_zero(tmp_path):
     assert removed == 1
 
 
+def test_soccer_league_metadata_survives_cache_and_game_aggregation(tmp_path):
+    """Sparse book rows must not erase an event's Odds API league metadata."""
+    from server.odds.normalize import rows_to_games
+
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    with cache._conn() as c:
+        columns = {row[1] for row in c.execute("PRAGMA table_info(odds_snapshot)")}
+    assert {"league_key", "league_title"}.issubset(columns)
+
+    now = datetime(2026, 8, 21, 18, 0, tzinfo=timezone.utc)
+    base = {
+        "event_id": "epl-1", "sport_key": "soccer",
+        "home_team": "Arsenal", "away_team": "Chelsea",
+        "commence_time": now,
+        "bookmaker_key": "draftkings", "market_key": "spreads",
+        "outcome_point": -0.5, "price_american": -110, "fetched_at": now,
+    }
+    cache.upsert([
+        {**base, "outcome_name": "Arsenal", "league_key": "soccer_epl", "league_title": "EPL"},
+        {**base, "outcome_name": "Chelsea", "league_key": None, "league_title": None},
+    ])
+
+    rows = cache.all_current("soccer")
+    by_outcome = {row["outcome_name"]: row for row in rows}
+    assert by_outcome["Arsenal"]["league_key"] == "soccer_epl"
+    assert by_outcome["Arsenal"]["league_title"] == "EPL"
+    assert by_outcome["Chelsea"]["league_key"] is None
+    assert by_outcome["Chelsea"]["league_title"] is None
+
+    game = rows_to_games(rows, now=now)[0]
+    assert game["league_key"] == "soccer_epl"
+    assert game["league_title"] == "EPL"
+
+
 # ─────────────────── A8: distinct_events SQL pushdown ─────────────────
 
 

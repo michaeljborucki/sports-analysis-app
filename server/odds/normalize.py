@@ -109,6 +109,8 @@ def normalize_odds_response(
         event_id = game["id"]
         home = game.get("home_team", "")
         away = game.get("away_team", "")
+        league_key = game.get("sport_key") if sport_key == "soccer" else None
+        league_title = game.get("sport_title") if sport_key == "soccer" else None
         commence = datetime.fromisoformat(game["commence_time"].replace("Z", "+00:00"))
         for bm in game.get("bookmakers", []):
             bk = bm["key"]
@@ -127,6 +129,8 @@ def normalize_odds_response(
                     base_row = {
                         "event_id": event_id,
                         "sport_key": sport_key,
+                        "league_key": league_key,
+                        "league_title": league_title,
                         "home_team": home,
                         "away_team": away,
                         "commence_time": commence,
@@ -189,12 +193,18 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
         ev = by_event.setdefault(r["event_id"], {
             "event_id": r["event_id"],
             "sport_key": r.get("sport_key", "mlb"),
+            "league_key": r.get("league_key"),
+            "league_title": r.get("league_title"),
             "home_team": r["home_team"],
             "away_team": r["away_team"],
             "commence_time": _coerce_dt(r["commence_time"]),
             "markets_by_key": {},
             "stale_seconds": 0,
         })
+        if not ev["league_key"] and r.get("league_key"):
+            ev["league_key"] = r["league_key"]
+        if not ev["league_title"] and r.get("league_title"):
+            ev["league_title"] = r["league_title"]
         mk = ev["markets_by_key"].setdefault(r["market_key"], {})
         out_key = (r["outcome_name"], r.get("outcome_point"))
         out = mk.setdefault(out_key, {
@@ -247,6 +257,8 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
         games.append({
             "event_id": ev["event_id"],
             "sport_key": ev["sport_key"],
+            "league_key": ev["league_key"],
+            "league_title": ev["league_title"],
             "home_team": ev["home_team"],
             "away_team": ev["away_team"],
             "commence_time": ev["commence_time"],

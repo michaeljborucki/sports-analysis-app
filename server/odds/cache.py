@@ -32,6 +32,8 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS odds_snapshot (
   event_id       TEXT NOT NULL,
   sport_key      TEXT NOT NULL DEFAULT 'mlb',
+  league_key     TEXT,
+  league_title   TEXT,
   home_team      TEXT NOT NULL,
   away_team      TEXT NOT NULL,
   commence_time  TEXT NOT NULL,
@@ -220,6 +222,10 @@ _MIGRATIONS = [
     # user picked at arm time. Existing rows (pre-account-first) keep
     # NULL and the delta-tick falls back to the legacy splitter for them.
     "ALTER TABLE sidecar_active_signals ADD COLUMN armed_customer_id TEXT",
+    # 0.7: Odds API's soccer competition identifiers and names. NULL for
+    # non-soccer rows and direct-book rows without provider metadata.
+    "ALTER TABLE odds_snapshot ADD COLUMN league_key TEXT",
+    "ALTER TABLE odds_snapshot ADD COLUMN league_title TEXT",
 ]
 
 
@@ -454,6 +460,8 @@ class OddsCache:
             prepared.append({
                 **r,
                 "sport_key": r.get("sport_key", "mlb"),
+                "league_key": r.get("league_key"),
+                "league_title": r.get("league_title"),
                 "commence_time": ct.isoformat() if isinstance(ct, datetime) else ct,
                 "fetched_at": fa.isoformat() if isinstance(fa, datetime) else fa,
                 "outcome_point": 0.0 if point is None else float(point),
@@ -468,11 +476,11 @@ class OddsCache:
             c.executemany(
                 """
                 INSERT INTO odds_snapshot
-                  (event_id, sport_key, home_team, away_team, commence_time,
+                  (event_id, sport_key, league_key, league_title, home_team, away_team, commence_time,
                    bookmaker_key, market_key, outcome_name, outcome_point,
                    price_american, fetched_at, wager_type, max_stake_dollars)
                 VALUES
-                  (:event_id, :sport_key, :home_team, :away_team, :commence_time,
+                  (:event_id, :sport_key, :league_key, :league_title, :home_team, :away_team, :commence_time,
                    :bookmaker_key, :market_key, :outcome_name, :outcome_point,
                    :price_american, :fetched_at, :wager_type, :max_stake_dollars)
                 ON CONFLICT(event_id, bookmaker_key, market_key, outcome_name, outcome_point)
@@ -483,6 +491,8 @@ class OddsCache:
                    home_team      = excluded.home_team,
                    away_team      = excluded.away_team,
                    sport_key      = excluded.sport_key,
+                   league_key     = COALESCE(excluded.league_key, odds_snapshot.league_key),
+                   league_title   = COALESCE(excluded.league_title, odds_snapshot.league_title),
                    wager_type     = excluded.wager_type,
                    max_stake_dollars = COALESCE(excluded.max_stake_dollars, max_stake_dollars)
                 """,
