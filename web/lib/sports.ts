@@ -160,7 +160,7 @@ export const SPORTS: Record<SportKey, Sport> = {
     // rows in the cache for scanner consumption; a 3-way UI pass comes later.
     marketGroups: [
       { label: "Moneyline", mainKey: "h2h", display: "moneyline" },
-      { label: "Spread", mainKey: "spreads", display: "spread" },
+      { label: "Spread", mainKey: "spreads", altKey: "alternate_spreads", display: "spread" },
       { label: "Total", mainKey: "totals", display: "total" },
     ],
   },
