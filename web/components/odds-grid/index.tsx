@@ -6,6 +6,7 @@ import { BOOK_ORDER } from "@/lib/books";
 import { useVisibleBooks } from "@/lib/use-visible-books";
 import type { Sport, MarketGroup } from "@/lib/sports";
 import { groupSoccerGames } from "@/lib/soccer-leagues";
+import { validAltLineSelection } from "@/lib/alt-line-availability";
 import { MarketTabs } from "./market-tabs";
 import { useLiveFilter } from "@/lib/use-live-filter";
 import { matchesLiveFilter } from "../live-status-filter";
@@ -65,11 +66,11 @@ export function OddsGrid({
   // close it.
   useEffect(() => {
     if (sheetEventId == null) return;
-    if (!games.some(g => g.event_id === sheetEventId)) {
+    if (validAltLineSelection(games, sheetEventId, sport.key, activeGroup) == null) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- close the sheet when its selected game is filtered out
       setSheetEventId(null);
     }
-  }, [games, sheetEventId]);
+  }, [games, sheetEventId, sport.key, activeGroup]);
 
   // Books present in this dataset, ordered by registry priority.
   const availableBooks = useMemo(() => {

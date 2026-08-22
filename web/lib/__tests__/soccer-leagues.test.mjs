@@ -61,6 +61,20 @@ test("orders otherwise-equal leagues by key", () => {
   assert.deepEqual(groups.map((group) => group.key), ["league-a", "league-z"]);
 });
 
+test("orders equal-kickoff games deterministically by event id across permutations", () => {
+  const games = [
+    { event_id: "z-game", league_key: "soccer_epl", league_title: "EPL", is_live: false, commence_time: "2026-08-21T12:00:00Z" },
+    { event_id: "a-game", league_key: "soccer_epl", league_title: "EPL", is_live: false, commence_time: "2026-08-21T12:00:00Z" },
+  ];
+
+  for (const input of [games, [...games].reverse()]) {
+    assert.deepEqual(
+      groupSoccerGames(input).flatMap((group) => group.games.map((game) => game.event_id)),
+      ["a-game", "z-game"],
+    );
+  }
+});
+
 test("exposes alternate soccer spreads for market selection", () => {
   const spread = SPORTS.soccer.marketGroups.find((market) => market.label === "Spread");
 

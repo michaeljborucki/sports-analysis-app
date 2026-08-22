@@ -19,8 +19,8 @@ markets = [
   "totals",
 ]
 
-# No alternates / periods / player_props for soccer pre-match — coral33
-# doesn't offer them in catalog and Odds API soccer alt coverage is thin.
+# Soccer alternate spreads are requested per event. Coverage varies by league
+# and book, so the UI exposes expansion only for events that return them.
 
 [alternates]
 enabled            = true

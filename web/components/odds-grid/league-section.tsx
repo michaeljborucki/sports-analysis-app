@@ -8,6 +8,7 @@ import { pickBest, findAllBest } from "@/lib/consensus";
 import { formatAmerican } from "@/lib/format";
 import type { DisplayKind, MarketGroup, Sport } from "@/lib/sports";
 import { renderTeam } from "@/lib/sports";
+import { canExpandAltLines } from "@/lib/alt-line-availability";
 import { matchesLiveFilter } from "../live-status-filter";
 import { BookLogo } from "../book-logo";
 import { BestCell } from "./best-cell";
@@ -211,7 +212,8 @@ export function OddsGamesTable({
           {games.map(g => {
             const m = findMarket(g, activeKey);
             const outcomes = orderedOutcomes(m, g, activeGroup.display);
-            const isOpen = sheetEventId === g.event_id;
+            const canExpand = canExpandAltLines(g, sport.key, activeGroup);
+            const isOpen = canExpand && sheetEventId === g.event_id;
             const rowCount = outcomes.length;
             return (
               <Fragment key={g.event_id}>
@@ -227,6 +229,7 @@ export function OddsGamesTable({
                     display={activeGroup.display}
                     books={books}
                     visible={visible}
+                    canExpand={canExpand}
                     onToggleSheet={onToggleSheet}
                   />
                 ))}
@@ -266,6 +269,7 @@ const OutcomeRow = memo(function OutcomeRow({
   display,
   books,
   visible,
+  canExpand,
   onToggleSheet,
 }: {
   game: Game;
@@ -277,6 +281,7 @@ const OutcomeRow = memo(function OutcomeRow({
   display: DisplayKind;
   books: string[];
   visible: Set<string>;
+  canExpand: boolean;
   onToggleSheet: (eventId: string | null) => void;
 }) {
   const isFirst = idx === 0;
@@ -320,22 +325,25 @@ const OutcomeRow = memo(function OutcomeRow({
       {isFirst && (
         <td
           rowSpan={rowCount}
-          onClick={() => onToggleSheet(isOpen ? null : game.event_id)}
+          onClick={canExpand ? () => onToggleSheet(isOpen ? null : game.event_id) : undefined}
           className={clsx(
             "px-3 py-1.5 align-middle whitespace-nowrap",
-            "border-r border-border-subtle/60 cursor-pointer",
+            "border-r border-border-subtle/60",
+            canExpand && "cursor-pointer",
             isOpen && "bg-bg-1/50",
           )}
         >
           <div className="flex items-center gap-2">
-            <ChevronRight
-              aria-hidden
-              size={10}
-              className={clsx(
-                "text-text-3 transition-transform",
-                isOpen ? "rotate-90" : "rotate-0",
-              )}
-            />
+            {canExpand && (
+              <ChevronRight
+                aria-hidden
+                size={10}
+                className={clsx(
+                  "text-text-3 transition-transform",
+                  isOpen ? "rotate-90" : "rotate-0",
+                )}
+              />
+            )}
             <div className="flex flex-col gap-0.5">
               <span className="text-text-1 font-medium">
                 {renderTeam(game.away_team, sport)} @{" "}

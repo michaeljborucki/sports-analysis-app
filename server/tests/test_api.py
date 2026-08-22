@@ -90,3 +90,12 @@ def test_openapi_game_includes_league_metadata(app):
     game = r.json()["components"]["schemas"]["Game"]
     assert "league_key" in game["properties"]
     assert "league_title" in game["properties"]
+
+
+def test_soccer_spread_registry_exposes_alternate_spreads(app):
+    with TestClient(app) as c:
+        sports = c.get("/api/sports").json()["sports"]
+
+    soccer = next(sport for sport in sports if sport["key"] == "soccer")
+    spread = next(group for group in soccer["market_groups"] if group["main_key"] == "spreads")
+    assert spread["alt_key"] == "alternate_spreads"

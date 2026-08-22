@@ -25,7 +25,7 @@ class TierConfig:
     interval_seconds: int
     regions: list[str]
     markets: list[str]
-    games_window_hours: int | None = None  # only meaningful on player_props
+    games_window_hours: int | None = None  # per-event tiers (alternates/player_props)
 
     @property
     def is_main(self) -> bool:

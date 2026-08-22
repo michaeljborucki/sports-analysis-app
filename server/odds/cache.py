@@ -491,8 +491,8 @@ class OddsCache:
                    home_team      = excluded.home_team,
                    away_team      = excluded.away_team,
                    sport_key      = excluded.sport_key,
-                   league_key     = COALESCE(excluded.league_key, odds_snapshot.league_key),
-                   league_title   = COALESCE(excluded.league_title, odds_snapshot.league_title),
+                   league_key     = COALESCE(NULLIF(TRIM(excluded.league_key), ''), odds_snapshot.league_key),
+                   league_title   = COALESCE(NULLIF(TRIM(excluded.league_title), ''), odds_snapshot.league_title),
                    wager_type     = excluded.wager_type,
                    max_stake_dollars = COALESCE(excluded.max_stake_dollars, max_stake_dollars)
                 """,

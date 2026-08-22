@@ -240,7 +240,7 @@ SPORTS: dict[str, Sport] = {
             # home + away only in the grid; draw needs UI work). The data is
             # stored correctly as 3 rows under h2h for scanner consumption.
             MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
-            MarketGroup("Spread", main_key="spreads", display="spread"),
+            MarketGroup("Spread", main_key="spreads", alt_key="alternate_spreads", display="spread"),
             MarketGroup("Total", main_key="totals", display="total"),
         ),
     ),

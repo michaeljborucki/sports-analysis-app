@@ -37,7 +37,9 @@ export function groupSoccerGames(games: Game[]): SoccerLeagueGroup[] {
   return [...groupsByKey.values()]
     .map((group) => ({
       ...group,
-      games: group.games.sort((a, b) => a.commence_time.localeCompare(b.commence_time)),
+      games: group.games.sort((a, b) =>
+        a.commence_time.localeCompare(b.commence_time) || a.event_id.localeCompare(b.event_id)
+      ),
     }))
     .sort((a, b) => {
       if (a.key === OTHER_SOCCER_KEY) return 1;

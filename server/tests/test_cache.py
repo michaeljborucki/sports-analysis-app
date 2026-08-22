@@ -350,6 +350,26 @@ def test_soccer_league_metadata_survives_cache_and_game_aggregation(tmp_path):
     assert game["league_title"] == "EPL"
 
 
+def test_blank_soccer_league_metadata_cannot_erase_same_price_row(tmp_path):
+    cache = OddsCache(tmp_path / "test.db")
+    cache.init()
+    now = datetime(2026, 8, 21, 18, 0, tzinfo=timezone.utc)
+    row = {
+        "event_id": "epl-blank", "sport_key": "soccer",
+        "home_team": "Arsenal", "away_team": "Chelsea",
+        "commence_time": now, "bookmaker_key": "draftkings",
+        "market_key": "spreads", "outcome_name": "Arsenal",
+        "outcome_point": -0.5, "price_american": -110, "fetched_at": now,
+        "league_key": "soccer_epl", "league_title": "EPL",
+    }
+    cache.upsert([row])
+    cache.upsert([{**row, "league_key": "  ", "league_title": ""}])
+
+    stored = cache.all_current("soccer")[0]
+    assert stored["league_key"] == "soccer_epl"
+    assert stored["league_title"] == "EPL"
+
+
 # ─────────────────── A8: distinct_events SQL pushdown ─────────────────
 
 
