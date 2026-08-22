@@ -61,9 +61,8 @@ export function OddsGrid({
   const [sheetEventId, setSheetEventId] = useState<string | null>(null);
   const { visible } = useVisibleBooks();
 
-  // If the currently-open game disappears from the filtered list (e.g. the
-  // user toggled the live filter) the sheet would dangle with no content —
-  // close it.
+  // If the open game disappears from the filtered list or loses the active
+  // alternate-market coverage, the sheet would dangle with no content — close it.
   useEffect(() => {
     if (sheetEventId == null) return;
     if (validAltLineSelection(games, sheetEventId, sport.key, activeGroup) == null) {
