@@ -1347,6 +1347,10 @@ export interface components {
              * @default mlb
              */
             sport_key: string;
+            /** League Key */
+            league_key?: string | null;
+            /** League Title */
+            league_title?: string | null;
             /** Home Team */
             home_team: string;
             /** Away Team */
