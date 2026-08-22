@@ -21,3 +21,10 @@ markets = [
 
 # No alternates / periods / player_props for soccer pre-match — coral33
 # doesn't offer them in catalog and Odds API soccer alt coverage is thin.
+
+[alternates]
+enabled            = true
+interval_seconds   = 300
+regions            = ["us", "us2", "us_ex", "uk", "eu"]
+markets            = ["alternate_spreads"]
+games_window_hours = 12

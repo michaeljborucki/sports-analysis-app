@@ -407,8 +407,9 @@ class FetcherRegistry:
         logger.info("main %s: %d rows across %d sport keys", sport.key, total, len(keys))
 
     async def _run_per_event(self, sport: Sport, tier: TierConfig) -> None:
+        window = tier.games_window_hours or 36
         events = self.cache.distinct_events(
-            within_hours_ahead=36, sport_key=sport.key
+            within_hours_ahead=window, sport_key=sport.key
         )
         if not events:
             return

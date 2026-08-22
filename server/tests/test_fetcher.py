@@ -249,6 +249,28 @@ async def test_per_event_uses_instance_sem_not_fresh_one():
 
 
 @pytest.mark.asyncio
+async def test_per_event_uses_tier_games_window_for_event_lookup():
+    sp = _sport(key="soccer")
+    reg, _client = _make_registry()
+    reg.cache.distinct_events = MagicMock(return_value=[])
+    tier = TierConfig(
+        name="alternates",
+        enabled=True,
+        interval_seconds=300,
+        regions=["us"],
+        markets=["alternate_spreads"],
+        games_window_hours=12,
+    )
+
+    await reg._run_per_event(sp, tier)
+
+    reg.cache.distinct_events.assert_called_once_with(
+        within_hours_ahead=12,
+        sport_key="soccer",
+    )
+
+
+@pytest.mark.asyncio
 async def test_refresh_all_now_caps_concurrent_tier_runners(monkeypatch):
     """`refresh_all_now` must bound the number of simultaneously-executing
     tier runners — otherwise the UI button stacks `len(enabled)` tasks
