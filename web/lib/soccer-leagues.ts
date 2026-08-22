@@ -43,6 +43,6 @@ export function groupSoccerGames(games: Game[]): SoccerLeagueGroup[] {
       if (a.key === OTHER_SOCCER_KEY) return 1;
       if (b.key === OTHER_SOCCER_KEY) return -1;
       if (a.hasLive !== b.hasLive) return Number(b.hasLive) - Number(a.hasLive);
-      return a.earliestKickoff.localeCompare(b.earliestKickoff) || a.title.localeCompare(b.title);
+      return a.earliestKickoff.localeCompare(b.earliestKickoff) || a.title.localeCompare(b.title) || a.key.localeCompare(b.key);
     });
 }
