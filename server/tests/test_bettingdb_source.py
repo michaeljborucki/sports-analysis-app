@@ -543,8 +543,65 @@ def test_unknown_odds_source_falls_back_to_native(
     monkeypatch.setenv("ODDS_SOURCE", "betting-db")   # typo: hyphen
     monkeypatch.setenv("BETTING_DB_PATH", "/nonexistent/odds.db")
     from server.odds import cache as cache_mod
+    # The warning is deduped per raw value; clear the record so this test
+    # is order-independent.
+    monkeypatch.setattr(cache_mod, "_warned_odds_source", cache_mod._UNSET)
     with caplog.at_level("WARNING"):
         assert cache_mod._odds_source() == "native"
     assert "falling back to 'native'" in caplog.text
     # And the read path really is native — a missing betting-db is fine.
     assert cache.all_current() == []
+
+
+# ─────────────── memo memory bound (one bucket, one entry) ────────────
+
+def test_memo_evicts_stale_buckets_rather_than_accumulating(
+    cache: OddsCache, betting_db, monkeypatch,
+):
+    """A full-book scan is ~150k dicts. Retaining one entry per (sport,
+    bucket) pair would pin several of those at once; only the CURRENT
+    bucket may be held."""
+    from server.odds import bettingdb_source as B
+
+    monkeypatch.setenv("ODDS_SOURCE", "betting_db")
+
+    fake_now = [1_000_000.0]
+    monkeypatch.setattr(B.time, "time", lambda: fake_now[0])
+
+    cache.all_current()            # caches sport_key=None
+    cache.all_current("mlb")       # caches sport_key="mlb", same bucket
+    assert set(B._MAPPED_ROWS_CACHE) == {None, "mlb"}
+    bucket_a = B._MAPPED_ROWS_CACHE["mlb"][0]
+    first_rows = B._MAPPED_ROWS_CACHE["mlb"][1]
+
+    # Same bucket -> served from the memo, same list object, no re-scan.
+    assert B._mapped_rows("mlb") is first_rows
+
+    # Roll the clock past the TTL. The next call must drop BOTH stale
+    # entries, leaving only the sport just fetched.
+    fake_now[0] += B.MEMO_TTL_SECONDS * 3
+    cache.all_current("mlb")
+
+    assert set(B._MAPPED_ROWS_CACHE) == {"mlb"}
+    bucket_b, second_rows = B._MAPPED_ROWS_CACHE["mlb"]
+    assert bucket_b != bucket_a
+    assert second_rows is not first_rows       # old rows released
+
+
+def test_invalid_odds_source_warning_is_deduped(cache: OddsCache, monkeypatch, caplog):
+    """The validation runs on every scanner read; a bad value must not
+    spam a warning per request."""
+    from server.odds import cache as cache_mod
+
+    monkeypatch.setattr(cache_mod, "_warned_odds_source", cache_mod._UNSET)
+    monkeypatch.setenv("ODDS_SOURCE", "bettingdb")   # invalid
+    with caplog.at_level("WARNING"):
+        for _ in range(5):
+            assert cache_mod._odds_source() == "native"
+    assert caplog.text.count("falling back to 'native'") == 1
+
+    # A DIFFERENT bad value is a new fact and warns again.
+    monkeypatch.setenv("ODDS_SOURCE", "betting_db_v2")
+    with caplog.at_level("WARNING"):
+        cache_mod._odds_source()
+    assert caplog.text.count("falling back to 'native'") == 2

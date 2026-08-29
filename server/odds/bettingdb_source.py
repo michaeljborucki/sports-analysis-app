@@ -221,20 +221,33 @@ def _connect() -> sqlite3.Connection:
     Fails LOUD: a missing / unreadable betting-db in this mode means the
     scanners would otherwise silently see zero odds, which looks exactly
     like "no edges today". Log, then re-raise.
+
+    The guarded region covers a probe read, not just `connect()`.
+    `sqlite3.connect` on a URI is lazy — it does not touch the file — and
+    under WAL the failure modes that actually bite (an unreadable or
+    unwritable `-shm`/`-wal` sidecar next to a readable main DB, which is
+    exactly the shape a read-only opener hits against a live writer)
+    surface on the FIRST statement. Without the probe those would escape
+    unlogged from whichever query happened to run first.
     """
     path = _db_path()
+    conn = None
     try:
         conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=10.0)
+        conn.row_factory = sqlite3.Row
+        conn.execute("SELECT 1 FROM sqlite_master LIMIT 1").fetchone()
     except sqlite3.Error:
+        if conn is not None:
+            conn.close()
         logger.error(
             "ODDS_SOURCE=betting_db but betting-db could not be opened "
             "read-only at %s — odds reads are FAILING, not degrading. "
-            "Check BETTING_DB_PATH and that the betting-db poller has "
-            "created the file.",
+            "Check BETTING_DB_PATH, that the betting-db poller has "
+            "created the file, and that its -wal/-shm sidecars are "
+            "readable.",
             path,
         )
         raise
-    conn.row_factory = sqlite3.Row
     return conn
 
 
@@ -504,9 +517,14 @@ def _mapped_rows_uncached(sport_key: str | None = None) -> list[dict]:
     return list(out.values())
 
 
-@functools.lru_cache(maxsize=16)
-def _mapped_rows_memo(sport_key: str | None, bucket: int) -> list[dict]:
-    return _mapped_rows_uncached(sport_key)
+# sport_key -> (bucket, rows). Deliberately NOT an lru_cache keyed on
+# (sport_key, bucket): that retains one entry PER BUCKET, so a maxsize of
+# N holds up to N historical scans. A full-book scan is ~150k dicts
+# (~200MB), which is multi-GB of RSS on this laptop for data nobody will
+# read again. Keying on sport_key alone means one live entry per sport at
+# most, and the sweep below drops every entry from a stale bucket, so
+# retention is bounded to a single bucket's worth of rows.
+_MAPPED_ROWS_CACHE: dict[str | None, tuple[int, list[dict]]] = {}
 
 
 def _mapped_rows(sport_key: str | None = None) -> list[dict]:
@@ -517,13 +535,23 @@ def _mapped_rows(sport_key: str | None = None) -> list[dict]:
     read-only (nothing downstream mutates cache rows; `rows_to_games`
     only reads).
     """
-    return _mapped_rows_memo(sport_key, int(time.time() // MEMO_TTL_SECONDS))
+    bucket = int(time.time() // MEMO_TTL_SECONDS)
+    hit = _MAPPED_ROWS_CACHE.get(sport_key)
+    if hit is not None and hit[0] == bucket:
+        return hit[1]
+    # Every caller reads the same clock, so anything not on the current
+    # bucket is dead weight — evict before allocating the new scan.
+    for stale in [k for k, (b, _) in _MAPPED_ROWS_CACHE.items() if b != bucket]:
+        del _MAPPED_ROWS_CACHE[stale]
+    rows = _mapped_rows_uncached(sport_key)
+    _MAPPED_ROWS_CACHE[sport_key] = (bucket, rows)
+    return rows
 
 
 def _reset_memo_for_tests() -> None:
     """Clear the TTL memo. Tests only — they swap BETTING_DB_PATH between
     cases faster than the bucket rolls over."""
-    _mapped_rows_memo.cache_clear()
+    _MAPPED_ROWS_CACHE.clear()
 
 
 def _direct_book_rows(cache, sport_key: str | None = None) -> list[dict]:

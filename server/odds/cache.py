@@ -35,6 +35,15 @@ VALID_ODDS_SOURCES = ("native", "betting_db")
 # again if it ever changes underneath a running process.
 _logged_odds_source: str | None = None
 
+# Sentinel distinct from any string, so a first read of a BAD value warns
+# (None would collide with "never seen" only by luck).
+_UNSET = object()
+
+# Last raw ODDS_SOURCE value warned about, so an invalid setting is
+# reported once rather than on every single odds read — this runs on the
+# hot path for every scanner request.
+_warned_odds_source: object = _UNSET
+
 
 def _odds_source() -> str:
     """Which store the READ entry points below serve rows from.
@@ -58,11 +67,12 @@ def _odds_source() -> str:
     monkeypatch. Config.from_env() is pure os.environ reads; the cost is
     nil next to the SQLite scan that follows.
     """
-    global _logged_odds_source
+    global _logged_odds_source, _warned_odds_source
     from ..config import Config
     raw = (Config.from_env().odds_source or "").strip()
     source = raw if raw in VALID_ODDS_SOURCES else "native"
-    if source != raw:
+    if source != raw and raw != _warned_odds_source:
+        _warned_odds_source = raw
         logger.warning(
             "ODDS_SOURCE=%r is not one of %s — falling back to 'native'. "
             "Odds reads are served from this repo's own cache.db.",
