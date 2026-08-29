@@ -28,6 +28,14 @@ logger = logging.getLogger(__name__)
 VERSION_FLUSH_INTERVAL_S = 0.2
 
 
+VALID_ODDS_SOURCES = ("native", "betting_db")
+
+# Last value `_odds_source()` resolved, so the resolved source is logged
+# ONCE (at the first odds read after startup) instead of per call — and
+# again if it ever changes underneath a running process.
+_logged_odds_source: str | None = None
+
+
 def _odds_source() -> str:
     """Which store the READ entry points below serve rows from.
 
@@ -37,13 +45,33 @@ def _odds_source() -> str:
     `bettingdb_source`. The WRITE path — upsert, purges, the fetchers
     feeding them — is untouched in both modes.
 
+    NOTE: in betting_db mode `distinct_events` and `event_sport_key`
+    decide the PAID per-event Odds API worklist in `fetcher.py`; see
+    `bettingdb_source`'s module docstring.
+
+    An unrecognized value falls back to "native" with a loud warning
+    rather than erroring or silently doing something else — a typo in
+    ODDS_SOURCE must never leave the reads in an undefined state.
+
     Read per call rather than cached so flipping the env var takes
     effect without a restart, and so tests can toggle it with
     monkeypatch. Config.from_env() is pure os.environ reads; the cost is
     nil next to the SQLite scan that follows.
     """
+    global _logged_odds_source
     from ..config import Config
-    return Config.from_env().odds_source
+    raw = (Config.from_env().odds_source or "").strip()
+    source = raw if raw in VALID_ODDS_SOURCES else "native"
+    if source != raw:
+        logger.warning(
+            "ODDS_SOURCE=%r is not one of %s — falling back to 'native'. "
+            "Odds reads are served from this repo's own cache.db.",
+            raw, list(VALID_ODDS_SOURCES),
+        )
+    if source != _logged_odds_source:
+        _logged_odds_source = source
+        logger.info("odds read source resolved to %r", source)
+    return source
 
 
 SCHEMA = """
@@ -436,6 +464,13 @@ class OddsCache:
         get an O(1) lookup returning the SAME list object by identity.
         Memoization invalidates on the next version bump.
         """
+        if _odds_source() == "betting_db":
+            # The version counter only advances on THIS repo's upserts;
+            # betting-db's poller writes into its own DB and never bumps
+            # it, so a version-keyed memo would pin the first scan
+            # forever. `bettingdb_source` carries its own short-TTL memo
+            # that gives the same one-scan-per-tick sharing.
+            return self.all_current()
         return self._all_current_for_version(self.version)
 
     def _conn(self) -> sqlite3.Connection:
