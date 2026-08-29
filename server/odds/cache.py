@@ -28,6 +28,24 @@ logger = logging.getLogger(__name__)
 VERSION_FLUSH_INTERVAL_S = 0.2
 
 
+def _odds_source() -> str:
+    """Which store the READ entry points below serve rows from.
+
+    "native" (the default, and what every deployment does today) means
+    the methods on this class behave exactly as they always have. Only
+    an explicit ODDS_SOURCE=betting_db diverts reads to
+    `bettingdb_source`. The WRITE path — upsert, purges, the fetchers
+    feeding them — is untouched in both modes.
+
+    Read per call rather than cached so flipping the env var takes
+    effect without a restart, and so tests can toggle it with
+    monkeypatch. Config.from_env() is pure os.environ reads; the cost is
+    nil next to the SQLite scan that follows.
+    """
+    from ..config import Config
+    return Config.from_env().odds_source
+
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS odds_snapshot (
   event_id       TEXT NOT NULL,
@@ -502,6 +520,12 @@ class OddsCache:
 
     def all_current(self, sport_key: str | None = None) -> list[dict]:
         """All cached rows, optionally filtered to a single sport."""
+        if _odds_source() == "betting_db":
+            from . import bettingdb_source
+            return bettingdb_source.all_current(self, sport_key)
+        return self._all_current_native(sport_key)
+
+    def _all_current_native(self, sport_key: str | None = None) -> list[dict]:
         q = "SELECT * FROM odds_snapshot"
         args: tuple = ()
         if sport_key:
@@ -523,6 +547,12 @@ class OddsCache:
         in `refresh_event`, which did a full-table GROUP BY just to map
         one event to its sport. Uses the PK's leading-column index on
         event_id, so this is O(log n)."""
+        if _odds_source() == "betting_db":
+            from . import bettingdb_source
+            return bettingdb_source.event_sport_key(self, event_id)
+        return self._event_sport_key_native(event_id)
+
+    def _event_sport_key_native(self, event_id: str) -> str | None:
         with self._conn() as c:
             row = c.execute(
                 "SELECT sport_key FROM odds_snapshot WHERE event_id = ? LIMIT 1",
@@ -838,6 +868,21 @@ class OddsCache:
         uses; widens to capture late line moves while leaving a small
         no-touch buffer near tip-off.
         """
+        if _odds_source() == "betting_db":
+            from . import bettingdb_source
+            return bettingdb_source.events_in_close_window(
+                self, now, lead_minutes, trail_minutes,
+            )
+        return self._events_in_close_window_native(
+            now, lead_minutes, trail_minutes,
+        )
+
+    def _events_in_close_window_native(
+        self,
+        now: datetime,
+        lead_minutes: int = 15,
+        trail_minutes: int = 5,
+    ) -> list[dict]:
         start = (now + timedelta(minutes=trail_minutes)).isoformat()
         end = (now + timedelta(minutes=lead_minutes)).isoformat()
         with self._conn() as c:
@@ -993,6 +1038,21 @@ class OddsCache:
         per-event MAX, not on raw rows that may disagree on
         commence_time). `now` is injected for testability.
         """
+        if _odds_source() == "betting_db":
+            from . import bettingdb_source
+            return bettingdb_source.distinct_events(
+                self, within_hours_ahead, sport_key, now,
+            )
+        return self._distinct_events_native(
+            within_hours_ahead, sport_key, now,
+        )
+
+    def _distinct_events_native(
+        self,
+        within_hours_ahead: int | None = None,
+        sport_key: str | None = None,
+        now: datetime | None = None,
+    ) -> list[dict]:
         from datetime import datetime as _dt, timezone as _tz
         q_parts: list[str] = ["""
             SELECT event_id, MAX(sport_key) AS sport_key,

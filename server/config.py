@@ -25,6 +25,18 @@ class Config:
     coral33_enabled: bool
     kalshi_api_key: str
     kalshi_private_key_path: Path | None
+    # Which store the odds READ path serves rows from.
+    #   "native"     — today's behavior: server/cache.db's odds_snapshot,
+    #                  populated by this repo's own fetchers. DEFAULT.
+    #   "betting_db" — read Odds-API rows from the central betting-db
+    #                  SQLite (read-only), unioned with this repo's
+    #                  direct-book rows (coral33 / kalshi / polymarket).
+    # The native fetcher keeps running in BOTH modes; this flag only
+    # changes what the read entry points return.
+    odds_source: str
+    # Path to betting-db's SQLite file. Only consulted when
+    # odds_source == "betting_db"; opened read-only.
+    betting_db_path: Path
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -54,4 +66,9 @@ class Config:
                 if (p := os.environ.get("KALSHI_PRIVATE_KEY_PATH", "").strip())
                 else None
             ),
+            odds_source=os.getenv("ODDS_SOURCE", "native"),
+            betting_db_path=Path(os.environ.get(
+                "BETTING_DB_PATH",
+                str(Path.home() / "personal_workspace/betting-db/data/odds.db"),
+            )),
         )
