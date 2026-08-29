@@ -37,6 +37,16 @@ class Config:
     # Path to betting-db's SQLite file. Only consulted when
     # odds_source == "betting_db"; opened read-only.
     betting_db_path: Path
+    # Master switch for THIS repo's Odds API fetcher — scheduled polls,
+    # the UI's refresh-all button, and per-event refresh. Default True =
+    # today's behavior. Set false when odds come from betting-db instead,
+    # so betting-site stops spending Odds API credits of its own.
+    #
+    # Deliberately narrower than cache_mode: cache_mode=latest silences
+    # EVERY fetcher including coral33/kalshi/polymarket, which are free,
+    # directly-polled, and must keep running. This gate touches only the
+    # metered Odds API path.
+    odds_api_fetcher_enabled: bool
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -67,6 +77,9 @@ class Config:
                 else None
             ),
             odds_source=os.getenv("ODDS_SOURCE", "native"),
+            odds_api_fetcher_enabled=os.environ.get(
+                "ODDS_API_FETCHER_ENABLED", "true",
+            ).strip().lower() not in ("false", "0", "no", "off"),
             betting_db_path=Path(os.environ.get(
                 "BETTING_DB_PATH",
                 str(Path.home() / "personal_workspace/betting-db/data/odds.db"),

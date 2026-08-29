@@ -188,7 +188,19 @@ def create_app() -> FastAPI:
         # ODDS_API_KEY and coral33 credentials are still required as
         # capability checks — without them the fetcher physically can't run.
         if initial_mode == CacheMode.LIVE:
-            if not config.odds_api_key:
+            # ODDS_API_FETCHER_ENABLED ANDs with the cache_mode condition
+            # above: it can only ever SUPPRESS the Odds API fetcher, never
+            # start one cache_mode wouldn't have. Scoped to this fetcher
+            # alone — coral33 / kalshi / polymarket below are unaffected,
+            # as are the CLV scheduler and the accounts scraper.
+            if not config.odds_api_fetcher_enabled:
+                logging.info(
+                    "odds api fetcher disabled via ODDS_API_FETCHER_ENABLED "
+                    "— reads come from ODDS_SOURCE=%s. coral33/kalshi/"
+                    "polymarket fetchers are unaffected.",
+                    config.odds_source,
+                )
+            elif not config.odds_api_key:
                 logging.warning("cache_mode=live but ODDS_API_KEY not set — Odds API fetcher off")
             else:
                 fetcher.start_all()

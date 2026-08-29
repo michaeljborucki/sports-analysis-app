@@ -437,6 +437,21 @@ def build_router(
         Idempotent — already-covered wagers are skipped, partial runs
         can resume.
         """
+        # The historical endpoints this walks are metered Odds API credit
+        # (and priced above the live ones), and `dry_run=True` still
+        # spends on event discovery — so this is a real spend path even
+        # in its default form, and ODDS_API_FETCHER_ENABLED must stop it
+        # like every other one.
+        from ..config import Config
+        if not Config.from_env().odds_api_fetcher_enabled:
+            return {
+                "status": "disabled_by_env",
+                "reason": (
+                    "ODDS_API_FETCHER_ENABLED=false — CLV backfill spends "
+                    "Odds API credit (historical endpoints) and is "
+                    "refused. Re-enable the fetcher to run it."
+                ),
+            }
         if cache is None or odds_client is None:
             return {
                 "status": "unavailable",

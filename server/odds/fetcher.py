@@ -133,9 +133,31 @@ class FetcherRegistry:
 
     # ---------- Scheduler control ----------
 
+    def _odds_api_disabled(self) -> bool:
+        """True when ODDS_API_FETCHER_ENABLED=false.
+
+        Checked at every entry point that can cost Odds API credit —
+        scheduled polling (`start_all`), the UI's refresh-all button
+        (`refresh_all_now`) and per-event refresh (`refresh_event`) — so
+        the gate holds no matter which caller reaches the registry
+        (lifespan, /api/fetcher/*, /api/refresh/*, or a cache_mode flip
+        back to live). Guarding only the lifespan would leave the UI
+        buttons spending.
+
+        Deliberately narrower than cache_mode, which stops coral33 /
+        kalshi / polymarket too; those are free and must keep running.
+        """
+        return not getattr(self.config, "odds_api_fetcher_enabled", True)
+
     def start_all(self) -> dict:
         if self._running:
             return {"status": "already_running"}
+        if self._odds_api_disabled():
+            logger.info(
+                "odds api fetcher disabled via ODDS_API_FETCHER_ENABLED — "
+                "not starting scheduled polls"
+            )
+            return {"status": "disabled_by_env"}
         if not self.config.odds_api_key:
             logger.warning("ODDS_API_KEY empty; refusing to start fetcher")
             return {"status": "no_api_key"}
@@ -238,6 +260,12 @@ class FetcherRegistry:
         ODDS_API_CONCURRENCY so we don't queue 100+ semaphore-waiters at
         once (which would make every refresh click take 30s+ to drain).
         """
+        if self._odds_api_disabled():
+            logger.info(
+                "odds api fetcher disabled via ODDS_API_FETCHER_ENABLED — "
+                "refresh_all_now is a no-op (no requests billed)"
+            )
+            return {"status": "disabled_by_env", "triggered": []}
         enabled = self.all_enabled_tiers()
         if not enabled:
             return {"status": "no_tiers_enabled", "triggered": []}
@@ -546,6 +574,14 @@ class FetcherRegistry:
     # ---------- On-demand per-event refresh ----------
 
     async def refresh_event(self, event_id: str) -> dict:
+        # Checked before the debounce bookkeeping so a disabled fetcher
+        # doesn't consume the caller's debounce slot.
+        if self._odds_api_disabled():
+            logger.info(
+                "odds api fetcher disabled via ODDS_API_FETCHER_ENABLED — "
+                "refresh_event(%s) is a no-op (no request billed)", event_id,
+            )
+            return {"status": "disabled_by_env", "event_id": event_id}
         # Debounce (first sport's on_demand config; they're all 60s by default)
         debounce = 60
         for sp in self.sports:
