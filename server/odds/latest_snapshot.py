@@ -37,7 +37,7 @@ class LatestOddsSnapshotService:
         self,
         cache: Any,
         *,
-        refresh_interval_seconds: float = 15.0,
+        refresh_interval_seconds: float = 60.0,
         hard_stale_seconds: float = 90.0,
     ) -> None:
         self._cache = cache
@@ -48,6 +48,7 @@ class LatestOddsSnapshotService:
         self._loop_task: asyncio.Task[None] | None = None
         self._lock = asyncio.Lock()
         self._last_error: str | None = None
+        self._last_build_started = 0.0
 
     @property
     def current(self) -> OddsSnapshot | None:
@@ -84,7 +85,8 @@ class LatestOddsSnapshotService:
         if self._current is not None and self._current.source_version == source_version:
             return self._current
         if self._current is not None:
-            await self._ensure_refresh(source_version)
+            if self._refresh_due:
+                await self._ensure_refresh(source_version)
             return self._current
         task = await self._ensure_refresh(source_version)
         return await asyncio.shield(task)
@@ -134,8 +136,16 @@ class LatestOddsSnapshotService:
             ):
                 await self._ensure_refresh(self._cache.read_version)
 
+    @property
+    def _refresh_due(self) -> bool:
+        return (
+            time.monotonic() - self._last_build_started
+            >= self._refresh_interval_seconds
+        )
+
     async def _build(self, source_version: tuple) -> OddsSnapshot:
         started = time.perf_counter()
+        self._last_build_started = time.monotonic()
         try:
             (
                 rows,
@@ -148,6 +158,10 @@ class LatestOddsSnapshotService:
             generation = (
                 1 if self._current is None else self._current.generation + 1
             )
+            # The database can change while a large snapshot is being read.
+            # Publishing the version observed after the read prevents an
+            # immediate redundant rebuild of effectively the same data.
+            source_version = self._cache.read_version
             snapshot = OddsSnapshot(
                 generation=generation,
                 built_at=built_at,

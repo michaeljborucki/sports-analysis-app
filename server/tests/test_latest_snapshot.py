@@ -85,12 +85,17 @@ async def test_simultaneous_first_read_builds_the_snapshot_once():
 
 
 @pytest.mark.asyncio
-async def test_changed_source_serves_current_snapshot_while_one_refresh_runs():
+async def test_changed_source_is_throttled_then_serves_current_while_refresh_runs():
     cache = FakeCache()
-    service = LatestOddsSnapshotService(cache, refresh_interval_seconds=60)
+    service = LatestOddsSnapshotService(cache, refresh_interval_seconds=0.08)
     first = await service.get()
     cache.read_version = ("source", 2)
 
+    assert await service.get() is first
+    assert service.refreshing is False
+    assert cache.calls == 1
+
+    await asyncio.sleep(0.09)
     started = time.perf_counter()
     stale_one, stale_two = await asyncio.gather(service.get(), service.get())
     elapsed = time.perf_counter() - started
@@ -109,7 +114,7 @@ async def test_changed_source_serves_current_snapshot_while_one_refresh_runs():
 @pytest.mark.asyncio
 async def test_failed_refresh_keeps_last_good_snapshot_and_records_error():
     cache = FakeCache()
-    service = LatestOddsSnapshotService(cache)
+    service = LatestOddsSnapshotService(cache, refresh_interval_seconds=0)
     first = await service.get()
     cache.read_version = ("source", 2)
 
@@ -123,6 +128,22 @@ async def test_failed_refresh_keeps_last_good_snapshot_and_records_error():
 
     assert service.current is first
     assert service.last_error == "snapshot source unavailable"
+
+
+@pytest.mark.asyncio
+async def test_refresh_records_source_version_after_slow_build_finishes():
+    cache = FakeCache()
+    service = LatestOddsSnapshotService(cache, refresh_interval_seconds=0)
+
+    def update_during_read() -> list[dict]:
+        cache.calls += 1
+        cache.read_version = ("source", 2)
+        return cache.rows
+
+    cache.all_current = update_during_read
+    snapshot = await service.get()
+
+    assert snapshot.source_version == ("source", 2)
 
 
 @pytest.mark.asyncio
