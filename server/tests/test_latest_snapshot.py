@@ -75,3 +75,57 @@ async def test_simultaneous_first_read_builds_the_snapshot_once():
 
     assert first is second
     assert cache.calls == 1
+
+
+@pytest.mark.asyncio
+async def test_changed_source_serves_current_snapshot_while_one_refresh_runs():
+    cache = FakeCache()
+    service = LatestOddsSnapshotService(cache, refresh_interval_seconds=60)
+    first = await service.get()
+    cache.read_version = ("source", 2)
+
+    started = time.perf_counter()
+    stale_one, stale_two = await asyncio.gather(service.get(), service.get())
+    elapsed = time.perf_counter() - started
+
+    assert stale_one is first
+    assert stale_two is first
+    assert elapsed < 0.03
+    assert service.refreshing is True
+    await service.wait_until_idle()
+    current = await service.get()
+    assert current.generation == 2
+    assert current.source_version == ("source", 2)
+    assert cache.calls == 2
+
+
+@pytest.mark.asyncio
+async def test_failed_refresh_keeps_last_good_snapshot_and_records_error():
+    cache = FakeCache()
+    service = LatestOddsSnapshotService(cache)
+    first = await service.get()
+    cache.read_version = ("source", 2)
+
+    def fail() -> list[dict]:
+        cache.calls += 1
+        raise RuntimeError("snapshot source unavailable")
+
+    cache.all_current = fail
+    assert await service.get() is first
+    await service.wait_until_idle()
+
+    assert service.current is first
+    assert service.last_error == "snapshot source unavailable"
+
+
+@pytest.mark.asyncio
+async def test_start_and_stop_manage_one_background_loop():
+    cache = FakeCache()
+    service = LatestOddsSnapshotService(cache, refresh_interval_seconds=0.01)
+
+    await service.start()
+    assert service.current is not None
+    assert service.running is True
+
+    await service.stop()
+    assert service.running is False
