@@ -11,6 +11,7 @@ from typing import Any
 from starlette.concurrency import run_in_threadpool
 
 from .normalize import rows_to_games
+from .market_config import is_prop_market
 
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ class OddsSnapshot:
     source_version: tuple
     rows: tuple[dict, ...]
     games: tuple[dict, ...]
+    non_prop_games: tuple[dict, ...]
 
 
 class LatestOddsSnapshotService:
@@ -132,7 +134,9 @@ class LatestOddsSnapshotService:
     async def _build(self, source_version: tuple) -> OddsSnapshot:
         started = time.perf_counter()
         try:
-            rows, games, built_at = await run_in_threadpool(self._build_sync)
+            rows, games, non_prop_games, built_at = await run_in_threadpool(
+                self._build_sync
+            )
             generation = (
                 1 if self._current is None else self._current.generation + 1
             )
@@ -142,6 +146,7 @@ class LatestOddsSnapshotService:
                 source_version=source_version,
                 rows=rows,
                 games=games,
+                non_prop_games=non_prop_games,
             )
             self._current = snapshot
             self._last_error = None
@@ -161,8 +166,14 @@ class LatestOddsSnapshotService:
                 return self._current
             raise
 
-    def _build_sync(self) -> tuple[tuple[dict, ...], tuple[dict, ...], datetime]:
+    def _build_sync(
+        self,
+    ) -> tuple[tuple[dict, ...], tuple[dict, ...], tuple[dict, ...], datetime]:
         built_at = datetime.now(timezone.utc)
         rows = tuple(self._cache.all_current())
         games = tuple(rows_to_games(rows, now=built_at))
-        return rows, games, built_at
+        non_prop_rows = (
+            row for row in rows if not is_prop_market(row["market_key"])
+        )
+        non_prop_games = tuple(rows_to_games(non_prop_rows, now=built_at))
+        return rows, games, non_prop_games, built_at

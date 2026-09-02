@@ -63,6 +63,10 @@ async def test_first_snapshot_captures_rows_games_and_source_version():
         "h2h",
         "batter_hits",
     }
+    assert {
+        market["market_key"]
+        for market in snapshot.non_prop_games[0]["markets"]
+    } == {"h2h"}
     assert cache.calls == 1
 
 
