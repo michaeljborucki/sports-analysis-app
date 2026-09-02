@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import logging
 import time
-from typing import Any
+from types import MappingProxyType
+from typing import Any, Mapping
 
 from starlette.concurrency import run_in_threadpool
 
@@ -25,6 +26,8 @@ class OddsSnapshot:
     rows: tuple[dict, ...]
     games: tuple[dict, ...]
     non_prop_games: tuple[dict, ...]
+    non_prop_games_by_sport: Mapping[str, tuple[dict, ...]]
+    system_rows: tuple[dict, ...]
 
 
 class LatestOddsSnapshotService:
@@ -134,9 +137,14 @@ class LatestOddsSnapshotService:
     async def _build(self, source_version: tuple) -> OddsSnapshot:
         started = time.perf_counter()
         try:
-            rows, games, non_prop_games, built_at = await run_in_threadpool(
-                self._build_sync
-            )
+            (
+                rows,
+                games,
+                non_prop_games,
+                non_prop_games_by_sport,
+                system_rows,
+                built_at,
+            ) = await run_in_threadpool(self._build_sync)
             generation = (
                 1 if self._current is None else self._current.generation + 1
             )
@@ -147,6 +155,8 @@ class LatestOddsSnapshotService:
                 rows=rows,
                 games=games,
                 non_prop_games=non_prop_games,
+                non_prop_games_by_sport=non_prop_games_by_sport,
+                system_rows=system_rows,
             )
             self._current = snapshot
             self._last_error = None
@@ -168,7 +178,14 @@ class LatestOddsSnapshotService:
 
     def _build_sync(
         self,
-    ) -> tuple[tuple[dict, ...], tuple[dict, ...], tuple[dict, ...], datetime]:
+    ) -> tuple[
+        tuple[dict, ...],
+        tuple[dict, ...],
+        tuple[dict, ...],
+        Mapping[str, tuple[dict, ...]],
+        tuple[dict, ...],
+        datetime,
+    ]:
         built_at = datetime.now(timezone.utc)
         rows = tuple(self._cache.all_current())
         games = tuple(rows_to_games(rows, now=built_at))
@@ -176,4 +193,22 @@ class LatestOddsSnapshotService:
             row for row in rows if not is_prop_market(row["market_key"])
         )
         non_prop_games = tuple(rows_to_games(non_prop_rows, now=built_at))
-        return rows, games, non_prop_games, built_at
+        by_sport: dict[str, list[dict]] = {}
+        for game in non_prop_games:
+            by_sport.setdefault(game["sport_key"], []).append(game)
+        non_prop_games_by_sport = MappingProxyType({
+            sport: tuple(sport_games) for sport, sport_games in by_sport.items()
+        })
+        system_rows = tuple(
+            row for row in rows
+            if row["sport_key"] in {"mlb", "ncaaf", "nfl"}
+            and row["market_key"] in {"h2h", "spreads", "totals"}
+        )
+        return (
+            rows,
+            games,
+            non_prop_games,
+            non_prop_games_by_sport,
+            system_rows,
+            built_at,
+        )

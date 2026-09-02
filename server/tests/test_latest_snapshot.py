@@ -68,6 +68,8 @@ async def test_first_snapshot_captures_rows_games_and_source_version():
         market["market_key"]
         for market in snapshot.non_prop_games[0]["markets"]
     } == {"h2h"}
+    assert snapshot.non_prop_games_by_sport["mlb"] == snapshot.non_prop_games
+    assert {row["market_key"] for row in snapshot.system_rows} == {"h2h"}
     assert cache.calls == 1
 
 
