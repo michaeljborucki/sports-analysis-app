@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from server.odds.latest_snapshot import LatestOddsSnapshotService
+from scripts.benchmark_critical_pages import Measurement, format_measurements
 
 
 NOW = datetime.now(timezone.utc)
@@ -133,3 +134,16 @@ async def test_start_and_stop_manage_one_background_loop():
 
     await service.stop()
     assert service.running is False
+
+
+def test_benchmark_formatter_reports_latency_status_and_size():
+    output = format_measurements([
+        Measurement("health", 200, 0.027, 457),
+        Measurement("edges-arb", 200, 0.429, 140_994),
+    ])
+
+    assert output.splitlines() == [
+        "endpoint\tstatus\tseconds\tbytes",
+        "health\t200\t0.027\t457",
+        "edges-arb\t200\t0.429\t140994",
+    ]
