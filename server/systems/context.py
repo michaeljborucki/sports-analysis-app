@@ -418,17 +418,27 @@ def college_team_directory_context(
 
 
 def select_kickoff_weather(hourly: dict, kickoff: datetime) -> dict[str, float]:
+    """Nearest hour to kickoff that actually carries both readings.
+
+    Open-Meteo returns nulls at the edge of its forecast range. Taking the
+    nearest hour blindly and calling float() on a null raised straight out
+    of the enricher, blanking the context for EVERY football game rather
+    than the one game with a thin forecast.
+    """
     times = [
         datetime.fromisoformat(value).replace(tzinfo=timezone.utc)
         for value in hourly.get("time", [])
     ]
-    if not times:
-        return {}
-    index = min(range(len(times)), key=lambda idx: abs((times[idx] - kickoff).total_seconds()))
     temperatures = hourly.get("temperature_2m", [])
     winds = hourly.get("wind_speed_10m", [])
-    if index >= len(temperatures) or index >= len(winds):
+    usable = [
+        index for index in range(len(times))
+        if index < len(temperatures) and index < len(winds)
+        and temperatures[index] is not None and winds[index] is not None
+    ]
+    if not usable:
         return {}
+    index = min(usable, key=lambda idx: abs((times[idx] - kickoff).total_seconds()))
     return {
         "temperature_f": float(temperatures[index]),
         "sustained_wind_mph": float(winds[index]),
@@ -756,7 +766,18 @@ async def _football_weather_context(
             forecast_payload = forecast.payload
         else:
             forecast_payload = await load_forecast()
-        weather = select_kickoff_weather(forecast_payload.get("hourly", {}), game.commence_time)
+        try:
+            weather = select_kickoff_weather(
+                forecast_payload.get("hourly", {}), game.commence_time
+            )
+        except Exception as exc:
+            # Per-game, deliberately: a malformed forecast for one stadium
+            # is a gap in one game, never a blackout across the slate.
+            detail = str(exc).strip() or type(exc).__name__
+            warnings.append(
+                f"No weather for {game.away_team} @ {game.home_team}: {detail}"
+            )
+            continue
         if weather:
             additions[game.event_id] = {"weather_applicable": True, **weather}
     return additions, warnings

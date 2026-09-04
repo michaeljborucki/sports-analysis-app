@@ -475,3 +475,30 @@ def test_scoreboard_date_key_uses_espns_eastern_date_not_utc():
         data_timestamp=datetime(2026, 9, 3, 16, 0, tzinfo=timezone.utc),
     )
     assert scoreboard_date_key([night_game], date(2026, 9, 3)) == "20260903"
+
+
+def test_kickoff_weather_skips_null_hours_from_the_provider():
+    """Open-Meteo returns nulls at the edge of its forecast range.
+
+    float(None) used to raise straight out of the enricher, which blanked
+    the context for EVERY football game, not just the one bad forecast.
+    """
+    hourly = {
+        "time": ["2026-09-18T22:00", "2026-09-18T23:00", "2026-09-19T00:00"],
+        "temperature_2m": [None, 78.4, None],
+        "wind_speed_10m": [None, 6.1, None],
+    }
+    kickoff = datetime(2026, 9, 19, 0, 0, tzinfo=timezone.utc)
+    assert select_kickoff_weather(hourly, kickoff) == {
+        "temperature_f": 78.4, "sustained_wind_mph": 6.1,
+    }
+
+
+def test_kickoff_weather_returns_nothing_when_every_hour_is_null():
+    hourly = {
+        "time": ["2026-09-19T00:00"],
+        "temperature_2m": [None],
+        "wind_speed_10m": [None],
+    }
+    kickoff = datetime(2026, 9, 19, 0, 0, tzinfo=timezone.utc)
+    assert select_kickoff_weather(hourly, kickoff) == {}
