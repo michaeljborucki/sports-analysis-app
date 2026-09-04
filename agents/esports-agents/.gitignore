@@ -1,8 +1,0 @@
-.env
-__pycache__/
-*.pyc
-data/bets.csv
-.pytest_cache/
-*.egg-info/
-dist/
-build/
