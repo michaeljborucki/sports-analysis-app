@@ -18,8 +18,25 @@ MATCH_WINDOW_MIN = 15  # ± minutes (default; per-sport overrides below)
 # would orphan with a 15-minute window. 6 hours is wide enough to cover any
 # realistic card length while still rejecting unrelated days.
 SPORT_WINDOW_MINUTES: dict[str, int] = {
-    "ufc":    360,
-    "boxing": 360,
+    # College kickoff listings commonly move by a television half-hour.
+    "ncaaf":    30,
+    # Combat sports: coral33 stamps a whole card with one start time AND
+    # routinely files the card under the local calendar day, so a card that
+    # the Odds API lists 03:00 UTC Saturday arrives as 03:00 UTC Sunday —
+    # an exact 24h offset (verified on Bahdi/Schofield and Collazo/Sandoval,
+    # 2026-10-10). 25h absorbs that rollover plus card length; a fighter
+    # pair never meets twice inside two days, and `match()` still takes the
+    # closest start when several candidates qualify.
+    "ufc":    1500,
+    "boxing": 1500,
+    # Tennis: coral33 posts undecided matches at a 12:00:01Z placeholder and
+    # nudges the real time repeatedly as the order of play firms up (41 of
+    # 377 unresolved 2026-09 orphans sat on that exact placeholder, and no
+    # resolved row did). 12h keeps the match on its own calendar day.
+    "tennis":  720,
+    # Soccer: kickoff times disagree by up to ~2h between sources (Liga MX
+    # in particular). Two clubs never meet twice inside three hours.
+    "soccer":  180,
 }
 
 # Abbreviations that mean the same thing in college sports / soccer. Applied
@@ -29,10 +46,28 @@ SPORT_WINDOW_MINUTES: dict[str, int] = {
 # alone, with no following abbreviation context.
 _ABBREV_EXPANSION: dict[str, str] = {
     "st":   "state",
+    # Compass-point initials: coral33 sends "N Carolina A&T" where the Odds
+    # API sends "North Carolina A&T Aggies". Safe in the prefix path because
+    # an expansion that creates two candidates orphans rather than guessing.
+    "n":    "north",
+    "s":    "south",
+    "e":    "east",
+    "w":    "west",
     "intl": "international",
     "natl": "national",
     "univ": "university",
 }
+
+
+def _floor_minute(dt: datetime) -> datetime:
+    """Drop sub-minute precision before comparing kickoff times.
+
+    coral33 stamps every GameDateTime with a :01 seconds offset, so a game the
+    two sources list exactly one TV half-hour apart measures 1801s — one second
+    past the 1800s ncaaf window — and orphans. Neither source means anything by
+    the seconds field, so both sides are floored before the diff.
+    """
+    return dt.replace(second=0, microsecond=0)
 
 
 def _strip_accents(s: str) -> str:
@@ -83,6 +118,14 @@ def _normalize_team(
         if len(tokens) >= 2:
             n = f"{tokens[0][0]} {tokens[-1]}"
     return aliases.get(n, n)
+
+
+def normalize_team_key(name: str, sport_key: str | None = None) -> str:
+    """Public wrapper: fold a name exactly as the matcher does, minus the
+    alias lookup. Config loading uses this so hand-written alias KEYS land in
+    the same shape the matcher will look up — otherwise an accented or
+    punctuated key ('américa', 'man. city') is dead on arrival."""
+    return _normalize_team(name, {}, sport_key)
 
 
 class Coral33EventMatcher:
@@ -165,7 +208,7 @@ class Coral33EventMatcher:
                 ev_ts = datetime.fromisoformat(ev_ts.replace("Z", "+00:00"))
             if ev_ts.tzinfo is None:
                 ev_ts = ev_ts.replace(tzinfo=timezone.utc)
-            diff = abs((ev_ts - c_ts).total_seconds())
+            diff = abs((_floor_minute(ev_ts) - _floor_minute(c_ts)).total_seconds())
             if diff > window_s:
                 continue
             if best is None or diff < best[0]:
@@ -189,7 +232,7 @@ class Coral33EventMatcher:
 
         # Prefix-match fallback for schools that arrive as "{school}" on
         # coral33 but "{school} {mascot…}" on Odds API (all NCAA and any
-        # other sport with the same pattern). Safer than maintaining a
+# other sport with the same pattern). Safer than maintaining a
         # 300-team alias list: accept only when exactly one candidate
         # prefix-matches in time window — ambiguous matchups (e.g., "Miami"
         # could be Miami FL or Miami OH) stay orphans rather than risking
@@ -233,7 +276,7 @@ class Coral33EventMatcher:
                 ev_ts = datetime.fromisoformat(ev_ts.replace("Z", "+00:00"))
             if ev_ts.tzinfo is None:
                 ev_ts = ev_ts.replace(tzinfo=timezone.utc)
-            diff = abs((ev_ts - c_ts).total_seconds())
+            diff = abs((_floor_minute(ev_ts) - _floor_minute(c_ts)).total_seconds())
             if diff > window_s:
                 continue
             matches.append((int(diff), ev, swapped))
@@ -250,8 +293,8 @@ class Coral33EventMatcher:
 
 
 # Sports where coral33's bare-school naming convention is the norm and a
-# word-prefix fallback is safe. Start conservative — baseball_ncaa only.
-_PREFIX_MATCH_SPORTS: frozenset[str] = frozenset({"baseball_ncaa"})
+# word-prefix fallback is safe.
+_PREFIX_MATCH_SPORTS: frozenset[str] = frozenset({"baseball_ncaa", "ncaaf"})
 
 
 def _is_token_prefix(short_tokens: list[str], long_tokens: list[str]) -> bool:

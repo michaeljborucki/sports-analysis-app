@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 import tomllib
 import unicodedata
 from pathlib import Path
@@ -186,24 +187,45 @@ def _load_aliases() -> dict[str, dict[str, str]]:
     return out
 
 
+# Seconds between mtime checks on the alias file. `normalize_player_name`
+# runs per prop row, so we don't stat on every call.
+_ALIAS_STAT_INTERVAL_S = 30.0
+_ALIAS_STATE: tuple[float, float] = (0.0, 0.0)  # (last_checked, file_mtime)
+
+
 def _get_aliases() -> dict[str, dict[str, str]]:
-    """Lazy alias loader. The TOML is read on first call and cached for the
-    process lifetime. Tests that need to reset it call `reload_aliases()`.
+    """Lazy alias loader with a throttled mtime check.
+
+    Adding an alias used to need a server restart, which is why hand-fixed
+    names kept showing up as unresolved on the mapping-health page long after
+    they were fixed. The file is re-read when its mtime moves, at most once
+    every `_ALIAS_STAT_INTERVAL_S`.
     """
-    global _ALIASES
-    if _ALIASES is None:
+    global _ALIASES, _ALIAS_STATE
+    now = time.monotonic()
+    if _ALIASES is not None and now - _ALIAS_STATE[0] < _ALIAS_STAT_INTERVAL_S:
+        return _ALIASES
+    try:
+        mtime = _ALIASES_PATH.stat().st_mtime
+    except OSError:
+        mtime = _ALIAS_STATE[1]
+    if _ALIASES is None or mtime != _ALIAS_STATE[1]:
+        if _ALIASES is not None:
+            logger.info("player_names: alias file changed — reloading")
         _ALIASES = _load_aliases()
+    _ALIAS_STATE = (now, mtime)
     return _ALIASES
 
 
 def reload_aliases() -> None:
     """Reset the alias cache so the next `normalize_player_name` re-reads
     the TOML. Useful for tests + a future hot-reload signal handler."""
-    global _ALIASES
+    global _ALIASES, _ALIAS_STATE
     _ALIASES = None
+    _ALIAS_STATE = (0.0, 0.0)
 
 
-def normalize_player_name(name: str, sport: str) -> str:
+def normalize_player_name(name: str, sport: str, market_key: str = "") -> str:
     """Return the canonical form of a player name for the given sport.
 
     The canonical form is stable across casing, accents, hyphens,
@@ -229,6 +251,12 @@ def normalize_player_name(name: str, sport: str) -> str:
     sport_key = (sport or "").strip().lower()
     if not sport_key:
         return folded
+    # Optional role scope prevents a hitter alias renaming a same-name pitcher.
+    if market_key.startswith(("batter_", "pitcher_")):
+        role = market_key.split("_", 1)[0]
+        scoped = _get_aliases().get(f"{sport_key}_{role}", {})
+        if folded in scoped:
+            return scoped[folded]
     table = _get_aliases().get(sport_key)
     if table is None:
         return folded

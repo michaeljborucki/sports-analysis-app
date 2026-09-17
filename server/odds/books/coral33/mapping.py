@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import logging
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from .event_matcher import normalize_team_key
+
+
+logger = logging.getLogger(__name__)
 
 
 # coral33 period string -> our market-key suffix. Empty string = main market
@@ -19,9 +25,13 @@ PERIOD_SUFFIX: dict[str, str] = {
     "1st Period": "_p1",
     "2nd Period": "_p2",
     "3rd Period": "_p3",
-    "1st 5 Innings": "_f5",
-    "1st 3 Innings": "_f3",
-    "1st 7 Innings": "_f7",
+    # Innings suffixes MUST match the Odds API / Kalshi convention
+    # (`_1st_5_innings`, …) — every scanner pairs by exact market_key, so an
+    # `_f5` shorthand here would orphan all coral33 F5 rows (they'd never match
+    # the sharp anchors under `*_1st_5_innings`).
+    "1st 5 Innings": "_1st_5_innings",
+    "1st 3 Innings": "_1st_3_innings",
+    "1st 7 Innings": "_1st_7_innings",
 }
 
 
@@ -71,6 +81,25 @@ class Coral33SportConfig:
 # the same stat name can mean different things across sports (e.g., "Strikeouts"
 # is a pitcher market in baseball but a skater category would differ).
 PROP_STAT_TO_MARKET_KEY: dict[str, dict[str, str]] = {
+    "nfl": {
+        "Completions": "player_pass_completions",
+        "Interceptions": "player_pass_interceptions",
+        "Longest Completion": "player_pass_longest_completion",
+        "Pass Attempts": "player_pass_attempts",
+        "Passing Yards": "player_pass_yds",
+        "Rushing Yards": "player_rush_yds",
+        "TD Passes": "player_pass_tds",
+        "Longest Reception": "player_reception_longest",
+        "Receiving Yards": "player_reception_yds",
+        # coral33 misspells this on some games (seen 2026-09-09 on
+        # CorrelationID 453-g); the exact-match lookup dropped the whole
+        # game's receiving-yards board until it was aliased.
+        "Receving Yards": "player_reception_yds",
+        "Receptions": "player_receptions",
+        "Reception": "player_receptions",
+        # NFLPLRPROPS uses Points for kicker totals (Borregales/Myers).
+        "Points": "player_kicking_points",
+    },
     "nba": {
         "Points":           "player_points",
         "Rebounds":         "player_rebounds",
@@ -127,8 +156,35 @@ def load_coral33_config(path: Path) -> Coral33Config:
     aliases_raw = raw.get("team_aliases") or {}
     team_aliases: dict[str, dict[str, str]] = {}
     for sport, table in aliases_raw.items():
-        team_aliases[sport] = {k: v for k, v in table.items()}
+        team_aliases[sport] = _fold_alias_table(sport, table)
     return Coral33Config(sports=sports, team_aliases=team_aliases)
+
+
+def _fold_alias_table(sport: str, table: dict) -> dict[str, str]:
+    """Normalize alias keys AND values the way the matcher will.
+
+    The matcher strips accents and punctuation *before* the alias lookup
+    (`event_matcher._normalize_team`), but the TOML is hand-written in
+    display form. Loading keys raw left 21 of the 136 soccer aliases dead —
+    "américa", "man. city", "bayern münchen", "nott'm forest" could never be
+    hit. Values are folded too: an alias only helps if its output is in the
+    same shape as the other source's normalized name.
+    """
+    out: dict[str, str] = {}
+    for k, v in table.items():
+        if not isinstance(k, str) or not isinstance(v, str):
+            continue
+        fk = normalize_team_key(k, sport)
+        fv = normalize_team_key(v, sport)
+        if not fk or not fv:
+            continue
+        if fk in out and out[fk] != fv:
+            logger.warning(
+                "coral33 aliases: %s key %r collides with an earlier entry "
+                "(%r vs %r) — last one wins", sport, k, out[fk], fv,
+            )
+        out[fk] = fv
+    return out
 
 
 # Alias so the public symbol in __init__ matches what's imported elsewhere.

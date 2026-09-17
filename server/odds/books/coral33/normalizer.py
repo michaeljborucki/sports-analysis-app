@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime, timezone
 from typing import Callable
 
@@ -12,6 +13,14 @@ logger = logging.getLogger(__name__)
 
 
 BOOK_KEY = "coral33"
+
+# Set CORAL33_DEBUG_ORPHANS=1 to log the raw coral33 team names + parsed
+# commence time for every row that fails to match an Odds API event. Off by
+# default — orphans are routine (untracked soccer/tennis leagues), so this
+# would be noisy always-on. Turn it on to feed the reactive team-alias
+# workflow: an orphan is either a name the alias table doesn't cover or a
+# commence-time drift beyond the match window.
+_ORPHAN_DEBUG = os.environ.get("CORAL33_DEBUG_ORPHANS") == "1"
 
 
 try:
@@ -53,6 +62,19 @@ _ALT_SUFFIXES = (
     " Games",            # tennis — same player, but games-level markets
                          # (set-level markets live on the bare-name line)
 )
+
+
+# Suffixes coral33 uses for markets we have no cache market_key for. These
+# lines are NOT stripped and re-matched: a 1st-set spread priced as a
+# match spread would poison EV/arb. We drop them, and — since dropping them
+# is intentional, not a mapping failure — we don't report them either.
+_UNSUPPORTED_SUFFIXES = (
+    " 1st Set",   # tennis set-level spread/total; no set-level market key yet
+)
+
+
+def _has_unsupported_suffix(raw_team_name: str) -> bool:
+    return (raw_team_name or "").rstrip().endswith(_UNSUPPORTED_SUFFIXES)
 
 
 def _is_tennis_games_line(raw_team_name: str) -> bool:
@@ -97,6 +119,8 @@ def normalize_league_lines(
     fetched_at: datetime,
     match_event: Callable[[str, str, str, datetime], dict | None],
     is_alternate: bool = False,
+    match_correlation: Callable[[str], dict | None] | None = None,
+    report_issue: Callable[..., None] | None = None,
 ) -> list[dict]:
     """Take a Get_LeagueLines2 response for a (sport, period) pull and produce
     cache rows. Events that don't match an existing Odds API event are dropped
@@ -127,6 +151,7 @@ def normalize_league_lines(
     orphans = 0
     circled = 0
     live = 0
+    unsupported = 0
     for line in lines:
         if line.get("Status") != "O":
             circled += 1
@@ -139,6 +164,9 @@ def normalize_league_lines(
         is_games_line = sport_key == "tennis" and (
             _is_tennis_games_line(raw_t1) or _is_tennis_games_line(raw_t2)
         )
+        if _has_unsupported_suffix(raw_t1) or _has_unsupported_suffix(raw_t2):
+            unsupported += 1
+            continue
         team1 = _clean_team(raw_t1)
         team2 = _clean_team(raw_t2)
         if not team1 or not team2:
@@ -164,9 +192,32 @@ def normalize_league_lines(
         coral_home = team2
 
         matched = match_event(sport_key, coral_home, coral_away, commence)
+        if matched is None and is_alternate and match_correlation is not None:
+            # NFL alt boards use mascot-only names. Join to the main-board
+            # parent already matched this cycle, as player props do.
+            correlation = (line.get("CorrelationID") or "").strip()
+            parent = match_correlation(correlation) if correlation else None
+            if parent is not None:
+                parent_time = parent.get("commence_time")
+                if isinstance(parent_time, str):
+                    parent_time = datetime.fromisoformat(parent_time.replace("Z", "+00:00"))
+                # Rotation numbers can be reused; reject another game's time.
+                if parent_time is not None and abs((parent_time - commence).total_seconds()) < 60:
+                    matched = parent
         if matched is None:
+            if report_issue:
+                report_issue(kind="team", sport=sport_key, raw_name=f"{team1} / {team2}",
+                             event=commence.isoformat(), market=period)
             orphans += 1
+            if _ORPHAN_DEBUG:
+                logger.info(
+                    "coral33 %s ORPHAN: away=%r home=%r commence=%s",
+                    sport_key, coral_away, coral_home, commence.isoformat(),
+                )
             continue
+        if report_issue:
+            report_issue(kind="team", sport=sport_key, raw_name=f"{team1} / {team2}",
+                         event=commence.isoformat(), market=period, resolved=True)
         event_id = matched["event_id"]
         # Use Odds API canonical team names for STORAGE so coral33 and Odds
         # API share outcome buckets. Fall back to coral names if the matcher
@@ -209,10 +260,12 @@ def normalize_league_lines(
             rows.extend(_extract_total(line, suffix, base, market_prefix_total))
             rows.extend(_extract_team_totals(line, suffix, base, team1_canon, team2_canon, market_prefix_tt))
 
-    if orphans or circled or live:
+    if orphans or circled or live or unsupported:
         logger.info(
-            "coral33 %s %s: %d rows, %d orphans, %d circled, %d live (from %d lines)",
-            sport_key, period, len(rows), orphans, circled, live, len(lines),
+            "coral33 %s %s: %d rows, %d orphans, %d circled, %d live, "
+            "%d unsupported-market (from %d lines)",
+            sport_key, period, len(rows), orphans, circled, live, unsupported,
+            len(lines),
         )
     return rows
 
@@ -222,6 +275,7 @@ def normalize_player_props(
     sport_key: str,
     fetched_at: datetime,
     game_num_lookup: Callable[[object], dict | None],
+    report_issue: Callable[..., None] | None = None,
 ) -> list[dict]:
     """Decode a Get_LeagueLines2 response from a PLAYERPRO subtype (one row per
     player-stat Over/Under) into cache rows.
@@ -269,8 +323,15 @@ def normalize_player_props(
             continue
         market_key = stat_map.get(stat)
         if market_key is None:
+            if report_issue:
+                report_issue(kind="stat", sport=sport_key, raw_name=stat, market="player_props",
+                             event=(line.get("CorrelationID") or "").strip())
             unknown_stat += 1
             continue
+        player = normalize_player_name(raw_player, sport_key, market_key)
+        if report_issue:
+            report_issue(kind="stat", sport=sport_key, raw_name=stat, market="player_props",
+                         event=(line.get("CorrelationID") or "").strip(), resolved=True)
         point = _float_or_none(line.get("TotalPoints"))
         over = _int_or_none(line.get("TtlPtsAdj1"))
         under = _int_or_none(line.get("TtlPtsAdj2"))
@@ -279,12 +340,22 @@ def normalize_player_props(
 
         correlation_id = (line.get("CorrelationID") or "").strip()
         if not correlation_id:
+            if report_issue:
+                report_issue(kind="prop_parent", sport=sport_key, raw_name=raw_player, market=stat)
             orphans += 1
             continue
         ref = game_num_lookup(correlation_id)
         if ref is None:
+            if report_issue:
+                report_issue(kind="prop_parent", sport=sport_key, raw_name=raw_player,
+                             event=correlation_id, market=stat)
             orphans += 1
             continue
+        if report_issue:
+            report_issue(kind="prop_parent", sport=sport_key, raw_name=raw_player,
+                         event=correlation_id, market=stat, resolved=True)
+            report_issue(kind="player_observation", sport=sport_key, raw_name=raw_player,
+                         event=ref["event_id"], market=market_key)
         commence = ref.get("commence_time")
         if isinstance(commence, str):
             commence = datetime.fromisoformat(commence.replace("Z", "+00:00"))

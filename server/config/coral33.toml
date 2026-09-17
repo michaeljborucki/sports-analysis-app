@@ -10,7 +10,7 @@
 
 # Subtype strings use the LITERAL server names with spaces (not URL-encoded).
 # Confirmed via Get_SportsLeagues probe (2026-04-20):
-#   BASKETBALL: NBA, NBA ALT LINE, NBAPLAYERPRO, NBA GPROPS, NBA ADJ SERI
+#   BASKETBALL: NBA, NBA ALT LINE, NBAPLAYERPRO, NBA GPROPS, NBA ADJ SERI, NBA PRESEASO
 #   HOCKEY:     NHL, HOCKEY ALTER, NHL GAME PRO, NHL ADJ SERI, NHL REG TIME
 #   BASEBALL:   MLB, MLB ALT LINE, MLB SERIES, NCAABASEBALL, BASEPLAPROP
 #   TENNIS:     (only Futures + WTA MATCHUPS currently in catalog; live-match
@@ -18,7 +18,14 @@
 
 [sports.nba]
 sport_type    = "BASKETBALL"
-subtypes_main = ["NBA"]
+# "NBA PRESEASO" (truncated "NBA PRESEASON") is coral33's label for the current
+# summer-league slate — it folds in here so those games cross-shop against the
+# Odds API basketball_nba_summer_league key under sport_key `nba`. Summer League
+# is game-lines-only in practice; the non-Game periods below still get called
+# for this subtype (schema applies `periods` to every subtype) and return empty.
+# Team names arrive as standard franchises → the existing [team_aliases.nba]
+# block covers them; add reactively if orphan logs surface a suffixed form.
+subtypes_main = ["NBA", "NBA PRESEASO"]
 subtypes_alt  = ["NBA ALT LINE"]
 subtypes_prop = ["NBAPLAYERPRO"]
 periods = ["Game", "1st Half", "2nd Half", "1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter"]
@@ -37,6 +44,26 @@ subtypes_main = ["WNBA"]
 subtypes_alt  = []
 subtypes_prop = []
 periods = ["Game", "1st Half", "1st Quarter"]
+
+[sports.nfl]
+sport_type    = "FOOTBALL"
+# Regular-season board and derivatives verified on 2026-09-09.
+# Retain the preseason subtype for its seasonal slate.
+subtypes_main = ["NFL", "NFL PRESEAS"]
+subtypes_alt  = ["NFLALTLINE"]
+subtypes_prop = ["NFLPLRPROPS"]
+periods = ["Game", "1st Half", "1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter"]
+
+[sports.ncaaf]
+sport_type    = "FOOTBALL"
+# COLLEGE is the primary college-football slate; COLLEXT carries Coral33's
+# additional college rotation. Cache-key deduplication collapses overlap.
+# COLLALT is the college alt-line board (teams suffixed " Alt Line", stripped
+# by the normalizer) — spreads/totals only, no ML. Probed 2026-08-29.
+subtypes_main = ["COLLEGE", "COLLEXT"]
+subtypes_alt  = ["COLLALT"]
+subtypes_prop = []
+periods = ["Game", "1st Half"]
 
 
 [sports.nhl]
@@ -184,6 +211,7 @@ mavs            = "dallas mavericks"
 nuggets         = "denver nuggets"
 pistons         = "detroit pistons"
 warriors        = "golden state warriors"
+"golden st warriors" = "golden state warriors"   # coral33 abbreviates State→St (seen on the summer-league / preseason feed)
 rockets         = "houston rockets"
 pacers          = "indiana pacers"
 clippers        = "los angeles clippers"
@@ -296,6 +324,10 @@ nationals       = "washington nationals"
 nats            = "washington nationals"
 
 [team_aliases.asian_baseball]
+# Observed Coral33 variants matched to the same fixture (2026-09-09).
+"rakuten golden eagles" = "tohoku rakuten golden eagles"
+"fukuoka s hawks" = "fukuoka softbank hawks"
+
 # coral33 uses short forms (no region prefix); Odds API uses the full
 # "{region} {mascot}" canonical. Normalization lowercases + strips
 # punctuation, so e.g. "Hokkaido Nippon-Ham Fighters" → "hokkaido nippon
@@ -318,6 +350,49 @@ nats            = "washington nationals"
 #   lotte giants, nc dinos, samsung lions, ssg landers
 
 [team_aliases.soccer]
+# Observed Coral33 variants matched to the same fixture (2026-09-09).
+"machida zelvia" = "fc machida zelvia"
+"tokyo" = "fc tokyo"
+"mito" = "mito hollyhock"
+"kyoto sanga" = "kyoto purple sanga"
+"rb bragantino" = "bragantino sp"
+"sc internacional" = "internacional"
+"atletico pr" = "atletico paranaense"
+"juarez" = "fc juarez"
+"uanl tigres" = "tigres"
+"atlante" = "atlante fc"
+"club tijuana" = "tijuana"
+"club leon" = "leon"
+"unam pumas" = "pumas"
+"vancouver whitecaps" = "vancouver whitecaps fc"
+"san diego" = "san diego fc"
+"minnesota united" = "minnesota united fc"
+"inter miami" = "inter miami cf"
+"atlanta united" = "atlanta united fc"
+"columbus crew" = "columbus crew sc"
+"sabah baku" = "sabah fk"
+"bodo glimt" = "bod glimt"
+"lens" = "rc lens"
+"le mans" = "le mans fc"
+"toulouse fc" = "toulouse"
+"angers sco" = "angers"
+"stade rennais" = "rennes"
+"fc koln" = "1 fc koln"
+"freiburg" = "sc freiburg"
+"paderborn" = "sc paderborn"
+"stuttgart" = "vfb stuttgart"
+"hoffenheim" = "tsg hoffenheim"
+"schalke 04" = "fc schalke 04"
+"torino fc" = "torino"
+"atalanta" = "atalanta bc"
+"barcelona fc" = "barcelona"
+"celta de vigo" = "celta vigo"
+"elche" = "elche cf"
+"osasuna" = "ca osasuna"
+"racing santander" = "real racing club de santander"
+"brighton hove" = "brighton and hove albion"
+"coventry" = "coventry city"
+
 # Soccer team naming is a mess — Odds API tends toward full club names
 # ("Manchester City") and short national-team forms ("USA", "South
 # Korea"); coral33 emits a different convention depending on league
@@ -440,6 +515,16 @@ nats            = "washington nationals"
 "chivas"                        = "guadalajara"
 "club deportivo guadalajara"    = "guadalajara"
 
+# ─── Verified against the 2026-09-17 mapping-health orphans ──────────
+# Coral33 drops the club suffix the Odds API keeps.
+"seattle sounders"              = "seattle sounders fc"
+"orlando city"                  = "orlando city sc"
+"st. louis city"                = "st. louis city sc"
+# J-League: the two sources put the city on opposite ends of the name.
+"sanfrecce hiroshima"           = "hiroshima sanfrecce fc"
+"chiba"                         = "jef united chiba"
+"urawa reds"                    = "urawa red diamonds"
+
 [team_aliases.baseball_ncaa]
 # coral33 sends bare school names ("Duke", "North Carolina"); Odds API
 # uses school+mascot ("Duke Blue Devils", "North Carolina Tar Heels").
@@ -453,15 +538,39 @@ nats            = "washington nationals"
 #      canonical form (e.g., abbreviations, punctuation)
 # Add entries only when orphan logs surface a real mismatch.
 
+[team_aliases.ncaaf]
+# Observed Coral33 variants matched to the same fixture (2026-09-09).
+"southern miss" = "southern mississippi golden eagles"
+"middle tennessee st" = "middle tennessee blue raiders"
+"connecticut" = "uconn huskies"
+"central florida" = "ucf knights"
+"ul lafayette" = "louisiana ragin cajuns"
+
+# Verified against the live Coral33 and Odds API slates on 2026-08-27.
+"north carolina st" = "nc state"
+massachusetts       = "umass"
+"miami florida"    = "miami"
+"miami ohio"       = "miami oh"
+"long island"       = "liu"        # Odds API lists them as "LIU Sharks"
+mississippi         = "ole miss"
+
 [team_aliases.tennis]
 
 [team_aliases.ufc]
 # UFC fighter names are typically identical across coral33 and Odds API
 # (full first + last). Add aliases here only when orphan logs surface a
 # real mismatch (nicknames, accent variants, etc.).
+# Verified against the 2026-09-17 mapping-health orphans:
+"doo ho choi"          = "dooho choi"        # spacing of a Korean given name
+"rongzhu"              = "zhu rong"          # transliteration order differs
+"alexander volkanovski" = "alex volkanovski" # Odds API uses the short form
 
 [team_aliases.boxing]
 # Same as UFC — fighter names usually identity-match.
+# Verified against the 2026-09-17 mapping-health orphans:
+"jesus ramos"          = "jesus alejandro ramos jr"  # coral drops middle + suffix
+"floyd schofield"      = "floyd scholfield"          # Odds API spelling
+"ricardo sandoval"     = "ricardo rafael sandoval"   # coral drops middle name
 
 [team_aliases.cricket]
 # IPL franchise names are largely canonical across providers. Add aliases

@@ -24,6 +24,10 @@ from .normalizer import (
 
 logger = logging.getLogger(__name__)
 
+# Per-(subtype, period) line counts. Shares the normalizer's debug env var
+# so one flag turns on the whole coral33 coverage trace. Off by default.
+_SUBTYPE_DEBUG = os.environ.get("CORAL33_DEBUG_ORPHANS") == "1"
+
 
 # One job per sport runs all three tiers (main → alt → prop) sequentially
 # each cycle. This avoids hitting coral33 with overlapping requests, and
@@ -125,6 +129,35 @@ def _merge_with_wager_type(
     return list(by_key.values())
 
 
+def build_team_issue_reporter(sport_key, cache_events, record):
+    """Wrap a mapping-health writer with classification + candidates.
+
+    Two jobs beyond plain recording:
+      * split orphans into `team` (a fixture the Odds API carries, so a real
+        name/alias bug) and `team_coverage` (a competition it doesn't carry at
+        all — coral33 pulls Argentine Primera, the Gulf leagues and K-League,
+        and those were 90% of the soccer rows in the health table);
+      * size the candidate window by sport instead of a flat 30 minutes.
+
+    A resolve is sent under BOTH kinds: a fixture can be filed as coverage on
+    one cycle and match on the next, and the resolve is keyed by identity.
+    """
+    from ...mapping_health import classify_team_issue, team_candidates
+
+    def report(**issue):
+        if issue.get("resolved"):
+            for kind in ("team", "team_coverage"):
+                record(**{**issue, "kind": kind})
+            return
+        issue["kind"] = classify_team_issue(issue["raw_name"], cache_events)
+        issue["candidates"] = team_candidates(
+            issue["raw_name"], issue["event"], cache_events, sport=sport_key,
+        )
+        record(**issue)
+
+    return report
+
+
 class Coral33Fetcher:
     """Per-sport poller for coral33.com odds. Scoped to the same `OddsCache`
     used by the Odds API fetcher, so rows land alongside existing events under
@@ -145,8 +178,13 @@ class Coral33Fetcher:
         self.customer_id = customer_id
         self.password = password
         self.cache = cache
+        from ...mapping_health import MappingHealth
+        self.mapping_health = MappingHealth(cache.path.with_suffix(".mapping.sqlite"))
         self.config_path = config_path
-        self.client = Coral33Client(customer_id=customer_id, password=password)
+        self.client = Coral33Client(
+            customer_id=customer_id, password=password,
+            proxy_url=os.environ.get("CORAL33_PROXY_URL") or None,
+        )
         self.scheduler = AsyncIOScheduler()
         self._running = False
         self._config: Coral33Config | None = None
@@ -170,15 +208,23 @@ class Coral33Fetcher:
     def is_running(self) -> bool:
         return self._running
 
+    def _report_mapping_issue(self, **issue):
+        try:
+            self.mapping_health.record(**issue)
+        except Exception:
+            logger.exception("Coral mapping diagnostic write failed")
+
     def _load_config(self) -> Coral33Config:
         if self._config is None:
             self._config = load_coral33_config(self.config_path)
         return self._config
 
-    def _matcher(self) -> Coral33EventMatcher:
+    def _matcher(self, events: list[dict] | None = None) -> Coral33EventMatcher:
         cfg = self._load_config()
 
         def events_for(sport_key: str) -> list[dict]:
+            if events is not None:
+                return events
             return self.cache.distinct_events(sport_key=sport_key)
 
         return Coral33EventMatcher(events_for, team_aliases=cfg.team_aliases)
@@ -299,7 +345,14 @@ class Coral33Fetcher:
         # APScheduler job in `server/main.py` (id="purge_stale_rows", 60s
         # interval) so we don't scan odds_snapshot 20+ times per minute.
 
-        matcher = self._matcher()
+        cache_events = await self.cache.distinct_events_async(
+            sport_key=sport_key,
+        )
+        matcher = self._matcher(cache_events)
+        report_team_issue = build_team_issue_reporter(
+            sport_key, cache_events, self._report_mapping_issue,
+        )
+
         captcha_hit = False
         total_rows = 0
 
@@ -364,6 +417,13 @@ class Coral33Fetcher:
                         sport_type, subtype, period,
                     )
                     continue
+                if _SUBTYPE_DEBUG:
+                    logger.info(
+                        "coral33 %s SUBTYPE %s/%s: straight=%d parlay=%d lines",
+                        sport_key, subtype, period,
+                        len((straight_data or {}).get("Lines") or []),
+                        len((parlay_data or {}).get("Lines") or []),
+                    )
                 # Correlation index is fed from the Straight pull only —
                 # both wager types return the same Lines metadata, but we
                 # only need to ingest once.
@@ -379,6 +439,8 @@ class Coral33Fetcher:
                         straight_data, period=period, sport_key=sport_key,
                         fetched_at=now, match_event=matcher.match,
                         is_alternate=is_alt,
+                        match_correlation=self._correlation_index.get,
+                        report_issue=report_team_issue,
                     )
                     if straight_data is not None
                     else []
@@ -388,6 +450,8 @@ class Coral33Fetcher:
                         parlay_data, period=period, sport_key=sport_key,
                         fetched_at=now, match_event=matcher.match,
                         is_alternate=is_alt,
+                        match_correlation=self._correlation_index.get,
+                        report_issue=report_team_issue,
                     )
                     if parlay_data is not None
                     else []
@@ -522,6 +586,7 @@ class Coral33Fetcher:
                 normalize_player_props(
                     straight_data, sport_key=sport_key, fetched_at=now,
                     game_num_lookup=lookup,
+                    report_issue=self._report_mapping_issue,
                 )
                 if straight_data is not None
                 else []
@@ -530,6 +595,7 @@ class Coral33Fetcher:
                 normalize_player_props(
                     parlay_data, sport_key=sport_key, fetched_at=now,
                     game_num_lookup=lookup,
+                    report_issue=self._report_mapping_issue,
                 )
                 if parlay_data is not None
                 else []

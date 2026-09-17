@@ -8,8 +8,8 @@
 # the loader validates this on load.
 #
 # Reactive growth pattern: when a player shows up as orphaned in the EV/arb
-# scanner (one book has them, none of the others do), grep the orphan logs
-# for `player_orphan` lines to find the two folded variants you need to
+# scanner (one book has them, none of the others do), look
+# in Settings → Mapping health to find the two folded variants you need to
 # bridge, then add an alias entry here. No restart needed if the loader is
 # hot-reload-aware; today it reloads at process start.
 #
@@ -41,6 +41,34 @@
 "judge"           = "aaron judge"
 "trout"           = "mike trout"
 
+# Coral33 variants observed against the same MLB event and player stat.
+"bobby witt" = "bobby witt jr"
+"daniel lynch" = "daniel lynch iv"
+"michael harris" = "michael harris ii"
+"ronald acuna" = "ronald acuna jr"
+"fernando tatis" = "fernando tatis jr"
+"francis lindor" = "francisco lindor"
+
+[mlb_batter]
+# Batter-only: do not rename the distinct pitcher Luis Garcia.
+"luis garcia" = "luis garcia jr"
+
+# From the 2026-09-17 mapping-health audit. Generational suffixes are NOT
+# folded mechanically (a blanket strip would merge a father/son or a
+# same-name pitcher), so each bridge is confirmed by hand, batter-scoped.
+"vladimir guerrero" = "vladimir guerrero jr"
+"victor mesa"       = "victor mesa jr"
+"leo bernal"        = "leonardo bernal"
+# Coral33 spelling slips, confirmed same player + same team + same game:
+"corbin carrol"     = "corbin carroll"
+"cody mayo"         = "coby mayo"
+
+[mlb_pitcher]
+# Pitcher-only, same audit. Scoped so a same-name batter is untouched.
+"merril kelly"      = "merrill kelly"
+"christian javier"  = "cristian javier"
+"zac thornton"      = "zach thornton"
+
 [nhl]
 # Seed empty — extend as orphan logs reveal mismatches.
 
@@ -53,3 +81,18 @@
 
 [tennis]
 # Tennis player props are not yet wired up; placeholder.
+
+[nfl]
+# Confirmed by user: same Patriots kicker.
+"andy borregales" = "andres borregales"
+
+# From the 2026-09-17 mapping-health audit — coral33 drops the generational
+# suffix the Odds API keeps. Each verified as the same player on the same
+# team in the same game. NOT auto-generated: difflib also proposed
+# "jj mccarthy" -> "jake mccarthy" (a QB and an outfielder), so suggestions
+# are read, not applied.
+"kenneth walker"  = "kenneth walker iii"
+"marvin mims"     = "marvin mims jr"
+"marvin harrison" = "marvin harrison jr"
+"michael pittman" = "michael pittman jr"
+"luther burden"   = "luther burden iii"
