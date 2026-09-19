@@ -1,0 +1,67 @@
+# College football (`americanfootball_ncaaf`) market configuration.
+
+[main]
+enabled          = true
+interval_seconds = 300
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets = [
+  "h2h",
+  "spreads",
+  "totals",
+]
+
+[alternates]
+enabled          = true
+interval_seconds = 300
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets = [
+  "alternate_spreads",
+  "alternate_totals",
+]
+
+[periods]
+enabled          = true
+interval_seconds = 300
+regions          = ["us", "us2", "us_ex", "eu", "uk"]
+markets = [
+  "h2h_h1",
+  "spreads_h1",
+  "totals_h1",
+]
+
+[player_props]
+# Register Coral33's observed college prop markets for the Props page and
+# Settings. The Odds API DOES sell NCAAF props (same keys as NFL), but that
+# is a billed per-event request for every game on a Saturday slate — leave
+# this fetch tier disabled; Coral33's NCAAPLRPROPS board polls independently.
+enabled             = false
+interval_seconds    = 300
+regions             = []
+games_window_hours  = 6
+markets = [
+  "player_pass_yds",
+  "player_pass_tds",
+  "player_rush_yds",
+  "player_reception_yds",
+  "player_receptions",
+  "player_pass_completions",
+  "player_pass_interceptions",
+  "player_pass_attempts",
+  "player_pass_longest_completion",
+  "player_reception_longest",
+  "player_kicking_points",
+]
+
+[on_demand]
+enabled          = true
+debounce_seconds = 60
+
+[picks]
+include_bet_types = [
+  "moneyline",
+  "spread",
+  "total",
+  "first_half_moneyline",
+  "first_half_spread",
+  "first_half_total",
+]

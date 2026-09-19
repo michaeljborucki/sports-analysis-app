@@ -351,16 +351,37 @@ def normalize_player_props(
                              event=correlation_id, market=stat)
             orphans += 1
             continue
-        if report_issue:
-            report_issue(kind="prop_parent", sport=sport_key, raw_name=raw_player,
-                         event=correlation_id, market=stat, resolved=True)
-            report_issue(kind="player_observation", sport=sport_key, raw_name=raw_player,
-                         event=ref["event_id"], market=market_key)
         commence = ref.get("commence_time")
         if isinstance(commence, str):
             commence = datetime.fromisoformat(commence.replace("Z", "+00:00"))
         if commence is not None and commence.tzinfo is None:
             commence = commence.replace(tzinfo=timezone.utc)
+        # A CorrelationID is only unique within ONE coral33 board, and the
+        # ids are short ("113-g"), so a lookup that crosses boards or sports
+        # could hand back a different game. The prop line carries its own
+        # kickoff; require the parent to agree before trusting the join.
+        # (Verified 2026-09-19: NCAAPLRPROPS and COLLEGE agree on both the id
+        # and the kickoff, so this rejects nothing on today's boards.)
+        line_commence = None
+        try:
+            line_commence = _parse_coral_datetime(line.get("GameDateTime", ""))
+        except ValueError:
+            line_commence = None
+        if (
+            commence is not None
+            and line_commence is not None
+            and abs((commence - line_commence).total_seconds()) > 60
+        ):
+            if report_issue:
+                report_issue(kind="prop_parent", sport=sport_key, raw_name=raw_player,
+                             event=correlation_id, market=stat)
+            orphans += 1
+            continue
+        if report_issue:
+            report_issue(kind="prop_parent", sport=sport_key, raw_name=raw_player,
+                         event=correlation_id, market=stat, resolved=True)
+            report_issue(kind="player_observation", sport=sport_key, raw_name=raw_player,
+                         event=ref["event_id"], market=market_key)
         if commence is not None and commence <= now:
             live += 1
             continue

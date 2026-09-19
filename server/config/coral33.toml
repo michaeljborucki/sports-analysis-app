@@ -62,7 +62,10 @@ sport_type    = "FOOTBALL"
 # by the normalizer) — spreads/totals only, no ML. Probed 2026-08-29.
 subtypes_main = ["COLLEGE", "COLLEXT"]
 subtypes_alt  = ["COLLALT"]
-subtypes_prop = []
+# College player props. Confirmed live 2026-09-19 via Get_SportsLeagues:
+# the catalog exposes NCAAPLRPROPS (player) and NCAAGMPROPS (game props,
+# a different line shape — not wired yet).
+subtypes_prop = ["NCAAPLRPROPS"]
 periods = ["Game", "1st Half"]
 
 

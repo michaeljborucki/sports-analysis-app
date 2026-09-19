@@ -100,6 +100,27 @@ PROP_STAT_TO_MARKET_KEY: dict[str, dict[str, str]] = {
         # NFLPLRPROPS uses Points for kicker totals (Borregales/Myers).
         "Points": "player_kicking_points",
     },
+    # College football (NCAAPLRPROPS). Coral33's college board is thinner
+    # than NFLPLRPROPS — a live 2026-09-19 capture carried only the four
+    # skill-position stats below — but the labels are identical, so the
+    # NFL variants are carried over to absorb the board as it widens
+    # (bowl season, marquee games) without another probe.
+    "ncaaf": {
+        "Passing Yards": "player_pass_yds",
+        "TD Passes": "player_pass_tds",
+        "Rushing Yards": "player_rush_yds",
+        "Receiving Yards": "player_reception_yds",
+        # Seen on NFLPLRPROPS; same label set, so map them up front.
+        "Receving Yards": "player_reception_yds",   # coral33's own misspelling
+        "Receptions": "player_receptions",
+        "Reception": "player_receptions",
+        "Completions": "player_pass_completions",
+        "Interceptions": "player_pass_interceptions",
+        "Pass Attempts": "player_pass_attempts",
+        "Longest Completion": "player_pass_longest_completion",
+        "Longest Reception": "player_reception_longest",
+        "Points": "player_kicking_points",
+    },
     "nba": {
         "Points":           "player_points",
         "Rebounds":         "player_rebounds",

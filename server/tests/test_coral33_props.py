@@ -5,14 +5,49 @@ Uses the real HAR-captured NBAPLAYERPRO response as the ground truth.
 from __future__ import annotations
 
 import json
+import pytest
 from datetime import datetime, timezone
 from pathlib import Path
 
-from server.odds.books.coral33.normalizer import normalize_player_props
+from server.odds.books.coral33.normalizer import (
+    _parse_coral_datetime,
+    normalize_player_props,
+)
 
 
 FIXTURES = Path(__file__).parent / "fixtures" / "coral33"
-NOW = datetime(2026, 4, 20, 18, 0, tzinfo=timezone.utc)
+# Before the fixture's 2026-04-19 19:00 (coral local) kickoff, so the
+# board reads as upcoming rather than live.
+NOW = datetime(2026, 4, 19, 18, 0, tzinfo=timezone.utc)
+
+
+@pytest.mark.parametrize("stat,market", [
+    ("Completions", "player_pass_completions"),
+    ("Interceptions", "player_pass_interceptions"),
+    ("Longest Completion", "player_pass_longest_completion"),
+    ("Pass Attempts", "player_pass_attempts"),
+    ("Passing Yards", "player_pass_yds"),
+    ("Rushing Yards", "player_rush_yds"),
+    ("TD Passes", "player_pass_tds"),
+    ("Longest Reception", "player_reception_longest"),
+    ("Receiving Yards", "player_reception_yds"),
+    ("Receptions", "player_receptions"),
+    ("Reception", "player_receptions"),
+    ("Points", "player_kicking_points"),
+])
+def test_nfl_prop_stats_emit_matching_over_under_markets(stat, market):
+    response = {"Lines": [{
+        "Status": "O", "Team1ID": "Test Player", "Team2ID": stat,
+        "TotalPoints": 20.5, "TtlPtsAdj1": -105, "TtlPtsAdj2": -125,
+        "CorrelationID": "451-g   ",
+    }]}
+    rows = normalize_player_props(response, "nfl", NOW, _stub_lookup)
+    assert len(rows) == 2
+    assert {r["market_key"] for r in rows} == {market}
+    assert [(r["outcome_name"], r["price_american"]) for r in rows] == [
+        ("test player Over", -105), ("test player Under", -125),
+    ]
+    assert all(r["outcome_point"] == 20.5 and r["event_id"] == "EV:451-g" for r in rows)
 
 
 def _load(name: str) -> dict:
@@ -21,14 +56,19 @@ def _load(name: str) -> dict:
 
 
 def _stub_lookup(correlation_id: object) -> dict | None:
-    """Treat any non-empty CorrelationID as matched to a synthetic event_id."""
+    """Treat any non-empty CorrelationID as matched to a synthetic event_id.
+
+    The kickoff mirrors the fixture's own `GameDateTime`: a prop line and its
+    parent game always share a start time, and the normalizer now rejects a
+    parent that disagrees (coral33 reuses CorrelationIDs across boards).
+    """
     if not correlation_id:
         return None
     return {
         "event_id": f"EV:{correlation_id}",
         "home_team": "Home",
         "away_team": "Away",
-        "commence_time": NOW.replace(hour=22),
+        "commence_time": _parse_coral_datetime("2026-04-19 19:00:01.000"),
     }
 
 
@@ -143,3 +183,23 @@ def test_unconfigured_sport_returns_empty():
         resp, sport_key="nhl", fetched_at=NOW, game_num_lookup=_stub_lookup,
     )
     assert rows == []
+
+
+def test_coral33_receiving_yards_typo_still_maps():
+    """Regression: coral33 spelled the stat "Receving Yards" (no `i`) on
+    CorrelationID 453-g from 2026-09-09, and the exact-match stat lookup
+    silently dropped every receiving-yards line for that game (893 hits in
+    mapping health before anyone noticed). The typo must map like the
+    correctly-spelled stat."""
+    response = {"Lines": [{
+        "Status": "O", "Team1ID": "Puka Nacua", "Team2ID": "Receving Yards",
+        "TotalPoints": 72.5, "TtlPtsAdj1": -115, "TtlPtsAdj2": -115,
+        "CorrelationID": "453-g",
+    }]}
+    rows = normalize_player_props(response, "nfl", NOW, _stub_lookup)
+    assert [r["market_key"] for r in rows] == [
+        "player_reception_yds", "player_reception_yds",
+    ]
+    assert [r["outcome_name"] for r in rows] == [
+        "puka nacua Over", "puka nacua Under",
+    ]

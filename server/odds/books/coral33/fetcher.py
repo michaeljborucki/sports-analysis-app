@@ -129,6 +129,15 @@ def _merge_with_wager_type(
     return list(by_key.values())
 
 
+def correlation_key(sport_key: str, correlation_id: str) -> str:
+    """Scope a coral33 CorrelationID to its sport.
+
+    The ids are short per-board strings ("113-g") that coral33 reuses across
+    sports, so one flat dict let whichever sport cycled last own the key.
+    """
+    return f"{sport_key}|{correlation_id}"
+
+
 def build_team_issue_reporter(sport_key, cache_events, record):
     """Wrap a mapping-health writer with classification + candidates.
 
@@ -439,7 +448,9 @@ class Coral33Fetcher:
                         straight_data, period=period, sport_key=sport_key,
                         fetched_at=now, match_event=matcher.match,
                         is_alternate=is_alt,
-                        match_correlation=self._correlation_index.get,
+                        match_correlation=lambda c: self._correlation_index.get(
+                            correlation_key(sport_key, c)
+                        ),
                         report_issue=report_team_issue,
                     )
                     if straight_data is not None
@@ -450,7 +461,9 @@ class Coral33Fetcher:
                         parlay_data, period=period, sport_key=sport_key,
                         fetched_at=now, match_event=matcher.match,
                         is_alternate=is_alt,
-                        match_correlation=self._correlation_index.get,
+                        match_correlation=lambda c: self._correlation_index.get(
+                            correlation_key(sport_key, c)
+                        ),
                         report_issue=report_team_issue,
                     )
                     if parlay_data is not None
@@ -530,7 +543,7 @@ class Coral33Fetcher:
             # Store CANONICAL Odds API team names so downstream props join
             # cleanly with main-tier outcomes (same event_id + same team text
             # ⇒ same outcome bucket).
-            self._correlation_index[cid] = {
+            self._correlation_index[correlation_key(sport_key, cid)] = {
                 "event_id": matched["event_id"],
                 "home_team": matched.get("home_team") or team2,
                 "away_team": matched.get("away_team") or team1,
@@ -541,7 +554,9 @@ class Coral33Fetcher:
         def lookup(correlation_id):
             if not isinstance(correlation_id, str):
                 return None
-            return self._correlation_index.get(correlation_id)
+            return self._correlation_index.get(
+                correlation_key(sport_key, correlation_id)
+            )
 
         async def fetch_pair(
             sport_type: str, subtype: str, period: str,
