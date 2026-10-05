@@ -184,6 +184,179 @@ def test_default_flag_is_native(monkeypatch):
     assert Config.from_env().odds_source == "native"
 
 
+def test_read_version_uses_betting_db_and_debounced_direct_generation(
+    cache: OddsCache, betting_db, monkeypatch,
+):
+    monkeypatch.setenv("ODDS_SOURCE", "betting_db")
+    first = cache.read_version
+    assert first[0] == "betting_db"
+
+    cache._bump_version()
+    # Raw native-cache churn does not immediately invalidate scanner memos.
+    assert cache.read_version == first
+
+    cache._flush_direct_read_generation_now(force=True)
+    second = cache.read_version
+    assert second[:-1] == first[:-1]
+    assert second[-1] == first[-1] + 1
+
+
+def test_source_fingerprint_is_coalesced_within_stabilization_window(
+    betting_db, monkeypatch,
+):
+    from server.odds import bettingdb_source
+    original = bettingdb_source._source_fingerprint_uncached
+    calls = 0
+
+    def counted():
+        nonlocal calls
+        calls += 1
+        return original()
+
+    monkeypatch.setattr(
+        bettingdb_source, "_source_fingerprint_uncached", counted,
+    )
+
+    assert bettingdb_source.source_fingerprint() == (
+        bettingdb_source.source_fingerprint()
+    )
+    assert calls == 1
+
+
+def test_family_filter_preserves_every_non_prop_market(
+    cache: OddsCache, tmp_path, monkeypatch,
+):
+    db_path = tmp_path / "family.db"
+    markets = (
+        "h2h",
+        "alternate_spreads",
+        "h2h_1st_5_innings",
+        "totals_1st_5_innings",
+        "pitcher_strikeouts",
+        "batter_home_runs",
+        "player_points",
+    )
+    _seed(
+        db_path,
+        [_event("family_evt", COMMENCE)],
+        [
+            _odds(
+                "family_evt", market, "Over",
+                description="Test Player" if market.startswith(
+                    ("pitcher_", "batter_", "player_")
+                ) else None,
+                point=0.5,
+            )
+            for market in markets
+        ],
+        NOW,
+    )
+    monkeypatch.setenv("BETTING_DB_PATH", str(db_path))
+    monkeypatch.setenv("ODDS_SOURCE", "betting_db")
+
+    non_props = cache.all_current_family("mlb", prop_family=False)
+    props = cache.all_current_family("mlb", prop_family=True)
+
+    assert {row["market_key"] for row in non_props} == set(markets[:4])
+    assert {row["market_key"] for row in props} == set(markets[4:])
+
+
+def test_mapped_row_timing_logs_only_on_cache_miss(
+    cache: OddsCache, betting_db, monkeypatch, caplog,
+):
+    monkeypatch.setenv("ODDS_SOURCE", "betting_db")
+    caplog.set_level("INFO", logger="server.odds.bettingdb_source")
+
+    cache.all_current_family("mlb", prop_family=False)
+    cache.all_current_family("mlb", prop_family=False)
+
+    timing = [
+        record for record in caplog.records
+        if record.getMessage().startswith("betting-db read")
+    ]
+    assert len(timing) == 1
+    message = timing[0].getMessage()
+    assert "rows=" in message
+    assert "fetch_ms=" in message
+    assert "map_ms=" in message
+    assert "total_ms=" in message
+
+
+def test_event_listers_do_not_materialize_odds_rows(
+    cache: OddsCache, betting_db, monkeypatch,
+):
+    monkeypatch.setenv("ODDS_SOURCE", "betting_db")
+    from server.odds import bettingdb_source
+
+    monkeypatch.setattr(
+        bettingdb_source,
+        "_mapped_rows",
+        lambda *args, **kwargs: pytest.fail("event listing scanned odds rows"),
+    )
+
+    events = cache.distinct_events(
+        within_hours_ahead=24, sport_key="mlb", now=NOW,
+    )
+    close = bettingdb_source.events_in_close_window(
+        cache,
+        now=COMMENCE - timedelta(minutes=10),
+        lead_minutes=15,
+        trail_minutes=5,
+    )
+
+    assert [event["event_id"] for event in events] == ["evt_1"]
+    assert [event["event_id"] for event in close] == ["evt_1"]
+
+
+def test_repeated_event_matching_reuses_one_event_query(
+    cache: OddsCache, betting_db, monkeypatch,
+):
+    monkeypatch.setenv("ODDS_SOURCE", "betting_db")
+    from server.odds import bettingdb_source
+    original = bettingdb_source._betting_db_events_uncached
+    calls = 0
+
+    def counted(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        bettingdb_source, "_betting_db_events_uncached", counted,
+    )
+
+    cache.distinct_events(sport_key="mlb")
+    cache.distinct_events(sport_key="mlb")
+
+    assert calls == 1
+
+
+def test_family_filter_pushes_event_horizon_into_source(
+    cache: OddsCache, tmp_path, monkeypatch,
+):
+    db_path = tmp_path / "horizon.db"
+    far = NOW + timedelta(days=10)
+    _seed(
+        db_path,
+        [_event("soon", COMMENCE), _event("far", far)],
+        [
+            _odds("soon", "h2h", "Home"),
+            _odds("far", "h2h", "Home"),
+        ],
+        NOW,
+    )
+    monkeypatch.setenv("BETTING_DB_PATH", str(db_path))
+    monkeypatch.setenv("ODDS_SOURCE", "betting_db")
+
+    rows = cache.all_current_family(
+        "mlb",
+        prop_family=False,
+        commence_before=NOW + timedelta(days=2),
+    )
+
+    assert {row["event_id"] for row in rows} == {"soon"}
+
+
 def test_native_mode_never_touches_betting_db(cache: OddsCache, monkeypatch):
     """With the default flag, reads come from the native cache even when
     BETTING_DB_PATH points at a file that does not exist."""
@@ -605,3 +778,99 @@ def test_invalid_odds_source_warning_is_deduped(cache: OddsCache, monkeypatch, c
     with caplog.at_level("WARNING"):
         cache_mod._odds_source()
     assert caplog.text.count("falling back to 'native'") == 2
+
+
+# ─────────────── sargable freshness bound (query-plan fix) ────────────
+
+def test_freshness_sql_emits_a_sargable_fetched_at_floor():
+    """`fetched_at >= CASE WHEN commence_time ... END` is row-dependent,
+    so SQLite cannot use `idx_latest_fetched` and full-scans latest_odds
+    (5.6M rows on the live DB -> 30-46s per read).
+
+    Every CASE branch yields one of the cutoffs, so `fetched_at >=
+    MIN(cutoffs)` is logically ENTAILED by the CASE and can be emitted
+    as a plain indexable bound alongside it. It never changes the result
+    set — it only lets the planner seek instead of scan.
+    """
+    from server.odds.bettingdb_source import _freshness_sql, _iso_z, allowed_age_seconds
+
+    now = datetime(2026, 9, 20, 15, 4, 0, tzinfo=timezone.utc)
+    clause, params = _freshness_sql(now)
+
+    # A bare, parameterised fetched_at floor must exist OUTSIDE the CASE.
+    before_case = clause.split("CASE")[0]
+    assert "fetched_at >= ?" in before_case, (
+        f"no sargable fetched_at floor emitted; clause={clause!r}"
+    )
+
+    # …and it must equal the loosest (oldest) cutoff — the catch-all band —
+    # so it can never exclude a row the CASE would have admitted.
+    loosest = _iso_z(now - timedelta(seconds=allowed_age_seconds(float("inf"))))
+    assert loosest in params
+    # The floor is the minimum over every cutoff the CASE can return.
+    cutoffs = [p for p in params if isinstance(p, str) and p <= _iso_z(now)]
+    assert loosest == min(cutoffs)
+
+
+def test_catch_all_band_row_survives_the_sargable_floor(
+    cache: OddsCache, tmp_path: Path, monkeypatch,
+):
+    """The loosest band (far-future event) tolerates a ~2-day-old fetch.
+    That is exactly the row a too-tight sargable floor would silently
+    drop, so guard it end-to-end rather than only at the SQL level."""
+    db_path = tmp_path / "odds.db"
+    # Bands top out at 720h (30d); BEYOND that is the catch-all, whose
+    # allowance is 2*86400 + 300s = 48.08h. 40 days out + a 47h-old fetch
+    # sits inside it.
+    _seed(
+        db_path,
+        [_event("evt_catchall", NOW + timedelta(days=40))],
+        [_odds("evt_catchall", "h2h", "New York Yankees")],
+        fetched_at=NOW - timedelta(hours=47),
+    )
+    monkeypatch.setenv("BETTING_DB_PATH", str(db_path))
+    monkeypatch.setenv("ODDS_SOURCE", "betting_db")
+
+    assert [r["event_id"] for r in cache.all_current()] == ["evt_catchall"]
+
+
+def test_memo_bucket_is_stamped_at_completion_not_at_entry(monkeypatch):
+    """The memo stamps the bucket computed when the scan STARTED, then
+    stores it after the scan returns. A scan longer than MEMO_TTL_SECONDS
+    therefore lands in the cache already expired — on the live DB a 34s
+    scan was filed under a bucket 7 windows in the past, so the very next
+    caller missed and re-scanned. Four dashboard scanners = four full
+    scans of the same data.
+
+    Stamping at completion makes the entry live for its full TTL, without
+    widening the window: rows are still at most MEMO_TTL_SECONDS old
+    relative to when they were produced.
+    """
+    from server.odds import bettingdb_source as B
+
+    clock = {"t": 1000.0}
+    monkeypatch.setattr(B.time, "time", lambda: clock["t"])
+
+    calls = {"n": 0}
+
+    def slow_scan(*_a, **_k):
+        calls["n"] += 1
+        clock["t"] += 34.0          # scan takes 34s, TTL is 5s
+        return [{"row": calls["n"]}]
+
+    monkeypatch.setattr(B, "_mapped_rows_uncached", slow_scan)
+    B._MAPPED_ROWS_CACHE.clear()
+
+    first = B._mapped_rows(None)
+    assert calls["n"] == 1
+
+    # A caller arriving immediately after completion must reuse that scan.
+    clock["t"] += 1.0
+    second = B._mapped_rows(None)
+    assert calls["n"] == 1, "memo missed on data that is 1 second old"
+    assert second is first
+
+    # …and must still expire once the TTL has genuinely elapsed.
+    clock["t"] += B.MEMO_TTL_SECONDS + 1
+    B._mapped_rows(None)
+    assert calls["n"] == 2

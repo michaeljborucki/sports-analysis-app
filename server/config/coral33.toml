@@ -65,7 +65,10 @@ subtypes_alt  = ["COLLALT"]
 # College player props. Confirmed live 2026-09-19 via Get_SportsLeagues:
 # the catalog exposes NCAAPLRPROPS (player) and NCAAGMPROPS (game props,
 # a different line shape — not wired yet).
-subtypes_prop = ["NCAAPLRPROPS"]
+# Turned OFF at the user's request 2026-09-19. The normalizer and the
+# NCAAPLRPROPS mapping stay in place — restore the board by putting
+# "NCAAPLRPROPS" back in this list.
+subtypes_prop = []
 periods = ["Game", "1st Half"]
 
 
@@ -329,6 +332,7 @@ nats            = "washington nationals"
 [team_aliases.asian_baseball]
 # Observed Coral33 variants matched to the same fixture (2026-09-09).
 "rakuten golden eagles" = "tohoku rakuten golden eagles"
+"rakuten gold eagles"   = "tohoku rakuten golden eagles"  # 2026-10-02 orphan
 "fukuoka s hawks" = "fukuoka softbank hawks"
 
 # coral33 uses short forms (no region prefix); Odds API uses the full
@@ -557,7 +561,18 @@ massachusetts       = "umass"
 "long island"       = "liu"        # Odds API lists them as "LIU Sharks"
 mississippi         = "ole miss"
 
+# Verified against the 2026-09-26 mapping orphans (all in the Odds API feed).
+"the citadel"       = "citadel"
+"houston christian" = "houston baptist"   # Odds API still uses the old name
+"nc central"        = "north carolina central"
+"tennessee martin"  = "ut martin"
+"william & mary"    = "william and mary"
+
 [team_aliases.tennis]
+# Verified against the 2026-10-02 mapping orphans. Keys/values fold to
+# "<first-initial> <last-token>" at load, so write the raw names.
+"c osorio" = "maria camila osorio serrano"  # coral keeps the first surname
+"x sun"     = "sun xinran"                  # Odds API puts the surname first
 
 [team_aliases.ufc]
 # UFC fighter names are typically identical across coral33 and Odds API
@@ -567,6 +582,13 @@ mississippi         = "ole miss"
 "doo ho choi"          = "dooho choi"        # spacing of a Korean given name
 "rongzhu"              = "zhu rong"          # transliteration order differs
 "alexander volkanovski" = "alex volkanovski" # Odds API uses the short form
+# Verified against the 2026-09-26 mapping orphans:
+"alatengheili"         = "heili alateng"     # single name vs split + reordered
+"elves brener"         = "elves brenner"     # Odds API spelling
+"ilimbek akylbek uulu" = "ilimbek akylbek"   # Odds API drops the patronymic
+# Verified against the 2026-10-02 mapping orphans (UFC 2026-10-03 card):
+"mick parkin"          = "michael parkin"    # coral uses the nickname
+"alexander hernandez"  = "alex hernandez"    # Odds API uses the short form
 
 [team_aliases.boxing]
 # Same as UFC — fighter names usually identity-match.
@@ -574,6 +596,8 @@ mississippi         = "ole miss"
 "jesus ramos"          = "jesus alejandro ramos jr"  # coral drops middle + suffix
 "floyd schofield"      = "floyd scholfield"          # Odds API spelling
 "ricardo sandoval"     = "ricardo rafael sandoval"   # coral drops middle name
+# Verified against the 2026-09-26 mapping orphans:
+"leo ruiz"             = "leonardo ruiz"             # coral uses the short form
 
 [team_aliases.cricket]
 # IPL franchise names are largely canonical across providers. Add aliases
@@ -585,3 +609,5 @@ mississippi         = "ole miss"
 # names (Atlanta Dream, Minnesota Lynx, Chicago Sky, Portland Fire).
 # Add aliases reactively as orphan logs surface short forms during the
 # season — e.g. "Liberty" → "new york liberty".
+# Verified against the 2026-10-02 orphans: coral33 sends "Golden St".
+"golden st valkyries" = "golden state valkyries"

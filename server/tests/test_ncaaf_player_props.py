@@ -1,7 +1,9 @@
 """College-football player props via Coral33's NCAAPLRPROPS board.
 
-The Odds API sells NCAAF props too, but that tier stays disabled — these
-markets arrive free through the same Coral33 path NFL props already use.
+The board is currently turned OFF (coral33.toml: ncaaf subtypes_prop = []).
+The parser, stat mapping and correlation-id defenses below stay tested so
+the feature can be switched back on with a one-line config edit. The Odds
+API sells NCAAF props too, but that metered tier stays disabled either way.
 """
 from __future__ import annotations
 
@@ -30,11 +32,16 @@ _PARENT = {
 }
 
 
-def test_ncaaf_pulls_the_player_prop_subtype():
+def test_ncaaf_player_prop_board_is_turned_off():
+    """The college prop board is disabled at the user's request.
+
+    The NCAAPLRPROPS parser and stat mapping below stay tested and intact;
+    only the fetch wiring is off, so re-enabling is a one-line config edit.
+    """
     cfg = load_coral33_config(Path("server/config/coral33.toml"))
     ncaaf = cfg.sports["ncaaf"]
-    assert ncaaf.subtypes_prop == ["NCAAPLRPROPS"]
-    assert ("FOOTBALL", "NCAAPLRPROPS", "Game") in ncaaf.prop_calls
+    assert ncaaf.subtypes_prop == []
+    assert ncaaf.prop_calls == []
 
 
 @pytest.mark.parametrize("stat,market", [

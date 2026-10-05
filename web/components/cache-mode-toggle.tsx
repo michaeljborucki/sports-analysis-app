@@ -40,21 +40,18 @@ async function fetchJson<T>(path: string): Promise<T> {
 const MODE_META = {
   live: {
     label: "Live",
-    subtitle: "Both fetchers running · reads rolling cache",
+    subtitle: "Fetchers running, prices update continuously",
     icon: Radio,
-    tone: "price-up",
   },
   latest: {
     label: "Latest",
-    subtitle: "Fetchers off · reads last-pulled cache",
+    subtitle: "Fetchers off, showing the last prices pulled",
     icon: Pause,
-    tone: "text-2",
   },
   snapshot: {
     label: "Snapshot",
-    subtitle: "Fetchers off · reads captured reference set",
+    subtitle: "Fetchers off, showing a saved reference set",
     icon: Archive,
-    tone: "violet-accent",
   },
 } as const;
 
@@ -117,47 +114,42 @@ export function CacheModeToggle() {
   return (
     <div className="relative">
       <button
+        type="button"
         onClick={() => setOpen(v => !v)}
         disabled={!data}
-        title={meta.subtitle}
+        title={data ? meta.subtitle : "Checking data source"}
+        aria-haspopup="menu"
+        aria-expanded={open}
         className={clsx(
-          "inline-flex items-center gap-2 h-8 px-3 rounded-md text-xs font-medium",
-          "border transition-colors",
-          mode === "live" &&
-            "bg-price-up/10 border-price-up/40 text-price-up hover:bg-price-up/15",
-          mode === "latest" &&
-            "bg-bg-1 border-border-subtle text-text-2 hover:text-text-1",
-          mode === "snapshot" &&
-            "bg-violet-accent/10 border-violet-accent/40 text-violet-accent hover:bg-violet-accent/15",
+          "flex w-full items-center gap-2 rounded-md px-2.5 h-8 text-left text-[length:var(--fs-13)]",
+          "border border-border-subtle bg-bg-1 hover:bg-bg-2 transition-colors",
         )}
       >
         <span
           aria-hidden
           className={clsx(
-            "inline-block w-1.5 h-1.5 rounded-full",
-            mode === "live" && "bg-price-up live-dot",
-            mode === "latest" && "bg-text-3",
-            mode === "snapshot" && "bg-violet-accent",
+            "inline-block h-1.5 w-1.5 shrink-0 rounded-full",
+            !data && "bg-text-3",
+            data && mode === "live" && "live-dot",
+            data && mode === "latest" && "bg-text-3",
+            data && mode === "snapshot" && "bg-sharp",
           )}
         />
-        <Icon size={12} aria-hidden strokeWidth={1.8} />
-        <span className="uppercase tracking-wide text-[11px]">
-          {meta.label}
+        <span className="flex-1 truncate text-text-1">
+          {data ? `${meta.label} data` : "Checking…"}
         </span>
-        <ChevronDown size={10} aria-hidden className="text-text-3" />
+        <ChevronDown size={12} aria-hidden className="text-text-3" />
       </button>
 
       {open && (
         <>
-          {/* click-outside scrim */}
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
           <div
-            className="fixed inset-0 z-40"
-            onClick={() => setOpen(false)}
-            aria-hidden
-          />
-          <div className="absolute right-0 top-9 z-50 w-[320px] rounded-lg border border-border-subtle bg-bg-1 shadow-2xl overflow-hidden">
-            <div className="px-3 py-2 border-b border-border-subtle text-[10px] uppercase tracking-wider text-text-3">
-              Cache source
+            role="menu"
+            className="absolute bottom-full left-0 z-50 mb-2 w-[300px] overflow-hidden rounded-lg border border-border-subtle bg-bg-1 shadow-[0_12px_32px_rgb(0_0_0/0.45)]"
+          >
+            <div className="border-b border-border-subtle px-3 py-2 text-[length:var(--fs-12)] text-text-3">
+              Where prices come from
             </div>
             {(Object.keys(MODE_META) as Mode[]).map(m => {
               const M = MODE_META[m];
@@ -167,66 +159,57 @@ export function CacheModeToggle() {
               return (
                 <button
                   key={m}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={selected}
                   onClick={() => !disabled && setMode(m)}
                   disabled={disabled || busy !== null}
                   className={clsx(
-                    "w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors",
-                    "border-b border-border-subtle/60 last:border-b-0",
-                    selected ? "bg-bg-2" : "hover:bg-bg-2/60",
-                    disabled && "opacity-40 cursor-not-allowed",
-                    busy === `mode:${m}` && "opacity-60 cursor-wait",
+                    "flex w-full items-start gap-3 border-b border-border-subtle px-3 py-2.5 text-left transition-colors last:border-b-0",
+                    selected ? "bg-bg-2" : "hover:bg-bg-2",
+                    disabled && "cursor-not-allowed opacity-40",
+                    busy === `mode:${m}` && "cursor-wait opacity-60",
                   )}
                 >
-                  <MIcon
-                    size={14}
-                    aria-hidden
-                    className={clsx(
-                      "mt-0.5 shrink-0",
-                      selected ? "text-text-1" : "text-text-3",
-                    )}
-                  />
-                  <div className="flex-1 min-w-0">
+                  <MIcon size={14} aria-hidden className={clsx("mt-0.5 shrink-0", selected ? "text-text-1" : "text-text-3")} />
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-medium text-text-1">
-                        {M.label}
-                      </span>
-                      {selected && (
-                        <span className="text-[9px] uppercase tracking-wider text-accent">
-                          active
-                        </span>
-                      )}
+                      <span className="text-[length:var(--fs-13)] font-medium text-text-1">{M.label}</span>
+                      {selected && <span className="text-[length:var(--fs-11)] text-text-3">Current</span>}
                     </div>
-                    <div className="text-[11px] text-text-3 mt-0.5">
-                      {M.subtitle}
-                    </div>
+                    <div className="mt-0.5 text-[length:var(--fs-12)] text-text-3">{M.subtitle}</div>
                     {m === "snapshot" && (
-                      <div className="text-[10px] text-text-3 mt-1 tabular">
-                        {data?.snapshot_available
-                          ? `${data.snapshot_row_count?.toLocaleString() ?? "?"} rows · captured ${formatAge(data.snapshot_captured_at)}`
-                          : "no snapshot yet — capture below"}
+                      <div className="mt-1 text-[length:var(--fs-11)] text-text-3">
+                        {data?.snapshot_available ? (
+                          <>
+                            <span className="tabular">{data.snapshot_row_count?.toLocaleString() ?? "?"}</span> rows, captured {formatAge(data.snapshot_captured_at)}
+                          </>
+                        ) : (
+                          "No snapshot yet. Capture one below."
+                        )}
                       </div>
                     )}
                     {m === "latest" && data?.live_newest_row_at && (
-                      <div className="text-[10px] text-text-3 mt-1 tabular">
-                        {data.live_row_count?.toLocaleString() ?? "?"} rows · newest {formatAge(data.live_newest_row_at)}
+                      <div className="mt-1 text-[length:var(--fs-11)] text-text-3">
+                        <span className="tabular">{data.live_row_count?.toLocaleString() ?? "?"}</span> rows, newest {formatAge(data.live_newest_row_at)}
                       </div>
                     )}
                   </div>
                 </button>
               );
             })}
-            <div className="px-3 py-2 border-t border-border-subtle bg-bg-0">
+            <div className="border-t border-border-subtle bg-bg-0 px-3 py-2">
               <button
+                type="button"
                 onClick={captureSnapshot}
                 disabled={busy !== null}
                 className={clsx(
-                  "w-full inline-flex items-center justify-center gap-2 h-7 rounded-md text-[11px]",
-                  "border border-border-subtle bg-bg-1 text-text-2 hover:text-text-1 hover:border-accent/50",
-                  busy === "snapshot" && "opacity-60 cursor-wait",
+                  "inline-flex h-8 w-full items-center justify-center gap-2 rounded-md border border-border-subtle bg-bg-1 text-[length:var(--fs-12)] text-text-2 hover:bg-bg-2 hover:text-text-1",
+                  busy === "snapshot" && "cursor-wait opacity-60",
                 )}
                 title="Overwrite cache.snapshot.db with a fresh copy of the live cache"
               >
-                <Camera size={11} aria-hidden />
+                <Camera size={12} aria-hidden />
                 {busy === "snapshot" ? "Capturing…" : "Capture snapshot from live"}
               </button>
             </div>

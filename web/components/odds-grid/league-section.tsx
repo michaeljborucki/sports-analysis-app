@@ -14,6 +14,7 @@ import { BookLogo } from "../book-logo";
 import { BestCell } from "./best-cell";
 import { CellFlash } from "./cell-flash";
 import { GameTime } from "./game-time";
+import { bookHeaderTint } from "./grid-style";
 
 function findMarket(game: Game, key: string): Market | undefined {
   return game.markets?.find(m => m.market_key === key);
@@ -134,15 +135,16 @@ export function LeagueSection({
   return (
     <section aria-label={title}>
       <details open className="group">
-        <summary className="flex cursor-pointer list-none items-center gap-2 px-1 py-1 text-sm text-text-1 [&::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-center gap-2 px-1 py-1 text-[length:var(--fs-14)] text-text-1 [&::-webkit-details-marker]:hidden">
           <ChevronRight
             aria-hidden
             size={14}
             className="text-text-3 transition-transform group-open:rotate-90"
           />
           <span className="font-semibold">{title}</span>
-          <span className="text-xs tabular text-text-3">
-            {games.length} {games.length === 1 ? "match" : "matches"}
+          <span className="text-[length:var(--fs-12)] text-text-3">
+            <span className="tabular">{games.length}</span>{" "}
+            {games.length === 1 ? "match" : "matches"}
           </span>
         </summary>
         <div className="mt-1">
@@ -152,6 +154,10 @@ export function LeagueSection({
     </section>
   );
 }
+
+// Sticky first column: opaque surface + a 1px inset rule on its right edge
+// (border-collapse drops real borders on sticky cells while scrolling).
+const STICKY_RULE = "shadow-[inset_-1px_0_0_var(--color-border-subtle)]";
 
 export function OddsGamesTable({
   games,
@@ -164,80 +170,78 @@ export function OddsGamesTable({
   onToggleSheet,
 }: OddsGamesTableProps) {
   return (
-    <div className="border border-border-subtle rounded-md overflow-hidden bg-bg-0">
-      <table className="w-full text-xs">
-        <thead className="bg-bg-1 text-text-2">
-          <tr>
-            <th className="text-left px-3 py-2 font-medium uppercase tracking-wide text-[11px]">
-              Game
-            </th>
-            <th className="text-left px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-              Side
-            </th>
-            <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-              Best
-            </th>
-            <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-              Consensus
-            </th>
-            {books.map(b => (
-              <th key={b} className="text-right px-2 py-2">
-                <div className="flex justify-end">
-                  <BookLogo bookKey={b} mode="header" />
-                </div>
+    <div className="rounded-lg border border-border-subtle bg-bg-0 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead className="dt-head">
+            <tr>
+              <th className={clsx("dt-th sticky left-0 z-20 bg-bg-1", STICKY_RULE)}>
+                Game
               </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {games.length === 0 && (
-            <tr>
-              <td
-                colSpan={4 + books.length}
-                className="text-center py-12 text-text-3"
-              >
-                No {sport.label} odds cached yet. Turn the fetcher on or wait
-                for the first tick.
-              </td>
+              <th className="dt-th">Side</th>
+              <th className="dt-th text-right">Best</th>
+              <th className="dt-th text-right border-r border-border-subtle">
+                Consensus
+              </th>
+              {books.map(b => (
+                <th key={b} className={clsx("dt-th text-right", bookHeaderTint(b))}>
+                  <div className="flex justify-end">
+                    <BookLogo bookKey={b} mode="header" />
+                  </div>
+                </th>
+              ))}
             </tr>
-          )}
-          {games.length > 0 && books.length === 0 && (
-            <tr>
-              <td colSpan={4} className="text-center py-12 text-text-3">
-                No books selected. Click the Books button above to pick which
-                sportsbooks to show.
-              </td>
-            </tr>
-          )}
-          {games.map(g => {
-            const m = findMarket(g, activeKey);
-            const outcomes = orderedOutcomes(m, g, activeGroup.display);
-            const canExpand = canExpandAltLines(g, sport.key, activeGroup);
-            const isOpen = canExpand && sheetEventId === g.event_id;
-            const rowCount = outcomes.length;
-            return (
-              <Fragment key={g.event_id}>
-                {outcomes.map((out, idx) => (
-                  <OutcomeRow
-                    key={`${g.event_id}-${idx}`}
-                    game={g}
-                    outcome={out}
-                    idx={idx}
-                    rowCount={rowCount}
-                    isOpen={isOpen}
-                    sport={sport}
-                    display={activeGroup.display}
-                    books={books}
-                    visible={visible}
-                    canExpand={canExpand}
-                    onToggleSheet={onToggleSheet}
-                  />
-                ))}
-              </Fragment>
-            );
-          })}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {games.length === 0 && (
+              <tr>
+                <td
+                  colSpan={4 + books.length}
+                  className="py-12 text-center text-[length:var(--fs-13)] text-text-3"
+                >
+                  No prices for this market yet. If the data source is set to
+                  Latest, switch it to Live in the sidebar.
+                </td>
+              </tr>
+            )}
+            {games.length > 0 && books.length === 0 && (
+              <tr>
+                <td colSpan={4} className="py-12 text-center text-[length:var(--fs-13)] text-text-3">
+                  No books selected. Click the Books button above to pick which
+                  sportsbooks to show.
+                </td>
+              </tr>
+            )}
+            {games.map(g => {
+              const m = findMarket(g, activeKey);
+              const outcomes = orderedOutcomes(m, g, activeGroup.display);
+              const canExpand = canExpandAltLines(g, sport.key, activeGroup);
+              const isOpen = canExpand && sheetEventId === g.event_id;
+              const rowCount = outcomes.length;
+              return (
+                <Fragment key={g.event_id}>
+                  {outcomes.map((out, idx) => (
+                    <OutcomeRow
+                      key={`${g.event_id}-${idx}`}
+                      game={g}
+                      outcome={out}
+                      idx={idx}
+                      rowCount={rowCount}
+                      isOpen={isOpen}
+                      sport={sport}
+                      display={activeGroup.display}
+                      books={books}
+                      visible={visible}
+                      canExpand={canExpand}
+                      onToggleSheet={onToggleSheet}
+                    />
+                  ))}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -315,11 +319,13 @@ const OutcomeRow = memo(function OutcomeRow({
     };
   }, [outcome, visible]);
 
+  const isLast = idx === rowCount - 1;
+
   return (
     <tr
       className={clsx(
-        isFirst && "border-t border-border-subtle",
-        "hover:bg-bg-1/40",
+        "transition-colors hover:bg-[rgb(var(--text-rgb)/0.03)]",
+        isLast && "border-b border-border-subtle",
       )}
     >
       {isFirst && (
@@ -327,35 +333,33 @@ const OutcomeRow = memo(function OutcomeRow({
           rowSpan={rowCount}
           onClick={canExpand ? () => onToggleSheet(isOpen ? null : game.event_id) : undefined}
           className={clsx(
-            "px-3 py-1.5 align-middle whitespace-nowrap",
-            "border-r border-border-subtle/60",
-            canExpand && "cursor-pointer",
-            isOpen && "bg-bg-1/50",
+            "dt-td sticky left-0 z-10 whitespace-nowrap",
+            STICKY_RULE,
+            isOpen ? "bg-bg-2" : "bg-bg-1",
+            canExpand && "cursor-pointer hover:bg-bg-2",
           )}
         >
           <div className="flex items-center gap-2">
             {canExpand && (
               <ChevronRight
                 aria-hidden
-                size={10}
+                size={12}
                 className={clsx(
-                  "text-text-3 transition-transform",
+                  "shrink-0 text-text-3 transition-transform",
                   isOpen ? "rotate-90" : "rotate-0",
                 )}
               />
             )}
             <div className="flex flex-col gap-0.5">
-              <span className="text-text-1 font-medium">
+              <span className="font-medium text-text-1">
                 {renderTeam(game.away_team, sport)} @{" "}
                 {renderTeam(game.home_team, sport)}
               </span>
-              <span className="text-text-3 text-[11px] flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 text-[length:var(--fs-11)] leading-[var(--lh-11)] text-text-3">
                 {matchesLiveFilter(game.commence_time, "live") ? (
                   <>
                     <span className="live-dot" aria-hidden />
-                    <span className="text-price-down font-semibold uppercase tracking-wide">
-                      live
-                    </span>
+                    <span className="font-medium text-live">Live</span>
                   </>
                 ) : (
                   <GameTime commenceTime={game.commence_time} />
@@ -367,13 +371,13 @@ const OutcomeRow = memo(function OutcomeRow({
       )}
       <td
         className={clsx(
-          "px-2 py-1.5 whitespace-nowrap text-text-1",
-          !isFirst && "text-text-2",
+          "dt-td whitespace-nowrap",
+          isFirst ? "text-text-1" : "text-text-2",
         )}
       >
         {sideLabel(outcome, game, display, sport)}
       </td>
-      <td className="text-right px-2 py-1.5 tabular">
+      <td className="dt-td text-right">
         {best ? (
           <BestCell
             price={best.price_american}
@@ -383,7 +387,7 @@ const OutcomeRow = memo(function OutcomeRow({
           <span className="text-text-3">—</span>
         )}
       </td>
-      <td className="text-right px-2 py-1.5 tabular text-text-2 border-r border-border-subtle/60">
+      <td className="dt-td tabular text-right text-text-2 border-r border-border-subtle">
         {consensus != null ? formatAmerican(consensus) : "—"}
       </td>
       {books.map(b => {
@@ -405,7 +409,7 @@ const OutcomeRow = memo(function OutcomeRow({
  * that returns the same price for this book skips the CellFlash effect
  * comparison and the clsx work. The flash animation itself is keyed by
  * `value` change inside CellFlash, so memoisation does NOT suppress
- * legitimate flashes.
+ * legitimate flashes. Best price = `edge` text on an `--edge-10` wash.
  */
 const BookPriceCell = memo(function BookPriceCell({
   price,
@@ -415,17 +419,13 @@ const BookPriceCell = memo(function BookPriceCell({
   isBest: boolean;
 }) {
   if (price == null) {
-    return (
-      <td className="text-right px-2 py-1.5 text-text-3 tabular">—</td>
-    );
+    return <td className="dt-td tabular text-right text-text-3">—</td>;
   }
   return (
     <td
       className={clsx(
-        "text-right px-2 py-1.5 tabular transition-colors",
-        isBest
-          ? "text-price-up font-semibold bg-price-up/[0.06] border-l border-price-up/25"
-          : "text-text-1",
+        "dt-td tabular text-right",
+        isBest ? "bg-[var(--edge-10)] font-semibold text-edge" : "text-text-1",
       )}
     >
       <CellFlash value={price}>{formatAmerican(price)}</CellFlash>

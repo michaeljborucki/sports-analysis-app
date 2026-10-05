@@ -5,20 +5,27 @@ priced legs is < 1.0, meaning a risk-free positive-ROI split bet exists.
 Prices consumed here are already commission-adjusted by `rows_to_games`; the
 scanner treats them as net effective payouts.
 
-Coverage:
-  - h2h (2-way for US sports, 3-way for soccer with a "Draw" outcome)
-  - spreads + alternate_spreads   (paired by complementary signed points)
-  - totals + alternate_totals     (paired by point)
+Coverage mirrors the EV scanner: every complete two- or three-way bucket,
+including period markets, team totals, and player props. Main and alternate
+spreads/totals are merged per period suffix before pairing.
 
 3-way arbs require at least 2 distinct books across the 3 legs — three legs
 at one book is just the book's vig and never positive.
-Player props are skipped (no two-sided pairing across books for individual
-player Over/Under at the same point — handled by the EV scanner instead).
 """
 from __future__ import annotations
 
 from .devig import american_to_implied_prob
 from .pairing import collect_spread_pairs, collect_total_pairs
+from .venues import OPT_IN_BOOKS, book_allowed, venue
+
+
+def _ev_pairing_helpers():
+    """Import EV's market taxonomy lazily to avoid module-init coupling."""
+    from .ev import (
+        _base_market, _buckets, _expect_outcome_count, _outcome_key,
+        _period_suffix,
+    )
+    return _base_market, _buckets, _expect_outcome_count, _outcome_key, _period_suffix
 
 
 def _payout_multiplier(american: int) -> float:
@@ -43,17 +50,63 @@ def _outcome_point(out: dict) -> float | None:
     return None
 
 
+def _ranked_visible(
+    outcome: dict, books_filter: set[str] | None
+) -> list[dict]:
+    """This outcome's allowed prices, best payout first. Opt-in books
+    (novig_maker) only count when the filter names them — see venues.py."""
+    prices = [
+        p for p in (outcome.get("prices") or [])
+        if book_allowed(p["bookmaker_key"], books_filter)
+    ]
+    return sorted(prices, key=lambda p: _payout_multiplier(p["price_american"]), reverse=True)
+
+
 def _best_visible(
     outcome: dict, books_filter: set[str] | None
 ) -> dict | None:
     """Pick the best American-odds price from this outcome, optionally
     restricted to a book-allowlist."""
-    prices = outcome.get("prices") or []
-    if books_filter is not None:
-        prices = [p for p in prices if p["bookmaker_key"] in books_filter]
-    if not prices:
+    ranked = _ranked_visible(outcome, books_filter)
+    return ranked[0] if ranked else None
+
+
+# How deep to look past each side's best price when the two bests share a
+# venue (e.g. a Novig maker quote vs a Novig take on the other side).
+_PAIR_DEPTH = 4
+
+
+def best_cross_venue_pair(
+    side_a: dict, side_b: dict, books_filter: set[str] | None,
+) -> tuple[dict, dict] | None:
+    """Best-priced (a, b) whose books are on different venues.
+
+    Same venue is never a real two-way: a book's own two sides carry its
+    vig, and a Novig maker quote against a Novig take is just your bid vs
+    the book. Without opt-in books this reduces to "best vs best, distinct
+    book" exactly as before.
+    """
+    ranked_a = _ranked_visible(side_a, books_filter)[:_PAIR_DEPTH]
+    ranked_b = _ranked_visible(side_b, books_filter)[:_PAIR_DEPTH]
+    if not ranked_a or not ranked_b:
         return None
-    return max(prices, key=lambda p: _payout_multiplier(p["price_american"]))
+    if venue(ranked_a[0]["bookmaker_key"]) != venue(ranked_b[0]["bookmaker_key"]):
+        return ranked_a[0], ranked_b[0]
+    if not any(p["bookmaker_key"] in OPT_IN_BOOKS for p in (ranked_a[0], ranked_b[0])):
+        # Two ordinary books colliding = the same book on both sides;
+        # keep the long-standing behavior (no pair) rather than reaching
+        # for second-best prices.
+        return None
+    best: tuple[float, dict, dict] | None = None
+    for pa in ranked_a:
+        for pb in ranked_b:
+            if venue(pa["bookmaker_key"]) == venue(pb["bookmaker_key"]):
+                continue
+            total = (american_to_implied_prob(pa["price_american"])
+                     + american_to_implied_prob(pb["price_american"]))
+            if best is None or total < best[0]:
+                best = (total, pa, pb)
+    return None if best is None else (best[1], best[2])
 
 
 def _try_pair(
@@ -62,14 +115,10 @@ def _try_pair(
     books_filter: set[str] | None,
 ) -> tuple[dict, dict, float] | None:
     """Return (best_price_a, best_price_b, roi_frac) if an arb exists."""
-    best_a = _best_visible(side_a, books_filter)
-    best_b = _best_visible(side_b, books_filter)
-    if not best_a or not best_b:
+    pair = best_cross_venue_pair(side_a, side_b, books_filter)
+    if pair is None:
         return None
-    if best_a["bookmaker_key"] == best_b["bookmaker_key"]:
-        # Same book: not a real arb — the book's vig makes total ≥ 1 by design.
-        # (Can still happen when commission adjustments flip it; rare but skip.)
-        return None
+    best_a, best_b = pair
     imp_a = american_to_implied_prob(best_a["price_american"])
     imp_b = american_to_implied_prob(best_b["price_american"])
     total = imp_a + imp_b
@@ -137,6 +186,8 @@ def _emit(
                 "point": best_a.get("point"),
                 "stake_pct": stake_a_pct,
                 "max_stake_dollars": a_size,
+                "wager_type": best_a.get("wager_type"),
+                "counterpart_price_american": best_a.get("counterpart_price_american"),
             },
             {
                 "outcome_name": side_b["outcome_name"],
@@ -145,6 +196,8 @@ def _emit(
                 "point": best_b.get("point"),
                 "stake_pct": stake_b_pct,
                 "max_stake_dollars": b_size,
+                "wager_type": best_b.get("wager_type"),
+                "counterpart_price_american": best_b.get("counterpart_price_american"),
             },
         ],
     }
@@ -168,7 +221,7 @@ def _try_three_way(
         if not b:
             return None
         bests.append(b)
-    distinct_books = {b["bookmaker_key"] for b in bests}
+    distinct_books = {venue(b["bookmaker_key"]) for b in bests}
     if len(distinct_books) < 2:
         return None  # all three legs at one book → just the book's vig
     total = sum(american_to_implied_prob(b["price_american"]) for b in bests)
@@ -208,6 +261,8 @@ def _emit_three_way(
                 "point": b.get("point"),
                 "stake_pct": imp / total * 100.0,
                 "max_stake_dollars": b.get("max_stake_dollars"),
+                "wager_type": b.get("wager_type"),
+                "counterpart_price_american": b.get("counterpart_price_american"),
             }
             for s, b, imp in zip(sides, bests, imps)
         ],
@@ -219,43 +274,62 @@ def scan_game_arbs(
 ) -> list[dict]:
     out: list[dict] = []
 
-    # --- H2H ---------------------------------------------------------------
-    h2h = _find_market(game, "h2h")
-    h2h_outcomes = h2h.get("outcomes", []) if h2h else []
-    if len(h2h_outcomes) == 2:
-        a, b = h2h_outcomes
-        pair = _try_pair(a, b, books_filter)
-        if pair:
-            best_a, best_b, roi = pair
-            out.append(_emit(game, "h2h", None, a, b, best_a, best_b, roi))
-    elif len(h2h_outcomes) == 3:
-        # Soccer-style 3-way (home/draw/away) — order doesn't matter for
-        # the math, but keep input order so the emitted `sides` row stays
-        # consistent across cycles.
-        result = _try_three_way(h2h_outcomes, books_filter)
-        if result is not None:
-            bests, roi = result
-            out.append(_emit_three_way(game, "h2h", h2h_outcomes, bests, roi))
+    base_market, buckets, expect_count, outcome_key, period_suffix = _ev_pairing_helpers()
+    spread_suffixes: set[str] = set()
+    total_suffixes: set[str] = set()
+    for market in game.get("markets") or []:
+        mk = market.get("market_key", "")
+        base = base_market(mk)
+        suffix = period_suffix(mk)
+        if base in ("spreads", "alternate_spreads"):
+            spread_suffixes.add(suffix)
+        elif base in ("totals", "alternate_totals"):
+            total_suffixes.add(suffix)
 
-    # --- Spreads (main + alt) — pair by complementary signed points -------
-    for abs_pt, home_side, away_side in collect_spread_pairs(game):
-        pair = _try_pair(home_side, away_side, books_filter)
-        if pair:
-            best_a, best_b, roi = pair
-            out.append(
-                _emit(game, "spreads", abs_pt, home_side, away_side,
-                      best_a, best_b, roi)
-            )
+    handled: set[str] = set()
+    for suffix in spread_suffixes:
+        main_mk, alt_mk = f"spreads{suffix}", f"alternate_spreads{suffix}"
+        for abs_pt, side_a, side_b in collect_spread_pairs(game, (main_mk, alt_mk)):
+            pair = _try_pair(side_a, side_b, books_filter)
+            if pair:
+                best_a, best_b, roi = pair
+                out.append(_emit(game, main_mk, abs_pt, side_a, side_b, best_a, best_b, roi))
+        handled.update((main_mk, alt_mk))
 
-    # --- Totals (main + alt) — pair Over and Under at same point ----------
-    for pt, over_side, under_side in collect_total_pairs(game):
-        pair = _try_pair(over_side, under_side, books_filter)
-        if pair:
-            best_a, best_b, roi = pair
-            out.append(
-                _emit(game, "totals", pt, over_side, under_side,
-                      best_a, best_b, roi)
-            )
+    for suffix in total_suffixes:
+        main_mk, alt_mk = f"totals{suffix}", f"alternate_totals{suffix}"
+        for pt, side_a, side_b in collect_total_pairs(game, (main_mk, alt_mk)):
+            pair = _try_pair(side_a, side_b, books_filter)
+            if pair:
+                best_a, best_b, roi = pair
+                out.append(_emit(game, main_mk, pt, side_a, side_b, best_a, best_b, roi))
+        handled.update((main_mk, alt_mk))
+
+    # EV-compatible generic path: H2H, team totals, props, periods, and any
+    # other market whose bucket contains a complete two- or three-way set.
+    for market in game.get("markets") or []:
+        mk = market.get("market_key")
+        if not mk or mk in handled:
+            continue
+        keyed = {outcome_key(o): o for o in market.get("outcomes") or []}
+        expected = expect_count(mk, {k: {} for k in keyed})
+        for _bucket, keys in buckets(mk, list(keyed)).items():
+            if len(keys) != expected:
+                continue
+            sides = [keyed[k] for k in keys]
+            point = keys[0][1] if all(k[1] == keys[0][1] for k in keys) else None
+            if expected == 2:
+                pair = _try_pair(sides[0], sides[1], books_filter)
+                if pair:
+                    best_a, best_b, roi = pair
+                    out.append(_emit(game, mk, point, sides[0], sides[1], best_a, best_b, roi))
+            else:
+                result = _try_three_way(sides, books_filter)
+                if result:
+                    bests, roi = result
+                    emitted = _emit_three_way(game, mk, sides, bests, roi)
+                    emitted["point"] = point
+                    out.append(emitted)
 
     return out
 

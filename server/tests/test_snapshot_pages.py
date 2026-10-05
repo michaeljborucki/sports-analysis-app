@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from server.api.odds import build_router as odds_router
+from server.api.props import build_router as props_router
 from server.api.systems import build_router as systems_router
 from server.odds.cache import OddsCache
 from server.odds.normalize import rows_to_games
@@ -57,6 +58,7 @@ def test_odds_endpoint_uses_snapshot_without_reading_source_cache():
     cache = MagicMock()
     cache.all_current_family.side_effect = AssertionError("legacy cache read")
     cache.get_status.return_value = {}
+    cache.newest_fetched_at.return_value = None
     app = FastAPI()
     app.include_router(odds_router(cache, FakeSnapshotService()))
 
@@ -67,6 +69,38 @@ def test_odds_endpoint_uses_snapshot_without_reading_source_cache():
         "mlb-game"
     ]
     cache.all_current_family.assert_not_called()
+
+
+def test_odds_freshness_prefers_newest_actual_offer_over_legacy_status():
+    cache = MagicMock()
+    cache.all_current_family.side_effect = AssertionError("legacy cache read")
+    cache.get_status.return_value = {
+        "last_fetch_at": (NOW - timedelta(days=4)).isoformat(),
+    }
+    cache.newest_fetched_at.return_value = NOW - timedelta(seconds=7)
+    app = FastAPI()
+    app.include_router(odds_router(cache, FakeSnapshotService()))
+
+    response = TestClient(app).get("/api/odds/mlb")
+
+    assert response.status_code == 200
+    assert 7 <= response.json()["stale_seconds"] < 15
+
+
+def test_props_freshness_uses_displayed_offers_not_legacy_poller_status():
+    row = _mlb_row("Test Player Over", -110)
+    row.update(market_key="batter_hits", outcome_point=1.5,
+               fetched_at=NOW - timedelta(seconds=7), bookmaker_key="coral33")
+    cache = MagicMock()
+    cache.all_current_family.return_value = [row]
+    cache.get_status.return_value = {
+        "last_fetch_at": (NOW - timedelta(days=4)).isoformat(),
+    }
+    app = FastAPI()
+    app.include_router(props_router(cache))
+    response = TestClient(app).get("/api/props/mlb")
+    assert response.status_code == 200
+    assert 7 <= response.json()["stale_seconds"] < 15
 
 
 def test_systems_endpoint_uses_snapshot_rows_without_reading_source_cache(

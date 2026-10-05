@@ -6,6 +6,8 @@ export type SportKey =
   | "nba"
   | "wnba"
   | "nhl"
+  | "nfl"
+  | "ncaaf"
   | "baseball_ncaa"
   | "asian_baseball"
   | "soccer"
@@ -128,6 +130,44 @@ export const SPORTS: Record<SportKey, Sport> = {
       { label: "1P Total", mainKey: "totals_p1", altKey: "alternate_totals_p1", display: "total" },
     ],
   },
+  nfl: {
+    key: "nfl",
+    label: "NFL",
+    teamDisplay: "full",
+    marketGroups: [
+      { label: "Moneyline", mainKey: "h2h", display: "moneyline" },
+      { label: "Spread", mainKey: "spreads", altKey: "alternate_spreads", display: "spread" },
+      { label: "Total", mainKey: "totals", altKey: "alternate_totals", display: "total" },
+      { label: "1H ML", mainKey: "h2h_h1", display: "moneyline" },
+      { label: "1H Spread", mainKey: "spreads_h1", display: "spread" },
+      { label: "1H Total", mainKey: "totals_h1", display: "total" },
+      { label: "1Q ML", mainKey: "h2h_q1", display: "moneyline" },
+      { label: "1Q Spread", mainKey: "spreads_q1", display: "spread" },
+      { label: "1Q Total", mainKey: "totals_q1", display: "total" },
+      { label: "2Q ML", mainKey: "h2h_q2", display: "moneyline" },
+      { label: "2Q Spread", mainKey: "spreads_q2", display: "spread" },
+      { label: "2Q Total", mainKey: "totals_q2", display: "total" },
+      { label: "3Q ML", mainKey: "h2h_q3", display: "moneyline" },
+      { label: "3Q Spread", mainKey: "spreads_q3", display: "spread" },
+      { label: "3Q Total", mainKey: "totals_q3", display: "total" },
+      { label: "4Q ML", mainKey: "h2h_q4", display: "moneyline" },
+      { label: "4Q Spread", mainKey: "spreads_q4", display: "spread" },
+      { label: "4Q Total", mainKey: "totals_q4", display: "total" },
+    ],
+  },
+  ncaaf: {
+    key: "ncaaf",
+    label: "College Football",
+    teamDisplay: "full",
+    marketGroups: [
+      { label: "Moneyline", mainKey: "h2h", display: "moneyline" },
+      { label: "Spread", mainKey: "spreads", display: "spread" },
+      { label: "Total", mainKey: "totals", display: "total" },
+      { label: "1H ML", mainKey: "h2h_h1", display: "moneyline" },
+      { label: "1H Spread", mainKey: "spreads_h1", display: "spread" },
+      { label: "1H Total", mainKey: "totals_h1", display: "total" },
+    ],
+  },
   baseball_ncaa: {
     key: "baseball_ncaa",
     label: "NCAA Baseball",
@@ -196,7 +236,7 @@ export const SPORTS: Record<SportKey, Sport> = {
 };
 
 export const SPORT_ORDER: SportKey[] = [
-  "mlb", "nba", "wnba", "nhl", "baseball_ncaa", "asian_baseball",
+  "mlb", "nfl", "ncaaf", "nba", "wnba", "nhl", "baseball_ncaa", "asian_baseball",
   "tennis", "soccer", "ufc", "boxing", "cricket",
 ];
 
@@ -207,6 +247,8 @@ export function isSportKey(v: string): v is SportKey {
     v === "nba" ||
     v === "wnba" ||
     v === "nhl" ||
+    v === "nfl" ||
+    v === "ncaaf" ||
     v === "baseball_ncaa" ||
     v === "asian_baseball" ||
     v === "soccer" ||

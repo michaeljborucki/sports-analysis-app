@@ -46,18 +46,3 @@ markets             = []
 [on_demand]
 enabled          = true
 debounce_seconds = 60
-
-# Picks filter — which bet types surface on /picks/tennis.
-[picks]
-include_bet_types = [
-  "moneyline",
-  # tennis-agents bet cards use "game_handicap" for game-count spreads.
-  # Keep "game_spread" as an alias in case that file format changes.
-  "game_handicap",
-  "game_spread",
-  "total_games",
-  # Set-level markets present on tennis-agents bet cards but not sold on
-  # The Odds API — keep in include list so they still appear here:
-  "set_spread",
-  "total_sets",
-]

@@ -2,7 +2,6 @@
 import { use } from "react";
 import { notFound } from "next/navigation";
 import useSWR from "swr";
-import { useIsMounted } from "@/lib/use-is-mounted";
 import { apiPaths, type OddsResponse } from "@/lib/api";
 import { intervals } from "@/lib/swr";
 import { isSportKey, getSport } from "@/lib/sports";
@@ -11,6 +10,7 @@ import { StaleIndicator } from "@/components/stale-indicator";
 import { StaleBanner } from "@/components/stale-banner";
 import { OddsGridSkeleton } from "@/components/skeletons";
 import { RefreshButton } from "@/components/refresh-button";
+import { BackendUnreachable, PageHeader } from "@/components/ui";
 
 export default function OddsPage({
   params,
@@ -25,37 +25,20 @@ export default function OddsPage({
     apiPaths.odds(sport),
     { refreshInterval: intervals.odds }
   );
-  const mounted = useIsMounted();
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="flex items-end justify-between gap-4">
-        <div className="flex items-baseline gap-4">
-          <h1 className="text-2xl font-bold tracking-tight">
-            {sportMeta.label} Odds
-          </h1>
-          <span className="text-xs text-text-3 tabular">
-            {mounted
-              ? new Date().toLocaleDateString([], {
-                  month: "short",
-                  day: "numeric",
-                })
-              : null}
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          {data && <StaleIndicator staleSeconds={data.stale_seconds ?? 0} />}
-          <RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />
-        </div>
-      </header>
+      <PageHeader
+        className="mb-0"
+        title={`${sportMeta.label} odds`}
+        description="Best price per side across your visible books. Click a game for alt lines."
+        meta={data ? <StaleIndicator staleSeconds={data.stale_seconds ?? 0} /> : undefined}
+        actions={<RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />}
+      />
 
       {data && <StaleBanner staleSeconds={data.stale_seconds ?? 0} />}
 
-      {error && (
-        <div className="text-price-down text-sm">
-          Backend unreachable. Is the FastAPI server running on :8000?
-        </div>
-      )}
+      {error && <BackendUnreachable error={error} />}
       {isLoading && !data && <OddsGridSkeleton />}
       {data && <OddsGrid games={data.games ?? []} sport={sportMeta} />}
     </div>

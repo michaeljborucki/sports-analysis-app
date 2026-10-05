@@ -18,9 +18,10 @@ Prices passed in are already commission-adjusted by `rows_to_games`.
 """
 from __future__ import annotations
 
-from .arbitrage import _find_market
+from .arbitrage import _ev_pairing_helpers, _find_market
 from .devig import american_to_implied_prob
 from .pairing import collect_spread_pairs, collect_total_pairs
+from .venues import book_allowed
 
 
 def _payout_ratio(american: int) -> float:
@@ -31,9 +32,9 @@ def _filter_prices(
     outcome: dict, books_filter: set[str] | None
 ) -> list[dict]:
     prices = outcome.get("prices") or []
-    if books_filter is None:
-        return list(prices)
-    return [p for p in prices if p["bookmaker_key"] in books_filter]
+    # Opt-in books (novig_maker) never qualify unless named — a resting
+    # order can't be a guaranteed promo leg or hedge.
+    return [p for p in prices if book_allowed(p["bookmaker_key"], books_filter)]
 
 
 def _best_conversion_for_direction(
@@ -139,12 +140,14 @@ def _emit(
             "book": free_price["bookmaker_key"],
             "price_american": free_price["price_american"],
             "point": free_price.get("point"),
+            "wager_type": free_price.get("wager_type"),
         },
         "hedge_leg": {
             "outcome_name": hedge_outcome["outcome_name"],
             "book": hedge_price["bookmaker_key"],
             "price_american": hedge_price["price_american"],
             "point": hedge_price.get("point"),
+            "wager_type": hedge_price.get("wager_type"),
         },
     }
 
@@ -157,36 +160,52 @@ def scan_game_free_bets(
 ) -> list[dict]:
     out: list[dict] = []
 
-    # H2H
-    h2h = _find_market(game, "h2h")
-    if h2h and len(h2h.get("outcomes", [])) == 2:
-        a, b = h2h["outcomes"]
-        pair = _pair_best_free_bet(
-            a, b, hedge_books_filter, free_bet_books_filter, min_free_odds
+    base_market, _, _, _, period_suffix = _ev_pairing_helpers()
+    suffixes = {
+        period_suffix(m["market_key"])
+        for m in game.get("markets") or []
+        if base_market(m.get("market_key", "")) in (
+            "h2h", "spreads", "alternate_spreads", "totals", "alternate_totals",
         )
-        if pair:
-            fo, fp, ho, hp, conv = pair
-            out.append(_emit(game, "h2h", None, fo, fp, ho, hp, conv))
+    }
+    for suffix in sorted(suffixes):
+        # Periods stay separate: a full-game price cannot hedge a quarter.
+        h2h_key = f"h2h{suffix}"
+        h2h = _find_market(game, h2h_key)
+        if h2h and len(h2h.get("outcomes", [])) == 2:
+            a, b = h2h["outcomes"]
+            pair = _pair_best_free_bet(
+                a, b, hedge_books_filter, free_bet_books_filter, min_free_odds,
+            )
+            if pair:
+                fo, fp, ho, hp, conv = pair
+                out.append(_emit(game, h2h_key, None, fo, fp, ho, hp, conv))
 
-    # Spreads — pair by complementary signed points (main + alt merged)
-    for abs_pt, home_side, away_side in collect_spread_pairs(game):
-        pair = _pair_best_free_bet(
-            home_side, away_side,
-            hedge_books_filter, free_bet_books_filter, min_free_odds,
-        )
-        if pair:
-            fo, fp, ho, hp, conv = pair
-            out.append(_emit(game, "spreads", abs_pt, fo, fp, ho, hp, conv))
+        # Main/alternate spreads must have complementary signed points.
+        spread_key = f"spreads{suffix}"
+        for abs_pt, home_side, away_side in collect_spread_pairs(
+            game, (spread_key, f"alternate_spreads{suffix}"),
+        ):
+            pair = _pair_best_free_bet(
+                home_side, away_side,
+                hedge_books_filter, free_bet_books_filter, min_free_odds,
+            )
+            if pair:
+                fo, fp, ho, hp, conv = pair
+                out.append(_emit(game, spread_key, abs_pt, fo, fp, ho, hp, conv))
 
-    # Totals — pair Over and Under at same point (main + alt merged)
-    for pt, over_side, under_side in collect_total_pairs(game):
-        pair = _pair_best_free_bet(
-            over_side, under_side,
-            hedge_books_filter, free_bet_books_filter, min_free_odds,
-        )
-        if pair:
-            fo, fp, ho, hp, conv = pair
-            out.append(_emit(game, "totals", pt, fo, fp, ho, hp, conv))
+        # Main/alternate totals pair only at the same threshold.
+        total_key = f"totals{suffix}"
+        for pt, over_side, under_side in collect_total_pairs(
+            game, (total_key, f"alternate_totals{suffix}"),
+        ):
+            pair = _pair_best_free_bet(
+                over_side, under_side,
+                hedge_books_filter, free_bet_books_filter, min_free_odds,
+            )
+            if pair:
+                fo, fp, ho, hp, conv = pair
+                out.append(_emit(game, total_key, pt, fo, fp, ho, hp, conv))
 
     return out
 

@@ -144,7 +144,12 @@ logger = logging.getLogger(__name__)
 
 # Books this repo polls directly. Their rows live only in the native
 # cache, so they are unioned in on every read.
-DIRECT_BOOK_KEYS: frozenset[str] = frozenset({"coral33", "kalshi", "polymarket"})
+# `novig` is direct too, but unlike kalshi its betting-db rows are KEPT:
+# the direct poller only reaches a rate-limited subset of Novig's markets,
+# so its rows win per-PK and betting-db fills every slot it doesn't reach.
+DIRECT_BOOK_KEYS: frozenset[str] = frozenset({
+    "coral33", "kalshi", "novig", "novig_maker", "polymarket",
+})
 
 # Mirror of betting-db's `[[cadence.main]]` bands — the SOURCE OF TRUTH
 # is ~/personal_workspace/betting-db/config.toml, and `interval_for` in
@@ -179,6 +184,7 @@ DEFAULT_PAST_HOURS = 6
 # endpoints onto ONE scan while staying well inside betting-db's
 # tightest 60s poll band.
 MEMO_TTL_SECONDS = 5
+SOURCE_FINGERPRINT_TTL_SECONDS = 15.0
 
 
 def _env_int(name: str, default: int) -> int:
@@ -213,6 +219,45 @@ def _past_hours() -> int:
 def _db_path() -> str:
     from ..config import Config
     return str(Config.from_env().betting_db_path)
+
+
+def _source_fingerprint_uncached() -> tuple:
+    """Cheap identity for the read-only betting-db snapshot.
+
+    SQLite WAL writes may leave the main database untouched, so both the main
+    file and WAL sidecar participate. Missing sidecars are represented rather
+    than treated as errors because SQLite legitimately removes a WAL after a
+    checkpoint.
+    """
+    path = _db_path()
+    parts: list[tuple[str, int | None, int | None]] = []
+    for candidate in (path, f"{path}-wal"):
+        try:
+            stat = os.stat(candidate)
+            parts.append((candidate, stat.st_mtime_ns, stat.st_size))
+        except FileNotFoundError:
+            parts.append((candidate, None, None))
+    return tuple(parts)
+
+
+_SOURCE_FINGERPRINT_CACHE: tuple[float, str, tuple] | None = None
+
+
+def source_fingerprint() -> tuple:
+    """Return a coarse source identity stable for one refresh window."""
+    global _SOURCE_FINGERPRINT_CACHE
+    now = time.monotonic()
+    path = _db_path()
+    cached = _SOURCE_FINGERPRINT_CACHE
+    if (
+        cached is not None
+        and cached[1] == path
+        and now - cached[0] < SOURCE_FINGERPRINT_TTL_SECONDS
+    ):
+        return cached[2]
+    fingerprint = _source_fingerprint_uncached()
+    _SOURCE_FINGERPRINT_CACHE = (now, path, fingerprint)
+    return fingerprint
 
 
 def _connect() -> sqlite3.Connection:
@@ -399,7 +444,27 @@ def _freshness_sql(now: datetime) -> tuple[str, list]:
     )
     params.append(catch_all)
     case = "CASE " + " ".join(whens) + " ELSE ? END"
-    return f" AND commence_time >= ? AND fetched_at >= {case}", params
+    # Sargable floor. `fetched_at >= CASE WHEN commence_time ...` depends
+    # on the row, so SQLite cannot use idx_latest_fetched and falls back
+    # to SCAN latest_odds — 5.6M rows / 30-46s per read on the live DB.
+    # Every branch of the CASE returns one of `cutoffs`, so
+    # `fetched_at >= min(cutoffs)` is logically ENTAILED by the CASE: it
+    # admits a superset, the CASE then filters exactly as before, and the
+    # result set is unchanged (verified against the live DB under a single
+    # BEGIN DEFERRED snapshot). What it buys is a seekable bound, so the
+    # planner can drive off an index instead of scanning the table.
+    #
+    # min() over the built params rather than a hardcoded "catch-all is
+    # loosest" assumption, so reordering CADENCE_MAIN_BANDS cannot
+    # silently tighten the floor and start dropping live rows.
+    cutoffs = [cut for _horizon, cut in zip(whens, params[2::2])]
+    cutoffs = params[2:-1:2] + [catch_all]
+    min_cutoff = min(cutoffs)
+    return (
+        " AND commence_time >= ? AND fetched_at >= ? "
+        f"AND fetched_at >= {case}",
+        [params[0], min_cutoff, *params[1:]],
+    )
 
 
 # ─────────────────────────── row mapping ─────────────────────────────
@@ -425,23 +490,57 @@ def _encode_outcome_name_cached(
     return _encode_outcome_name(market_key, name, description, sport_key)
 
 
-def _mapped_rows_uncached(sport_key: str | None = None) -> list[dict]:
+def _mapped_rows_uncached(
+    sport_key: str | None = None,
+    market_keys: tuple[str, ...] | None = None,
+    prop_family: bool | None = None,
+    commence_before: datetime | None = None,
+    bookmaker_key: str | None = None,
+) -> list[dict]:
     """betting-db `latest_odds` -> `odds_snapshot`-shaped rows.
 
     `sport_key` is betting-site's APP sport ("mlb"), matching the native
     `all_current(sport_key=...)` parameter — not betting-db's column of
     the same name.
     """
+    started = time.perf_counter()
     now = datetime.now(timezone.utc)
     fresh_sql, fresh_params = _freshness_sql(now)
     sport_sql, sport_params = _sport_filter_sql(sport_key)
-    q = _BASE_SELECT + fresh_sql + sport_sql
+    market_sql = ""
+    market_params: list[str] = []
+    if bookmaker_key:
+        market_sql += " AND bookmaker_key = ?"
+        market_params.append(bookmaker_key)
+    if market_keys:
+        market_sql = f" AND market_key IN ({','.join('?' for _ in market_keys)})"
+        market_params.extend(market_keys)
+    if prop_family is not None:
+        from .market_config import PROP_MARKET_PREFIXES
+        prop_terms = " OR ".join("market_key GLOB ?" for _ in PROP_MARKET_PREFIXES)
+        market_sql += f" AND {'(' if prop_family else 'NOT ('}{prop_terms})"
+        market_params.extend(f"{prefix}*" for prefix in PROP_MARKET_PREFIXES)
+    if commence_before is not None:
+        event_sport_sql, event_sport_params = _sport_filter_sql(sport_key)
+        event_sport_sql = event_sport_sql.replace("sport_key", "e.sport_key")
+        market_sql += (
+            " AND event_id IN (SELECT e.event_id FROM events e WHERE 1"
+            + event_sport_sql
+            + " AND e.commence_time <= ?)"
+        )
+        market_params.extend(event_sport_params)
+        market_params.append(_iso_z(commence_before))
+    q = _BASE_SELECT + fresh_sql + sport_sql + market_sql
 
+    fetch_started = time.perf_counter()
     conn = _connect()
     try:
-        raw = conn.execute(q, [*fresh_params, *sport_params]).fetchall()
+        raw = conn.execute(
+            q, [*fresh_params, *sport_params, *market_params]
+        ).fetchall()
     finally:
         conn.close()
+    fetched = time.perf_counter()
 
     # Keyed by odds_snapshot's PK so post-fold collisions resolve
     # last-write-wins, exactly as OddsCache.upsert's ON CONFLICT does.
@@ -514,6 +613,18 @@ def _mapped_rows_uncached(sport_key: str | None = None) -> list[dict]:
             "betting-db: dropped %d row(s) with NULL home/away team "
             "(odds_snapshot requires both)", dropped_teamless,
         )
+    completed = time.perf_counter()
+    logger.info(
+        "betting-db read sport=%s prop_family=%s market_count=%d rows=%d "
+        "fetch_ms=%.1f map_ms=%.1f total_ms=%.1f",
+        sport_key or "all",
+        prop_family,
+        len(market_keys) if market_keys else 0,
+        len(out),
+        (fetched - fetch_started) * 1000,
+        (completed - fetched) * 1000,
+        (completed - started) * 1000,
+    )
     return list(out.values())
 
 
@@ -524,10 +635,19 @@ def _mapped_rows_uncached(sport_key: str | None = None) -> list[dict]:
 # read again. Keying on sport_key alone means one live entry per sport at
 # most, and the sweep below drops every entry from a stale bucket, so
 # retention is bounded to a single bucket's worth of rows.
-_MAPPED_ROWS_CACHE: dict[str | None, tuple[int, list[dict]]] = {}
+_MappedRowsCacheKey = str | None | tuple[
+    str | None, tuple[str, ...], bool | None, str | None
+]
+# value is (produced_at_monotonic_wallclock, rows)
+_MAPPED_ROWS_CACHE: dict[_MappedRowsCacheKey, tuple[float, list[dict]]] = {}
 
 
-def _mapped_rows(sport_key: str | None = None) -> list[dict]:
+def _mapped_rows(
+    sport_key: str | None = None,
+    market_keys: tuple[str, ...] | None = None,
+    prop_family: bool | None = None,
+    commence_before: datetime | None = None,
+) -> list[dict]:
     """Short-TTL memoized `_mapped_rows_uncached`.
 
     Time-bucketed so all callers inside one MEMO_TTL_SECONDS window share
@@ -535,26 +655,71 @@ def _mapped_rows(sport_key: str | None = None) -> list[dict]:
     read-only (nothing downstream mutates cache rows; `rows_to_games`
     only reads).
     """
-    bucket = int(time.time() // MEMO_TTL_SECONDS)
-    hit = _MAPPED_ROWS_CACHE.get(sport_key)
-    if hit is not None and hit[0] == bucket:
+    entered_at = time.time()
+    # Preserve the long-standing unfiltered cache keys (`None`, `"mlb"`,
+    # etc.) because diagnostics/tests inspect them; filtered scans use a
+    # disjoint tuple key.
+    cache_key = (
+        sport_key
+        if market_keys is None and prop_family is None and commence_before is None
+        else (
+            sport_key,
+            market_keys or (),
+            prop_family,
+            _iso_z(commence_before) if commence_before else None,
+        )
+    )
+    hit = _MAPPED_ROWS_CACHE.get(cache_key)
+    if hit is not None and (entered_at - hit[0]) < MEMO_TTL_SECONDS:
         return hit[1]
-    # Every caller reads the same clock, so anything not on the current
-    # bucket is dead weight — evict before allocating the new scan.
-    for stale in [k for k, (b, _) in _MAPPED_ROWS_CACHE.items() if b != bucket]:
+    rows = _mapped_rows_uncached(
+        sport_key, market_keys, prop_family, commence_before,
+    )
+    # Age from when the scan FINISHED, not a wall-clock bucket fixed when
+    # it started. Buckets gave an entry 0-TTL seconds of life depending on
+    # where it landed in the window, and a scan slower than the TTL (34s
+    # against 5s on the live DB) was filed under a window that had already
+    # rolled — so it arrived expired and the next caller re-scanned data
+    # that was seconds old. The dashboard's four scanners each paid for
+    # their own copy of the same rows. Rows are still at most one TTL old
+    # relative to when they were produced; the window is not widened.
+    produced_at = time.time()
+    # Anything older than one TTL is dead weight — evict once the new rows
+    # are in hand, so at most one live entry per key is retained.
+    for stale in [
+        k for k, (t, _) in _MAPPED_ROWS_CACHE.items()
+        if (produced_at - t) >= MEMO_TTL_SECONDS
+    ]:
         del _MAPPED_ROWS_CACHE[stale]
-    rows = _mapped_rows_uncached(sport_key)
-    _MAPPED_ROWS_CACHE[sport_key] = (bucket, rows)
+    _MAPPED_ROWS_CACHE[cache_key] = (produced_at, rows)
     return rows
+
+
+def book_rows(bookmaker_key: str, sport_key: str) -> list[dict]:
+    """One book's betting-db rows for one app sport — same mapping and
+    freshness filters as every other read, without materializing the
+    whole sport. Used by the Novig fetcher to find which Novig slots
+    betting-db already holds. Unmemoized: called once per catalog cycle.
+    """
+    return _mapped_rows_uncached(sport_key, bookmaker_key=bookmaker_key)
 
 
 def _reset_memo_for_tests() -> None:
     """Clear the TTL memo. Tests only — they swap BETTING_DB_PATH between
     cases faster than the bucket rolls over."""
+    global _SOURCE_FINGERPRINT_CACHE
     _MAPPED_ROWS_CACHE.clear()
+    _EVENTS_CACHE.clear()
+    _SOURCE_FINGERPRINT_CACHE = None
 
 
-def _direct_book_rows(cache, sport_key: str | None = None) -> list[dict]:
+def _direct_book_rows(
+    cache,
+    sport_key: str | None = None,
+    market_keys: tuple[str, ...] | None = None,
+    prop_family: bool | None = None,
+    commence_before: datetime | None = None,
+) -> list[dict]:
     """Native-cache rows for books betting-db does not poll.
 
     Queries `odds_snapshot` directly rather than filtering
@@ -574,6 +739,17 @@ def _direct_book_rows(cache, sport_key: str | None = None) -> list[dict]:
     if sport_key:
         q += " AND sport_key = ?"
         args.append(sport_key)
+    if market_keys:
+        q += f" AND market_key IN ({','.join('?' for _ in market_keys)})"
+        args.extend(market_keys)
+    if prop_family is not None:
+        from .market_config import PROP_MARKET_PREFIXES
+        prop_terms = " OR ".join("market_key GLOB ?" for _ in PROP_MARKET_PREFIXES)
+        q += f" AND {'(' if prop_family else 'NOT ('}{prop_terms})"
+        args.extend(f"{prefix}*" for prefix in PROP_MARKET_PREFIXES)
+    if commence_before is not None:
+        q += " AND commence_time <= ?"
+        args.append(_iso(commence_before))
     with cache._conn() as c:
         rows = []
         for r in c.execute(q, args):
@@ -620,6 +796,52 @@ def all_current(cache, sport_key: str | None = None) -> list[dict]:
         r for r in _mapped_rows(sport_key)
         if r["bookmaker_key"] not in DIRECT_BOOK_KEYS
         or _pk(r) not in direct_pks
+    ]
+    rows.extend(direct)
+    return rows
+
+
+def all_current_markets(
+    cache,
+    sport_key: str,
+    market_keys: tuple[str, ...],
+) -> list[dict]:
+    """Exact-market variant used by latency-sensitive mainline consumers."""
+    if not market_keys:
+        return []
+    direct = _direct_book_rows(cache, sport_key, market_keys)
+    direct_pks = {_pk(row) for row in direct}
+    rows = [
+        row for row in _mapped_rows(sport_key, market_keys)
+        if row["bookmaker_key"] not in DIRECT_BOOK_KEYS
+        or _pk(row) not in direct_pks
+    ]
+    rows.extend(direct)
+    return rows
+
+
+def all_current_family(
+    cache,
+    sport_key: str,
+    prop_family: bool,
+    commence_before: datetime | None = None,
+) -> list[dict]:
+    """Sport-filtered rows restricted to props or every non-prop market."""
+    direct = _direct_book_rows(
+        cache,
+        sport_key,
+        prop_family=prop_family,
+        commence_before=commence_before,
+    )
+    direct_pks = {_pk(row) for row in direct}
+    rows = [
+        row for row in _mapped_rows(
+            sport_key,
+            prop_family=prop_family,
+            commence_before=commence_before,
+        )
+        if row["bookmaker_key"] not in DIRECT_BOOK_KEYS
+        or _pk(row) not in direct_pks
     ]
     rows.extend(direct)
     return rows
@@ -679,6 +901,91 @@ def _group_events(rows: list[dict]) -> list[dict]:
     return list(by_event.values())
 
 
+def _betting_db_events_uncached(
+    sport_key: str | None = None,
+    *,
+    window_start: datetime | None = None,
+    window_end: datetime | None = None,
+) -> list[dict]:
+    """Read event metadata without materializing the odds universe.
+
+    The EXISTS clause retains the spend-path freshness guarantee: an event is
+    eligible only when at least one of its latest-odds rows passes the same
+    cadence-aware filter used by the odds reader.
+    """
+    fresh_sql, fresh_params = _freshness_sql(datetime.now(timezone.utc))
+    fresh_sql = fresh_sql.replace("commence_time", "l.commence_time")
+    fresh_sql = fresh_sql.replace("fetched_at", "l.fetched_at")
+    sport_sql, sport_params = _sport_filter_sql(sport_key)
+    sport_sql = sport_sql.replace("sport_key", "e.sport_key")
+    q = (
+        "SELECT e.event_id, e.sport_key, e.commence_time, "
+        "e.home_team, e.away_team FROM events e WHERE 1"
+        + sport_sql
+        + " AND e.home_team IS NOT NULL AND e.away_team IS NOT NULL"
+    )
+    args: list = list(sport_params)
+    if window_start is not None:
+        q += " AND e.commence_time >= ?"
+        args.append(_iso_z(window_start))
+    if window_end is not None:
+        q += " AND e.commence_time <= ?"
+        args.append(_iso_z(window_end))
+    q += (
+        " AND EXISTS (SELECT 1 FROM latest_odds l "
+        "WHERE l.event_id = e.event_id" + fresh_sql + " LIMIT 1)"
+        " ORDER BY e.commence_time, e.event_id"
+    )
+    args.extend(fresh_params)
+
+    conn = _connect()
+    try:
+        raw = conn.execute(q, args).fetchall()
+    finally:
+        conn.close()
+
+    out: list[dict] = []
+    for row in raw:
+        app_sport = app_sport_for(row["sport_key"])
+        if app_sport is None:
+            continue
+        out.append({
+            "event_id": row["event_id"],
+            "sport_key": app_sport,
+            "commence_time": _norm_ts(row["commence_time"]),
+            "home_team": row["home_team"],
+            "away_team": row["away_team"],
+        })
+    return out
+
+
+_EVENTS_CACHE: dict[str | None, tuple[int, list[dict]]] = {}
+
+
+def _betting_db_events(
+    sport_key: str | None = None,
+    *,
+    window_start: datetime | None = None,
+    window_end: datetime | None = None,
+) -> list[dict]:
+    """Memoize matcher event lists within the same short read bucket."""
+    if window_start is not None or window_end is not None:
+        return _betting_db_events_uncached(
+            sport_key,
+            window_start=window_start,
+            window_end=window_end,
+        )
+    bucket = int(time.time() // MEMO_TTL_SECONDS)
+    hit = _EVENTS_CACHE.get(sport_key)
+    if hit is not None and hit[0] == bucket:
+        return hit[1]
+    for stale in [key for key, (b, _) in _EVENTS_CACHE.items() if b != bucket]:
+        del _EVENTS_CACHE[stale]
+    events = _betting_db_events_uncached(sport_key)
+    _EVENTS_CACHE[sport_key] = (bucket, events)
+    return events
+
+
 def distinct_events(
     cache,
     within_hours_ahead: int | None = None,
@@ -692,8 +999,11 @@ def distinct_events(
     which is freshness- and commence-window-filtered, so a stale archived
     event cannot enter the worklist.
     """
-    rows = _mapped_rows(sport_key) + _direct_book_rows(cache, sport_key)
-    events = _group_events(rows)
+    events = _betting_db_events(sport_key)
+    direct_events = _group_events(_direct_book_rows(cache, sport_key))
+    by_id = {event["event_id"]: event for event in events}
+    by_id.update({event["event_id"]: event for event in direct_events})
+    events = list(by_id.values())
     if within_hours_ahead is None:
         return events
     ts_now = now if now is not None else datetime.now(timezone.utc)
@@ -717,10 +1027,17 @@ def events_in_close_window(
     trail_minutes: int = 5,
 ) -> list[dict]:
     """Drop-in for `OddsCache.events_in_close_window`."""
-    start = _iso(now + timedelta(minutes=trail_minutes))
-    end = _iso(now + timedelta(minutes=lead_minutes))
-    rows = _mapped_rows() + _direct_book_rows(cache)
-    return [
-        e for e in _group_events(rows)
-        if start <= e["commence_time"] <= end
-    ]
+    start_dt = now + timedelta(minutes=trail_minutes)
+    end_dt = now + timedelta(minutes=lead_minutes)
+    events = _betting_db_events(
+        window_start=start_dt,
+        window_end=end_dt,
+    )
+    direct = _group_events(_direct_book_rows(cache))
+    start, end = _iso(start_dt), _iso(end_dt)
+    by_id = {event["event_id"]: event for event in events}
+    by_id.update({
+        event["event_id"]: event for event in direct
+        if start <= event["commence_time"] <= end
+    })
+    return list(by_id.values())

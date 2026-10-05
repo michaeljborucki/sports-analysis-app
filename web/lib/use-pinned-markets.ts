@@ -45,6 +45,10 @@ const DEFAULT_PINS: Record<SportKey, string[]> = {
     "player_assists",
     "player_shots_on_goal",
   ],
+  // Player props are intentionally disabled for the initial preseason feed.
+  nfl: [],
+  // College football currently exposes game and first-half lines, not props.
+  ncaaf: [],
   // NCAA baseball shares key-shape with MLB; same defaults are a reasonable
   // guess, but if the fetcher never yields matching keys the intersection
   // in the matrix silently produces an empty pin set (everything in More).

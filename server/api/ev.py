@@ -11,7 +11,8 @@ from ..odds.cache import OddsCache
 from ..odds.coalesce import memoized_coalesced
 from ..odds.ev import SHARP_BOOKS, scan_all_ev
 from ..odds.normalize import rows_to_games
-from ..sidecar.ev_row_id import build_ev_row_id
+from ..odds.scanner_runtime import run_scanner
+from ..odds.latest_snapshot import LatestOddsSnapshotService
 from ..util import TTLCache
 
 
@@ -33,6 +34,8 @@ class EVOpportunity(BaseModel):
     kelly_quarter_pct: float
     source: Literal["pinnacle", "consensus"]
     anchor_book_count: int
+    anchor_age_s: int | None = None
+    reference_delayed: bool = False
     offered_age_s: int
     also_in_arb: bool
     confidence: Literal["normal", "low"]
@@ -41,10 +44,9 @@ class EVOpportunity(BaseModel):
     #   "parlay"   — line is on coral33's Parlay tab only
     #   "both"     — line is on both tabs (the common case)
     wager_type: Literal["straight", "parlay", "both"] | None = None
-    # Canonical row identifier (event_id|market_kind|point|outcome_name|book)
-    # used by the auto-bet sidecar so the frontend can echo a single string
-    # back to POST /api/sidecar/place.
-    ev_row_id: str
+    # Venue pairing: on a Novig take leg this is the maker price you could
+    # post instead; on a `novig_maker` leg it's the take price. None else.
+    counterpart_price_american: int | None = None
 
 
 class EVResponse(BaseModel):
@@ -54,7 +56,10 @@ class EVResponse(BaseModel):
     sharp_anchor_books: list[str]
 
 
-def build_router(cache: OddsCache) -> APIRouter:
+def build_router(
+    cache: OddsCache,
+    snapshot_service: LatestOddsSnapshotService | None = None,
+) -> APIRouter:
     router = APIRouter()
     memo = TTLCache(ttl_seconds=20.0)
 
@@ -103,13 +108,21 @@ def build_router(cache: OddsCache) -> APIRouter:
         # clean miss + fresh scan. Scanners read the full universe (no
         # sport filter), so a global counter is exactly the right
         # granularity.
+        snapshot = await snapshot_service.get() if snapshot_service else None
+        source_version = (
+            ("snapshot", snapshot.generation)
+            if snapshot is not None else cache.read_version
+        )
         cache_key = (
-            "ev", str(cache.path), cache.version, books, sharp_books, min_ev,
+            "ev", str(cache.path), source_version, books, sharp_books, min_ev,
             max_longshot_odds, stale_seconds, max_results, tag_arb, sort,
             wager_filter,
         )
 
         async def _compute() -> EVResponse:
+            return await run_scanner("ev", _compute_sync)
+
+        def _compute_sync() -> EVResponse:
             books_set: set[str] | None = None
             if books.strip():
                 books_set = {b for b in books.split(",") if b}
@@ -124,8 +137,11 @@ def build_router(cache: OddsCache) -> APIRouter:
             # Player props are included: outcomes are encoded as
             # "<Player> Over/Under/Yes/No" and the scanner pairs per-player
             # via market-aware bucket logic in ev._pair_bucket.
-            rows = cache.all_current()
-            games = rows_to_games(rows, now=now)
+            if snapshot is not None:
+                games = snapshot.games
+            else:
+                rows = cache.all_current()
+                games = rows_to_games(rows, now=now)
 
             arb_keys: set[tuple] | None = None
             if tag_arb:
@@ -165,18 +181,6 @@ def build_router(cache: OddsCache) -> APIRouter:
                     if o.get("book") == "coral33"
                     and o.get("wager_type") in ("parlay", "both")
                 ]
-
-            # Stamp each opportunity with its canonical row_id so the UI can
-            # round-trip it back to POST /api/sidecar/place without having
-            # to reconstruct the address from individual fields.
-            for o in opps:
-                o["ev_row_id"] = build_ev_row_id(
-                    event_id=o["event_id"],
-                    market_kind=o["market_kind"],
-                    point=o.get("point"),
-                    outcome_name=o["outcome_name"],
-                    book=o["book"],
-                )
 
             return EVResponse(
                 opportunities=[EVOpportunity.model_validate(o) for o in opps],

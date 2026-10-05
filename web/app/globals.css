@@ -1,120 +1,99 @@
 @import "tailwindcss";
 
 /* ============================================================================
- * DESIGN TOKENS — Wave 1 foundation
- * ----------------------------------------------------------------------------
- * This file defines the design system. Component files consume these tokens
- * and MUST NOT hard-code colors, sizes, or line-heights.
+ * DESIGN TOKENS — Gunmetal (2026-10-02)
+ * Spec: docs/superpowers/specs/2026-10-02-gunmetal-redesign.md
  *
- * SEMANTIC COLOR ROLES (post Wave 1 reassignment):
- *   --accent (cyan #22D3EE) .......... current-location marker ONLY.
- *     Active nav item, current tab, current filter chip. Not for status,
- *     not for CTA. If an element does not represent "where the user is
- *     right now," it should not be cyan.
+ * Every color has exactly one job:
+ *   edge   amber   — the number to act on (edge %, best price, EV, arb ROI)
+ *   gain   green   — money won / positive P&L / positive CLV
+ *   loss   red     — money lost / negative P&L / negative CLV
+ *   stale  rose    — stale data or warning only
+ *   live   red dot — live games only
+ *   sharp  lilac   — sharp-book marker only
+ *   accent         — current location; rendered as text-1 on bg-2, never a hue
+ * Modes (ARB/LH/EV/FB/PB) are labels, not colors.
  *
- *   --price-up / --price-down ........ magnitude encoding.
- *     The ramps (*-10 through *-90) encode the size of a number (EV%, arb%,
- *     hold%, edge, ROI). Larger magnitude = higher opacity. Do not use these
- *     for status/presence — that's what --flash and text tones are for.
- *
- *   --violet-accent .................. sharp-book marker.
- *     Pinnacle, Circa, and future sharps get this color on their column
- *     header / book chip. Not for anything else.
- *
- *   --flash (amber) .................. stale / warning only.
- *     Stale-data chips, warning empty-states, tone="warning". Do not expand
- *     to hover or selection states.
- *
- * Wave 2 TODO — downstream component migrations still needed:
- *   - LIVE chip             → move from --accent to --price-down (it's a
- *                             recording dot, not a current location).
- *   - MAIN chip             → stays on --accent for now (it IS a current
- *                             filter). Revisit if we add chip hover/active.
- *   - Freshness/stale chip  → stays on --flash (already correct role).
- *   - Refresh button accent → drop --accent; use --text-2 idle / --text-1 hover.
- *   - Focus ring inside inputs → already handled by global *:focus-visible below,
- *                             but nav-shell active tab should not also get the
- *                             glow — it's a current-location marker, not focus.
- *   - EV/arb/hold/edge cells → wire to --price-up-* and --price-down-* ramps
- *                             based on magnitude buckets (Wave 2 owns the
- *                             bucket thresholds).
- *   - Pinnacle/Circa column headers → apply --violet-accent-20 bg + solid
- *                             --violet-accent left rule.
- *   - All `py-1.5 px-2` row cells → migrate to var(--row-pad-y) / var(--row-pad-x)
- *                             once density toggle lands.
- * ============================================================================
- */
+ * Legacy names (price-up, price-down, flash, violet-accent) are aliases kept
+ * only while pages migrate. New code must not use them.
+ * ============================================================================ */
 
 @theme inline {
-  /* Base surfaces + text (unchanged — existing components consume these) */
-  --color-bg-0: #0B0F14;
-  --color-bg-1: #131A22;
-  --color-bg-2: #1C2530;
-  --color-border-subtle: #263140;
-  --color-text-1: #F5F7FA;
-  --color-text-2: #9AA5B4;
-  --color-text-3: #6B7685;
+  --color-bg-0: #27292C;
+  --color-bg-1: #2F3135;
+  --color-bg-2: #36393D;
+  --color-border-subtle: #42454A;
+  --color-text-1: #F1F0ED;
+  --color-text-2: #AEACA7;
+  --color-text-3: #7F7D78;
 
-  /* Semantic accent tokens (unchanged — existing components consume these) */
-  --color-price-up: #2CB459;
-  --color-price-down: #E5484D;
-  --color-flash: #F5A524;
-  --color-accent: #22D3EE;
-  --color-violet-accent: #7C5CFF;
+  --color-edge: #EDA845;
+  --color-gain: #7DCB9A;
+  --color-loss: #F0715F;
+  --color-stale: #E58AA0;
+  --color-live: #FF5A4E;
+  --color-sharp: #A99BE8;
+  --color-accent: #F1F0ED;
 
-  /* Body font stack — Geist Sans. Layout injects --font-geist-sans via the
-     geist/font/sans package; fallback chain keeps text legible if the
-     variable ever fails to load (dev reload, font cache bust). */
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* Legacy aliases — migrate away */
+  --color-price-up: #7DCB9A;
+  --color-price-down: #F0715F;
+  --color-flash: #E58AA0;
+  --color-violet-accent: #A99BE8;
+
+  --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SF Mono", Menlo, monospace;
 }
 
 /* ============================================================================
- * COLOR MAGNITUDE RAMPS
- * Backgrounds expressed as rgba() on a stable RGB triple. Downstream can
- * compose with any opacity, but the named ramp steps (10/25/50/75/90) are
- * the canonical magnitude buckets Wave 2 will consume.
- *
- * Chosen ramps: 10% / 25% / 50% / 75% / 90% alpha on the brand hex so the
- * lowest tint is a subtle hint and the highest reads as near-solid fill.
- * The solid --color-price-up / --color-price-down remain unchanged for
- * text, icons, and borders.
- *
- * The `--*-rgb` triples exist so components can also write
- *   background: rgb(var(--price-up-rgb) / 0.33);
- * for one-off magnitudes that don't fall on the named steps.
+ * MAGNITUDE RAMPS
+ * rgb triples allow rgb(var(--edge-rgb) / 0.33) for one-off magnitudes.
  * ============================================================================ */
 :root {
-  /* RGB triples (space-separated) for rgb(var(--x) / <alpha>) composition */
-  --price-up-rgb: 44 180 89;        /* #2CB459 */
-  --price-down-rgb: 229 72 77;      /* #E5484D */
-  --accent-rgb: 34 211 238;         /* #22D3EE */
-  --violet-accent-rgb: 124 92 255;  /* #7C5CFF */
-  --flash-rgb: 245 165 36;          /* #F5A524 */
+  --edge-rgb: 237 168 69;
+  --gain-rgb: 125 203 154;
+  --loss-rgb: 240 113 95;
+  --stale-rgb: 229 138 160;
+  --live-rgb: 255 90 78;
+  --sharp-rgb: 169 155 232;
+  --text-rgb: 241 240 237;
 
-  /* Price-up (green) magnitude ramp — backgrounds */
-  --price-up-10: rgb(var(--price-up-rgb) / 0.10);
-  --price-up-25: rgb(var(--price-up-rgb) / 0.25);
-  --price-up-50: rgb(var(--price-up-rgb) / 0.50);
-  --price-up-75: rgb(var(--price-up-rgb) / 0.75);
-  --price-up-90: rgb(var(--price-up-rgb) / 0.90);
+  --edge-10: rgb(var(--edge-rgb) / 0.10);
+  --edge-25: rgb(var(--edge-rgb) / 0.22);
+  --edge-50: rgb(var(--edge-rgb) / 0.40);
+  --edge-75: rgb(var(--edge-rgb) / 0.62);
+  --edge-90: rgb(var(--edge-rgb) / 0.85);
 
-  /* Price-down (red) magnitude ramp — backgrounds */
-  --price-down-10: rgb(var(--price-down-rgb) / 0.10);
-  --price-down-25: rgb(var(--price-down-rgb) / 0.25);
-  --price-down-50: rgb(var(--price-down-rgb) / 0.50);
-  --price-down-75: rgb(var(--price-down-rgb) / 0.75);
-  --price-down-90: rgb(var(--price-down-rgb) / 0.90);
+  --gain-10: rgb(var(--gain-rgb) / 0.10);
+  --gain-25: rgb(var(--gain-rgb) / 0.22);
+  --loss-10: rgb(var(--loss-rgb) / 0.10);
+  --loss-25: rgb(var(--loss-rgb) / 0.22);
+  --stale-10: rgb(var(--stale-rgb) / 0.10);
+  --stale-25: rgb(var(--stale-rgb) / 0.22);
+  --sharp-20: rgb(var(--sharp-rgb) / 0.18);
+  --sharp-40: rgb(var(--sharp-rgb) / 0.36);
+  --flash-wash: rgb(var(--text-rgb) / 0.14);
 
-  /* Violet-accent (sharp-book marker) — two soft tints for column shading */
-  --violet-accent-20: rgb(var(--violet-accent-rgb) / 0.20);
-  --violet-accent-40: rgb(var(--violet-accent-rgb) / 0.40);
-
-  /* Accent tints (reserved for current-location decorations, e.g. active
-     nav underline glow). Not a full ramp on purpose — accent is a role,
-     not a magnitude. */
-  --accent-20: rgb(var(--accent-rgb) / 0.20);
-  --accent-60: rgb(var(--accent-rgb) / 0.60);
+  /* Legacy ramp aliases — migrate away */
+  --price-up-rgb: var(--gain-rgb);
+  --price-down-rgb: var(--loss-rgb);
+  --accent-rgb: var(--text-rgb);
+  --violet-accent-rgb: var(--sharp-rgb);
+  --flash-rgb: var(--stale-rgb);
+  --price-up-10: var(--edge-10);
+  --price-up-25: var(--edge-25);
+  --price-up-50: var(--edge-50);
+  --price-up-75: var(--edge-75);
+  --price-up-90: var(--edge-90);
+  --price-down-10: var(--loss-10);
+  --price-down-25: var(--loss-25);
+  --price-down-50: rgb(var(--loss-rgb) / 0.40);
+  --price-down-75: rgb(var(--loss-rgb) / 0.62);
+  --price-down-90: rgb(var(--loss-rgb) / 0.85);
+  --violet-accent-20: var(--sharp-20);
+  --violet-accent-40: var(--sharp-40);
+  --accent-20: rgb(var(--text-rgb) / 0.12);
+  --accent-60: rgb(var(--text-rgb) / 0.40);
 }
 
 /* ============================================================================
@@ -127,31 +106,28 @@
  * that need a compound apply both vars:
  *   font-size: var(--fs-12); line-height: var(--lh-12);
  *
- * Usage map (rough; Wave 2 finalizes):
- *   10/11 → micro labels, column headers, meta (book chips, vig %)
- *   12    → row cells, primary table body
- *   13    → section headers inside side sheet
- *   15    → body paragraphs (rare — mostly empty-states)
- *   20    → page subtitles
- *   28    → page titles (e.g. "Edges", "Player Props")
+ * Usage (spec §2): 11 meta · 12 table header/meta · 13 table body ·
+ * 14 controls/body · 16 section title · 22 page title. Use the vars, not
+ * text-[Npx]. Sizes marked legacy exist only for unmigrated components.
  * ============================================================================ */
 :root {
-  --fs-10: 10px;  --lh-10: 13px;
+  --fs-10: 10px;  --lh-10: 13px;   /* legacy */
   --fs-11: 11px;  --lh-11: 14px;
   --fs-12: 12px;  --lh-12: 16px;
   --fs-13: 13px;  --lh-13: 18px;
-  --fs-15: 15px;  --lh-15: 20px;
-  --fs-20: 20px;  --lh-20: 26px;
-  --fs-28: 28px;  --lh-28: 34px;
+  --fs-14: 14px;  --lh-14: 20px;
+  --fs-15: 15px;  --lh-15: 20px;   /* legacy */
+  --fs-16: 16px;  --lh-16: 22px;
+  --fs-20: 20px;  --lh-20: 26px;   /* legacy */
+  --fs-22: 22px;  --lh-22: 28px;
+  --fs-28: 28px;  --lh-28: 34px;   /* legacy */
 }
 
 /* ============================================================================
  * DENSITY MODES
- * Set via <html data-density="..."> in layout.tsx. Default is comfortable,
- * which matches the current py-1.5 px-3 row rhythm.
- *
- * Wave 2 adds the user-facing toggle (nav shell settings menu) and migrates
- * row components to consume these vars. Do NOT migrate rows in Wave 1.
+ * Set via <html data-density="..."> (layout.tsx default: comfortable; the
+ * Settings toggle and ⌘⇧D switch it). Tables consume these through the
+ * .dt-* classes.
  * ============================================================================ */
 :root {
   --row-h: 32px;
@@ -164,8 +140,8 @@ html[data-density="compact"] {
   --row-pad-x: 8px;
 }
 html[data-density="comfortable"] {
-  --row-h: 32px;
-  --row-pad-y: 6px;
+  --row-h: 34px;
+  --row-pad-y: 7px;
   --row-pad-x: 12px;
 }
 html[data-density="spacious"] {
@@ -181,9 +157,8 @@ html, body {
   background: var(--color-bg-0);
   color: var(--color-text-1);
   font-family: var(--font-sans);
-  /* `tnum` for tabular figures on sans body copy; `ss01` is Geist's
-     disambiguated-glyph stylistic set (clearer 1/l/I, single-storey a). */
-  font-feature-settings: 'tnum' 1, 'ss01' 1;
+  font-size: var(--fs-14);
+  line-height: var(--lh-14);
 }
 
 body {
@@ -191,13 +166,42 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Numeric data cells. Uses Geist Mono for true fixed-width glyphs — Geist
-   Mono ships tabular-style digits by default, but we force `tnum` + `ss01`
-   explicitly so any future mono fallback keeps alignment. */
+/* Numbers only (prices, %, $, counts, times) — never words or labels. */
 .tabular {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: 'tnum' 1, 'ss01' 1;
+  font-feature-settings: 'tnum' 1, 'zero' 0;
+  letter-spacing: -0.01em;
+}
+
+/* ============================================================================
+ * DATA TABLES — density-aware classes shared by every table.
+ *   .dt-head  header row container     .dt-th  header cell
+ *   .dt-row   body row (hover, rule)   .dt-td  body cell
+ * ============================================================================ */
+.dt-head {
+  background: var(--color-bg-1);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.dt-th {
+  padding: 8px var(--row-pad-x);
+  font-size: var(--fs-12);
+  line-height: var(--lh-12);
+  font-weight: 500;
+  color: var(--color-text-3);
+  text-align: left;
+  white-space: nowrap;
+}
+.dt-row {
+  border-bottom: 1px solid var(--color-border-subtle);
+  transition: background-color 80ms ease;
+}
+.dt-row:hover { background: rgb(var(--text-rgb) / 0.03); }
+.dt-td {
+  padding: var(--row-pad-y) var(--row-pad-x);
+  font-size: var(--fs-13);
+  line-height: var(--lh-13);
+  vertical-align: middle;
 }
 
 /* ============================================================================
@@ -211,9 +215,9 @@ body {
  * light so it doesn't obscure adjacent odds cells.
  * ============================================================================ */
 *:focus-visible {
-  outline: 2px solid rgba(34, 211, 238, 0.6);     /* accent/60 */
+  outline: 2px solid rgba(237, 168, 69, 0.75);    /* edge/75 */
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.12); /* accent/12 halo */
+  box-shadow: none;
   transition: outline-color 120ms ease, box-shadow 120ms ease;
   border-radius: 3px;
 }
@@ -241,7 +245,7 @@ a:focus {
  * ============================================================================ */
 @media (prefers-reduced-transparency: reduce) {
   [data-side-sheet-root] {
-    background-color: var(--color-bg-2) !important;
+    background-color: var(--color-bg-1) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
@@ -257,17 +261,17 @@ a:focus {
  * Pulsing dot with a halo. Halved intensity + infinite loop.
  * ============================================================================ */
 @keyframes live-pulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.22); }
-  50%      { box-shadow: 0 0 0 7px rgba(229, 72, 77, 0.03); }
+  0%, 100% { box-shadow: 0 0 0 3px rgb(var(--live-rgb) / 0.22); }
+  50%      { box-shadow: 0 0 0 7px rgb(var(--live-rgb) / 0.03); }
 }
 .live-dot {
   display: inline-block;
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--color-price-down);
+  background: var(--color-live);
   animation: live-pulse 1.6s ease-in-out infinite;
-  box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.22);
+  box-shadow: 0 0 0 3px rgb(var(--live-rgb) / 0.22);
 }
 @media (prefers-reduced-motion: reduce) {
   .live-dot { animation: none; }

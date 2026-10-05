@@ -2,7 +2,10 @@
 
 import clsx from "clsx";
 
-interface Bet {
+import { Chip, type ChipTone } from "@/components/ui";
+import { bookName, sportName } from "./labels";
+
+export interface Bet {
   source_book: string;
   external_id: string;
   accepted_at: string;
@@ -30,43 +33,54 @@ const fmtUsd = (n: number | null | undefined) =>
     ? "—"
     : n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
-const STATUS_TONE: Record<string, string> = {
-  open: "text-text-2 bg-bg-2",
-  win: "text-price-up bg-price-up/15",
-  loss: "text-price-down bg-price-down/15",
-  push: "text-text-2 bg-bg-2",
-  void: "text-text-3 bg-bg-2",
-  pending: "text-text-2 bg-bg-2",
+const STATUS: Record<string, { label: string; tone: ChipTone }> = {
+  open: { label: "Open", tone: "neutral" },
+  pending: { label: "Pending", tone: "neutral" },
+  win: { label: "Win", tone: "gain" },
+  loss: { label: "Loss", tone: "loss" },
+  push: { label: "Push", tone: "neutral" },
+  void: { label: "Void", tone: "neutral" },
 };
 
-export function BetTable({ bets }: { bets: Bet[] | undefined }) {
+export function BetTable({
+  bets,
+  filtered = false,
+}: {
+  bets: Bet[] | undefined;
+  filtered?: boolean;
+}) {
   if (!bets) {
-    return <div className="h-48 rounded bg-bg-1 animate-pulse" />;
+    return (
+      <div className="h-48 rounded-lg border border-border-subtle bg-bg-1 animate-pulse" />
+    );
   }
   if (bets.length === 0) {
     return (
-      <div className="rounded border border-border-subtle bg-bg-1 p-6 text-center text-text-3">
-        No bets yet. Place some on Coral33, configure Kalshi/Polymarket sync in
-        Settings, or import a CSV.
+      <div className="rounded-lg border border-border-subtle bg-bg-1 px-6 py-8 text-center text-[length:var(--fs-13)] text-text-3">
+        {filtered
+          ? "No bets match these filters."
+          : "No bets yet. Place some on Coral33, configure Kalshi or Polymarket sync in Settings, or import a CSV."}
       </div>
     );
   }
   return (
-    <div className="rounded border border-border-subtle overflow-auto">
-      <table className="w-full text-xs">
-        <thead className="bg-bg-1 text-text-3">
+    <div className="rounded-lg border border-border-subtle bg-bg-1 overflow-x-auto">
+      <table className="w-full">
+        <thead className="dt-head">
           <tr>
-            <th className="text-left px-2 py-1.5">Date</th>
-            <th className="text-left px-2 py-1.5">Book</th>
-            <th className="text-left px-2 py-1.5">Sport</th>
-            <th className="text-left px-2 py-1.5">Pick</th>
-            <th className="text-right px-2 py-1.5">Odds</th>
-            <th className="text-right px-2 py-1.5">Stake</th>
-            <th className="text-right px-2 py-1.5">Result</th>
-            <th className="text-right px-2 py-1.5">CLV</th>
+            <th className="dt-th">Date</th>
+            <th className="dt-th">Book</th>
+            <th className="dt-th">Sport</th>
+            <th className="dt-th">Pick</th>
+            <th className="dt-th text-right">Odds</th>
+            <th className="dt-th text-right">Stake</th>
+            <th className="dt-th text-right">Result</th>
+            <th className="dt-th text-right" title="Closing-line value: how your price compared to the closing line">
+              CLV
+            </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="bg-bg-0">
           {bets.map((b) => {
             const net =
               b.status === "win"
@@ -74,49 +88,63 @@ export function BetTable({ bets }: { bets: Bet[] | undefined }) {
                 : b.status === "loss"
                   ? -b.stake
                   : 0;
-            const tone = STATUS_TONE[b.status] ?? "text-text-3 bg-bg-2";
+            const status = STATUS[b.status] ?? { label: b.status, tone: "neutral" as const };
+            const pick = b.outcome_name ?? b.raw_description ?? "—";
+            const settled = b.status !== "open" && b.status !== "pending";
             return (
-              <tr
-                key={`${b.source_book}-${b.external_id}`}
-                className="border-t border-border-subtle hover:bg-bg-1"
-              >
-                <td className="px-2 py-1">{fmtDate(b.accepted_at)}</td>
-                <td className="px-2 py-1">{b.source_book}</td>
-                <td className="px-2 py-1">{b.sport_key ?? "—"}</td>
-                <td className="px-2 py-1 truncate max-w-[260px]">
-                  {b.outcome_name ?? b.raw_description ?? "—"}
+              <tr key={`${b.source_book}-${b.external_id}`} className="dt-row">
+                <td className="dt-td tabular text-text-2 whitespace-nowrap">
+                  {fmtDate(b.accepted_at)}
                 </td>
-                <td className="px-2 py-1 text-right tabular">
+                <td className="dt-td text-text-1 whitespace-nowrap">{bookName(b.source_book)}</td>
+                <td className="dt-td text-text-2 whitespace-nowrap">{sportName(b.sport_key)}</td>
+                <td className="dt-td text-text-1 max-w-[320px]">
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    <span className="truncate" title={pick}>{pick}</span>
+                    {b.total_picks > 1 && (
+                      <Chip title={`${b.total_picks}-leg ${b.wager_type}`}>
+                        <span className="tabular">{b.total_picks}</span> legs
+                      </Chip>
+                    )}
+                    {b.is_free_play && <Chip>Free play</Chip>}
+                  </span>
+                </td>
+                <td className="dt-td text-right tabular text-text-1">
                   {fmtOdds(b.odds_american)}
                 </td>
-                <td className="px-2 py-1 text-right tabular">
+                <td className="dt-td text-right tabular text-text-2">
                   {fmtUsd(b.stake)}
                 </td>
-                <td className="px-2 py-1 text-right whitespace-nowrap">
-                  <span
-                    className={clsx(
-                      "inline-flex items-center px-1.5 rounded-sm text-[10px] font-semibold tracking-wider",
-                      tone,
+                <td className="dt-td text-right whitespace-nowrap">
+                  <span className="inline-flex items-center justify-end gap-2">
+                    {settled && (
+                      <span
+                        className={clsx(
+                          "tabular",
+                          net > 0 && "text-gain",
+                          net < 0 && "text-loss",
+                          net === 0 && "text-text-3",
+                        )}
+                      >
+                        {net > 0 ? "+" : net < 0 ? "-" : ""}
+                        {fmtUsd(Math.abs(net))}
+                      </span>
                     )}
-                  >
-                    {b.status.toUpperCase()}
+                    <Chip tone={status.tone}>{status.label}</Chip>
                   </span>
-                  {b.status !== "open" && b.status !== "pending" && (
-                    <span
-                      className={clsx(
-                        "tabular ml-1.5",
-                        net > 0 && "text-price-up",
-                        net < 0 && "text-price-down",
-                        net === 0 && "text-text-3",
-                      )}
-                    >
-                      {net > 0 ? "+" : ""}
-                      {fmtUsd(Math.abs(net))}
-                    </span>
-                  )}
                 </td>
-                <td className="px-2 py-1 text-right tabular">
-                  {b.clv_pct == null ? "—" : `${b.clv_pct.toFixed(2)}%`}
+                <td
+                  className={clsx(
+                    "dt-td text-right tabular",
+                    b.clv_pct == null && "text-text-3",
+                    b.clv_pct != null && b.clv_pct > 0 && "text-gain",
+                    b.clv_pct != null && b.clv_pct < 0 && "text-loss",
+                    b.clv_pct === 0 && "text-text-2",
+                  )}
+                >
+                  {b.clv_pct == null
+                    ? "—"
+                    : `${b.clv_pct > 0 ? "+" : ""}${b.clv_pct.toFixed(2)}%`}
                 </td>
               </tr>
             );

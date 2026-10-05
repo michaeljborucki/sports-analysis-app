@@ -104,10 +104,12 @@ class PolymarketFetcher:
             self._config = load_polymarket_config(self.config_path)
         return self._config
 
-    def _matcher(self) -> PolymarketEventMatcher:
+    def _matcher(self, events: list[dict] | None = None) -> PolymarketEventMatcher:
         cfg = self._load_config()
 
         def events_for(sport_key: str) -> list[dict]:
+            if events is not None:
+                return events
             return self.cache.distinct_events(sport_key=sport_key)
 
         return PolymarketEventMatcher(events_for, team_aliases=cfg.team_aliases)
@@ -264,7 +266,10 @@ class PolymarketFetcher:
             logger.warning("polymarket %s: %s", sport_key, e)
             return
 
-        matcher = self._matcher()
+        cache_events = await self.cache.distinct_events_async(
+            sport_key=sport_key,
+        )
+        matcher = self._matcher(cache_events)
 
         # M3: when the normalizer calls match_event with a noon-ET
         # anchor (the date-only convention from _noon_et_anchor), try

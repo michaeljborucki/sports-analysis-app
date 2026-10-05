@@ -377,3 +377,261 @@ def test_rules_still_gate_on_the_market_price_not_coral33s():
     signal = next(s for s in result.signals if s.system_id == "MLB_10_ROAD_FAVORITE_AFTER_SHUTOUT_LOSS")
     assert signal.price_american is None
     assert signal.book is None
+
+
+def test_low_total_opening_week_favorite_takes_the_under():
+    """VSiN's Week 1 board: Ohio-Nebraska, total 45.5 with a 23.5 favorite."""
+    result = evaluate_systems(
+        [game(week=1, total=45.5, home_spread=-23.5, away_spread=23.5,
+              total_under_placement=-110)],
+        evaluated_at=NOW, requested_date=date(2026, 8, 29),
+    )
+    signal = next(
+        s for s in result.signals
+        if s.system_id == "FOOTBALL_15_CFB_LOW_TOTAL_FAVORITE_UNDER"
+    )
+    assert signal.selection == "Under 45.5"
+    assert signal.price_american == -110
+
+
+def test_low_total_rule_holds_its_boundaries_on_total_and_favorite_size():
+    for candidate in (
+        game(week=1, total=49.0, home_spread=-23.5, away_spread=23.5),
+        game(week=1, total=48.5, home_spread=-3.5, away_spread=3.5),
+        game(week=2, total=45.5, home_spread=-23.5, away_spread=23.5),
+    ):
+        result = evaluate_systems(
+            [candidate], evaluated_at=NOW, requested_date=date(2026, 8, 29),
+        )
+        assert not any(
+            s.system_id == "FOOTBALL_15_CFB_LOW_TOTAL_FAVORITE_UNDER"
+            for s in result.signals
+        )
+
+
+def test_massive_home_favorite_and_41_plus_favorite_do_not_double_count():
+    """Ohio State -50.5, total 56.5: one spread bet and one total bet.
+
+    Football 1 and Football 5 fire on the same game by design — they are
+    different WAGERS, so the wager list must show two rows, not one row
+    counted twice, and neither may absorb the other's system id.
+    """
+    result = evaluate_systems(
+        [game(week=1, home_spread=-50.5, away_spread=50.5, total=56.5)],
+        evaluated_at=NOW, requested_date=date(2026, 8, 29),
+    )
+    wagers = deduplicate_wagers(result.signals)
+    by_selection = {w.selection: w for w in wagers}
+    assert by_selection["Home -50.5"].supporting_system_ids == [
+        "FOOTBALL_1_CFB_MASSIVE_HOME_FAVORITE"
+    ]
+    assert by_selection["Over 56.5"].supporting_system_ids == [
+        "FOOTBALL_5_CFB_41_PLUS_FAVORITE_OVER"
+    ]
+    assert len([w for w in wagers if w.bet_type == "total"]) == 1
+
+
+def test_g5_non_conference_home_favorite_and_underdog_split_over_under():
+    favorite = evaluate_systems(
+        [game(home_conference_class="g5", away_conference_class="g5",
+              is_conference_game=False, home_spread=-7.5, total=56.5)],
+        evaluated_at=NOW, requested_date=date(2026, 8, 29),
+    )
+    assert next(
+        s for s in favorite.signals
+        if s.system_id == "FOOTBALL_16_CFB_G5_HOME_FAVORITE_UNDER"
+    ).selection == "Under 56.5"
+
+    underdog = evaluate_systems(
+        [game(home_conference_class="g5", away_conference_class="g5",
+              is_conference_game=False, home_spread=3.0, total=55.5)],
+        evaluated_at=NOW, requested_date=date(2026, 8, 29),
+    )
+    assert next(
+        s for s in underdog.signals
+        if s.system_id == "FOOTBALL_17_CFB_G5_HOME_UNDERDOG_OVER"
+    ).selection == "Over 55.5"
+
+
+def test_g5_systems_ignore_conference_games_and_mixed_matchups():
+    for candidate in (
+        game(home_conference_class="g5", away_conference_class="g5",
+             is_conference_game=True, home_spread=-7.5, total=56.5),
+        game(home_conference_class="g5", away_conference_class="p4",
+             is_conference_game=False, home_spread=-7.5, total=56.5),
+    ):
+        result = evaluate_systems(
+            [candidate], evaluated_at=NOW, requested_date=date(2026, 8, 29),
+        )
+        assert not any(
+            s.system_id in (
+                "FOOTBALL_16_CFB_G5_HOME_FAVORITE_UNDER",
+                "FOOTBALL_17_CFB_G5_HOME_UNDERDOG_OVER",
+            ) for s in result.signals
+        )
+
+
+def test_neutral_site_p4_favorite_covers_both_line_bands_but_not_the_gap():
+    def signals(home_spread):
+        result = evaluate_systems(
+            [game(week=1, neutral_site=True, is_conference_game=False,
+                  home_conference_class="p4", away_conference_class="p4",
+                  home_spread=home_spread, away_spread=-home_spread)],
+            evaluated_at=NOW, requested_date=date(2026, 8, 29),
+        )
+        return [
+            s.selection for s in result.signals
+            if s.system_id == "FOOTBALL_18_CFB_NEUTRAL_P4_FAVORITE"
+        ]
+
+    assert signals(-3.0) == ["Home -3"]
+    assert signals(20.5) == ["Away -20.5"]
+    assert signals(-7.5) == []
+
+
+def test_neutral_site_p4_favorite_requires_a_neutral_field():
+    result = evaluate_systems(
+        [game(week=1, neutral_site=False, is_conference_game=False,
+              home_conference_class="p4", away_conference_class="p4",
+              home_spread=-20.5, away_spread=20.5)],
+        evaluated_at=NOW, requested_date=date(2026, 8, 29),
+    )
+    assert not any(
+        s.system_id == "FOOTBALL_18_CFB_NEUTRAL_P4_FAVORITE"
+        for s in result.signals
+    )
+
+
+def test_acc_tight_matchup_under_needs_both_teams_in_the_acc():
+    qualifying = game(home_conference_id=1, away_conference_id=1,
+                      home_spread=3.0, total=52.5)
+    result = evaluate_systems(
+        [qualifying], evaluated_at=NOW, requested_date=date(2026, 8, 29),
+    )
+    assert next(
+        s for s in result.signals
+        if s.system_id == "FOOTBALL_20_CFB_ACC_TIGHT_MATCHUP_UNDER"
+    ).selection == "Under 52.5"
+
+    for candidate in (
+        game(home_conference_id=1, away_conference_id=8,
+             home_spread=3.0, total=52.5),
+        game(home_conference_id=1, away_conference_id=1,
+             home_spread=-4.0, total=52.5),
+        game(home_conference_id=1, away_conference_id=1,
+             home_spread=3.0, total=56.5),
+    ):
+        rejected = evaluate_systems(
+            [candidate], evaluated_at=NOW, requested_date=date(2026, 8, 29),
+        )
+        assert not any(
+            s.system_id == "FOOTBALL_20_CFB_ACC_TIGHT_MATCHUP_UNDER"
+            for s in rejected.signals
+        )
+
+
+def test_game_two_fcs_systems_run_on_games_the_fbs_only_gate_excludes():
+    """Sacramento State -37.5 vs Mississippi Valley State, after an FBS loss.
+
+    `is_fbs_game` is False here — an FCS opponent is the whole point — so
+    these two rules must opt out of the FBS-only gate the other college
+    systems sit behind.
+    """
+    result = evaluate_systems(
+        [game(is_fbs_game=False, home_is_fbs=False, away_is_fbs=False,
+              home_spread=-37.5, away_spread=37.5,
+              home_previous_game_played=True, away_previous_game_played=True,
+              home_previous_opponent_is_fbs=True, home_previous_game_won=False,
+              away_previous_opponent_is_fbs=False)],
+        evaluated_at=NOW, requested_date=date(2026, 8, 29),
+    )
+    ids = {s.system_id: s for s in result.signals}
+    assert ids["FOOTBALL_21_CFB_GAME2_FCS_LETDOWN"].selection == "Away +37.5"
+    assert ids["FOOTBALL_22_CFB_GAME2_FCS_REBOUND_FADE"].selection == "Away +37.5"
+
+
+def test_game_two_rebound_fade_needs_a_loss_not_merely_an_fbs_opener():
+    result = evaluate_systems(
+        [game(is_fbs_game=False, home_is_fbs=True, away_is_fbs=False,
+              home_spread=-30.5, away_spread=30.5,
+              home_previous_game_played=True, away_previous_game_played=True,
+              home_previous_opponent_is_fbs=True, home_previous_game_won=True,
+              away_previous_opponent_is_fbs=False)],
+        evaluated_at=NOW, requested_date=date(2026, 8, 29),
+    )
+    ids = {s.system_id for s in result.signals}
+    assert "FOOTBALL_21_CFB_GAME2_FCS_LETDOWN" in ids
+    assert "FOOTBALL_22_CFB_GAME2_FCS_REBOUND_FADE" not in ids
+
+
+def test_week_one_teams_with_no_prior_game_are_a_no_match_not_a_data_gap():
+    """Every college team is 0-0 in Week 1; that is an answer, not a hole."""
+    result = evaluate_systems(
+        [game(home_is_fbs=True, away_is_fbs=True,
+              home_spread=-37.5, away_spread=37.5,
+              home_previous_game_played=False, away_previous_game_played=False)],
+        evaluated_at=NOW, requested_date=date(2026, 8, 29),
+    )
+    letdown = next(
+        e for e in result.evaluations
+        if e.system_id == "FOOTBALL_21_CFB_GAME2_FCS_LETDOWN"
+    )
+    assert letdown.status == "no_match"
+    assert letdown.evaluated_games == 1
+
+
+def test_game_two_home_shutdown_offense_fade_takes_the_road_side():
+    result = evaluate_systems(
+        [game(is_fbs_game=False, home_is_fbs=True, home_games_played=1,
+              home_previous_game_played=True, home_previous_points=7,
+              home_previous_margin=-21, home_spread=-20.5, away_spread=20.5)],
+        evaluated_at=NOW, requested_date=date(2026, 8, 29),
+    )
+    assert next(
+        s for s in result.signals
+        if s.system_id == "FOOTBALL_23_CFB_GAME2_HOME_SHUTDOWN_OFFENSE_FADE"
+    ).selection == "Away +20.5"
+
+
+def test_neutral_site_revenge_underdog_only_fires_for_the_avenging_dog():
+    result = evaluate_systems(
+        [game(neutral_site=True, home_revenge=False, away_revenge=True,
+              home_spread=-7.5, away_spread=7.5)],
+        evaluated_at=NOW, requested_date=date(2026, 8, 29),
+    )
+    assert next(
+        s for s in result.signals
+        if s.system_id == "FOOTBALL_24_CFB_NEUTRAL_REVENGE_UNDERDOG"
+    ).selection == "Away +7.5"
+
+    favored = evaluate_systems(
+        [game(neutral_site=True, home_revenge=True, away_revenge=False,
+              home_spread=-7.5, away_spread=7.5)],
+        evaluated_at=NOW, requested_date=date(2026, 8, 29),
+    )
+    assert not any(
+        s.system_id == "FOOTBALL_24_CFB_NEUTRAL_REVENGE_UNDERDOG"
+        for s in favored.signals
+    )
+
+
+def test_opening_week_p4_under_is_a_same_conference_rule():
+    """VSiN's match list holds only intra-ACC games, never P4 crossovers."""
+    same = evaluate_systems(
+        [game(week=1, is_conference_game=True, home_conference_class="p4",
+              away_conference_class="p4", total=53.5)],
+        evaluated_at=NOW, requested_date=date(2026, 8, 29),
+    )
+    assert any(
+        s.system_id == "FOOTBALL_19_CFB_P4_OPENING_MATCHUP_UNDER"
+        for s in same.signals
+    )
+    crossover = evaluate_systems(
+        [game(week=1, is_conference_game=False, home_conference_class="p4",
+              away_conference_class="p4", total=53.5)],
+        evaluated_at=NOW, requested_date=date(2026, 8, 29),
+    )
+    assert not any(
+        s.system_id == "FOOTBALL_19_CFB_P4_OPENING_MATCHUP_UNDER"
+        for s in crossover.signals
+    )

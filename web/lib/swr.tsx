@@ -36,6 +36,5 @@ export function SwrProvider({ children }: { children: ReactNode }) {
 
 export const intervals = {
   odds: 15_000,
-  picks: 60_000,
   health: 30_000,
 } as const;

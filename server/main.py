@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -12,12 +13,13 @@ from .odds.books.coral33 import Coral33Fetcher
 from .odds.books.coral33.accounts import AccountsScraper
 from .odds.books.kalshi import KalshiFetcher
 from .odds.books.polymarket import PolymarketFetcher
+from .odds.books.novig import NovigFetcher
 from .odds.cache import OddsCache
 from .odds.cache_mode import CacheMode, CacheModeStore
 from .odds.client import OddsAPIClient
 from .odds.clv_capture import capture_closing_lines
 from .odds.fetcher import FetcherRegistry
-from .picks.reader import PicksReader
+from .odds.latest_snapshot import LatestOddsSnapshotService
 from .sports import all_sports
 from .user_settings import UserSettingsStore
 
@@ -46,7 +48,10 @@ def create_app() -> FastAPI:
     )
 
     cache = OddsCache(initial_path)
+    from .odds.mapping_health import MappingHealth
+    mapping_health = MappingHealth(initial_path.with_suffix(".mapping.sqlite"))
     cache.init()
+    snapshot_service = LatestOddsSnapshotService(cache)
     # Run schema migrations against the *other* path too, so a later mode
     # flip (live ↔ snapshot in cache_mode.py:_apply_mode) doesn't land us
     # on a DB that's missing a recent column. cheap — init is idempotent.
@@ -86,27 +91,16 @@ def create_app() -> FastAPI:
         cache=cache,
         config_path=_Path(__file__).parent / "config" / "polymarket.toml",
     )
+    # Novig direct order-book reader — public REST, no key, read-only.
+    # Overrides the Odds API's Novig rows (same PK) with fresher take
+    # prices + size. NOVIG_FETCHER_ENABLED=false turns it off.
+    novig_fetcher = NovigFetcher(cache=cache, settings_store=settings_store)
+    novig_enabled = os.environ.get("NOVIG_FETCHER_ENABLED", "true").strip().lower() not in ("0", "false", "no")
     # Multi-account roll-up scraper (Accounts page). Reads CORAL33_ACCOUNTS
     # env (JSON list) or falls back to the single-account env pair. The
     # cache reference lets the scraper persist balance_snapshots on every
     # refresh, populating the daily-chart's pending overlay automatically.
     accounts_scraper = AccountsScraper(cache=cache)
-
-    from .odds.market_config import MarketConfig
-    picks_readers: dict[str, PicksReader] = {}
-    for sp in sports:
-        try:
-            mc = MarketConfig.load(sp.markets_config)
-            include = mc.picks.include_bet_types
-        except Exception:
-            logging.warning("Failed to load picks config for %s", sp.key)
-            include = ()
-        picks_readers[sp.key] = PicksReader(
-            bet_card_dir=sp.agent_dir,
-            bets_csv=sp.agent_dir / "bets.csv",
-            agent_key=sp.agent_dir.parent.name,
-            include_bet_types=include,
-        )
 
     # Closing-line capture scheduler. Runs every 60s in LIVE mode and
     # walks events whose commence_time is in T-15..T-5; each pass devigs
@@ -163,6 +157,7 @@ def create_app() -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        await snapshot_service.start()
         # SSE broadcaster — flush + heartbeat tasks run regardless of
         # cache mode (heartbeats keep idle connections alive even when
         # no upserts are happening; the flush loop is a no-op when the
@@ -180,6 +175,7 @@ def create_app() -> FastAPI:
         # Runs regardless of cache mode — harmless when no upserts
         # happen, no-op when the dirty flag stays clear.
         cache_version_flush_task = _asyncio.create_task(cache.version_flush_loop())
+        mapping_health_task = _asyncio.create_task(mapping_health.run(cache))
 
         # cache_mode is the single source of truth for whether fetchers run.
         # LIVE → both fetchers up. LATEST / SNAPSHOT → both off, serving the
@@ -222,12 +218,15 @@ def create_app() -> FastAPI:
             # Polymarket is also public/no-auth. Always start in LIVE.
             polymarket_fetcher.start_all()
 
-            # Three 60s jobs (clv_capture, kalshi_orderbook_poll,
-            # sidecar_delta_tick) all used to fire on the same wall-clock
-            # second every minute, spiking the event loop's I/O queue.
-            # Stagger first-fire by 0s / 20s / 40s so each owns its own
-            # third of the minute. APScheduler keeps the offset by virtue
-            # of the next_run_time anchor + fixed interval.
+            # Novig is public/no-auth and free (no Odds API spend).
+            if novig_enabled:
+                novig_fetcher.start_all()
+            else:
+                logging.info("novig fetcher disabled (NOVIG_FETCHER_ENABLED=false)")
+
+            # Stagger the 60s jobs so they do not fire on the same wall-clock
+            # second and spike the event loop's I/O queue. APScheduler keeps
+            # each offset via the next_run_time anchor + fixed interval.
             now_utc = _dt.now(_tz.utc)
 
             # CLV capture only runs in LIVE — there's no point devigging
@@ -347,31 +346,6 @@ def create_app() -> FastAPI:
                 replace_existing=True, max_instances=1,
             )
 
-            # Auto-bet sidecar Kelly-delta tick (E5). Runs every 60s; the
-            # tick itself reads sidecar_mode and bails when it's 'off',
-            # so the kill-switch silently halts autonomous activity even
-            # while the scheduler is still registered. The orchestrator
-            # factory raises until F1 wires the live pool/placer, so we
-            # wrap the call to log-and-skip if the factory isn't ready.
-            from .sidecar.delta_tick import run_delta_tick as _sidecar_delta_tick
-
-            async def _sidecar_delta_tick_job():
-                try:
-                    await _sidecar_delta_tick(db_path=cache.path)
-                except RuntimeError as ex:
-                    # Factory not initialized yet (pre-F1); skip silently.
-                    logging.debug("sidecar delta tick skipped: %s", ex)
-                except Exception:
-                    logging.exception("sidecar delta tick failed")
-
-            clv_scheduler.add_job(
-                _sidecar_delta_tick_job,
-                trigger="interval", seconds=60,
-                next_run_time=now_utc + _td(seconds=40),  # T+40s stagger
-                id="sidecar_delta_tick",
-                replace_existing=True, max_instances=1, coalesce=True,
-            )
-
             # closing_lines TTL purge — the closing_lines table was 62%
             # of cache.db with no expiry mechanism. Daily, 90-day cutoff
             # keeps recent CLV analysis intact; older bets in the `bets`
@@ -392,8 +366,7 @@ def create_app() -> FastAPI:
                 "CLV capture (60s, T+0) + purge_stale_rows (60s, T+10) "
                 "+ wager-log refresh (30min) "
                 "+ kalshi/polymarket portfolio sync (5min) "
-                "+ kalshi orderbook depth poll (60s, T+20) "
-                "+ sidecar delta tick (60s, T+40) schedulers started"
+                "+ kalshi orderbook depth poll (60s, T+20) schedulers started"
             )
         else:
             logging.info(
@@ -402,6 +375,7 @@ def create_app() -> FastAPI:
             )
 
         yield
+        await snapshot_service.stop()
         # Cancel SSE background loops first — they don't depend on any
         # other resource and stopping them lets connected browsers see
         # a clean close. The cache version flush loop sits in the same
@@ -409,7 +383,8 @@ def create_app() -> FastAPI:
         sse_flush_task.cancel()
         sse_heartbeat_task.cancel()
         cache_version_flush_task.cancel()
-        for t in (sse_flush_task, sse_heartbeat_task, cache_version_flush_task):
+        mapping_health_task.cancel()
+        for t in (sse_flush_task, sse_heartbeat_task, cache_version_flush_task, mapping_health_task):
             try:
                 await t
             except (asyncio.CancelledError, BaseException):
@@ -423,6 +398,7 @@ def create_app() -> FastAPI:
         coral33_fetcher.shutdown()
         kalshi_fetcher.shutdown()
         polymarket_fetcher.shutdown()
+        novig_fetcher.shutdown()
         fetcher.shutdown()
         # Release the persistent Odds API HTTP/2 connection pool so the
         # shutdown banner doesn't pollute logs with "unclosed AsyncClient".
@@ -441,7 +417,6 @@ def create_app() -> FastAPI:
 
     from .api.health import build_router as health_router
     from .api.odds import build_router as odds_router
-    from .api.picks import build_router as picks_router
     from .api.props import build_router as props_router
     from .api.fetcher_ctl import build_router as fetcher_ctl_router
     from .api.refresh import build_router as refresh_router
@@ -456,47 +431,38 @@ def create_app() -> FastAPI:
     from .api.coral33_accounts import build_router as coral33_accounts_router
     from .api.kalshi_ctl import build_router as kalshi_ctl_router
     from .api.polymarket_ctl import build_router as polymarket_ctl_router
+    from .api.novig_ctl import build_router as novig_ctl_router
     from .api.cache_mode import build_router as cache_mode_router
     from .api.settings import build_router as settings_router
     from .api.stream import build_router as stream_router
     from .api.bets import build_router as bets_router
-    from .api.sidecar import build_router as sidecar_router
-
-    # Wire the SidecarOrchestrator singleton against the live AccountsScraper
-    # and the running cache.db. The factory module holds module-level globals
-    # the orchestrator + route layer read lazily, so this MUST run before any
-    # /api/sidecar request hits the orchestrator. Router registration order
-    # below is fine — uvicorn only starts serving after create_app returns.
-    from .sidecar import factory as sidecar_factory
-    sidecar_factory.configure(
-        scraper=accounts_scraper,
-        cache_db_path=live_cache_path,
-        mode_config_path=live_cache_path.with_name("sidecar_mode.json"),
-    )
+    from .api.systems import build_router as systems_router
 
     app.include_router(stream_router())
     app.include_router(bets_router(cache))
+    app.include_router(systems_router(cache, snapshot_service=snapshot_service))
     app.include_router(health_router(cache, fetcher))
-    app.include_router(odds_router(cache))
+
+    @app.get("/api/mapping-health")
+    def get_mapping_health():
+        return mapping_health.listing()
+    app.include_router(odds_router(cache, snapshot_service))
     app.include_router(props_router(cache))
-    app.include_router(
-        picks_router(picks_readers, date_override=config.picks_date_override)
-    )
     app.include_router(fetcher_ctl_router(fetcher, mode_store))
     app.include_router(refresh_router(fetcher))
     app.include_router(sports_router(settings_store))
-    app.include_router(arbitrage_router(cache))
-    app.include_router(low_hold_router(cache))
-    app.include_router(free_bets_router(cache))
-    app.include_router(ev_router(cache))
-    app.include_router(profit_boost_router(cache))
+    app.include_router(arbitrage_router(cache, snapshot_service))
+    app.include_router(low_hold_router(cache, snapshot_service))
+    app.include_router(free_bets_router(cache, snapshot_service))
+    app.include_router(ev_router(cache, snapshot_service))
+    app.include_router(profit_boost_router(cache, snapshot_service))
     app.include_router(coral33_ctl_router(coral33_fetcher))
     app.include_router(
         coral33_accounts_router(accounts_scraper, cache=cache, odds_client=client)
     )
-    app.include_router(sidecar_router())
     app.include_router(kalshi_ctl_router(kalshi_fetcher))
     app.include_router(polymarket_ctl_router(polymarket_fetcher))
+    app.include_router(novig_ctl_router(novig_fetcher))
     app.include_router(
         cache_mode_router(
             mode_store, cache, live_cache_path, snapshot_cache_path,
@@ -506,14 +472,12 @@ def create_app() -> FastAPI:
             wager_log_refresh_tick=_wager_log_refresh_tick,
             kalshi_fetcher=kalshi_fetcher,
             polymarket_fetcher=polymarket_fetcher,
+            novig_fetcher=novig_fetcher if novig_enabled else None,
         )
     )
     app.include_router(settings_router(settings_store, fetcher, sports))
     app.include_router(
-        dashboard_router(
-            cache, fetcher, picks_readers, sports,
-            picks_date_override=config.picks_date_override,
-        )
+        dashboard_router(cache, fetcher, sports, snapshot_service=snapshot_service)
     )
 
     return app

@@ -1,16 +1,16 @@
 "use client";
-import clsx from "clsx";
+import { Segmented } from "@/components/ui";
 
 export type LiveStatus = "all" | "pre" | "live";
 
 const OPTIONS: { key: LiveStatus; label: string }[] = [
   { key: "all", label: "All" },
-  { key: "pre", label: "Pre" },
+  { key: "pre", label: "Upcoming" },
   { key: "live", label: "Live" },
 ];
 
 /**
- * Small 3-way segmented control: All / Pre-match / Live.
+ * 3-way filter: All / Upcoming / Live.
  *
  * Filters results by a `commence_time` field:
  *   pre  → commence_time > now
@@ -25,31 +25,27 @@ export function LiveStatusFilter({
   onChange: (v: LiveStatus) => void;
 }) {
   return (
-    <div className="inline-flex rounded-md bg-bg-1 border border-border-subtle p-0.5">
-      {OPTIONS.map(o => (
-        <button
-          key={o.key}
-          onClick={() => onChange(o.key)}
-          className={clsx(
-            "px-3 py-1 text-xs tracking-wide uppercase transition-colors rounded-sm inline-flex items-center gap-1.5",
-            value === o.key
-              ? "bg-bg-2 text-text-1"
-              : "text-text-2 hover:text-text-1"
-          )}
-        >
-          {o.key === "live" && (
-            <span
-              aria-hidden
-              className={clsx(
-                "inline-block w-1.5 h-1.5 rounded-full",
-                value === "live" ? "bg-price-down live-dot" : "bg-text-3"
-              )}
-            />
-          )}
-          {o.label}
-        </button>
-      ))}
-    </div>
+    <Segmented<LiveStatus>
+      size="sm"
+      ariaLabel="Game status"
+      value={value}
+      onChange={onChange}
+      options={OPTIONS.map(o => ({
+        value: o.key,
+        label:
+          o.key === "live" ? (
+            <span className="inline-flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className={value === "live" ? "live-dot" : "inline-block h-1.5 w-1.5 rounded-full bg-text-3"}
+              />
+              Live
+            </span>
+          ) : (
+            o.label
+          ),
+      }))}
+    />
   );
 }
 

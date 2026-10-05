@@ -12,7 +12,6 @@ Every entry point that can bill the Odds API is covered here:
 """
 from __future__ import annotations
 
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -122,11 +121,6 @@ async def test_refresh_event_proceeds_past_the_gate_when_enabled():
 def app_env(monkeypatch, tmp_path):
     """Mirrors test_api.py's app fixture, minus the API key."""
     monkeypatch.delenv("ODDS_API_KEY", raising=False)
-    monkeypatch.setenv("BET_CARD_DIR", str(Path(__file__).parent / "fixtures"))
-    monkeypatch.setenv(
-        "BETS_CSV",
-        str(Path(__file__).parent / "fixtures" / "bets_example.csv"),
-    )
 
     import server.config as config_mod
     import server.user_settings as us_mod

@@ -96,19 +96,23 @@ export function OddsGrid({
 
   return (
     <div className="flex flex-col gap-3" data-sheet-keep-open>
-      <div className="flex items-center gap-4 justify-between">
-        <div className="flex items-center gap-4 flex-wrap">
-          {tabs.length > 0 && (
-            <MarketTabs
-              value={activeKey}
-              onChange={setActiveKey}
-              tabs={tabs}
-            />
-          )}
-          <div className="text-xs text-text-3 tabular">
-            {games.length}
-            {games.length !== allGames.length && ` / ${allGames.length}`} games
-          </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {tabs.length > 0 && (
+          <MarketTabs
+            value={activeKey}
+            onChange={setActiveKey}
+            tabs={tabs}
+          />
+        )}
+        <div className="text-[length:var(--fs-12)] text-text-3">
+          <span className="tabular">{games.length}</span>
+          {games.length !== allGames.length && (
+            <>
+              {" of "}
+              <span className="tabular">{allGames.length}</span>
+            </>
+          )}{" "}
+          {allGames.length === 1 ? "game" : "games"}
         </div>
       </div>
 

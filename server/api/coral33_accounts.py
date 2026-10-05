@@ -13,6 +13,7 @@ show a spinner.
 from __future__ import annotations
 
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
@@ -29,8 +30,10 @@ class WagerSummaryModel(BaseModel):
     open_amount_to_win: float
     straight_count: int
     parlay_count: int
-    parlay_partial_count: int
     free_play_count: int
+    won_open_slot_count: int
+    pending_open_slot_count: int
+    fulfilled_count: int
 
 
 class WagerLegModel(BaseModel):
@@ -45,6 +48,7 @@ class WagerLegModel(BaseModel):
     final_money: int | None = None
     spread: float | None = None
     total_points: float | None = None
+    total_side: str | None = None
     game_datetime: str | None = None
     outcome: str | None = None
     leg_amount_wagered: float = 0.0
@@ -256,11 +260,21 @@ def build_router(
         # onto today's HistoryPoint regardless of wager-log status, so the
         # rightmost bar is always accurate even before the backfill runs.
         current = scraper.cached()
-        live_pending_by_cid: dict[str, float] = {
-            s.customer_id: s.pending_wager_balance
-            for s in current.snapshots
-            if s.error is None
-        }
+        live_pending_by_cid: dict[str, float] = {}
+        live_date_by_cid: dict[str, str] = {}
+        for s in current.snapshots:
+            if s.error is not None:
+                continue
+            live_pending_by_cid[s.customer_id] = s.pending_wager_balance
+            try:
+                captured = datetime.fromisoformat(
+                    s.fetched_at.replace("Z", "+00:00")
+                )
+                live_date_by_cid[s.customer_id] = captured.astimezone(
+                    ZoneInfo("America/Denver")
+                ).date().isoformat()
+            except (TypeError, ValueError):
+                pass
 
         # Historical pending — derived once per account from the persisted
         # wager log. The log covers the last ~2 weeks (DEFAULT_BACKFILL_
@@ -291,22 +305,48 @@ def build_router(
             # direct measurement from Coral33 itself (no derivation).
             if cache is not None:
                 snap_by_date = cache.latest_balance_snapshot_per_date(cid)
-                if snap_by_date and point_models:
+                if snap_by_date:
+                    existing_dates = {p.date for p in point_models}
                     for p in point_models:
                         s = snap_by_date.get(p.date)
                         if s is not None:
                             p.pending = float(s["pending"])
+
+                    # Coral33's week=0 report can stop at the last completed
+                    # betting week. Extend its timeline with direct balance
+                    # measurements captured after that point.
+                    for snap_date, s in snap_by_date.items():
+                        if snap_date in existing_dates:
+                            continue
+                        point_models.append(HistoryPointModel(
+                            date=snap_date,
+                            won=0.0,
+                            lost=0.0,
+                            net=0.0,
+                            balance=float(s["current_balance"]),
+                            pending=float(s["pending"]),
+                        ))
+
+                    point_models.sort(key=lambda p: p.date)
+                    for i, p in enumerate(point_models):
+                        if p.date not in existing_dates:
+                            previous = (
+                                point_models[i - 1].balance
+                                if i > 0 else p.balance
+                            )
+                            p.net = p.balance - previous
 
             # Overlay live pending onto today's point regardless — the
             # wager-log compute gives EOD-yesterday-ish for today (since
             # any wager open right now hasn't settled by EOD today either,
             # the values typically agree), but the live snapshot is more
             # authoritative for the rightmost bar.
-            if point_models:
-                latest = point_models[-1]
-                latest.pending = live_pending_by_cid.get(
-                    cid, latest.pending,
-                )
+            live_date = live_date_by_cid.get(cid)
+            if live_date is not None:
+                for p in point_models:
+                    if p.date == live_date:
+                        p.pending = live_pending_by_cid.get(cid, p.pending)
+                        break
 
             accounts.append(AccountHistoryModel(
                 customer_id=cid,

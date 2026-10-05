@@ -25,7 +25,7 @@ async function postRefresh(url: string) {
  * book-by-book matrix of mains + alt lines for the active market group,
  * with sub-tabs to switch between Spreads / Totals / Team Totals (driven by
  * Settings). Mainline row gets a MAIN badge; best price per sub-row is
- * tinted.
+ * shown in `edge`.
  *
  * For the moneyline market group (no alts exist by convention), we render a
  * minimal summary — the main grid already shows the best ML; if the user
@@ -73,8 +73,8 @@ export function MarketExpansionPanel({
   // is redundant. Show a subtle notice and the refresh button only.
   if (group.display === "moneyline" || group.display === "yes_no") {
     return (
-      <div className="p-4 flex items-center justify-between">
-        <span className="text-[11px] text-text-3">
+      <div className="flex items-center justify-between gap-3 p-4">
+        <span className="text-[length:var(--fs-12)] text-text-3">
           {group.display === "yes_no"
             ? "Yes/No markets have no alt ladder."
             : "No alt lines for moneyline markets. Use the Spread or Total tab for per-book line shopping."}
@@ -91,8 +91,8 @@ export function MarketExpansionPanel({
   return (
     <div className="p-4 flex flex-col gap-3">
       <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-[11px] uppercase tracking-wider text-text-2">
-          Mains + alts — book by book
+        <span className="text-[length:var(--fs-13)] font-medium text-text-2">
+          Main and alt lines, book by book
         </span>
         <RefreshButton
           onClick={handleRefresh}
@@ -123,18 +123,22 @@ function RefreshButton({
 }) {
   return (
     <div className="ml-auto inline-flex items-center gap-2">
-      {status && <span className="text-[10px] text-accent tabular">{status}</span>}
+      {status && (
+        <span className="text-[length:var(--fs-12)] text-text-2">{status}</span>
+      )}
       <button
+        type="button"
         onClick={onClick}
         disabled={busy}
+        title="Re-poll this game's books now (debounced server-side)"
         className={clsx(
-          "inline-flex items-center gap-1.5 h-7 px-2 rounded-sm text-[10px] font-medium",
-          "border border-border-subtle bg-bg-1 text-text-2 hover:text-text-1",
+          "inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-[length:var(--fs-13)] font-medium",
+          "border border-border-subtle bg-bg-1 text-text-2 transition-colors hover:bg-bg-2 hover:text-text-1",
           busy && "opacity-60 cursor-wait"
         )}
       >
         <RefreshCw
-          size={12}
+          size={13}
           aria-hidden
           className={clsx(busy && "animate-spin")}
         />

@@ -64,6 +64,17 @@ export interface EdgeLeg {
    *  Non-null for Kalshi / Polymarket arb legs; null for sportsbooks
    *  (no published depth) and for non-arb modes. */
   max_stake_dollars?: number | null;
+  /** Novig only: on a take leg, the maker price you could post instead;
+   *  on a `novig_maker` leg, the take price. Null everywhere else. */
+  counterpart_price_american?: number | null;
+}
+
+/** Book key of Novig's virtual maker quotes (see server/odds/venues.py). */
+export const NOVIG_MAKER = "novig_maker";
+
+/** True when the edge depends on a resting Novig order getting filled. */
+export function usesMakerPrice(op: { legs: EdgeLeg[] }): boolean {
+  return op.legs.some(l => l.book === NOVIG_MAKER);
 }
 
 /** Shared envelope across all modes. */
@@ -126,6 +137,7 @@ export function fromArb(op: ArbOpportunity, idx: number): EdgeOpportunity {
     role: i === 0 ? "a" : "b",
     stake_pct: s.stake_pct,
     max_stake_dollars: s.max_stake_dollars ?? null,
+    counterpart_price_american: s.counterpart_price_american ?? null,
   }));
   return {
     mode: "arb",
@@ -158,6 +170,7 @@ export function fromLowHold(
     price_american: s.price_american,
     point: s.point,
     role: i === 0 ? "a" : "b",
+    counterpart_price_american: s.counterpart_price_american ?? null,
   }));
   return {
     mode: "low_hold",
@@ -170,10 +183,10 @@ export function fromLowHold(
     commence_time: op.commence_time,
     market_kind: op.market_kind,
     point: op.point,
-    // Surface hold as a (typically negative) edge-equivalent — lower hold
-    // ranks higher. Negating turns "0.5% hold" into "−0.5% edge", and
-    // sort-desc still floats the best (most-negative) pairs to the top.
-    // UI formats this separately so the sign doesn't confuse the user.
+    // Surface hold as signed edge — lower hold ranks higher. Negating turns
+    // "0.5% hold" into "−0.5% edge" and "−0.5% hold" into "+0.5% edge".
+    // This produces one continuous scale: vig is negative edge, a fair pair
+    // is zero, and negative hold (arbitrage) is positive edge.
     edge_pct: -op.hold_pct,
     legs,
     row_age_s: 0,
@@ -192,6 +205,7 @@ export function fromEv(op: EVOpportunity, idx: number): EdgeOpportunity {
       price_american: op.offered_price_american,
       point: op.point,
       role: "offered",
+      counterpart_price_american: op.counterpart_price_american ?? null,
     },
     // Fair / anchor leg — not a bookable side, shown as reference in the
     // workbench and in the table's FAIR column.
@@ -347,7 +361,7 @@ export function formatEdgePct(op: EdgeOpportunity): string {
     case "arb":
       return `${op.raw.roi_pct >= 0 ? "+" : ""}${op.raw.roi_pct.toFixed(2)}%`;
     case "low_hold":
-      return `${op.raw.hold_pct.toFixed(2)}%`;
+      return `${op.edge_pct >= 0 ? "+" : ""}${op.edge_pct.toFixed(2)}%`;
     case "ev":
       return `${op.raw.ev_pct >= 0 ? "+" : ""}${op.raw.ev_pct.toFixed(2)}%`;
     case "free_bet":
@@ -567,11 +581,11 @@ export function commenceLabel(iso: string): string {
 /** Color utility for edge magnitude. */
 export function edgeColor(op: EdgeOpportunity): string {
   if (op.mode === "low_hold") {
-    const h = op.raw.hold_pct;
-    if (h < 0.5) return "text-price-up";
-    if (h < 1.5) return "text-accent";
-    if (h < 2.5) return "text-flash";
-    return "text-text-2";
+    const edge = op.edge_pct;
+    if (edge > 0) return "text-price-up";
+    if (edge >= -0.5) return "text-accent";
+    if (edge >= -1.5) return "text-flash";
+    return "text-price-down";
   }
   if (op.mode === "free_bet") {
     const c = op.raw.conversion_pct;

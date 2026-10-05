@@ -6,8 +6,8 @@ the existing curl_cffi-based Coral33Client (no Selenium / Firefox).
 Account list comes from the `CORAL33_ACCOUNTS` env var as JSON, e.g.
 
     CORAL33_ACCOUNTS='[
-      {"customer_id":"VR11601","password":"dixon1","label":"Account 1"},
-      {"customer_id":"VR12509","password":"borucki1","label":"Primary"}
+      {"customer_id":"VR00000","password":"<password>","label":"Account 1"},
+      {"customer_id":"VR00000","password":"<password>","label":"Primary"}
     ]'
 
 `label` is optional — if omitted, the customerID is used as the display name.
@@ -19,13 +19,18 @@ returns immediately.
 from __future__ import annotations
 
 import asyncio
+import html
 import json
 import logging
 import os
+import re
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
+
+from curl_cffi.requests.exceptions import RequestException
 
 from .client import Coral33APIError, Coral33AuthError, Coral33Client
 
@@ -48,10 +53,20 @@ class WagerSummary:
     open_count: int = 0
     open_amount_risked: float = 0.0   # dollars
     open_amount_to_win: float = 0.0   # dollars
+    # Straight/parlay counts EXCLUDE free plays — free plays get their own
+    # chip, and counting them twice made 5 free plays read as "5 free plays
+    # + 5 parlays". straight + parlay + free_play == open_count.
     straight_count: int = 0
     parlay_count: int = 0
-    parlay_partial_count: int = 0     # at least one leg graded, others open
     free_play_count: int = 0
+    # Progress buckets, partitioning the same open_count a second way.
+    # coral33 tickets carry an unused second leg slot until it is taken:
+    #   won_open_slot     — a leg won, second leg not taken yet
+    #   pending_open_slot — nothing won yet, second leg not taken yet
+    #   fulfilled         — the second leg has been taken
+    won_open_slot_count: int = 0
+    pending_open_slot_count: int = 0
+    fulfilled_count: int = 0
 
 
 @dataclass
@@ -69,6 +84,10 @@ class WagerLeg:
     final_money: int | None = None  # American odds at placement
     spread: float | None = None
     total_points: float | None = None
+    # "over" / "under" for a total leg, else None. Coral33 puts the side ONLY
+    # in the description text — chosen_team is just "Team1/Team2" on a total —
+    # so without this the UI can show the number but not which way you bet.
+    total_side: str | None = None
     game_datetime: str | None = None
     outcome: str | None = None      # "" / "W" / "L" / "P" — leg-level
     leg_amount_wagered: float = 0.0
@@ -208,15 +227,51 @@ _BET_TYPE_BY_WAGER_TYPE = {
 }
 
 
+# Coral33 writes a half point as the HTML entity for ½, and concatenates every
+# leg's description into ONE string on a parlay, so the side has to be located
+# by its own total rather than by position. A split (quarter) line arrives as
+# a PAIR — "O 3,3½" is the 3 / 3.5 split that AdjTotalPoints reports as 3.25 —
+# so the second number is optional and the two are averaged.
+_TOTAL_SIDE_RE = re.compile(
+    r"(?<![A-Za-z])([OU])\s+(\d+(?:\.5)?)(?:,(\d+(?:\.5)?))?(?![\d.])"
+)
+
+
+def _total_side(description: str | None, total_points: float | None) -> str | None:
+    """Which side of a total this leg took, or None when it cannot be told.
+
+    Ambiguity resolves to None on purpose: showing "o/u 50.5" is honest,
+    while showing the wrong side of a total is worse than showing neither.
+    """
+    if not description or not total_points:
+        return None
+    text = html.unescape(description).replace("\u00bd", ".5")
+    sides = set()
+    for match in _TOTAL_SIDE_RE.finditer(text):
+        low = float(match.group(2))
+        line = low if match.group(3) is None else (low + float(match.group(3))) / 2
+        if abs(line - total_points) < 1e-9:
+            sides.add(match.group(1))
+    if len(sides) != 1:
+        return None
+    return "over" if sides.pop() == "O" else "under"
+
+
 def _classify_leg_status(outcome: str | None) -> str:
-    """Per-leg outcome → simple status label."""
+    """Per-leg outcome → simple status label.
+
+    NOTE: in the *pending* feed 'P' means PENDING, not push. Confirmed
+    against live tickets carrying 'P' on legs whose GameDateTime is still
+    days in the future — those cannot have pushed. (The settled wager log
+    is a different feed; there ticket-level 'P' really is a push.)
+    """
     out = (outcome or "").strip().upper()
     if out == "W":
         return "won"
     if out == "L":
         return "lost"
     if out == "P":
-        return "push"
+        return "pending"
     return "open"
 
 
@@ -242,6 +297,7 @@ def _build_leg(row: dict) -> WagerLeg:
         spread=row.get("AdjSpread") or None,
         total_points=row.get("AdjTotalPoints") or None,
         game_datetime=(row.get("GameDateTime") or "").strip() or None,
+        total_side=_total_side(desc, row.get("AdjTotalPoints") or None),
         outcome=_classify_leg_status(row.get("Outcome")),
         leg_amount_wagered=(row.get("LegAmountWagered") or 0) / 100.0,
         leg_to_win_amount=(row.get("LegToWinAmount") or 0) / 100.0,
@@ -279,23 +335,30 @@ def _classify_pending_wagers(
         is_parlay = wager_type == "P" or total_picks > 1
         legs = [_build_leg(r) for r in leg_rows]
         graded_count = sum(1 for l in legs if l.outcome in ("won", "lost", "push"))
-        open_count = sum(1 for l in legs if l.outcome == "open")
+        open_count = sum(1 for l in legs if l.outcome in ("open", "pending"))
         is_partial = graded_count > 0 and open_count > 0
-        # Summary tallies
-        if is_parlay:
+        is_free = (head.get("FreePlayFlag") or "").upper() == "Y"
+        # Summary tallies. Free plays are counted ONLY under free_play_count
+        # so the three type chips partition open_count instead of overlapping.
+        if is_free:
+            summary.free_play_count += 1
+        elif is_parlay:
             summary.parlay_count += 1
-            if is_partial:
-                summary.parlay_partial_count += 1
         else:
             summary.straight_count += 1
+        # Progress bucket. A single-leg ticket still has its second leg slot
+        # open; a multi-leg ticket has had that second leg taken.
+        if len(legs) > 1:
+            summary.fulfilled_count += 1
+        elif any(l.outcome == "won" for l in legs):
+            summary.won_open_slot_count += 1
+        else:
+            summary.pending_open_slot_count += 1
         summary.open_count += 1
         amount = (head.get("AmountWagered") or 0) / 100.0
         to_win = (head.get("ToWinAmount") or 0) / 100.0
         summary.open_amount_risked += amount
         summary.open_amount_to_win += to_win
-        is_free = (head.get("FreePlayFlag") or "").upper() == "Y"
-        if is_free:
-            summary.free_play_count += 1
         bet_type = _BET_TYPE_BY_WAGER_TYPE.get(wager_type, "parlay" if is_parlay else "straight")
         wagers_out.append(PendingWager(
             ticket_number=int(head.get("TicketNumber") or 0),
@@ -321,6 +384,23 @@ def _classify_pending_wagers(
     return summary, wagers_out
 
 
+def _snapshot_for_error(
+    cred: AccountCredential, exc: BaseException
+) -> AccountSnapshot:
+    """Backstop snapshot for an account whose fetch raised unexpectedly.
+
+    `fetch_account` is written never to raise, but the refresh gather runs
+    with return_exceptions=True so that an unanticipated error in one
+    account degrades to a single errored row instead of wiping the rollup.
+    """
+    return AccountSnapshot(
+        customer_id=cred.customer_id,
+        label=cred.label or cred.customer_id,
+        fetched_at=datetime.now(timezone.utc).isoformat(),
+        error=f"{type(exc).__name__}: {exc}",
+    )
+
+
 async def fetch_account(cred: AccountCredential) -> AccountSnapshot:
     """Authenticate, pull account info + pending wagers, return a snapshot.
     Errors are caught and stored in `snapshot.error` rather than raised."""
@@ -335,7 +415,7 @@ async def fetch_account(cred: AccountCredential) -> AccountSnapshot:
     )
     try:
         await client.authenticate()
-    except (Coral33AuthError, Coral33APIError) as e:
+    except (Coral33AuthError, Coral33APIError, RequestException) as e:
         snap.error = f"auth: {e}"
         return snap
     try:
@@ -357,7 +437,7 @@ async def fetch_account(cred: AccountCredential) -> AccountSnapshot:
         snap.available_balance = float(ai.get("AvailableBalance") or 0)
         snap.credit_limit = float(ai.get("CreditLimit") or 0)
         snap.wager_limit = float(ai.get("WagerLimit") or 0)
-    except Coral33APIError as e:
+    except (Coral33APIError, RequestException) as e:
         snap.error = f"getAccountInfo: {e}"
         return snap
     try:
@@ -371,7 +451,7 @@ async def fetch_account(cred: AccountCredential) -> AccountSnapshot:
         )
         snap.wagers = summary
         snap.pending_wagers = pending_wagers
-    except Coral33APIError as e:
+    except (Coral33APIError, RequestException) as e:
         # Non-fatal: balances are already populated, wager summary stays empty.
         logger.warning("Pending failed for %s: %s", cred.customer_id, e)
     return snap
@@ -399,7 +479,7 @@ async def fetch_account_history(
     )
     try:
         await client.authenticate()
-    except (Coral33AuthError, Coral33APIError) as e:
+    except (Coral33AuthError, Coral33APIError, RequestException) as e:
         logger.warning("history auth failed for %s: %s", cred.customer_id, e)
         return []
 
@@ -408,14 +488,16 @@ async def fetch_account_history(
     try:
         info = await client.post_form("getAccountInfo", {"RRO": "0"})
         agent_id = ((info.get("accountInfo") or {}).get("AgentID") or "").strip()
-    except Coral33APIError as e:
+    except (Coral33APIError, RequestException) as e:
         logger.warning("history agent lookup failed for %s: %s", cred.customer_id, e)
         return []
     if not agent_id:
         logger.warning("no AgentID for %s — cannot fetch history", cred.customer_id)
         return []
 
-    today = datetime.now(timezone.utc).date()
+    today = datetime.now(timezone.utc).astimezone(
+        ZoneInfo("America/Denver")
+    ).date()
     week_offsets = list(range(weeks_back - 1, -1, -1))
 
     # Fan out the 13 weekly figure calls in parallel. Each post_form
@@ -428,7 +510,7 @@ async def fetch_account_history(
                 "agentID": agent_id,
                 "week": str(week_offset),
             })
-        except Coral33APIError as e:
+        except (Coral33APIError, RequestException) as e:
             logger.warning(
                 "history fetch failed for %s @ week=%d: %s",
                 cred.customer_id, week_offset, e,
@@ -541,10 +623,19 @@ class AccountsScraper:
             self._refreshing = True
             try:
                 t0 = time.time()
-                snapshots = await asyncio.gather(
+                # return_exceptions=True: one account's transport blip
+                # must never take down the whole rollup. fetch_account
+                # already degrades into snap.error for known failures;
+                # this is the backstop for anything it didn't anticipate.
+                raw = await asyncio.gather(
                     *(fetch_account(c) for c in self._creds),
-                    return_exceptions=False,
+                    return_exceptions=True,
                 )
+                snapshots = [
+                    _snapshot_for_error(cred, res)
+                    if isinstance(res, BaseException) else res
+                    for cred, res in zip(self._creds, raw)
+                ]
                 self._cached = AccountsRollup(
                     snapshots=list(snapshots),
                     refreshed_at=datetime.now(timezone.utc).isoformat(),
@@ -561,11 +652,14 @@ class AccountsScraper:
                 if self._cache is not None:
                     try:
                         now = datetime.now(timezone.utc)
+                        local_date = now.astimezone(
+                            ZoneInfo("America/Denver")
+                        ).date().isoformat()
                         rows = [
                             {
                                 "customer_id": s.customer_id,
                                 "captured_at": now.isoformat(),
-                                "local_date": now.date().isoformat(),
+                                "local_date": local_date,
                                 "current_balance": float(s.current_balance),
                                 "pending": float(s.pending_wager_balance),
                                 "available": float(s.available_balance),
@@ -624,10 +718,18 @@ class AccountsScraper:
             if need_fetch:
                 results = await asyncio.gather(
                     *(fetch_account_history(c, weeks_back) for c in need_fetch),
-                    return_exceptions=False,
+                    return_exceptions=True,
                 )
                 stamp = datetime.now(timezone.utc).isoformat()
                 for cred, points in zip(need_fetch, results):
+                    if isinstance(points, BaseException):
+                        # Degrade this account to empty rather than 500 the
+                        # whole rollup — the other accounts still report.
+                        logger.warning(
+                            "history failed for %s: %s",
+                            cred.customer_id, points,
+                        )
+                        points = []
                     self._history[cred.customer_id] = (stamp, weeks_back, points)
             return {
                 cred.customer_id: self._history[cred.customer_id][2]
@@ -682,10 +784,16 @@ class AccountsScraper:
                 )
                 results = await asyncio.gather(
                     *(fetch_account_wager_log(c, weeks_back) for c in need_fetch),
-                    return_exceptions=False,
+                    return_exceptions=True,
                 )
                 stamp = datetime.now(timezone.utc).isoformat()
                 for cred, wagers in zip(need_fetch, results):
+                    if isinstance(wagers, BaseException):
+                        logger.warning(
+                            "wager_log failed for %s: %s",
+                            cred.customer_id, wagers,
+                        )
+                        continue
                     self._wager_log[cred.customer_id] = (stamp, weeks_back, wagers)
                     save_wager_log(cred.customer_id, wagers, weeks_back)
 

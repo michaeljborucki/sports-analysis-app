@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from typing import Iterable
 
 from .player_names import normalize_player_name
+from .venues import MAKER_OF, OPT_IN_BOOKS
+from functools import lru_cache
 
 
 logger = logging.getLogger(__name__)
@@ -63,6 +65,14 @@ def _check_outcome_name_collisions(rows: Iterable[dict]) -> None:
 _EXCLUDE_BOOKMAKERS: frozenset[str] = frozenset({"kalshi"})
 
 
+@lru_cache(maxsize=65536)
+def _canonical_cached_prop(name: str, sport: str, market_key: str = "") -> str:
+    player, _, side = name.rpartition(" ")
+    if player and side in ("Over", "Under"):
+        return f"{normalize_player_name(player, sport, market_key)} {side}"
+    return name
+
+
 def _encode_outcome_name(
     market_key: str, name: str, description: str | None, sport_key: str = "",
 ) -> str:
@@ -86,12 +96,23 @@ def _encode_outcome_name(
     if market_key.startswith(("pitcher_", "batter_", "player_")):
         # Cross-book canonicalization: fold + sport-scoped alias lookup.
         # Falls back to the folded description if no alias hit.
-        canon = normalize_player_name(description, sport_key)
+        canon = normalize_player_name(description, sport_key, market_key)
         return f"{canon} {name}" if canon else f"{description} {name}"
     # team_totals + alternate_team_totals + any period variant of those.
     if "team_totals" in market_key:
         return f"{description} {name}"
     return name
+
+
+def _link_maker_counterparts(prices: list[dict]) -> None:
+    """Cross-reference a venue's take and maker quotes on one outcome so
+    either leg can show the other (e.g. Novig take −135 · make −128)."""
+    by_book = {p["bookmaker_key"]: p for p in prices}
+    for taker, maker in MAKER_OF.items():
+        t, m = by_book.get(taker), by_book.get(maker)
+        if t is not None and m is not None:
+            t["counterpart_price_american"] = m["price_american"]
+            m["counterpart_price_american"] = t["price_american"]
 
 
 def normalize_odds_response(
@@ -181,6 +202,7 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
     """
     from .best_odds import best_price_dict, median_american_odds
     from .commissions import effective_american
+    from .market_config import is_prop_market
 
     # M7: outcome-name collision detection — log once per address per
     # process when two books emit different outcome_name strings for the
@@ -190,6 +212,10 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
 
     by_event: dict[str, dict] = {}
     for r in rows:
+        if is_prop_market(r["market_key"]):
+            canonical = _canonical_cached_prop(r["outcome_name"], r.get("sport_key", "mlb"), r["market_key"])
+            if canonical != r["outcome_name"]:
+                r = {**r, "outcome_name": canonical}
         ev = by_event.setdefault(r["event_id"], {
             "event_id": r["event_id"],
             "sport_key": r.get("sport_key", "mlb"),
@@ -205,7 +231,18 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
             ev["league_key"] = r["league_key"]
         if not ev["league_title"] and r.get("league_title"):
             ev["league_title"] = r["league_title"]
-        mk = ev["markets_by_key"].setdefault(r["market_key"], {})
+        market_key = r["market_key"]
+        numeric_prop = (
+            is_prop_market(market_key)
+            and r.get("outcome_point") is not None
+            and r["outcome_name"].endswith((" Over", " Under"))
+        )
+        is_alternate_prop = numeric_prop and market_key.endswith("_alternate")
+        if is_alternate_prop:
+            # The API expresses milestones as O/U thresholds (25+ => Over
+            # 24.5). Preserve that exact point; only merge the stat identity.
+            market_key = market_key.removesuffix("_alternate")
+        mk = ev["markets_by_key"].setdefault(market_key, {})
         out_key = (r["outcome_name"], r.get("outcome_point"))
         out = mk.setdefault(out_key, {
             "outcome_name": r["outcome_name"],
@@ -218,7 +255,7 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
         effective_price = effective_american(
             int(r["price_american"]), r["bookmaker_key"]
         )
-        out["prices"].append({
+        price = {
             "bookmaker_key": r["bookmaker_key"],
             "price_american": effective_price,
             "point": r.get("outcome_point"),
@@ -232,7 +269,17 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
             # Consumed by the arb scanner to clamp stake recommendations
             # on cross-venue opportunities.
             "max_stake_dollars": r.get("max_stake_dollars"),
-        })
+        }
+        if numeric_prop:
+            # Main and alternate feeds can repeat a book's same line. Use
+            # its newest quote once; at equal timestamps prefer the main.
+            by_book = out.setdefault("prop_prices", {})
+            priority = (fetched_at, not is_alternate_prop)
+            previous = by_book.get(r["bookmaker_key"])
+            if previous is None or priority > previous[0]:
+                by_book[r["bookmaker_key"]] = (priority, price)
+        else:
+            out["prices"].append(price)
         now_utc = now if now.tzinfo else now.replace(tzinfo=timezone.utc)
         age = max(0, int((now_utc - fetched_at).total_seconds()))
         if age > ev["stale_seconds"]:
@@ -245,8 +292,13 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
         for mk_key, outcomes in ev["markets_by_key"].items():
             out_list = []
             for out in outcomes.values():
-                best_price = best_price_dict(out["prices"])
-                consensus = median_american_odds([p["price_american"] for p in out["prices"]])
+                out["prices"].extend(p for _, p in out.get("prop_prices", {}).values())
+                _link_maker_counterparts(out["prices"])
+                # Opt-in books (novig_maker) are prices you'd post, not
+                # market prices — never the "best" or part of consensus.
+                market_prices = [p for p in out["prices"] if p["bookmaker_key"] not in OPT_IN_BOOKS]
+                best_price = best_price_dict(market_prices)
+                consensus = median_american_odds([p["price_american"] for p in market_prices])
                 out_list.append({
                     "outcome_name": out["outcome_name"],
                     "prices": out["prices"],

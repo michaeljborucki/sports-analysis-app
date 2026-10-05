@@ -4,8 +4,10 @@ import clsx from "clsx";
 
 import type { MarketOutcome, BookPrice } from "@/lib/api";
 import { formatAmerican } from "@/lib/format";
+import { Chip } from "@/components/ui";
 import { BookLogo } from "./book-logo";
 import { AnimatedPrice } from "./animated-price";
+import { bookHeaderTint } from "./odds-grid/grid-style";
 
 
 export interface MatrixRow {
@@ -32,21 +34,8 @@ export interface SideLabels {
 
 const DEFAULT_SIDE_LABELS: SideLabels = { over: "O", under: "U" };
 
-// Shared inline styles for cells that should respect the global density
-// mode. Wave 1 owns the vars themselves; we consume them here so rows
-// shrink/grow in lockstep with the Settings density toggle.
-const CELL_PAD_STYLE: React.CSSProperties = {
-  paddingInline: "var(--row-pad-x)",
-  paddingBlock: "var(--row-pad-y)",
-};
-// Header cells get the same paddings so column widths don't jump when the
-// user switches density mode.
-const HEADER_PAD_STYLE: React.CSSProperties = {
-  paddingInline: "var(--row-pad-x)",
-  paddingBlock: "var(--row-pad-y)",
-};
-// Price cells still need their per-book min-width control, which we keep
-// as a class on the <td>. Only the paddings migrate to vars.
+// Price cells keep a tighter inline padding than the .dt-td default so 20+
+// book columns stay scannable; block padding still follows density.
 const PRICE_PAD_STYLE: React.CSSProperties = {
   paddingInline: "calc(var(--row-pad-x) * 0.66)",
   paddingBlock: "var(--row-pad-y)",
@@ -84,17 +73,16 @@ function priceForBook(outcome: MarketOutcome | undefined, book: string): number 
  * Generic book-by-book matrix. Rows are user-defined (props: player+point;
  * alts: point variant). Columns are the visible-book set. Each cell shows
  * Over / Under prices for the row × book intersection. Best price per row is
- * tinted `text-price-up`. Missing entries render as em-dash.
+ * `edge` text on an `--edge-10` wash. Missing entries render as em-dash.
  *
  * Sticky first column and sticky header row, so horizontal scrolling with
  * 20+ books stays oriented.
  *
- * Row chrome (Wave 2):
- *   - Row paddings flex with `html[data-density]` via the --row-pad-* vars.
- *   - Hover lifts the row with a subtle bg tint plus a 2px left accent
- *     indicator. The indicator is rendered via `box-shadow: inset 2px 0 0`
- *     so it doesn't shift the row layout.
- *   - `prefers-reduced-motion` strips the transition timing.
+ * Row chrome:
+ *   - Cells use the density-aware .dt-th / .dt-td classes.
+ *   - Hover lifts the row with a subtle bg tint plus a 2px left marker on
+ *     the label cell (inset box-shadow, so no layout shift).
+ *   - Sharp-book columns get a `--sharp-20` header tint.
  */
 export function BookMatrixTable({
   rows,
@@ -130,7 +118,7 @@ export function BookMatrixTable({
         : emptyMessage;
     if (typeof content === "string") {
       return (
-        <div className="text-center text-text-3 py-16 text-sm">
+        <div className="py-16 text-center text-[length:var(--fs-13)] text-text-3">
           {content}
         </div>
       );
@@ -139,30 +127,24 @@ export function BookMatrixTable({
   }
 
   return (
-    <div className="border border-border-subtle rounded-md overflow-hidden bg-bg-0">
+    <div className="rounded-lg border border-border-subtle bg-bg-0 overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="text-xs border-collapse">
-          <thead className="bg-bg-1 text-text-2">
+        <table className="border-collapse">
+          <thead className="dt-head">
             <tr>
-              <th
-                className="sticky left-0 z-20 bg-bg-1 text-left font-medium uppercase tracking-wide text-[11px] min-w-[180px] border-r border-border-subtle"
-                style={HEADER_PAD_STYLE}
-              >
+              <th className="dt-th sticky left-0 z-20 min-w-[180px] bg-bg-1 border-r border-border-subtle">
                 {rowLabelHeader}
               </th>
               {sideMode !== "over" && sideMode !== "under" && (
                 <th
-                  className="sticky left-[180px] z-20 bg-bg-1 text-center font-medium uppercase tracking-wide text-[11px] w-[32px] border-r border-border-subtle"
-                  style={HEADER_PAD_STYLE}
-                >
-                  {/* Side column header (O/U) */}
-                </th>
+                  className="dt-th sticky left-[180px] z-20 w-[32px] bg-bg-1 text-center border-r border-border-subtle"
+                  aria-label="Side"
+                />
               )}
               {books.map(book => (
                 <th
                   key={book}
-                  className="font-medium uppercase tracking-wide text-[11px] min-w-[80px]"
-                  style={HEADER_PAD_STYLE}
+                  className={clsx("dt-th min-w-[80px] text-center", bookHeaderTint(book))}
                 >
                   <BookLogo bookKey={book} mode="label" />
                 </th>
@@ -232,48 +214,39 @@ const MatrixRowView = memo(function MatrixRowView({
         const outcome = side === "Over" ? row.over : row.under;
         const sideBest = side === "Over" ? bestOver : bestUnder;
         const isFirst = idx === 0;
-        const labelBgClass = row.isMain ? "bg-accent/5" : "bg-bg-0";
-        const rowBgClass = row.isMain ? "bg-accent/5" : "";
+        // Sticky cells must be opaque; the main line sits one step raised.
+        const labelBgClass = row.isMain ? "bg-bg-2" : "bg-bg-1";
         return (
           <tr
             key={`${row.key}-${side}`}
             className={clsx(
-              "group/matrixrow border-t border-border-subtle",
+              "group/matrixrow",
               "motion-safe:transition-colors motion-safe:duration-150",
-              "hover:bg-bg-1/60",
-              isFirst ? "border-t-2 border-border-subtle" : "",
-              rowBgClass,
+              "hover:bg-[rgb(var(--text-rgb)/0.03)]",
+              isFirst && "border-t border-border-subtle",
+              row.isMain && "bg-bg-1",
             )}
           >
             {isFirst && (
               <td
                 rowSpan={sides.length}
                 className={clsx(
-                  "sticky left-0 z-10 align-middle border-r border-border-subtle whitespace-nowrap",
+                  "dt-td sticky left-0 z-10 border-r border-border-subtle whitespace-nowrap",
                   "motion-safe:transition-shadow motion-safe:duration-150",
-                  "group-hover/matrixrow:[box-shadow:inset_2px_0_0_var(--accent-60)]",
+                  "group-hover/matrixrow:[box-shadow:inset_2px_0_0_var(--color-text-3)]",
                   labelBgClass,
                 )}
-                style={CELL_PAD_STYLE}
               >
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   {row.isMain && (
-                    <span
-                      className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider bg-accent/15 text-accent"
-                      title="Main line (posted by books as the mainline)"
-                    >
-                      MAIN
-                    </span>
+                    <Chip title="Main line (posted by books as the mainline)">Main</Chip>
                   )}
                   <div>
-                    <div className={clsx(
-                      "text-xs",
-                      row.isMain ? "text-text-1 font-medium" : "text-text-1"
-                    )}>
+                    <div className={clsx("text-text-1", row.isMain && "font-medium")}>
                       {row.label}
                     </div>
                     {row.sublabel && (
-                      <div className="text-text-3 text-[10px] tabular">
+                      <div className="text-[length:var(--fs-11)] leading-[var(--lh-11)] text-text-3">
                         {row.sublabel}
                       </div>
                     )}
@@ -284,10 +257,9 @@ const MatrixRowView = memo(function MatrixRowView({
             {sideMode === "both" && (
               <td
                 className={clsx(
-                  "sticky left-[180px] z-10 text-center text-[10px] uppercase tracking-wider text-text-3 border-r border-border-subtle",
+                  "dt-td sticky left-[180px] z-10 text-center text-[length:var(--fs-11)] text-text-3 border-r border-border-subtle",
                   labelBgClass,
                 )}
-                style={CELL_PAD_STYLE}
               >
                 {side === "Over" ? sideLabels.over : sideLabels.under}
               </td>
@@ -326,8 +298,8 @@ const MatrixCell = memo(function MatrixCell({
   return (
     <td
       className={clsx(
-        "text-center tabular",
-        isBest ? "text-price-up font-semibold" : "text-text-2",
+        "dt-td tabular text-center",
+        isBest ? "bg-[var(--edge-10)] font-semibold text-edge" : "text-text-1",
       )}
       style={PRICE_PAD_STYLE}
     >

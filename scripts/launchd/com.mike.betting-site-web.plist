@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.mike.betting-site-web</string>
+
+    <!--
+      Next.js production server on :3000. Serves the prebuilt web/.next —
+      it does NOT build. Rebuild after changing web/ code with
+      scripts/rebuild-web.sh (build + restart this agent).
+
+      Invokes node on next's own entrypoint rather than `npm run start` so
+      launchd supervises the server process itself, not an npm wrapper that
+      would swallow signals and confuse KeepAlive.
+    -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/node</string>
+        <string>/Users/mikeborucki/personal_workspace/betting-site/web/node_modules/next/dist/bin/next</string>
+        <string>start</string>
+        <string>--port</string>
+        <string>3000</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/mikeborucki/personal_workspace/betting-site/web</string>
+
+    <!-- next start shells out for some subprocesses; give it a sane PATH
+         since launchd agents inherit a near-empty one. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>NODE_ENV</key>
+        <string>production</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+
+    <key>StandardOutPath</key>
+    <string>/Users/mikeborucki/personal_workspace/betting-site/logs/launchd-web.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/mikeborucki/personal_workspace/betting-site/logs/launchd-web.err.log</string>
+</dict>
+</plist>

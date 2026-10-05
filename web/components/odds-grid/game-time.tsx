@@ -35,7 +35,7 @@ export function GameTime({ commenceTime }: { commenceTime: string }) {
   });
   return (
     <span className="tabular">
-      {dateLabel} · {time}
+      {dateLabel} {time}
     </span>
   );
 }

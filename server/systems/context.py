@@ -186,7 +186,18 @@ def scoreboard_date_key(games: list[EvaluationGame], fallback_date: date) -> str
         game.commence_time.astimezone(_ESPN_ZONE).date() for game in games
     })
     first, last = dates[0].strftime("%Y%m%d"), dates[-1].strftime("%Y%m%d")
-    return first if first == last else f"{first}-{last}"
+    # Always the range form, even for a single day. ESPN answers a BARE date
+    # with a ranked FBS-only subset, but answers the identical day written as
+    # a range with the real slate: 20260905 returns 25 events, 20260905-
+    # 20260905 returns 68. The bare form silently starved the matcher, which
+    # then blanked every context field for the games it could not find.
+    return f"{first}-{last}"
+
+
+def _is_single_day(date_key: str) -> bool:
+    """True when an ESPN date key covers exactly one day."""
+    start, _, end = date_key.partition("-")
+    return not end or start == end
 
 
 _MLB_CACHE: dict[str, tuple[float, tuple[dict[str, dict], list[str]]]] = {}
@@ -203,9 +214,41 @@ def _college_norm(name: str) -> str:
     return team_normalize(name)
 
 
+# ESPN's all-divisions group for college football. The scoreboard defaults
+# to FBS only; 90 returns FBS + FCS + below.
+_ESPN_CFB_ALL_DIVISIONS = "90"
+
 _P4_CONFERENCES = {1, 4, 5, 8}  # ACC, Big 12, Big Ten, SEC
 _G5_CONFERENCES = {12, 15, 17, 37, 151}  # CUSA, MAC, MWC, Sun Belt, AAC
 _FBS_CONFERENCES = _P4_CONFERENCES | _G5_CONFERENCES | {9, 18}
+
+# ESPN files Notre Dame under FBS Independents (18) alongside genuinely
+# non-power programs, so the conference id alone cannot classify it. Every
+# source these systems come from counts Notre Dame as Power 4 — without this
+# it is neither P4 nor G5, which silently drops it out of every rule phrased
+# in those terms. Keyed on the team id, not the conference, so UConn and the
+# other independents keep their own classification.
+_P4_INDEPENDENT_TEAM_IDS = {87}  # Notre Dame
+
+
+def _conference_class(
+    conference_id: int | None, team_id: int | None = None
+) -> str | None:
+    if team_id in _P4_INDEPENDENT_TEAM_IDS:
+        return "p4"
+    if conference_id in _P4_CONFERENCES:
+        return "p4"
+    if conference_id in _G5_CONFERENCES:
+        return "g5"
+    return None
+
+
+def _espn_team_id(team: dict) -> int | None:
+    raw = team.get("id")
+    try:
+        return int(raw) if raw is not None else None
+    except (TypeError, ValueError):
+        return None
 
 
 def football_scoreboard_context(
@@ -234,6 +277,15 @@ def football_scoreboard_context(
         context: dict = {
             "is_fbs_game": is_fbs,
             "week": event.get("week", {}).get("number") or week,
+            # A neutral field is a rule input, not a venue detail: several
+            # systems are defined only for showdowns on neutral turf.
+            "neutral_site": bool(competition.get("neutralSite")),
+            # Same-conference play. `None` when either side's conference is
+            # unknown, so "we could not tell" never reads as "non-conference".
+            "is_conference_game": (
+                conference_ids["home"] == conference_ids["away"]
+                if len(conference_ids) == 2 else None
+            ),
         }
         if event.get("id"):
             context["espn_event_id"] = event["id"]
@@ -241,10 +293,20 @@ def football_scoreboard_context(
             context["venue"] = competition["venue"]
         for side in ("home", "away"):
             conference_id = conference_ids.get(side)
-            context[f"{side}_conference_class"] = (
-                "p4" if conference_id in _P4_CONFERENCES
-                else "g5" if conference_id in _G5_CONFERENCES
-                else None
+            # The specific conference, kept alongside the P4/G5 bucket: rules
+            # like the ACC tight-matchup Under name one conference, and the
+            # bucket cannot answer them.
+            context[f"{side}_espn_team_id"] = _espn_team_id(sides[side].get("team") or {})
+            context[f"{side}_conference_id"] = conference_id
+            # Per side, unlike `is_fbs_game`, which is the AND of both. The
+            # Game 2 reactionary rules are about an FBS team drawing an FCS
+            # opponent, so they need to tell the two apart.
+            context[f"{side}_is_fbs"] = (
+                conference_id in _FBS_CONFERENCES
+                if conference_id is not None else None
+            )
+            context[f"{side}_conference_class"] = _conference_class(
+                conference_id, _espn_team_id(sides[side].get("team") or {})
             )
         additions[game.event_id] = context
     return additions
@@ -295,6 +357,309 @@ def college_games_played_context(
     return additions
 
 
+def _completed_results(
+    payloads: list[dict], index: TeamIndex
+) -> list[tuple[datetime, dict[str, dict]]]:
+    """Every finished game in `payloads`, keyed by team id, newest last.
+
+    One pass serves both reactionary systems (what a team did in its last
+    outing) and revenge systems (who beat whom), so the season scoreboard is
+    parsed once rather than once per question. `index` accumulates the team
+    aliases seen along the way, because the odds feed's spelling has to
+    resolve onto these same ids.
+    """
+    results: list[tuple[datetime, dict[str, dict]]] = []
+    for payload in payloads:
+        for event in payload.get("events", []):
+            competition = (event.get("competitions") or [{}])[0]
+            competitors = competition.get("competitors", [])
+            index_from_competitors(competitors, index)
+            if event.get("status", {}).get("type", {}).get("completed") is not True:
+                continue
+            event_date = event.get("date")
+            if not event_date or len(competitors) != 2:
+                continue
+            entries: dict[str, dict] = {}
+            for competitor in competitors:
+                team = competitor.get("team") or {}
+                team_id = competitor_id(team)
+                score = competitor.get("score")
+                if team_id is None or score is None:
+                    continue
+                try:
+                    points = int(float(score))
+                except (TypeError, ValueError):
+                    continue
+                conference_id = team.get("conferenceId")
+                entries[team_id] = {
+                    "points": points,
+                    "is_fbs": (
+                        int(conference_id) in _FBS_CONFERENCES
+                        if conference_id is not None else None
+                    ),
+                    "neutral_site": bool(competition.get("neutralSite")),
+                }
+            if len(entries) != 2:
+                continue
+            first, second = entries
+            entries[first]["opponent"] = second
+            entries[second]["opponent"] = first
+            results.append((_parse_dt(event_date), entries))
+    results.sort(key=lambda item: item[0])
+    return results
+
+
+def college_previous_game_context(
+    games: list[EvaluationGame], payload: dict,
+) -> dict[str, dict]:
+    """Each team's most recent completed outing before kickoff.
+
+    Feeds the Game 2 reactionary systems, which react to who a team just
+    played (FBS or FCS), whether it lost, and by how much. `*_previous_game_
+    played` is always present once the season feed loads: a team with nothing
+    behind it has played nothing, which is an ANSWER, not a data gap — Week 1
+    would otherwise report every college game as unevaluable.
+    """
+    index = TeamIndex()
+    results = _completed_results([payload], index)
+
+    additions: dict[str, dict] = {}
+    for game in games:
+        values: dict = {}
+        for side, name in (("home", game.home_team), ("away", game.away_team)):
+            team_id = index.resolve(name)
+            previous = None
+            if team_id is not None:
+                previous = next(
+                    (
+                        (played_at, entries)
+                        for played_at, entries in reversed(results)
+                        if team_id in entries and played_at < game.commence_time
+                    ),
+                    None,
+                )
+            if previous is None:
+                values.update({
+                    f"{side}_previous_game_played": False,
+                    f"{side}_previous_opponent_is_fbs": None,
+                    f"{side}_previous_game_won": None,
+                    f"{side}_previous_margin": None,
+                    f"{side}_previous_points": None,
+                    f"{side}_previous_points_allowed": None,
+                })
+                continue
+            _, entries = previous
+            own = entries[team_id]
+            opponent = entries[own["opponent"]]
+            values.update({
+                f"{side}_previous_game_played": True,
+                f"{side}_previous_opponent_is_fbs": opponent["is_fbs"],
+                f"{side}_previous_game_won": own["points"] > opponent["points"],
+                f"{side}_previous_margin": own["points"] - opponent["points"],
+                f"{side}_previous_points": own["points"],
+                f"{side}_previous_points_allowed": opponent["points"],
+            })
+        additions[game.event_id] = values
+    return additions
+
+
+def college_rankings_context(
+    games: list[EvaluationGame],
+    additions: dict[str, dict],
+    payload: dict,
+) -> dict[str, dict]:
+    """Whether each side is in the AP Top 25, keyed by ESPN team id.
+
+    Matching by id rather than by name because `football_scoreboard_context`
+    has already done the hard school-name resolution and stored the result;
+    re-resolving "Miami" against a poll payload would only reintroduce the
+    ambiguity. A team the scoreboard never matched reads as UNRANKED rather
+    than unknown: the poll is 25 names long, so absence really is an answer.
+    """
+    ranks: dict[int, int] = {}
+    for poll in payload.get("rankings", []):
+        name = (poll.get("name") or "") + " " + (poll.get("shortName") or "")
+        if poll.get("type") != "ap" and "AP" not in name:
+            continue
+        for entry in poll.get("ranks", []):
+            team_id = (entry.get("team") or {}).get("id")
+            current = entry.get("current")
+            if team_id is not None and current is not None:
+                ranks[int(team_id)] = int(current)
+        break
+
+    values: dict[str, dict] = {}
+    for game in games:
+        existing = additions.get(game.event_id, {})
+        entry: dict = {}
+        for side in ("home", "away"):
+            team_id = existing.get(f"{side}_espn_team_id")
+            rank = ranks.get(team_id) if team_id is not None else None
+            entry[f"{side}_is_ranked"] = rank is not None
+            entry[f"{side}_ap_rank"] = rank
+        values[game.event_id] = entry
+    return values
+
+
+def college_points_allowed_context(
+    games: list[EvaluationGame], payload: dict,
+) -> dict[str, dict]:
+    """Season-to-date points allowed per game, for the revenge system.
+
+    `None` before a team has played, which is a real coverage gap rather
+    than an answer: a team with no games has no scoring profile, and the
+    rule asks whether the opponent is ALLOWING 35+ per game. The evaluator
+    reports that as "unable to evaluate" in Week 0/1 and starts answering
+    once the season produces data.
+    """
+    index = TeamIndex()
+    results = _completed_results([payload], index)
+
+    values: dict[str, dict] = {}
+    for game in games:
+        entry: dict = {}
+        for side, name in (("home", game.home_team), ("away", game.away_team)):
+            team_id = index.resolve(name)
+            allowed = [
+                entries[entries[team_id]["opponent"]]["points"]
+                for played_at, entries in results
+                if team_id is not None and team_id in entries
+                and played_at < game.commence_time
+            ]
+            entry[f"{side}_ppg_allowed"] = (
+                sum(allowed) / len(allowed) if allowed else None
+            )
+        values[game.event_id] = entry
+    return values
+
+
+def nfl_prior_season_context(
+    games: list[EvaluationGame],
+    additions: dict[str, dict],
+    prior_payload: dict,
+    earlier_payload: dict,
+) -> dict[str, dict]:
+    """Last season's profile for each side, for the Week 1 systems.
+
+    Six of the Week 1 systems ask the same question in different words --
+    how did this team finish, how did it score, how did it lose -- so one
+    pass over the prior season's scoreboard answers all of them. The season
+    BEFORE that is needed only for the win-change system, which is defined
+    as a year-over-year drop.
+
+    Keyed by ESPN team id, which `nfl_scoreboard_context` has already
+    resolved. `None` for a team the scoreboard never matched, so an unmatched
+    team reads as a coverage gap rather than as a 0-win season.
+    """
+    def season_profile(payload: dict) -> dict[str, dict]:
+        # ESPN honours `seasontype` only when no explicit date range is
+        # given, and the range is what pins the request to one season -- so
+        # the postseason gets filtered HERE. Without this a deep playoff run
+        # reads as a 21-win season, and the Week 1 systems are defined
+        # against a 17-game year.
+        regular = {"events": [
+            event for event in payload.get("events", [])
+            if (event.get("season") or {}).get("type") == 2
+        ]}
+        index = TeamIndex()
+        totals: dict[str, dict] = {}
+        for _, entries in _completed_results([regular], index):
+            for team_id, own in entries.items():
+                opponent = entries[own["opponent"]]
+                margin = own["points"] - opponent["points"]
+                record = totals.setdefault(team_id, {
+                    "wins": 0, "losses": 0, "points_for": 0,
+                    "points_against": 0, "close_losses": 0, "games": 0,
+                })
+                record["games"] += 1
+                record["points_for"] += own["points"]
+                record["points_against"] += opponent["points"]
+                if margin > 0:
+                    record["wins"] += 1
+                elif margin < 0:
+                    record["losses"] += 1
+                    # A tie is neither a win nor a close loss.
+                    if abs(margin) <= 8:
+                        record["close_losses"] += 1
+        return totals
+
+    prior = season_profile(prior_payload)
+    earlier = season_profile(earlier_payload)
+
+    values: dict[str, dict] = {}
+    for game in games:
+        existing = additions.get(game.event_id, {})
+        entry: dict = {}
+        for side in ("home", "away"):
+            team_id = existing.get(f"{side}_espn_team_id")
+            record = prior.get(str(team_id)) if team_id is not None else None
+            if not record or not record["games"]:
+                entry.update({
+                    f"{side}_prior_season_wins": None,
+                    f"{side}_prior_season_win_pct": None,
+                    f"{side}_prior_season_ppg": None,
+                    f"{side}_prior_season_ppg_allowed": None,
+                    f"{side}_prior_season_close_losses": None,
+                    f"{side}_prior_season_win_change": None,
+                })
+                continue
+            decisions = record["wins"] + record["losses"]
+            before = earlier.get(str(team_id))
+            entry.update({
+                f"{side}_prior_season_wins": record["wins"],
+                f"{side}_prior_season_win_pct": (
+                    record["wins"] / decisions if decisions else None
+                ),
+                f"{side}_prior_season_ppg": record["points_for"] / record["games"],
+                f"{side}_prior_season_ppg_allowed": (
+                    record["points_against"] / record["games"]
+                ),
+                f"{side}_prior_season_close_losses": record["close_losses"],
+                f"{side}_prior_season_win_change": (
+                    record["wins"] - before["wins"] if before else None
+                ),
+            })
+        values[game.event_id] = entry
+    return values
+
+
+def college_revenge_context(
+    games: list[EvaluationGame], payloads: list[dict],
+) -> dict[str, dict]:
+    """Which side, if either, is avenging a loss to today's opponent.
+
+    Revenge is a loss to THIS opponent in the prior or current season, so the
+    caller passes both seasons' scoreboards. As with `college_previous_game_
+    context`, an absence is an answer: no recorded loss means no revenge.
+    """
+    index = TeamIndex()
+    results = _completed_results(payloads, index)
+    losses: set[tuple[str, str]] = set()
+    for _, entries in results:
+        (first, first_entry), (second, second_entry) = entries.items()
+        if first_entry["points"] == second_entry["points"]:
+            continue
+        loser, winner = (
+            (first, second) if first_entry["points"] < second_entry["points"]
+            else (second, first)
+        )
+        losses.add((loser, winner))
+
+    additions: dict[str, dict] = {}
+    for game in games:
+        home_id = index.resolve(game.home_team)
+        away_id = index.resolve(game.away_team)
+        additions[game.event_id] = {
+            "home_revenge": bool(
+                home_id and away_id and (home_id, away_id) in losses
+            ),
+            "away_revenge": bool(
+                home_id and away_id and (away_id, home_id) in losses
+            ),
+        }
+    return additions
+
+
 def _scoreboard_index(
     payload: dict,
 ) -> tuple[TeamIndex, dict[tuple[str, str], tuple[dict, dict]]]:
@@ -340,6 +705,7 @@ def nfl_scoreboard_context(
     payload: dict,
     division_by_team_id: dict[int, str],
     prior_playoff_team_ids: set[int],
+    conference_by_team_id: dict[int, str] | None = None,
 ) -> dict[str, dict]:
     index, events = _scoreboard_index(payload)
     additions: dict[str, dict] = {}
@@ -355,10 +721,20 @@ def nfl_scoreboard_context(
         week = event.get("week", {}).get("number") or payload.get("week", {}).get("number")
         home_division = division_by_team_id.get(home_id)
         away_division = division_by_team_id.get(away_id)
+        conferences = conference_by_team_id or {}
+        home_conference = conferences.get(home_id)
+        away_conference = conferences.get(away_id)
         additions[game.event_id] = {
             "season_type": season_types.get(season_type_id),
             "week": week,
             "is_divisional": bool(home_division and home_division == away_division),
+            # AFC vs NFC. `None` when either side's conference is unknown, so
+            # "we could not tell" never reads as "non-conference" -- the Week 1
+            # pick'em fade is defined only for interconference games.
+            "is_conference_game": (
+                home_conference == away_conference
+                if home_conference and away_conference else None
+            ),
             "away_made_playoffs_previous_season": away_id in prior_playoff_team_ids,
             "home_espn_team_id": home_id,
             "away_espn_team_id": away_id,
@@ -402,17 +778,22 @@ def college_team_directory_context(
         if not home or not away:
             continue
         is_fbs = home.get("parent_group_id") == 80 and away.get("parent_group_id") == 80
+        home_conference = home.get("conference_id")
+        away_conference = away.get("conference_id")
         additions[game.event_id] = {
             "is_fbs_game": is_fbs,
             "week": week,
-            "home_conference_class": (
-                "p4" if home.get("conference_id") in _P4_CONFERENCES
-                else "g5" if home.get("conference_id") in _G5_CONFERENCES else None
+            "home_conference_id": home_conference,
+            "away_conference_id": away_conference,
+            "home_is_fbs": home.get("parent_group_id") == 80,
+            "away_is_fbs": away.get("parent_group_id") == 80,
+            "is_conference_game": (
+                home_conference == away_conference
+                if home_conference is not None and away_conference is not None
+                else None
             ),
-            "away_conference_class": (
-                "p4" if away.get("conference_id") in _P4_CONFERENCES
-                else "g5" if away.get("conference_id") in _G5_CONFERENCES else None
-            ),
+            "home_conference_class": _conference_class(home_conference, home_id),
+            "away_conference_class": _conference_class(away_conference, away_id),
         }
     return additions
 
@@ -522,10 +903,25 @@ async def football_schedule_enricher(
             if not sport_games:
                 continue
             date_key = scoreboard_date_key(sport_games, requested_date)
-            async def load_scoreboard(path: str = path) -> dict:
+            async def load_scoreboard(path: str = path, sport: str = sport) -> dict:
+                params = {"dates": date_key, "limit": 1000}
+                if sport == "ncaaf":
+                    # All divisions. The default view is FBS-only, so an FCS
+                    # matchup (Presbyterian @ Mercer) was absent from the
+                    # payload entirely and could never match. Verified against
+                    # a live slate: widening adds events without making any
+                    # previously-resolved name ambiguous.
+                    params["groups"] = _ESPN_CFB_ALL_DIVISIONS
                 response = await client.get(
                     f"https://site.api.espn.com/apis/site/v2/sports/football/{path}/scoreboard",
-                    params={"dates": date_key, "limit": 300},
+                    # 1,000, not 300: the Upcoming tab asks for one range
+                    # spanning the rest of the season, and a college range
+                    # that wide runs to ~870 events. At 300 every game past
+                    # roughly Week 4 fell out of the scoreboard into the
+                    # directory fallback, which had no week of its own and
+                    # stamped them all Week 1 — putting November games in
+                    # front of rules that only speak about opening weekend.
+                    params=params,
                 )
                 response.raise_for_status()
                 return response.json()
@@ -550,8 +946,23 @@ async def football_schedule_enricher(
                 cfb_additions = football_scoreboard_context(sport_games, payload)
                 unmatched = [game for game in sport_games if game.event_id not in cfb_additions]
                 if unmatched:
+                    # The scoreboard's own week number describes the CURRENT
+                    # week, so it only speaks for a single-date request. Over
+                    # a real range it would be a guess, and a wrong week
+                    # silently qualifies opening-week rules; None leaves those
+                    # games visibly unevaluated instead.
+                    #
+                    # Test the endpoints, not the string: date_key is now
+                    # always written as a range (ESPN truncates a bare date),
+                    # so a one-day slate looks like "20260905-20260905" and a
+                    # `"-" in date_key` check would discard a week number that
+                    # is in fact exact.
+                    fallback_week = (
+                        payload.get("week", {}).get("number")
+                        if _is_single_day(date_key) else None
+                    )
                     fallback, fallback_warnings = await _college_directory_fallback(
-                        unmatched, payload.get("week", {}).get("number"),
+                        unmatched, fallback_week,
                         requested_date, client, context_cache,
                     )
                     cfb_additions.update(fallback)
@@ -580,7 +991,11 @@ async def football_schedule_enricher(
                 async def load_cfb_history() -> dict:
                     response = await client.get(
                         "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard",
-                        params={"dates": history_date_key, "limit": 1000},
+                        params={
+                            "dates": history_date_key,
+                            "limit": 1000,
+                            "groups": _ESPN_CFB_ALL_DIVISIONS,
+                        },
                     )
                     response.raise_for_status()
                     return response.json()
@@ -605,6 +1020,43 @@ async def football_schedule_enricher(
                 )
                 for event_id, values in games_played.items():
                     cfb_additions.setdefault(event_id, {}).update(values)
+                previous_games = college_previous_game_context(
+                    sport_games, history_payload
+                )
+                for event_id, values in previous_games.items():
+                    cfb_additions.setdefault(event_id, {}).update(values)
+
+                # Free: the season history is already in hand, so the revenge
+                # system's "allowing 35+ PPG" test costs no extra request.
+                points_allowed = college_points_allowed_context(
+                    sport_games, history_payload
+                )
+                for event_id, values in points_allowed.items():
+                    cfb_additions.setdefault(event_id, {}).update(values)
+
+                rankings_payload, ranking_warnings = await _college_rankings(
+                    requested_date, client, context_cache
+                )
+                warnings.extend(ranking_warnings)
+                if rankings_payload:
+                    rankings = college_rankings_context(
+                        sport_games, cfb_additions, rankings_payload
+                    )
+                    for event_id, values in rankings.items():
+                        cfb_additions.setdefault(event_id, {}).update(values)
+
+                prior_season_payloads, revenge_warnings = (
+                    await _prior_season_results(
+                        requested_date.year, client, context_cache
+                    )
+                )
+                warnings.extend(revenge_warnings)
+                if prior_season_payloads:
+                    revenge = college_revenge_context(
+                        sport_games, [*prior_season_payloads, history_payload]
+                    )
+                    for event_id, values in revenge.items():
+                        cfb_additions.setdefault(event_id, {}).update(values)
                 additions.update(cfb_additions)
                 weather_values, weather_warnings = await _football_weather_context(
                     sport_games, cfb_additions, requested_date, client, context_cache
@@ -619,6 +1071,150 @@ async def football_schedule_enricher(
                 additions.update(nfl_values)
                 warnings.extend(nfl_warnings)
     return additions, warnings
+
+
+# The prior college season, in month-sized bites. ESPN pages a scoreboard
+# range at 1,000 events and gives no truncation signal, and a full FBS+FCS
+# season runs past 1,400 games — one whole-season request would silently
+# drop the tail, which for a revenge rule means silently forgetting a loss.
+_PRIOR_SEASON_CHUNKS = (
+    ("aug-sep", "0801", "0930", 0),
+    ("oct", "1001", "1031", 0),
+    ("nov", "1101", "1130", 0),
+    ("dec-feb", "1201", "0215", 1),
+)
+
+
+async def _prior_season_results(
+    season_year: int,
+    client: httpx.AsyncClient,
+    context_cache: SystemContextCache | None,
+) -> tuple[list[dict], list[str]]:
+    """Last season's completed college games, for the revenge systems.
+
+    Cached against a fixed effective date rather than today's, because the
+    payload is a property of the season and never of the day it is read —
+    keying it on `requested_date` would refetch the whole prior season every
+    morning for an answer that cannot have changed.
+    """
+    prior = season_year - 1
+    effective = date(prior, 8, 1)
+    payloads: list[dict] = []
+    warnings: list[str] = []
+    for label, start, end, end_year_offset in _PRIOR_SEASON_CHUNKS:
+        date_key = f"{prior}{start}-{prior + end_year_offset}{end}"
+
+        async def load_chunk(date_key: str = date_key) -> dict:
+            response = await client.get(
+                "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard",
+                params={"dates": date_key, "limit": 1000},
+            )
+            response.raise_for_status()
+            return response.json()
+
+        if context_cache:
+            cached = await context_cache.get_or_refresh(
+                "espn", f"ncaaf:prior-season:{prior}:{label}", effective,
+                timedelta(days=7), load_chunk,
+            )
+            if cached.warning:
+                warnings.append(cached.warning)
+            if cached.payload:
+                payloads.append(cached.payload)
+        else:
+            try:
+                payloads.append(await load_chunk())
+            except Exception as exc:
+                detail = str(exc).strip() or type(exc).__name__
+                warnings.append(
+                    f"Prior-season context unavailable ({label}): {detail}"
+                )
+    return payloads, warnings
+
+
+async def _college_rankings(
+    requested_date: date,
+    client: httpx.AsyncClient,
+    context_cache: SystemContextCache | None,
+) -> tuple[dict | None, list[str]]:
+    """This week's AP Top 25.
+
+    Cached for six hours: the poll moves once a week (Sunday), so a shorter
+    window would just re-fetch a fixed answer, and a longer one could serve
+    Monday's readers last week's poll.
+    """
+    warnings: list[str] = []
+
+    async def load_rankings() -> dict:
+        response = await client.get(
+            "https://site.api.espn.com/apis/site/v2/sports/football/college-football/rankings"
+        )
+        response.raise_for_status()
+        return response.json()
+
+    if context_cache:
+        cached = await context_cache.get_or_refresh(
+            "espn", f"ncaaf:rankings:{requested_date.isoformat()}",
+            requested_date, timedelta(hours=6), load_rankings,
+        )
+        if cached.warning:
+            warnings.append(cached.warning)
+        return cached.payload, warnings
+    try:
+        return await load_rankings(), warnings
+    except Exception as exc:
+        detail = str(exc).strip() or type(exc).__name__
+        warnings.append(f"AP poll unavailable: {detail}")
+        return None, warnings
+
+
+async def _nfl_prior_seasons(
+    season_year: int,
+    client: httpx.AsyncClient,
+    context_cache: SystemContextCache | None,
+) -> tuple[dict, dict, list[str]]:
+    """The two completed seasons behind `season_year`.
+
+    An NFL regular season is ~272 games, comfortably inside ESPN's 1,000
+    event page, so unlike college each season is a single request. Cached
+    against a fixed effective date because a finished season cannot change.
+    """
+    warnings: list[str] = []
+    payloads: list[dict] = []
+    for offset in (1, 2):
+        season = season_year - offset
+
+        async def load_season(season: int = season) -> dict:
+            response = await client.get(
+                "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",
+                params={
+                    # A season spans the new year, so this is a range, not a
+                    # year: `dates=2025` would return calendar 2025, which is
+                    # the tail of one season and the front of the next.
+                    "dates": f"{season}0901-{season + 1}0215",
+                    "seasontype": 2,
+                    "limit": 1000,
+                },
+            )
+            response.raise_for_status()
+            return response.json()
+
+        if context_cache:
+            cached = await context_cache.get_or_refresh(
+                "espn", f"nfl:season-results:{season}", date(season, 8, 1),
+                timedelta(days=3650), load_season,
+            )
+            if cached.warning:
+                warnings.append(cached.warning)
+            payloads.append(cached.payload or {})
+        else:
+            try:
+                payloads.append(await load_season())
+            except Exception as exc:
+                detail = str(exc).strip() or type(exc).__name__
+                warnings.append(f"NFL {season} results unavailable: {detail}")
+                payloads.append({})
+    return payloads[0], payloads[1], warnings
 
 
 async def _college_directory_fallback(
@@ -799,7 +1395,7 @@ async def _nfl_context(
             if team.get("id"):
                 teams[int(team["id"])] = team.get("abbreviation") or team["id"]
 
-    async def team_division(team_id: int, abbreviation: str) -> tuple[int, str | None]:
+    async def team_division(team_id: int, abbreviation: str) -> tuple[int, str | None, str | None]:
         async def load_team() -> dict:
             response = await client.get(
                 f"https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/{abbreviation.lower()}"
@@ -816,13 +1412,22 @@ async def _nfl_context(
             payload = cached.payload
         else:
             payload = await load_team()
-        group_id = payload.get("team", {}).get("groups", {}).get("id")
-        return team_id, str(group_id) if group_id is not None else None
+        groups = payload.get("team", {}).get("groups", {}) or {}
+        group_id = groups.get("id")
+        # The division's parent group IS the conference, so AFC/NFC comes
+        # free from a request we already make for the division.
+        parent_id = (groups.get("parent") or {}).get("id")
+        return (
+            team_id,
+            str(group_id) if group_id is not None else None,
+            str(parent_id) if parent_id is not None else None,
+        )
 
-    division_pairs = await asyncio.gather(*[
+    division_rows = await asyncio.gather(*[
         team_division(team_id, abbreviation) for team_id, abbreviation in teams.items()
     ])
-    division_by_team = dict(division_pairs)
+    division_by_team = {row[0]: row[1] for row in division_rows}
+    conference_by_team = {row[0]: row[2] for row in division_rows}
 
     previous_season = requested_date.year - 1
     async def load_playoffs() -> dict:
@@ -855,7 +1460,20 @@ async def _nfl_context(
     else:
         playoff_payload = await load_playoffs()
     playoff_ids = {int(value) for value in playoff_payload.get("team_ids", [])}
-    additions = nfl_scoreboard_context(games, scoreboard, division_by_team, playoff_ids)
+    additions = nfl_scoreboard_context(
+        games, scoreboard, division_by_team, playoff_ids, conference_by_team
+    )
+
+    # Last season's profile answers six of the Week 1 systems at once, and
+    # the season before it supplies the year-over-year win change.
+    prior_payload, earlier_payload, prior_warnings = await _nfl_prior_seasons(
+        requested_date.year, client, context_cache
+    )
+    warnings.extend(prior_warnings)
+    for event_id, values in nfl_prior_season_context(
+        games, additions, prior_payload, earlier_payload
+    ).items():
+        additions.setdefault(event_id, {}).update(values)
 
     if games:
         async def load_harbaugh() -> dict:
@@ -942,6 +1560,46 @@ def was_swept_in_previous_home_series(history: list[dict]) -> bool | None:
     return all(not item.get("won") for item in series)
 
 
+def mlb_road_trip_context(
+    games: list[EvaluationGame],
+    schedule_games: list[dict],
+    requested_date: date,
+) -> dict[str, dict]:
+    """Whether today's game is the last stop of a road trip, per side.
+
+    The series-finale road-dog system is only profitable on the subset that
+    is heading home afterwards (+9.6% ROI, versus +1.6% for every series
+    finale), so this is the field the whole system turns on. It needs the
+    NEXT game rather than the last one, which is why the schedule window
+    runs past today.
+
+    `None` when the window holds no later game -- an unknown, not a "no".
+    A team playing at home today is not on a road trip at all, so `False`.
+    """
+    upcoming: dict[str, list[tuple[str, bool]]] = defaultdict(list)
+    for entry in schedule_games:
+        official = entry.get("officialDate")
+        if not official or official <= requested_date.isoformat():
+            continue
+        for side in ("home", "away"):
+            key = _norm(entry["teams"][side]["team"]["name"])
+            upcoming[key].append((official, side == "home"))
+    for schedule in upcoming.values():
+        schedule.sort()
+
+    values: dict[str, dict] = {}
+    for game in games:
+        entry: dict = {}
+        for side, name in (("home", game.home_team), ("away", game.away_team)):
+            if side == "home":
+                entry["home_ends_road_trip"] = False
+                continue
+            schedule = upcoming.get(_norm(name), [])
+            entry["away_ends_road_trip"] = schedule[0][1] if schedule else None
+        values[game.event_id] = entry
+    return values
+
+
 async def mlb_stats_enricher(
     games: list[EvaluationGame], requested_date: date,
     *, context_cache: SystemContextCache | None = None,
@@ -950,9 +1608,12 @@ async def mlb_stats_enricher(
     if not mlb_games:
         return {}, []
     start = requested_date - timedelta(days=35)
+    # Reaches a week PAST today so the road-trip lookahead can see the next
+    # game. Same single request; only the window grew.
+    end = requested_date + timedelta(days=7)
     params = {
         "sportId": "1", "startDate": start.isoformat(),
-        "endDate": requested_date.isoformat(), "hydrate": "team,linescore",
+        "endDate": end.isoformat(), "hydrate": "team,linescore",
     }
     warnings: list[str] = []
     async with httpx.AsyncClient(timeout=15.0) as client:
@@ -973,7 +1634,7 @@ async def mlb_stats_enricher(
 
         if context_cache:
             schedule_cached, standings_cached, calendar_cached = await asyncio.gather(
-                context_cache.get_or_refresh("mlb_stats", f"schedule:{start}:{requested_date}", requested_date, timedelta(minutes=5), load_schedule),
+                context_cache.get_or_refresh("mlb_stats", f"schedule:{start}:{end}", requested_date, timedelta(minutes=5), load_schedule),
                 context_cache.get_or_refresh("mlb_stats", f"standings:{requested_date.year}", requested_date, timedelta(minutes=15), load_standings),
                 context_cache.get_or_refresh("mlb_stats", f"all_star:{requested_date.year}", date(requested_date.year, 1, 1), timedelta(days=7), load_calendar),
             )
@@ -1059,6 +1720,9 @@ async def mlb_stats_enricher(
                 context[f"{side}_series_losses"] = sum(not item["won"] for item in prior_series[-max((number or 1) - 1, 0):]) if number and number > 1 else 0
         else:
             context["series_game_number"] = context["series_length"] = None
+        context.update(
+            mlb_road_trip_context([game], schedule_games, requested_date)[game.event_id]
+        )
         context["home_first_game_back"] = context.get("home_previous_game_was_home") is False
         context["away_was_swept_home"] = was_swept_in_previous_home_series(
             histories.get(away_key, [])

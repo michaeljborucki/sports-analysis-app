@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 # its prices are themselves the offered (vigged) lines we're measuring
 # CLV against. Including it would bias the fair line toward coral33's own
 # vig.
-_EXCLUDE_BOOKS = frozenset({"coral33"})
+_EXCLUDE_BOOKS = frozenset({"coral33", "novig_maker"})  # novig_maker: a price you would post, not a market price
 
 
 def _bucket_key(market_key: str, outcome_name: str, outcome_point: float | None) -> object:

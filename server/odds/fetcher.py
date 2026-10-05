@@ -42,6 +42,15 @@ ODDS_API_CONCURRENCY = max(1, int(os.environ.get("ODDS_API_CONCURRENCY", "4")))
 _RESOLVED_KEYS_TTL = timedelta(hours=24)
 
 
+# Odds API keys that only carry game lines (h2h/spreads/totals) in practice,
+# so the per-event tiers (alternates/periods/player_props) would just burn
+# quota on empty 422s. Events tagged with one of these keys are fetched on the
+# MAIN tier only — the per-event tiers skip them. This is how a game-lines-only
+# slate can fold into a full-market sport (e.g. NBA Summer League folded into
+# the `nba` sport, which otherwise pulls halves/quarters/props).
+GAME_LINES_ONLY_KEYS = frozenset({"basketball_nba_summer_league"})
+
+
 class FetcherRegistry:
     """Multi-sport, multi-tier fetcher. One APScheduler job per (sport, tier).
 
@@ -436,7 +445,7 @@ class FetcherRegistry:
 
     async def _run_per_event(self, sport: Sport, tier: TierConfig) -> None:
         window = tier.games_window_hours or 36
-        events = self.cache.distinct_events(
+        events = await self.cache.distinct_events_async(
             within_hours_ahead=window, sport_key=sport.key
         )
         if not events:
@@ -455,6 +464,11 @@ class FetcherRegistry:
                 if not resolved_fallback:
                     return 0, {}
                 api_key = resolved_fallback[0]
+            # Game-lines-only slates (e.g. NBA Summer League) never post
+            # alternates/periods — skip the per-event call so we don't spend
+            # quota on guaranteed-empty 422s.
+            if api_key in GAME_LINES_ONLY_KEYS:
+                return 0, {}
             async with self._sem:
                 try:
                     data, rate = await self.client.fetch_event_markets(
@@ -510,7 +524,7 @@ class FetcherRegistry:
 
     async def _run_props(self, sport: Sport, tier: TierConfig) -> None:
         window = tier.games_window_hours or 3
-        events = self.cache.distinct_events(
+        events = await self.cache.distinct_events_async(
             within_hours_ahead=window, sport_key=sport.key
         )
         if not events:
@@ -530,6 +544,10 @@ class FetcherRegistry:
                 if not resolved_fallback:
                     return 0, {}
                 api_key = resolved_fallback[0]
+            # Game-lines-only slates (e.g. NBA Summer League) never post player
+            # props — skip so we don't spend quota on guaranteed-empty 422s.
+            if api_key in GAME_LINES_ONLY_KEYS:
+                return 0, {}
             async with self._sem:
                 try:
                     data, rate = await self.client.fetch_event_markets(

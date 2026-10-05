@@ -50,6 +50,11 @@ logger = logging.getLogger(__name__)
 # CPU and server scanner load.
 FLUSH_INTERVAL_S = 1.0
 
+# Direct-book websocket/poller writes can be effectively continuous. In
+# betting-db read mode they should refresh derived scanner views promptly,
+# but never at the old one-request-per-second cadence.
+DIRECT_BOOK_FLUSH_INTERVAL_S = 15.0
+
 # Idle keepalive so proxies / NAT translators don't drop the SSE
 # connection. 15s is well inside every common idle-timeout default.
 HEARTBEAT_INTERVAL_S = 15.0
@@ -69,9 +74,11 @@ _subscribers: "set[asyncio.Queue[dict[str, Any]]]" = set()
 # flush_loop's read-and-clear is safe with concurrent writes — a write
 # between the read and clear is captured on the next flush iteration.
 _pending_dirty: bool = False
+_pending_types: set[str] = set()
+_last_emitted_at: dict[str, float] = {}
 
 
-def mark_dirty() -> None:
+def mark_dirty(event_type: str = "tick") -> None:
     """Signal that the odds cache has changed.
 
     Cheap (sets a boolean). Safe to call from any context — sync code,
@@ -85,6 +92,31 @@ def mark_dirty() -> None:
     """
     global _pending_dirty
     _pending_dirty = True
+    _pending_types.add(event_type)
+
+
+def _flush_pending(*, now: float | None = None) -> None:
+    """Broadcast every eligible pending invalidation type.
+
+    Types whose debounce window has not elapsed remain pending.  This means a
+    continuous direct-book stream produces one event per window without
+    losing the final change that arrived during the previous window.
+    """
+    global _pending_dirty
+    ts = time.monotonic() if now is None else now
+    for event_type in list(_pending_types):
+        min_interval = (
+            DIRECT_BOOK_FLUSH_INTERVAL_S
+            if event_type == "direct_books_changed"
+            else 0.0
+        )
+        last = _last_emitted_at.get(event_type)
+        if last is not None and ts - last < min_interval:
+            continue
+        _pending_types.discard(event_type)
+        _last_emitted_at[event_type] = ts
+        _broadcast({"type": event_type, "ts": time.time()})
+    _pending_dirty = bool(_pending_types)
 
 
 def subscribe() -> "asyncio.Queue[dict[str, Any]]":
@@ -139,7 +171,7 @@ def publish(event: dict[str, Any]) -> None:
     """Broadcast a typed event to every subscriber IMMEDIATELY.
 
     Distinct from mark_dirty(), which is the dumb-tick coalescing path used
-    by cache writers. Callers (currently: the sidecar orchestrator) own the
+    by cache writers. Callers own the
     event shape — convention is to set event['type'] so consumers can
     discriminate. The SSE writer in server/api/stream.py emits whatever
     dict it receives, so no parser changes are needed.
@@ -165,10 +197,7 @@ async def flush_loop() -> None:
         try:
             await asyncio.sleep(FLUSH_INTERVAL_S)
             if _pending_dirty:
-                # Clear before broadcast so any mark_dirty during the
-                # broadcast is captured for the next flush iteration.
-                _pending_dirty = False
-                _broadcast({"type": "tick", "ts": time.time()})
+                _flush_pending()
         except asyncio.CancelledError:
             logger.info("SSE flush_loop cancelled")
             raise
@@ -200,3 +229,5 @@ def _reset_for_tests() -> None:
     global _pending_dirty
     _subscribers.clear()
     _pending_dirty = False
+    _pending_types.clear()
+    _last_emitted_at.clear()

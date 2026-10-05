@@ -1,5 +1,11 @@
 {
-  "disabled_sports": [],
+  "disabled_sports": [
+    "asian_baseball",
+    "baseball_ncaa",
+    "cricket",
+    "nhl",
+    "soccer"
+  ],
   "disabled_markets": {
     "mlb": [
       "batter_doubles",
@@ -12,7 +18,6 @@
   },
   "visible_books": [
     "ballybet",
-    "betmgm",
     "betrivers",
     "caesars",
     "coral33",
@@ -21,11 +26,10 @@
     "fanatics",
     "fanduel",
     "hardrockbet",
-    "kalshi",
+    "novig",
     "polymarket",
     "prophetexchange",
     "prophetx",
-    "sporttrade",
     "williamhill_us"
   ]
 }

@@ -1,18 +1,21 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter
 from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
 
-from ..models import FetcherStatus, Game, Pick
+from ..models import FetcherStatus, Game
 from ..odds.arbitrage import scan_all_arbs
 from ..odds.cache import OddsCache
+from ..odds.coalesce import memoized_coalesced
 from ..odds.fetcher import FetcherRegistry
+from ..odds.latest_snapshot import LatestOddsSnapshotService, OddsSnapshot
 from ..odds.market_config import is_prop_market
 from ..odds.normalize import rows_to_games
-from ..picks.reader import PicksReader
 from ..sports import Sport
+from ..util import TTLCache
 from .arbitrage import ArbOpportunity
 
 
@@ -21,14 +24,11 @@ class SportSummary(BaseModel):
     label: str
     upcoming_games: int        # total games in the next 36h
     starting_in_3h: int        # starting within the props-window
-    picks_today: int
-    bet_card_date: str | None = None
 
 
 class DashboardResponse(BaseModel):
     sports: list[SportSummary]
     top_arbs: list[ArbOpportunity]
-    top_picks: list[Pick]          # highest-edge picks, cross-sport
     upcoming_games: list[Game]     # games starting in the next 3h, all sports
     fetcher: FetcherStatus
     scanned_at: datetime
@@ -41,45 +41,66 @@ SOON_WINDOW = timedelta(hours=3)
 def build_router(
     cache: OddsCache,
     fetcher: FetcherRegistry,
-    picks_readers: dict[str, PicksReader],
     sports: list[Sport],
-    picks_date_override: str = "",
+    snapshot_service: LatestOddsSnapshotService | None = None,
 ) -> APIRouter:
     router = APIRouter()
+    memo = TTLCache(ttl_seconds=20.0)
 
     @router.get("/api/dashboard", response_model=DashboardResponse)
     async def dashboard(books: str = "") -> DashboardResponse:
+        """Cross-sport summary. The full-cache read + arb scan is CPU/SQLite
+        heavy, so it runs in the threadpool (never on the event loop, which
+        used to stall every other request for 30-60s), and the result is
+        memoized + coalesced like the scanner endpoints: concurrent polls
+        from several tabs or SSE-driven revalidations share one computation.
+        Deliberately NOT routed through run_scanner — its single slot would
+        queue the dashboard behind the page's own concurrent /api/ev scan.
+
+        When the shared odds snapshot is available (always, in the running
+        app) the dashboard reuses its pre-normalized non-prop games — the
+        same data the Edges scanners read — instead of re-reading ~350k
+        cache rows per request.
+        """
+        snapshot = await snapshot_service.get() if snapshot_service else None
+        source_version = (
+            ("snapshot", snapshot.generation)
+            if snapshot is not None else cache.read_version
+        )
+        cache_key = ("dashboard", str(cache.path), source_version, books)
+
+        async def _compute() -> DashboardResponse:
+            return await run_in_threadpool(_build, books, snapshot)
+
+        return await memoized_coalesced(memo, cache_key, _compute)
+
+    def _build(books: str, snapshot: OddsSnapshot | None) -> DashboardResponse:
         books_set: set[str] | None = None
         if books.strip():
             books_set = {b for b in books.split(",") if b}
         now = datetime.now(timezone.utc)
-        target_date = (
-            date.fromisoformat(picks_date_override)
-            if picks_date_override
-            else date.today()
-        )
 
-        # Pull the cache ONCE and partition by sport_key in memory.
-        # The previous loop scanned `all_current(sport_key=…)` per sport
-        # and then scanned `all_current()` AGAIN for the cross-sport arb
-        # pass — N+1 full-table scans per dashboard load on a 100MB+ DB.
-        # One pass + a dict bucket cuts dashboard latency by roughly the
-        # number of sports configured.
-        all_non_prop_rows = [
-            r for r in cache.all_current()
-            if not is_prop_market(r["market_key"])
-        ]
-        rows_by_sport: dict[str, list[dict]] = {}
-        for r in all_non_prop_rows:
-            rows_by_sport.setdefault(r["sport_key"], []).append(r)
+        if snapshot is not None:
+            arb_games = list(snapshot.non_prop_games)
+            games_by_sport = snapshot.non_prop_games_by_sport
+        else:
+            # Fallback (tests / no snapshot service): one cache pass,
+            # partitioned by sport in memory.
+            all_non_prop_rows = [
+                r for r in cache.all_current()
+                if not is_prop_market(r["market_key"])
+            ]
+            arb_games = rows_to_games(all_non_prop_rows, now=now)
+            by_sport: dict[str, list[dict]] = {}
+            for g in arb_games:
+                by_sport.setdefault(g["sport_key"], []).append(g)
+            games_by_sport = by_sport
 
         summaries: list[SportSummary] = []
         upcoming_all: list[dict] = []
-        picks_all: list[dict] = []
 
         for sport in sports:
-            sport_rows = rows_by_sport.get(sport.key, [])
-            sport_games = rows_to_games(sport_rows, now=now)
+            sport_games = games_by_sport.get(sport.key, ())
             upcoming = [
                 g for g in sport_games
                 if now - timedelta(hours=6) <= g["commence_time"] <= now + FUTURE_WINDOW
@@ -91,38 +112,20 @@ def build_router(
             for g in starting_soon:
                 upcoming_all.append(g)
 
-            reader = picks_readers.get(sport.key)
-            picks_result = (
-                reader.get_picks_for_date(target_date)
-                if reader
-                else {"picks": [], "bet_card_date": None}
-            )
-            for p in picks_result["picks"]:
-                # Stamp sport_key so the dashboard can label cross-sport picks
-                picks_all.append({**p, "sport_key": sport.key})
-
             summaries.append(
                 SportSummary(
                     key=sport.key,
                     label=sport.label,
                     upcoming_games=len(upcoming),
                     starting_in_3h=len(starting_soon),
-                    picks_today=len(picks_result["picks"]),
-                    bet_card_date=picks_result.get("bet_card_date"),
                 )
             )
 
-        # Top 5 arbitrage opportunities across all sports — reuses the
-        # already-fetched rows instead of scanning the cache a second
-        # time. When the caller passes ?books=..., filter to those
-        # books to keep dashboard consistent with global book-visibility.
-        arb_games = rows_to_games(all_non_prop_rows, now=now)
+        # Top 5 arbitrage opportunities across all sports. When the caller
+        # passes ?books=..., filter to those books to keep the dashboard
+        # consistent with global book-visibility.
         all_arbs = scan_all_arbs(arb_games, books_filter=books_set)
         top_arbs = all_arbs[:5]
-
-        # Top 10 picks by edge percentage
-        picks_all.sort(key=lambda p: -p["edge_pct"])
-        top_picks = picks_all[:10]
 
         # Upcoming games sorted by start time
         upcoming_all.sort(key=lambda g: g["commence_time"])
@@ -145,7 +148,6 @@ def build_router(
         return DashboardResponse(
             sports=summaries,
             top_arbs=[ArbOpportunity.model_validate(o) for o in top_arbs],
-            top_picks=[Pick.model_validate(p) for p in top_picks],
             upcoming_games=[Game.model_validate(g) for g in upcoming_all[:12]],
             fetcher=fetcher_status,
             scanned_at=now,

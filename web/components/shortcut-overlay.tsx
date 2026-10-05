@@ -3,8 +3,8 @@
  * Keyboard shortcuts overlay.
  *
  * Sibling of `command-palette.tsx` — both are discovery surfaces docked at
- * `top: 20vh`, sharing the same visual language (bg-bg-1/95, backdrop
- * blur, rounded-lg, shadow-2xl, border-border-subtle). Renders into a
+ * `top: 20vh`, sharing the same visual language (bg-1 surface over a
+ * bg-0 scrim, rounded-lg, shadow-2xl, border-border-subtle). Renders into a
  * portal on `document.body`, guarded by a mounted check.
  *
  * Open-state, the global `?` listener, and the custom-event bridge live
@@ -33,6 +33,8 @@ export interface ShortcutOverlayProps {
   onOpenChange: (next: boolean) => void;
 }
 
+const noopSubscribe = () => () => {};
+
 export function ShortcutOverlay({ open, onOpenChange }: ShortcutOverlayProps) {
   const mounted = useIsMounted();
   const close = React.useCallback(() => onOpenChange(false), [onOpenChange]);
@@ -41,12 +43,11 @@ export function ShortcutOverlay({ open, onOpenChange }: ShortcutOverlayProps) {
   // to Mac on SSR (safe default since ⌘ is the interesting case) and
   // downgrade to `Ctrl` on mount if the UA disagrees. Avoids hydration
   // mismatch — first paint always shows ⌘.
-  const [isMac, setIsMac] = React.useState(true);
-  React.useEffect(() => {
-    if (typeof navigator === "undefined") return;
-    const ua = navigator.userAgent || "";
-    setIsMac(/Mac|iPhone|iPod|iPad/.test(ua));
-  }, []);
+  const isMac = React.useSyncExternalStore(
+    noopSubscribe,
+    () => /Mac|iPhone|iPod|iPad/.test(navigator.userAgent || ""),
+    () => true,
+  );
 
   // Escape-to-close. Single listener, scoped to the open state.
   React.useEffect(() => {
@@ -79,7 +80,7 @@ export function ShortcutOverlay({ open, onOpenChange }: ShortcutOverlayProps) {
     <div
       className={clsx(
         "fixed inset-0 z-[100]",
-        "bg-black/40 backdrop-blur-[2px]",
+        "bg-bg-0/70 backdrop-blur-[2px]",
         "flex items-start justify-center"
       )}
       style={{ paddingTop: "20vh" }}
@@ -89,7 +90,7 @@ export function ShortcutOverlay({ open, onOpenChange }: ShortcutOverlayProps) {
       <div
         className={clsx(
           "w-[640px] max-w-[calc(100vw-2rem)]",
-          "bg-bg-1/95 backdrop-blur-md",
+          "bg-bg-1",
           "border border-border-subtle rounded-lg shadow-2xl",
           "overflow-hidden"
         )}
@@ -147,11 +148,8 @@ export function ShortcutOverlay({ open, onOpenChange }: ShortcutOverlayProps) {
             return (
               <section key={group} className="mb-2 last:mb-0">
                 <div
-                  className={clsx(
-                    "px-2 pt-3 pb-1.5",
-                    "uppercase tracking-wider text-text-3 font-medium"
-                  )}
-                  style={{ fontSize: "10px", lineHeight: "12px" }}
+                  className="px-2 pt-3 pb-1.5 text-text-3 font-medium"
+                  style={{ fontSize: "var(--fs-12)", lineHeight: "var(--lh-12)" }}
                 >
                   {group}
                 </div>
@@ -177,9 +175,9 @@ export function ShortcutOverlay({ open, onOpenChange }: ShortcutOverlayProps) {
             "border-t border-border-subtle",
             "text-text-3"
           )}
-          style={{ fontSize: "10px", lineHeight: "12px" }}
+          style={{ fontSize: "var(--fs-11)", lineHeight: "var(--lh-11)" }}
         >
-          <FooterHint keyName="esc">to dismiss</FooterHint>
+          <FooterHint keyName="Esc">to dismiss</FooterHint>
         </div>
       </div>
     </div>,
@@ -218,8 +216,8 @@ function ShortcutRow({
       >
         {entry.label}
         {dim && (
-          <span className="ml-2 text-text-3 text-[10px] uppercase tracking-wide">
-            coming soon
+          <span className="ml-2 text-text-3 text-[length:var(--fs-11)]">
+            Coming soon
           </span>
         )}
       </span>
@@ -245,8 +243,7 @@ function KeyCombo({ keys }: { keys: string[] }) {
           return (
             <span
               key={`sep-${i}`}
-              className="text-text-3 text-[9px] uppercase tracking-wide px-0.5"
-              style={{ fontFamily: "var(--font-mono)" }}
+              className="text-text-3 text-[length:var(--fs-11)] px-0.5"
             >
               then
             </span>
@@ -264,12 +261,11 @@ function KeyChip({ children }: { children: React.ReactNode }) {
       className={clsx(
         "inline-flex items-center justify-center",
         "h-5 min-w-[1.25rem] px-1.5 rounded-sm",
-        "bg-bg-2 border border-border-subtle text-text-1"
+        "bg-bg-2 border border-border-subtle text-text-1 font-sans"
       )}
       style={{
-        fontFamily: "var(--font-mono)",
-        fontSize: "10px",
-        lineHeight: "12px",
+        fontSize: "var(--fs-11)",
+        lineHeight: "var(--lh-11)",
       }}
     >
       {children}
@@ -288,9 +284,7 @@ function FooterHint({
 }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <span className="text-text-2" style={{ fontFamily: "var(--font-mono)" }}>
-        {keyName}
-      </span>
+      <span className="text-text-2">{keyName}</span>
       <span>{children}</span>
     </span>
   );

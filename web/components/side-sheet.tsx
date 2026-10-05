@@ -88,27 +88,26 @@ export function SideSheet({
         // Fixed to the viewport right edge, full height below nothing (top:0)
         "fixed top-0 right-0 bottom-0 z-40",
         "flex flex-col",
-        // Glass: translucent bg + backdrop blur so the odds grid shows
-        // faintly through the sheet. Users with `prefers-reduced-transparency`
-        // get a solid fallback via a media query in globals.css scoped to
-        // [data-side-sheet-root].
-        "bg-bg-2/80 backdrop-blur-md border-l border-border-subtle",
-        "shadow-[-8px_0_24px_rgba(0,0,0,0.45)]",
+        // Solid surface (Gunmetal spec: bg-1 panels). The
+        // data-side-sheet-root attribute keeps the globals.css
+        // reduced-transparency rule scoped here.
+        "bg-bg-1 border-l border-border-subtle shadow-2xl",
       )}
       style={{ width: "min(720px, 45vw)" }}
     >
-      <header className="sticky top-0 z-10 bg-bg-2/80 backdrop-blur-md border-b border-border-subtle px-4 py-3 flex items-start gap-3">
-        <div className="flex-1 min-w-0">{header}</div>
+      <header className="sticky top-0 z-10 flex items-start gap-3 border-b border-border-subtle bg-bg-1 px-4 py-3">
+        <div className="min-w-0 flex-1">{header}</div>
         <button
+          type="button"
           onClick={onClose}
           aria-label="Close side sheet"
           className={clsx(
-            "shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-sm",
-            "text-text-3 hover:text-text-1 hover:bg-bg-1 transition-colors",
+            "shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-md",
+            "text-text-3 transition-colors hover:bg-bg-2 hover:text-text-1",
           )}
           title="Close (Esc)"
         >
-          <X size={14} aria-hidden />
+          <X size={16} aria-hidden />
         </button>
       </header>
       <div className="flex-1 overflow-y-auto overflow-x-hidden">

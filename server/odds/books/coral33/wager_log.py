@@ -47,6 +47,8 @@ from pathlib import Path
 from typing import Iterable
 
 from .accounts import AccountCredential
+from curl_cffi.requests.exceptions import RequestException
+
 from .client import Coral33APIError, Coral33AuthError, Coral33Client
 
 
@@ -380,7 +382,7 @@ async def fetch_account_wager_log(
     client = Coral33Client(cred.customer_id, cred.password, proxy_url=cred.proxy_url)
     try:
         await client.authenticate()
-    except (Coral33AuthError, Coral33APIError) as e:
+    except (Coral33AuthError, Coral33APIError, RequestException) as e:
         logger.warning("wager_log auth failed for %s: %s", cred.customer_id, e)
         return []
 
@@ -428,7 +430,7 @@ async def fetch_account_wager_log(
                     "week": str(week_offset),
                     "RRO": "0",
                 })
-            except Coral33APIError as e:
+            except (Coral33APIError, RequestException) as e:
                 logger.warning(
                     "wager_log fetch failed for %s @ %s w=%d: %s",
                     cred.customer_id, fd, week_offset, e,

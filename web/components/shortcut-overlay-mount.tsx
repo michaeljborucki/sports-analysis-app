@@ -30,6 +30,8 @@
  */
 import * as React from "react";
 
+import { useDensity } from "@/lib/use-density";
+
 import { ShortcutOverlay } from "./shortcut-overlay";
 
 export const SHORTCUTS_OPEN_EVENT = "shortcuts:open";
@@ -51,6 +53,10 @@ function isCommandPaletteOpen(): boolean {
 
 export function ShortcutOverlayMount() {
   const [open, setOpen] = React.useState(false);
+
+  // Global ⌘/Ctrl+Shift+D density cycle. Installed here (mounted once in the
+  // root layout) so it works on every page, not just Settings.
+  useDensity({ installHotkey: true });
 
   // Global `?` keystroke listener.
   React.useEffect(() => {

@@ -47,9 +47,3 @@ markets             = []
 [on_demand]
 enabled          = true
 debounce_seconds = 60
-
-[picks]
-include_bet_types = [
-  "moneyline",
-  "total_rounds",
-]

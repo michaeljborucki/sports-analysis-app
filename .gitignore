@@ -51,6 +51,10 @@ server/data/
 # Logs (defensive — agent scrapers write coral_scraper.log etc. which can
 # accumulate request URLs, timing data, and potentially auth-relevant noise)
 *.log
+# Rotated generations from scripts/rotate_logs.sh — *.log misses the .N.gz
+# suffix, and these carry the same request/timing noise as the live log.
+*.log.*.gz
+logs/
 
 # Claude Code / agent worktrees — heavy, redundant clones, never source-of-truth
 .claude/
@@ -60,3 +64,6 @@ server/data/
 # .env files are the main concern; .env.example placeholders are fine.
 agents/**/.env
 agents/**/.env.local
+
+# Local mapping diagnostics
+*.mapping.sqlite*

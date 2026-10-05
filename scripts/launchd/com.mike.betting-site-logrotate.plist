@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.mike.betting-site-logrotate</string>
+
+    <!--
+      Size-capped rotation for logs/. The API agent writes ~60 MB of stderr a
+      day (APScheduler ticks + coral33 normalizer lines), which is what grew
+      launchd-api.err.log to 300 MB. rotate_logs.sh copy-truncates anything
+      past 50 MB and keeps three gzipped generations.
+    -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/mikeborucki/personal_workspace/betting-site/scripts/rotate_logs.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/mikeborucki/personal_workspace/betting-site</string>
+
+    <!--
+      Hourly rather than daily: the cap is a size, not a schedule, so checking
+      often keeps the worst case near 50 MB instead of a day's growth past it.
+      The script stats a handful of files and exits, so the cost is nil.
+    -->
+    <key>StartInterval</key>
+    <integer>3600</integer>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!--
+      Its own log, deliberately outside logs/ so rotation never rotates the
+      rotator's own output out from under itself.
+    -->
+    <key>StandardOutPath</key>
+    <string>/Users/mikeborucki/personal_workspace/betting-site/logs-rotate.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/mikeborucki/personal_workspace/betting-site/logs-rotate.log</string>
+</dict>
+</plist>

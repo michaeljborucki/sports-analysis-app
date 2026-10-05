@@ -2,7 +2,6 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
-import clsx from "clsx";
 
 import {
   apiPaths,
@@ -15,10 +14,11 @@ import {
 import { useVisibleBooks } from "@/lib/use-visible-books";
 import { useLiveFilter } from "@/lib/use-live-filter";
 import { matchesLiveFilter } from "@/components/live-status-filter";
-import { BookIncludeDropdown } from "@/components/book-include-dropdown";
+import { BookIncludeList, bookSelectionSummary } from "@/components/book-include-dropdown";
 import { RefreshButton } from "@/components/refresh-button";
 import { FreshnessChip } from "@/components/freshness-chip";
 import { EmptyState } from "@/components/empty-state";
+import { BackendUnreachable, PageHeader, Segmented } from "@/components/ui";
 import {
   FilterX,
   Gift,
@@ -28,12 +28,11 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { BOOK_ORDER } from "@/lib/books";
-import { SPORTS, type SportKey } from "@/lib/sports";
+import { SPORTS } from "@/lib/sports";
 import {
   EDGE_MODES,
-  MODE_LABEL,
-  MODE_LONG_LABEL,
   mergeEdges,
+  NOVIG_MAKER,
   sortEdges,
   type EdgeMode,
   type EdgeOpportunity,
@@ -43,6 +42,12 @@ import {
 
 import { ModeToggle } from "@/components/edges/mode-toggle";
 import { EdgesTable } from "@/components/edges/edges-table";
+import {
+  FilterSentence,
+  PopoverNumberInput,
+  PopoverOptionList,
+  type SentenceClause,
+} from "@/components/edges/filter-sentence";
 import { useEdgesPrefs } from "@/lib/use-edges-prefs";
 import { computeRowStakeDollars } from "@/lib/stake-calc";
 
@@ -81,7 +86,9 @@ function clampMaxOdds(n: number): number {
   );
 }
 
-// Coral33 parlay-eligibility filter. Only meaningful in EV mode.
+// Coral33 parlay-eligibility filter. Applies to arb, low-hold, EV and
+// free-bet modes (every mode except profit-boost). For the paired modes it
+// keys off the opportunity's coral33 leg — see server/odds/wager_filter.py.
 //   any      — no filter (default)
 //   straight — drop coral33 lines that are parlay-only; keep every other book
 //   parlay   — show only coral33 lines that are parlay-eligible; drop everything else
@@ -92,6 +99,38 @@ const WAGER_FILTER_OPTIONS: { label: string; value: WagerFilter }[] = [
   { label: "Straight", value: "straight" },
   { label: "Parlay", value: "parlay" },
 ];
+
+const WAGER_SENTENCE: Record<WagerFilter, string> = {
+  any: "straight or parlay",
+  straight: "straight only",
+  parlay: "parlay-eligible only",
+};
+
+/** What the sentence filter calls each mode's rows: "Showing arbs in …". */
+const MODE_NOUN: Record<EdgeMode, string> = {
+  arb: "arbs",
+  low_hold: "low-hold pairs",
+  ev: "positive-EV bets",
+  free_bet: "free-bet conversions",
+  profit_boost: "profit-boost conversions",
+};
+
+// Novig pricing: "take" scans Novig at what you can fill right now; "maker"
+// also scans the price you'd post (one tick above the best bid), so edges
+// that only exist if your resting order fills show up too. Applies to the
+// modes where a leg can be a resting order — never to free-bet / boost
+// hedges, which must fill.
+type NovigPricing = "take" | "maker";
+
+const NOVIG_PRICING_OPTIONS: { label: string; value: NovigPricing }[] = [
+  { label: "Take", value: "take" },
+  { label: "Take + maker", value: "maker" },
+];
+
+const NOVIG_PRICING_SENTENCE: Record<NovigPricing, string> = {
+  take: "take prices",
+  maker: "take + maker prices",
+};
 
 function parseWagerFilter(raw: string | null): WagerFilter {
   if (raw === "straight" || raw === "parlay") return raw;
@@ -110,6 +149,14 @@ const TIME_WINDOW_OPTIONS: { label: string; value: TimeWindow }[] = [
   { label: "48h", value: "48h" },
   { label: "72h", value: "72h" },
 ];
+
+const TIME_WINDOW_SENTENCE: Record<TimeWindow, string> = {
+  all: "any time",
+  today: "today",
+  "24h": "within 24h",
+  "48h": "within 48h",
+  "72h": "within 72h",
+};
 
 function parseTimeWindow(raw: string | null): TimeWindow {
   if (!raw) return "all";
@@ -191,6 +238,9 @@ function EdgesPageInner() {
   const [wagerFilter, setWagerFilter] = useState<WagerFilter>(() =>
     parseWagerFilter(searchParams.get("wager")),
   );
+  const [novigPricing, setNovigPricing] = useState<NovigPricing>(() =>
+    searchParams.get("novig") === "maker" ? "maker" : "take",
+  );
   const [bookFilter, setBookFilter] = useState<Set<string>>(() => {
     const raw = searchParams.get("books");
     if (!raw) return new Set();
@@ -256,11 +306,12 @@ function EdgesPageInner() {
     if (minStake > 0) qs.set("minStake", String(minStake));
     if (timeWindow !== "all") qs.set("when", timeWindow);
     if (wagerFilter !== "any") qs.set("wager", wagerFilter);
+    if (novigPricing === "maker") qs.set("novig", "maker");
     if (modes.has("profit_boost") && boostPct !== 30) qs.set("boost", String(boostPct));
     const qstring = qs.toString();
     const url = qstring ? `/edges?${qstring}` : "/edges";
     router.replace(url, { scroll: false });
-  }, [modes, sport, minEdge, maxOdds, bookFilter, stake, minStake, timeWindow, wagerFilter, boostPct, router]);
+  }, [modes, sport, minEdge, maxOdds, bookFilter, stake, minStake, timeWindow, wagerFilter, novigPricing, boostPct, router]);
 
   // Bankroll / Kelly / rounding for the per-row Kelly stake. Same store
   // the table's StakeCell reads — so the minStake filter compares to the
@@ -270,13 +321,24 @@ function EdgesPageInner() {
   // ─── Data fetching — 4 parallel SWR keys ───────────────────────
   const { visible } = useVisibleBooks();
   const booksSorted = useMemo(() => [...visible].sort(), [visible]);
+  // Arb / low-hold / EV scan the virtual maker book only when asked to —
+  // the backend never considers it otherwise (server/odds/venues.py).
+  const makerModeActive =
+    novigPricing === "maker" &&
+    (modes.has("arb") || modes.has("low_hold") || modes.has("ev"));
+  const scanBooks = useMemo(
+    () => (makerModeActive ? [...booksSorted, NOVIG_MAKER].sort() : booksSorted),
+    [booksSorted, makerModeActive],
+  );
 
   const arbSwr = useSWR<ArbResponse>(
-    modes.has("arb") ? apiPaths.arbitrage(booksSorted) : null,
+    modes.has("arb") ? apiPaths.arbitrage(scanBooks, wagerFilter) : null,
     { refreshInterval: 60_000 },
   );
   const lhSwr = useSWR<LowHoldResponse>(
-    modes.has("low_hold") ? apiPaths.lowHold(booksSorted, 2.5) : null,
+    modes.has("low_hold")
+      ? apiPaths.lowHold(scanBooks, 2.5, wagerFilter)
+      : null,
     { refreshInterval: 60_000 },
   );
   // minEdge is a FLOOR on edge_pct. Backend always sorts desc, so without
@@ -286,7 +348,7 @@ function EdgesPageInner() {
   // breaking.
   const evSwr = useSWR<EVResponse>(
     modes.has("ev")
-      ? apiPaths.ev(booksSorted, {
+      ? apiPaths.ev(scanBooks, {
           minEv: minEdge,
           maxLongshotOdds: maxOdds,
           sort: "desc",
@@ -305,7 +367,7 @@ function EdgesPageInner() {
   );
   const fbSwr = useSWR<FreeBetResponse>(
     modes.has("free_bet")
-      ? apiPaths.freeBets(booksSorted, 100, freeBetBooksSorted)
+      ? apiPaths.freeBets(booksSorted, 100, freeBetBooksSorted, wagerFilter)
       : null,
     { refreshInterval: 60_000 },
   );
@@ -406,10 +468,9 @@ function EdgesPageInner() {
       //   arb:      edge_pct = roi_pct (≥ 0). Slider = MIN edge → keep ≥ value.
       //   ev:       edge_pct = ev_pct (any sign). Slider = MIN edge → keep ≥ value.
       //   free_bet: edge_pct = conversion_pct (≥ 0). Slider = MIN edge → keep ≥ value.
-      //   low_hold: edge_pct = −hold_pct (≤ 0). Slider value here means
+      //   low_hold: edge_pct = −hold_pct (positive for arbs). Slider means
       //     MAX hold %, so a user picking 1.5 means "show me holds ≤ 1.5%",
-      //     i.e. edge_pct ≥ −1.5. Negative slider values are nonsensical
-      //     for low-hold and just no-op.
+      //     i.e. edge_pct ≥ −1.5, which naturally retains all positive arbs.
       if (modes.has("low_hold")) {
         if (minEdge > 0) {
           rows = rows.filter(op => op.edge_pct >= -minEdge);
@@ -530,23 +591,20 @@ function EdgesPageInner() {
 
     // Filtered-to-zero (user-applied filter made this empty).
     if (rawCount > 0) {
-      const modeLabel =
-        modes.size === 1
-          ? MODE_LONG_LABEL[[...modes][0]]
-          : "cross-mode";
+      const only = [...modes][0];
       return (
         <EmptyState
           icon={<FilterX size={28} />}
-          title={`Your filters eliminated all ${modeLabel} edges`}
-          body={`The underlying cache has ${rawCount} opportunit${rawCount === 1 ? "y" : "ies"}, but none pass your current filter combination. Relax a filter or clear the book scope to restore the list.`}
+          title={`Your filters hide all ${rawCount} ${MODE_NOUN[only]}`}
+          body="Relax a filter in the sentence above, or clear them all."
           hints={[
             {
-              label: "Filter scope",
-              hint: "book filter narrows which book the edge is on, not which books are used as anchors.",
+              label: "Books",
+              hint: "the book filter narrows which book the edge is on, not which books are used as anchors.",
             },
             {
-              label: "Min-edge + max-odds",
-              hint: "a tight min-edge combined with a short max-odds can eliminate all rows together even when either alone would pass.",
+              label: "Combined filters",
+              hint: "a high minimum edge plus a low odds cap can hide everything even when each alone would not.",
             },
           ]}
           action={{
@@ -565,6 +623,11 @@ function EdgesPageInner() {
       );
     }
 
+    const stalenessHint = {
+      label: "Cache age",
+      hint: `prices are ${ageLabel} old. Edges close fast, so an old cache shows fewer of them.`,
+    };
+
     // Single-mode empty.
     if (modes.size === 1) {
       const only = [...modes][0];
@@ -572,22 +635,15 @@ function EdgesPageInner() {
         return (
           <EmptyState
             icon={<Scale size={28} />}
-            title="No arbitrage pairs in the current cache"
-            body="Arbitrage requires two visible books offering opposite sides of the same market with implied probabilities summing under 100%. Right now that combination doesn't exist across your visible set."
+            title="No arbs right now"
+            body="An arb needs two visible books pricing opposite sides of the same market for less than 100% combined. None do at the moment."
             tone={cacheStale ? "warning" : "neutral"}
             hints={[
               {
-                label: "Two-book minimum",
-                hint: `your visible set has ${visible.size} book${visible.size !== 1 ? "s" : ""}; arbs need at least two that both post the same market.`,
+                label: "Books",
+                hint: `you have ${visible.size} visible book${visible.size !== 1 ? "s" : ""}. Arbs need at least two posting the same market and line.`,
               },
-              {
-                label: "Line matching",
-                hint: "arbs also need matching points. Alt-line arbs are more common than mainline arbs but only surface if both sides of a non-main line are cached.",
-              },
-              {
-                label: "Cache staleness",
-                hint: `lines shift; a ${ageLabel}-old cache will keep showing yesterday's closed arbs or, more often, none.`,
-              },
+              stalenessHint,
             ]}
             action={
               visible.size < 2
@@ -604,25 +660,25 @@ function EdgesPageInner() {
         return (
           <EmptyState
             icon={<TrendingUp size={28} />}
-            title={`No +EV plays above +${minEdge || 1}%`}
-            body="Scanner compared every offered price against the de-vigged sharp consensus; nothing currently clears your min_ev floor. Lower the floor or wait for prices to move."
+            title={`No positive-EV bets above ${minEdge || 1}%`}
+            body="Every offered price was compared against the de-vigged sharp price. Nothing clears your minimum edge."
             tone={cacheStale ? "warning" : "neutral"}
             hints={[
               {
-                label: "Anchor books",
-                hint: "+EV uses Pinnacle (or Circa / the sharp consensus) as fair. If Pinnacle is hidden in Settings, the anchor falls back to consensus and the edge signal weakens.",
+                label: "Anchor",
+                hint: "fair price comes from Pinnacle, or a consensus if Pinnacle is hidden in Settings (a weaker signal).",
               },
               {
-                label: "Filter overlap",
-                hint: `min_ev ≥ ${minEdge || 1}% + max_odds ≤ +${maxOdds} can eliminate all rows together even when either alone would pass. Widen one.`,
+                label: "Odds cap",
+                hint: `you're capping odds at +${maxOdds}. Raise it or lower the minimum edge.`,
               },
               {
-                label: "Cache stale",
-                hint: `scanner drops offered prices older than 300s. A stale cache can only surface closed edges; fresh ones come in after a fetcher cycle.`,
+                label: "Cache age",
+                hint: "offered prices older than 5 minutes are dropped from the scan.",
               },
             ]}
             action={{
-              label: "Lower min EV to +1%",
+              label: "Lower minimum edge to 1%",
               onClick: () => setMinEdge(1),
             }}
           />
@@ -632,22 +688,15 @@ function EdgesPageInner() {
         return (
           <EmptyState
             icon={<Percent size={28} />}
-            title="No low-hold pairs under 2.5%"
-            body="Low-hold means two offered prices that, together, produce a book's edge under your threshold — profitable when combined with promo or rakeback. None of the current visible pairs clear the bar."
+            title="No pairs with hold under 2.5%"
+            body="Low hold is two opposite sides at different books whose combined margin is small, useful with promos or rakeback. None clear the bar right now."
             tone={cacheStale ? "warning" : "neutral"}
             hints={[
               {
-                label: "Two-book minimum",
-                hint: "same mechanic as arbs; low-hold requires opposite sides on different books at matched lines.",
+                label: "Typical range",
+                hint: "most real pairs sit at 1.5–3% hold. Under 1% is rare outside promo windows.",
               },
-              {
-                label: "Threshold tightness",
-                hint: "most real-world pairs sit at 1.5–3%; sub-1% is rare outside promo windows.",
-              },
-              {
-                label: "Cache age",
-                hint: `prices drift fast at the 2%-hold band; a ${ageLabel}-old cache shows lagging rather than current pairs.`,
-              },
+              stalenessHint,
             ]}
             action={{ label: "Refresh now", onClick: refreshAll }}
           />
@@ -657,22 +706,19 @@ function EdgesPageInner() {
         return (
           <EmptyState
             icon={<Gift size={28} />}
-            title="No free-bet conversions match your stake"
-            body={`Free-bet mode calculates the long-odds leg that maximizes EV when cashing a promo credit. Nothing in the cache currently returns enough $ at the configured stake of $${stake}.`}
+            title="No free-bet conversions right now"
+            body={`Nothing in the cache converts a $${stake.toLocaleString()} free bet well enough to show.`}
             tone={cacheStale ? "warning" : "neutral"}
             hints={[
               {
-                label: "Odds range",
-                hint: `free-bet EV rises with longer odds; if max_odds ≤ +${maxOdds}, the long legs are capped out of the profitable zone.`,
+                label: "Free-bet book",
+                hint: "the free bet must land on a book where you hold the promo. Check the book clause above.",
               },
               {
-                label: "Book availability",
-                hint: "the long leg has to exist on a book you actually have a promo balance on. Filter the offered-book dropdown to match your active promos.",
+                label: "Long odds",
+                hint: "free-bet value rises with longer odds, so wider markets convert better.",
               },
-              {
-                label: "Cache age",
-                hint: `long-odds props and futures drift less often but stale out the same way; refresh if ${ageLabel} > a few minutes.`,
-              },
+              stalenessHint,
             ]}
             action={{
               label: "Widen max odds to +1500",
@@ -685,25 +731,21 @@ function EdgesPageInner() {
         return (
           <EmptyState
             icon={<TrendingUp size={28} />}
-            title={`No profit-boost conversions at +${boostPct}% boost`}
-            body="Profit-boost mode finds two-leg conversions: boost one side at your promo book, hedge the opposite side at another book to lock in profit. None of the current pairs clear the conversion threshold."
+            title={`No conversions at a ${boostPct}% boost`}
+            body="Profit boost pairs a boosted side at your promo book with a hedge at another book. No pair locks in enough profit right now."
             tone={cacheStale ? "warning" : "neutral"}
             hints={[
               {
-                label: "Boost beats vig",
-                hint: "for a pair to convert, the boosted leg's improvement has to overcome the book's hold. Tight markets (-110/-110) need ~25%+ boost; long lines convert at smaller boost %.",
+                label: "Boost size",
+                hint: "the boost has to beat the market's hold. Tight -110/-110 markets need about 25% or more.",
               },
               {
-                label: "Book scope",
-                hint: "use the Book filter to set which book has your boost token. The hedge leg always lands at a DIFFERENT book in your visible set.",
-              },
-              {
-                label: "Min conversion",
-                hint: `the min-edge slider doubles as a min-conversion-% floor here. Lower it (or set negative) to surface near-breakeven pairs that may still be worth grinding.`,
+                label: "Boost book",
+                hint: "set which book holds your boost token. The hedge always lands at a different book.",
               },
             ]}
             action={{
-              label: "Lower min conversion to 0%",
+              label: "Lower minimum conversion to 0%",
               onClick: () => setMinEdge(0),
             }}
           />
@@ -711,14 +753,12 @@ function EdgesPageInner() {
       }
     }
 
-    // Defensive fallback — modes is a size-1 Set today, but keeps the
-    // function total in case a future mode is added and one of the branches
-    // above forgets to handle it.
+    // Defensive fallback — modes is a size-1 Set today.
     return (
       <EmptyState
         icon={<Inbox size={28} />}
         title="No edges right now"
-        body={`Scanner last ran against a cache ${ageLabel} old.`}
+        body={`The scanner last ran against prices ${ageLabel} old.`}
         tone={cacheStale ? "warning" : "neutral"}
         action={{ label: "Refresh now", onClick: refreshAll }}
       />
@@ -739,239 +779,279 @@ function EdgesPageInner() {
     router,
   ]);
 
+  // ─── Sentence filter clauses ───────────────────────────────────
+  const activeMode = [...modes][0] ?? DEFAULT_MODE;
+  const isLowHold = modes.has("low_hold");
+  const isConversion = modes.has("free_bet") || modes.has("profit_boost");
+
+  const clauses: SentenceClause[] = [];
+  clauses.push({
+    id: "sport",
+    before: "in",
+    value: sport === "all" ? "all sports" : (sportOptions.find(o => o.value === sport)?.label ?? sport),
+    heading: "Sport",
+    flush: true,
+    control: () => (
+      <PopoverOptionList options={sportOptions} value={sport} onChange={setSport} />
+    ),
+  });
+  clauses.push({
+    id: "edge",
+    before: isLowHold ? "hold below" : isConversion ? "conversion above" : "edge above",
+    value:
+      minEdge === 0 ? (
+        "any"
+      ) : (
+        <span className="tabular">
+          {!isLowHold && minEdge > 0 ? "+" : ""}
+          {minEdge}%
+        </span>
+      ),
+    heading: isLowHold ? "Maximum hold" : isConversion ? "Minimum conversion" : "Minimum edge",
+    title: isLowHold
+      ? "Max hold %: show pairs whose hold is at or below this"
+      : "Min edge %: show rows whose edge is at or above this",
+    control: () => (
+      <span className="flex items-center gap-3">
+        <input
+          type="range"
+          min={isLowHold ? 0 : -10}
+          max={10}
+          step={0.5}
+          value={minEdge}
+          onChange={e => setMinEdge(Number(e.target.value))}
+          className="w-40 accent-text-1"
+          aria-label={isLowHold ? "Maximum hold" : "Minimum edge"}
+        />
+        <span className="tabular w-12 text-right text-[length:var(--fs-13)] text-text-1">
+          {minEdge === 0 ? "any" : `${!isLowHold && minEdge > 0 ? "+" : ""}${minEdge}%`}
+        </span>
+      </span>
+    ),
+  });
+  if (modes.has("ev")) {
+    const off = maxOdds >= MAX_ODDS_OFF_THRESHOLD;
+    clauses.push({
+      id: "maxOdds",
+      before: "at odds up to",
+      value: off ? "any" : <span className="tabular">+{maxOdds}</span>,
+      heading: "Maximum odds",
+      title: `Filter out long-odds offered prices (devig noise grows with odds). Type any value from +${MAX_ODDS_INPUT_MIN} to +${MAX_ODDS_INPUT_MAX} (effectively off).`,
+      control: () => (
+        <span className="flex flex-col gap-2">
+          <PopoverNumberInput
+            prefix="+"
+            value={maxOdds}
+            onChange={n => setMaxOdds(clampMaxOdds(n))}
+            min={MAX_ODDS_INPUT_MIN}
+            max={MAX_ODDS_INPUT_MAX}
+            step={MAX_ODDS_INPUT_STEP}
+          />
+          <span className="text-[length:var(--fs-12)] text-text-3">
+            <span className="tabular">+{MAX_ODDS_INPUT_MAX}</span> turns the cap off.
+          </span>
+        </span>
+      ),
+    });
+  }
+  if (modes.has("profit_boost")) {
+    clauses.push({
+      id: "boost",
+      before: "with a",
+      value: <span className="tabular">{boostPct}%</span>,
+      after: "boost",
+      heading: "Profit boost",
+      title: "Profit-boost percentage applied to each offered price's winnings. 30 matches a typical DraftKings/FanDuel 30% boost. Range 0–100.",
+      control: () => (
+        <PopoverNumberInput
+          suffix="%"
+          value={boostPct}
+          onChange={n => {
+            if (!Number.isFinite(n)) return;
+            setBoostPct(Math.max(0, Math.min(100, Math.round(n))));
+          }}
+          min={0}
+          max={100}
+          step={5}
+        />
+      ),
+    });
+  }
+  clauses.push({
+    id: "when",
+    before: "starting",
+    value: TIME_WINDOW_SENTENCE[timeWindow],
+    heading: "Start time",
+    control: () => (
+      <Segmented
+        size="sm"
+        ariaLabel="Start time"
+        options={TIME_WINDOW_OPTIONS}
+        value={timeWindow}
+        onChange={setTimeWindow}
+      />
+    ),
+  });
+  if (modes.has("arb") || modes.has("low_hold") || modes.has("ev")) {
+    clauses.push({
+      id: "novig",
+      before: "with Novig at",
+      value: NOVIG_PRICING_SENTENCE[novigPricing],
+      heading: "Novig pricing",
+      title:
+        "Take: Novig at the price you can fill now. Take + maker: also scan the price you'd post one tick above the best bid (or joining it on a one-tick spread); rows that need your order to fill are marked Maker.",
+      control: () => (
+        <Segmented
+          size="sm"
+          ariaLabel="Novig pricing"
+          options={NOVIG_PRICING_OPTIONS}
+          value={novigPricing}
+          onChange={setNovigPricing}
+        />
+      ),
+    });
+  }
+  if (!modes.has("profit_boost")) {
+    clauses.push({
+      id: "wager",
+      value: WAGER_SENTENCE[wagerFilter],
+      heading: "Coral33 wager type",
+      title: "Coral33 wager-type filter: straight vs parlay-eligible lines",
+      control: () => (
+        <Segmented
+          size="sm"
+          ariaLabel="Coral33 wager type"
+          options={WAGER_FILTER_OPTIONS}
+          value={wagerFilter}
+          onChange={setWagerFilter}
+        />
+      ),
+    });
+  }
+  clauses.push({
+    id: "books",
+    before:
+      modes.has("free_bet") && modes.size === 1
+        ? "with the free bet at"
+        : modes.has("profit_boost") && modes.size === 1
+          ? "with the boost at"
+          : "at",
+    value: bookSelectionSummary(
+      bookFilter,
+      modes.has("free_bet") || modes.has("profit_boost") ? "any book" : "all books",
+    ),
+    heading:
+      modes.has("free_bet") && modes.size === 1
+        ? "Free-bet book"
+        : modes.has("profit_boost") && modes.size === 1
+          ? "Boost book"
+          : "Books",
+    flush: true,
+    control: () => (
+      <BookIncludeList
+        availableBooks={allBooksInPlay}
+        selected={bookFilter}
+        onChange={setBookFilter}
+      />
+    ),
+  });
+  if (!modes.has("ev")) {
+    const stakeControl = () => (
+      <PopoverNumberInput
+        prefix="$"
+        value={stake}
+        onChange={n => setStake(clampStake(n))}
+        min={50}
+        max={1_000_000}
+        step={50}
+        title="Per-row stake used for the Stake column. Persisted locally and via URL."
+      />
+    );
+    const stakeValue = <span className="tabular">${stake.toLocaleString()}</span>;
+    if (modes.has("free_bet")) {
+      clauses.push({
+        id: "stake",
+        before: "converting a",
+        value: stakeValue,
+        after: "free bet",
+        heading: "Free-bet amount",
+        control: stakeControl,
+      });
+    } else if (modes.has("profit_boost")) {
+      clauses.push({
+        id: "stake",
+        before: "boosting",
+        value: stakeValue,
+        heading: "Boosted-leg stake",
+        control: stakeControl,
+      });
+    } else {
+      clauses.push({
+        id: "stake",
+        before: "staking",
+        value: stakeValue,
+        after: modes.has("low_hold") ? "per pair" : "per arb",
+        heading: "Total stake per row",
+        control: stakeControl,
+      });
+    }
+  }
+  clauses.push({
+    id: "minStake",
+    before: "with stakes of at least",
+    value: minStake > 0 ? <span className="tabular">${minStake.toLocaleString()}</span> : "any size",
+    heading: "Minimum stake",
+    title: "Hide rows whose per-row stake is below this $ amount. Inclusive: a row at exactly $X passes a filter of $X.",
+    control: () => (
+      <PopoverNumberInput
+        prefix="$"
+        value={minStake}
+        onChange={n => setMinStake(clampMinStake(n))}
+        min={0}
+        max={1_000_000}
+        step={5}
+        placeholder="0"
+      />
+    ),
+  });
+
   return (
     <div className="flex flex-col gap-4">
-      <header className="flex items-end justify-between gap-4 flex-wrap">
-        <div className="flex items-baseline gap-4">
-          <h1 className="text-2xl font-bold tracking-tight">Edges</h1>
-          <span className="text-xs text-text-3 tabular">
-            {MODE_LONG_LABEL[[...modes][0]]} scanner · {MODE_LABEL[[...modes][0]]} mode
-          </span>
-          {allHaveData && (
-            <span className="text-xs text-text-3 tabular">
-              {sorted.length !== rawCount
-                ? `${sorted.length} / ${rawCount}`
-                : `${rawCount}`}{" "}
-              opportunities
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          <FreshnessChip staleAfterSeconds={300} />
-          <RefreshButton
-            onRefresh={refreshAll}
-            isValidating={anyValidating} />
-        </div>
-      </header>
-
-      {/* Mode picker on its own line — separates the "what kind of edge"
-          choice (which reshapes the filter row's contents) from the
-          "narrow this list" filters underneath. */}
-      <div className="flex items-center">
-        <ModeToggle value={modes} onChange={setModes} />
-      </div>
-
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="inline-flex rounded-md bg-bg-1 border border-border-subtle">
-          <select
-            value={sport}
-            onChange={e => setSport(e.target.value)}
-            className="h-8 bg-bg-1 text-xs text-text-1 px-2 rounded-md border-0 outline-none"
-            title="Filter by sport"
-          >
-            {sportOptions.map(o => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="inline-flex items-center gap-2 rounded-md bg-bg-1 border border-border-subtle h-8 px-2">
-          <span className="text-[10px] uppercase tracking-wider text-text-3">
-            {modes.has("low_hold") ? "Max hold" : "Min edge"}
-          </span>
-          <input
-            type="range"
-            min={modes.has("low_hold") ? 0 : -10}
-            max={10}
-            step={0.5}
-            value={minEdge}
-            onChange={e => setMinEdge(Number(e.target.value))}
-            className="w-24 accent-accent"
-            title={
-              modes.has("low_hold")
-                ? "Max hold %: show pairs whose hold is at or below this"
-                : "Min edge %: show rows whose edge is at or above this"
-            }
+      <PageHeader
+        title="Edges"
+        inline={
+          <ModeToggle
+            value={modes}
+            onChange={setModes}
+            counts={{ [activeMode]: allHaveData ? sorted.length : null }}
           />
-          <span className="tabular text-xs text-text-1 w-12 text-right">
-            {minEdge === 0
-              ? "any"
-              : modes.has("low_hold")
-                ? `≤${minEdge}%`
-                : `${minEdge > 0 ? "+" : ""}${minEdge}%`}
-          </span>
-        </div>
-
-        {modes.has("ev") && (
-          <div
-            className="inline-flex items-center gap-1 rounded-md bg-bg-1 border border-border-subtle h-8 px-2"
-            title={`Filter out long-odds offered prices (devig noise grows with odds). Type any value from +${MAX_ODDS_INPUT_MIN} to +${MAX_ODDS_INPUT_MAX} (effectively off).`}
-          >
-            <span className="text-[10px] uppercase tracking-wider text-text-3">
-              Max odds
-            </span>
-            <span className="text-text-3 text-xs">≤</span>
-            <span className="text-text-3 text-xs">+</span>
-            <input
-              type="number"
-              value={maxOdds}
-              onChange={e => setMaxOdds(clampMaxOdds(Number(e.target.value)))}
-              min={MAX_ODDS_INPUT_MIN}
-              max={MAX_ODDS_INPUT_MAX}
-              step={MAX_ODDS_INPUT_STEP}
-              className="w-16 bg-transparent text-xs tabular text-text-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
-            {maxOdds >= MAX_ODDS_OFF_THRESHOLD && (
-              <span className="text-text-3 text-[10px] uppercase tracking-wider ml-0.5">
-                off
-              </span>
-            )}
-          </div>
-        )}
-
-        {modes.has("profit_boost") && (
-          <div
-            className="inline-flex items-center gap-1 rounded-md bg-bg-1 border border-border-subtle h-8 px-2"
-            title="Profit-boost percentage applied to each offered price's winnings. 30 matches a typical DraftKings/FanDuel 30% boost. Range 0–100."
-          >
-            <span className="text-[10px] uppercase tracking-wider text-text-3">
-              Boost
-            </span>
-            <input
-              type="number"
-              value={boostPct}
-              onChange={e => {
-                const n = Number(e.target.value);
-                if (!Number.isFinite(n)) return;
-                setBoostPct(Math.max(0, Math.min(100, Math.round(n))));
-              }}
-              min={0}
-              max={100}
-              step={5}
-              className="w-12 bg-transparent text-xs tabular text-text-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-right"
-            />
-            <span className="text-text-3 text-xs">%</span>
-          </div>
-        )}
-
-        <div
-          className="inline-flex rounded-md bg-bg-1 border border-border-subtle p-0.5"
-          title="Filter by game start time"
-        >
-          {TIME_WINDOW_OPTIONS.map(o => (
-            <button
-              key={o.value}
-              type="button"
-              onClick={() => setTimeWindow(o.value)}
-              className={clsx(
-                "px-2.5 py-1 text-[11px] tracking-wide uppercase transition-colors rounded-sm tabular",
-                timeWindow === o.value
-                  ? "bg-bg-2 text-text-1"
-                  : "text-text-2 hover:text-text-1",
-              )}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-
-        {modes.has("ev") && (
-          <div
-            className="inline-flex rounded-md bg-bg-1 border border-border-subtle p-0.5"
-            title="Coral33 wager-type filter — Straight (default tab) vs Parlay-eligible only"
-          >
-            {WAGER_FILTER_OPTIONS.map(o => (
-              <button
-                key={o.value}
-                type="button"
-                onClick={() => setWagerFilter(o.value)}
-                className={clsx(
-                  "px-2.5 py-1 text-[11px] tracking-wide uppercase transition-colors rounded-sm tabular",
-                  wagerFilter === o.value
-                    ? "bg-bg-2 text-text-1"
-                    : "text-text-2 hover:text-text-1",
-                )}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <BookIncludeDropdown
-          label={
-            modes.has("free_bet") && modes.size === 1
-              ? "Free-bet book"
-              : modes.has("profit_boost") && modes.size === 1
-                ? "Boost book"
-                : "Book"
+        }
+        meta={<FreshnessChip staleAfterSeconds={300} />}
+        actions={<RefreshButton onRefresh={refreshAll} isValidating={anyValidating} />}
+      >
+        <FilterSentence
+          lead={<>Showing {MODE_NOUN[activeMode]}</>}
+          clauses={clauses}
+          aside={
+            allHaveData ? (
+              sorted.length !== rawCount ? (
+                <>
+                  <span className="tabular text-text-2">{sorted.length.toLocaleString()}</span> of{" "}
+                  <span className="tabular">{rawCount.toLocaleString()}</span> shown
+                </>
+              ) : (
+                <>
+                  <span className="tabular text-text-2">{rawCount.toLocaleString()}</span> found
+                </>
+              )
+            ) : null
           }
-          availableBooks={allBooksInPlay}
-          selected={bookFilter}
-          onChange={setBookFilter}
         />
+      </PageHeader>
 
-        {!modes.has("ev") && (
-          <div className="inline-flex items-center gap-1 rounded-md bg-bg-1 border border-border-subtle px-2 h-8">
-            <span className="text-text-3 text-[10px] uppercase tracking-wider">
-              {modes.has("free_bet") ? "Free face" : "Stake"}
-            </span>
-            <span className="text-text-3 text-xs">$</span>
-            <input
-              type="number"
-              value={stake}
-              onChange={e => setStake(clampStake(Number(e.target.value)))}
-              min={50}
-              max={1_000_000}
-              step={50}
-              className="w-20 bg-transparent text-xs tabular text-text-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              title="Per-row stake used for the Stake column. Persisted locally and via URL."
-            />
-          </div>
-        )}
-
-        {/* Min-stake floor — drops rows whose per-row $ stake (matches
-            the Stake column exactly) is below this threshold. 0 = off. */}
-        <div
-          className="inline-flex items-center gap-1 rounded-md bg-bg-1 border border-border-subtle px-2 h-8"
-          title="Hide rows whose per-row stake is below this $ amount. Inclusive: a row at exactly $X passes a filter of $X."
-        >
-          <span className="text-text-3 text-[10px] uppercase tracking-wider">
-            Min stake
-          </span>
-          <span className="text-text-3 text-xs">$</span>
-          <input
-            type="number"
-            value={minStake}
-            onChange={e => setMinStake(clampMinStake(Number(e.target.value)))}
-            min={0}
-            max={1_000_000}
-            step={5}
-            placeholder="0"
-            className="w-16 bg-transparent text-xs tabular text-text-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-          />
-        </div>
-      </div>
-
-      {anyError && (
-        <div className="text-price-down text-sm">
-          Backend unreachable. Is the FastAPI server running on :8000?
-        </div>
-      )}
+      {anyError && <BackendUnreachable error={anyError} />}
       {anyLoading && !allHaveData && (
-        <div className="text-text-2 text-sm">Scanning cache…</div>
+        <div className="text-[length:var(--fs-13)] text-text-3">Scanning the cache…</div>
       )}
 
       {allHaveData && sorted.length === 0 && emptyStateElement}
@@ -985,6 +1065,7 @@ function EdgesPageInner() {
           sortKey={sortKey}
           sortDir={sortDir}
           onSort={onSort}
+          showMaker={makerModeActive}
         />
       )}
     </div>

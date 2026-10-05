@@ -74,8 +74,8 @@ class UserSettingsStore:
     Serializes writes so a POST can't race with the fetcher's read.
     """
 
-    def __init__(self, path: Path = SETTINGS_PATH):
-        self.path = path
+    def __init__(self, path: Path | None = None):
+        self.path = path if path is not None else SETTINGS_PATH
         self._lock = Lock()
         self._settings = self._load_from_disk()
 

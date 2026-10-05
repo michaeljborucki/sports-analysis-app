@@ -245,10 +245,8 @@ def test_also_in_arb_flag_when_keys_match():
     assert dk and dk[0]["also_in_arb"] is True
 
 
-def test_three_way_markets_are_skipped():
-    """3-way h2h markets (soccer, MLB period ties) are not emitted — the
-    sports currently in scope don't use them and the product explicitly
-    excludes them."""
+def test_three_way_markets_are_devigged_without_emitting_undercovered_periods():
+    """Complete 3-way markets emit every side; incomplete ones emit nothing."""
     game = _game([
         _market("h2h_3_way", [
             _outcome("Home", [
@@ -271,7 +269,8 @@ def test_three_way_markets_are_skipped():
         ]),
     ])
     ops = scan_all_ev([game], now=NOW, min_ev_pct=-100)
-    assert ops == []
+    assert {op["outcome_name"] for op in ops} == {"Home", "Draw", "Away"}
+    assert {op["market_kind"] for op in ops} == {"h2h_3_way"}
 
 
 def test_alt_line_pairing_by_point_devigs_separately():

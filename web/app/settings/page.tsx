@@ -1,8 +1,9 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import clsx from "clsx";
-import { Check, Cog, Eye, Save } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Minus, Save } from "lucide-react";
 
 import {
   apiPaths,
@@ -15,6 +16,7 @@ import { RefreshButton } from "@/components/refresh-button";
 import { BookVisibilitySettings } from "@/components/book-visibility-settings";
 import { Coral33RefreshButton } from "@/components/coral33-refresh-button";
 import { DensityToggle } from "@/components/density-toggle";
+import { BackendUnreachable, Chip, Panel, PageHeader } from "@/components/ui";
 import { DEFAULT_VISIBLE_BOOKS } from "@/lib/books";
 import { useVisibleBooks } from "@/lib/use-visible-books";
 
@@ -22,17 +24,17 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
 
 const TIER_LABELS: Record<string, string> = {
-  main: "Main Markets",
-  alternates: "Alternate Lines",
-  periods: "Period / Inning Markets",
-  player_props: "Player Props",
+  main: "Main markets",
+  alternates: "Alternate lines",
+  periods: "Period and inning markets",
+  player_props: "Player props",
 };
 
 // Per-sport override for the "periods" tier (structure varies by sport).
 const PERIOD_LABEL_BY_SPORT: Record<string, string> = {
-  mlb: "First Innings (F5 / F3 / F1 / F7)",
-  baseball_ncaa: "First Innings (F5 / F3 / F1)",
-  nba: "Quarters & Halves",
+  mlb: "First innings (F5, F3, F1, F7)",
+  baseball_ncaa: "First innings (F5, F3, F1)",
+  nba: "Quarters and halves",
   nhl: "Periods (P1 / P2 / P3)",
 };
 
@@ -64,20 +66,17 @@ function TriCheckbox({ state }: { state: "on" | "off" | "mixed" }) {
       role="checkbox"
       aria-checked={state === "on" ? "true" : state === "mixed" ? "mixed" : "false"}
       className={clsx(
-        "inline-flex w-3.5 h-3.5 rounded-sm border items-center justify-center text-[10px] font-bold",
-        "transition-colors flex-shrink-0",
-        state === "on" && "bg-accent border-accent text-bg-0",
-        state === "mixed" && "bg-accent/40 border-accent text-bg-0",
-        state === "off" && "border-text-3"
+        "inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors",
+        state === "on" && "border-text-1 bg-text-1 text-bg-0",
+        state === "mixed" && "border-text-2 bg-bg-2 text-text-1",
+        state === "off" && "border-text-3 bg-transparent"
       )}
     >
       {state === "on" ? (
-        <Check size={10} strokeWidth={3} aria-hidden />
+        <Check size={11} strokeWidth={3} aria-hidden />
       ) : state === "mixed" ? (
-        "–"
-      ) : (
-        ""
-      )}
+        <Minus size={11} strokeWidth={3} aria-hidden />
+      ) : null}
     </span>
   );
 }
@@ -233,7 +232,7 @@ export default function SettingsPage() {
       );
       setTimeout(() => setSavedNotice(null), 5000);
       await mutate();
-    } catch (e) {
+    } catch {
       setSavedNotice("Save failed");
       setTimeout(() => setSavedNotice(null), 4000);
     } finally {
@@ -258,184 +257,195 @@ export default function SettingsPage() {
     );
   }
 
+  const marketCount = (sport: SportOption) =>
+    sport.tiers.reduce((n: number, t: TierOption) => n + t.markets.length, 0);
+
   return (
-    <div className="flex flex-col gap-4">
-      <header className="flex items-end justify-between gap-4 flex-wrap">
-        <div className="flex items-baseline gap-4">
-          <h1 className="inline-flex items-center gap-2 text-2xl font-bold tracking-tight">
-            <Cog size={20} aria-hidden className="text-text-2" />
-            Settings
-          </h1>
-          <span className="text-xs text-text-3 tabular max-w-xl">
-            Toggle sports and markets off to skip them in the fetcher. Saves
-            hot-reload the running fetcher — no backend restart needed.
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <Coral33RefreshButton />
-          {savedNotice && (
-            <span className="text-[11px] text-accent tabular">
-              {savedNotice}
-            </span>
-          )}
-          {dirty && (
-            <button
-              onClick={reset}
-              className="h-8 px-3 rounded-md text-xs font-medium border border-border-subtle bg-bg-1 text-text-2 hover:text-text-1"
-            >
-              Reset
-            </button>
-          )}
-          <button
-            onClick={save}
-            disabled={!dirty || saving}
-            className={clsx(
-              "inline-flex items-center gap-1.5 h-8 px-4 rounded-md text-xs font-medium border transition-colors tracking-wide",
-              dirty
-                ? "bg-accent/15 border-accent/50 text-accent hover:bg-accent/20"
-                : "bg-transparent border-border-subtle/50 text-text-3/60 cursor-default opacity-60",
-              saving && "opacity-60 cursor-wait"
+    <div className="flex flex-col">
+      <PageHeader
+        title="Settings"
+        description="Turn sports and markets off to skip them in the fetcher. Saving hot-reloads the running fetcher, no backend restart needed."
+        actions={
+          <>
+            {savedNotice && (
+              <span
+                role="status"
+                className={clsx(
+                  "text-[length:var(--fs-12)]",
+                  savedNotice === "Save failed" ? "text-loss" : "text-text-2",
+                )}
+              >
+                {savedNotice}
+              </span>
             )}
-            title={
-              dirty
-                ? "Persist your changes to the backend"
-                : "Nothing to save — toggle a sport, market, tier, or visible book to enable."
-            }
-          >
-            {dirty && !saving && <Save size={12} aria-hidden />}
-            {saving ? "Saving…" : dirty ? "Save changes" : "Nothing to save"}
-          </button>
-          <RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />
-        </div>
-      </header>
-
-      {error && (
-        <div className="text-price-down text-sm">
-          Backend unreachable. Is the FastAPI server running on :8000?
-        </div>
-      )}
-      {isLoading && !data && (
-        <div className="text-text-2 text-sm">Loading settings…</div>
-      )}
-
-      {/* Display preferences — density toggle writes the html[data-density]
-          attribute so the density CSS vars (--row-h, --row-pad-*) cascade
-          across every table. Persisted in localStorage (density_v1). */}
-      <section className="border border-border-subtle rounded-md bg-bg-0 px-4 py-3">
-        <h2 className="text-xs uppercase tracking-wider text-text-3 font-semibold mb-2">
-          Display preferences
-        </h2>
-        <DensityToggle />
-      </section>
-
-      <BookVisibilitySettings
-        value={visibleBooks}
-        onChange={setVisibleBooks}
+            {dirty && (
+              <button
+                type="button"
+                onClick={reset}
+                className="h-8 rounded-md border border-border-subtle bg-bg-1 px-3 text-[length:var(--fs-13)] font-medium text-text-2 transition-colors hover:bg-bg-2 hover:text-text-1"
+              >
+                Reset
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={save}
+              disabled={!dirty || saving}
+              className={clsx(
+                "inline-flex h-8 items-center gap-1.5 rounded-md px-4 text-[length:var(--fs-13)] font-semibold transition-colors",
+                dirty
+                  ? "bg-text-1 text-bg-0 hover:opacity-90"
+                  : "cursor-default border border-border-subtle text-text-3",
+                saving && "cursor-wait opacity-60",
+              )}
+              title={
+                dirty
+                  ? "Persist your changes to the backend"
+                  : "Nothing to save. Toggle a sport, market, tier or visible book to enable."
+              }
+            >
+              {dirty && !saving && <Save size={13} aria-hidden />}
+              {saving ? "Saving…" : dirty ? "Save changes" : "Nothing to save"}
+            </button>
+            <RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />
+          </>
+        }
       />
 
-      {data && (
-        <div className="flex flex-col gap-3">
-          {data.sports.map((sport: SportOption) => {
-            const sportOn = !disabledSports.has(sport.key);
-            const isExpanded = expanded.has(sport.key);
-            return (
-              <div
-                key={sport.key}
-                className="border border-border-subtle rounded-md bg-bg-0 overflow-hidden"
-              >
-                <div className="flex items-center gap-3 px-4 py-3 bg-bg-1 border-b border-border-subtle">
-                  <button
-                    onClick={() => toggleSport(sport.key)}
-                    className="flex-shrink-0 cursor-pointer"
-                    aria-label={`${sportOn ? "Disable" : "Enable"} ${sport.label}`}
-                  >
-                    <TriCheckbox state={sportOn ? "on" : "off"} />
-                  </button>
-                  <span className="text-sm font-semibold text-text-1">
-                    {sport.label}
-                  </span>
-                  <span className="text-[11px] text-text-3 tabular">
-                    {sport.tiers.length} tier{sport.tiers.length === 1 ? "" : "s"} ·{" "}
-                    {sport.tiers.reduce(
-                      (n: number, t: TierOption) => n + t.markets.length,
-                      0
-                    )}{" "}
-                    markets
-                  </span>
-                  <button
-                    onClick={() => toggleExpanded(sport.key)}
-                    className="ml-auto text-[11px] text-text-2 hover:text-text-1 uppercase tracking-wide"
-                  >
-                    {isExpanded ? "Collapse" : "Expand"}
-                  </button>
-                </div>
-                {isExpanded && (
-                  <div className={clsx(
-                    "flex flex-col divide-y divide-border-subtle",
-                    !sportOn && "opacity-50"
-                  )}>
-                    {sport.tiers.map((tier: TierOption) => {
-                      const state = tierState(sport, tier.name);
-                      return (
-                        <div key={tier.name} className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() =>
-                                setTierState(sport, tier.name, state !== "on")
-                              }
-                              className="flex-shrink-0 cursor-pointer"
-                              aria-label={`Toggle ${tier.name}`}
-                            >
-                              <TriCheckbox state={state} />
-                            </button>
-                            <span className="text-xs font-semibold text-text-1">
-                              {tierLabel(tier.name, sport.key)}
-                            </span>
-                            <span className="text-[10px] text-text-3 tabular uppercase tracking-wide">
-                              {tier.interval_seconds}s
-                              {!tier.enabled_in_config && (
-                                <span className="ml-2 text-flash">config off</span>
-                              )}
-                            </span>
-                          </div>
-                          <div className="mt-2 pl-7 flex flex-wrap gap-x-4 gap-y-1">
-                            {tier.markets.map((market: MarketOption) => {
-                              const disabled =
-                                disabledMarkets[sport.key]?.has(market.key) ??
-                                false;
-                              return (
-                                <button
-                                  key={market.key}
-                                  onClick={() =>
-                                    toggleMarket(sport.key, market.key)
-                                  }
-                                  className={clsx(
-                                    "inline-flex items-center gap-2 py-1 text-[11px] transition-colors",
-                                    disabled
-                                      ? "text-text-3"
-                                      : "text-text-2 hover:text-text-1"
-                                  )}
-                                >
-                                  <TriCheckbox
-                                    state={disabled ? "off" : "on"}
-                                  />
-                                  <span className="tabular">
-                                    {formatMarketKey(market.key)}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+      <div className="flex flex-col gap-4">
+        {error && <BackendUnreachable error={error} />}
+        {isLoading && !data && <div className="skeleton h-24 rounded-lg" aria-label="Loading settings" />}
+
+        <Panel title="Data sources">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border-subtle px-4 py-3">
+            <div className="min-w-0 flex-1">
+              <div className="text-[length:var(--fs-14)] font-medium text-text-1">Coral33</div>
+              <div className="text-[length:var(--fs-12)] text-text-3">
+                Run a refresh cycle now across every configured sport: main lines first, then alternates and props.
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+            <Coral33RefreshButton />
+          </div>
+          <Link
+            href="/settings/mapping-health"
+            className="group flex items-center gap-6 px-4 py-3 transition-colors hover:bg-bg-2"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="text-[length:var(--fs-14)] font-medium text-text-1">Mapping health</div>
+              <div className="text-[length:var(--fs-12)] text-text-3">
+                Team, player and market names the matcher couldn&rsquo;t resolve.
+              </div>
+            </div>
+            <ChevronRight size={16} aria-hidden className="text-text-3 group-hover:text-text-1" />
+          </Link>
+        </Panel>
+
+        {/* Density writes html[data-density] so the --row-* vars cascade to
+            every table. Persisted in localStorage (density_v1). */}
+        <Panel title="Display">
+          <div className="px-4 py-3">
+            <DensityToggle />
+          </div>
+        </Panel>
+
+        <BookVisibilitySettings value={visibleBooks} onChange={setVisibleBooks} />
+
+        {data && (
+          <Panel title="Sports and markets">
+            <ul>
+              {data.sports.map((sport: SportOption) => {
+                const sportOn = !disabledSports.has(sport.key);
+                const isExpanded = expanded.has(sport.key);
+                return (
+                  <li key={sport.key} className="border-b border-border-subtle last:border-b-0">
+                    <div className="flex items-center gap-3 px-4 py-2.5">
+                      <button
+                        type="button"
+                        onClick={() => toggleSport(sport.key)}
+                        className="flex-shrink-0 cursor-pointer"
+                        aria-label={`${sportOn ? "Disable" : "Enable"} ${sport.label}`}
+                      >
+                        <TriCheckbox state={sportOn ? "on" : "off"} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(sport.key)}
+                        aria-expanded={isExpanded}
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                      >
+                        <span className={clsx("text-[length:var(--fs-14)] font-semibold", sportOn ? "text-text-1" : "text-text-3")}>
+                          {sport.label}
+                        </span>
+                        <span className="text-[length:var(--fs-12)] text-text-3">
+                          <span className="tabular">{sport.tiers.length}</span> {sport.tiers.length === 1 ? "tier" : "tiers"},{" "}
+                          <span className="tabular">{marketCount(sport)}</span> markets
+                        </span>
+                        <ChevronDown
+                          size={14}
+                          aria-hidden
+                          className={clsx("ml-auto text-text-3 transition-transform", isExpanded && "rotate-180")}
+                        />
+                      </button>
+                    </div>
+                    {isExpanded && (
+                      <div
+                        className={clsx(
+                          "flex flex-col border-t border-border-subtle bg-bg-0/40",
+                          !sportOn && "opacity-50",
+                        )}
+                      >
+                        {sport.tiers.map((tier: TierOption) => {
+                          const state = tierState(sport, tier.name);
+                          return (
+                            <div key={tier.name} className="border-b border-border-subtle px-4 py-3 last:border-b-0">
+                              <div className="flex items-center gap-3 pl-7">
+                                <button
+                                  type="button"
+                                  onClick={() => setTierState(sport, tier.name, state !== "on")}
+                                  className="flex-shrink-0 cursor-pointer"
+                                  aria-label={`Toggle ${tier.name}`}
+                                >
+                                  <TriCheckbox state={state} />
+                                </button>
+                                <span className="text-[length:var(--fs-13)] font-semibold text-text-1">
+                                  {tierLabel(tier.name, sport.key)}
+                                </span>
+                                <span className="text-[length:var(--fs-12)] text-text-3">
+                                  every <span className="tabular">{tier.interval_seconds}s</span>
+                                </span>
+                                {!tier.enabled_in_config && <Chip tone="stale">Off in config</Chip>}
+                              </div>
+                              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 pl-14">
+                                {tier.markets.map((market: MarketOption) => {
+                                  const disabled = disabledMarkets[sport.key]?.has(market.key) ?? false;
+                                  return (
+                                    <button
+                                      type="button"
+                                      key={market.key}
+                                      onClick={() => toggleMarket(sport.key, market.key)}
+                                      className={clsx(
+                                        "inline-flex items-center gap-2 py-1 text-[length:var(--fs-12)] transition-colors",
+                                        disabled ? "text-text-3" : "text-text-2 hover:text-text-1",
+                                      )}
+                                    >
+                                      <TriCheckbox state={disabled ? "off" : "on"} />
+                                      <span>{formatMarketKey(market.key)}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </Panel>
+        )}
+      </div>
     </div>
   );
 }

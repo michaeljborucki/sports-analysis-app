@@ -35,6 +35,7 @@ from .devig import (
     implied_to_american,
 )
 from .pairing import collect_spread_pairs, collect_total_pairs
+from .venues import OPT_IN_BOOKS, book_allowed
 
 
 # Books trusted as sharp anchors. Pinnacle is the canonical price-discovery
@@ -171,6 +172,29 @@ def _collect_market_outcomes(
     return by_outcome
 
 
+def prop_reference_limit(game: dict, market_key: str, now: datetime, offer_limit: float) -> float:
+    """Prop reference TTL: collector cadence plus 120s delivery grace.
+
+    Offers retain the caller's limit. Explicit limits below the API default
+    remain strict for references too. Missed polling cycles are not accepted.
+    """
+    if offer_limit < 300 or not market_key.startswith(("player_", "batter_", "pitcher_")):
+        return offer_limit
+    commence = game.get("commence_time")
+    if isinstance(commence, str):
+        commence = datetime.fromisoformat(commence.replace("Z", "+00:00"))
+    if commence is None:
+        return offer_limit
+    hours = (commence - now).total_seconds() / 3600
+    # NFL in-season overrides in betting-db/config.toml; other sports keep
+    # the collector's global cadence. The caller's stricter limit wins above.
+    bands = ((1, 60), (12, 180), (48, 600)) if game.get("sport_key") == "nfl" else ((1, 300), (12, 900), (48, 3600))
+    for max_hours, interval in bands:
+        if 0 < hours <= max_hours:
+            return max(offer_limit, interval + 120)
+    return offer_limit
+
+
 def _stale(price: dict, now: datetime, limit_s: float) -> bool:
     return _age_seconds(price, now) > limit_s
 
@@ -209,6 +233,7 @@ def _pinnacle_fair(
     market_key: str,
     now: datetime,
     stale_seconds: float,
+    anchor_ages: dict | None = None,
 ) -> dict[tuple[str, float | None], float] | None:
     """Devig Pinnacle's prices. Returns {outcome_key -> fair_prob} or None if
     Pinnacle isn't fully present for this market's grouping."""
@@ -239,6 +264,8 @@ def _pinnacle_fair(
             fair = [fp1, fp2]
         for k, p in zip(ordered_keys, fair):
             probs[k] = p
+            if anchor_ages is not None:
+                anchor_ages[k] = max(_age_seconds(by_outcome[key]["pinnacle"], now) for key in ordered_keys)
 
     return probs or None
 
@@ -249,6 +276,7 @@ def _consensus_fair(
     now: datetime,
     stale_seconds: float,
     sharp_books: frozenset[str],
+    anchor_ages: dict | None = None,
 ) -> tuple[dict[tuple[str, float | None], float], int] | None:
     """Per-book devig then take median across books. Returns
     ({outcome_key -> fair_prob}, anchor_book_count) or None if insufficient
@@ -261,6 +289,7 @@ def _consensus_fair(
     def _gather(books_set: frozenset[str] | set[str] | None):
         per_outcome: dict[tuple[str, float | None], list[float]] = defaultdict(list)
         contributing_books: set[str] = set()
+        ages: dict = {}
         for _bucket, keys in buckets.items():
             if len(keys) != expect_n:
                 continue
@@ -286,18 +315,21 @@ def _consensus_fair(
                     fair = [fp1, fp2]
                 for k, fp in zip(keys, fair):
                     per_outcome[k].append(fp)
+                    ages[k] = max(ages.get(k, 0), *(_age_seconds(by_outcome[key][bk], now) for key in keys))
                 contributing_books.add(bk)
-        return per_outcome, contributing_books
+        return per_outcome, contributing_books, ages
 
-    per_outcome, books = _gather(sharp_books)
+    per_outcome, books, ages = _gather(sharp_books)
     if len(books) < 2:
-        per_outcome, books = _gather(None)
+        per_outcome, books, ages = _gather(None)
         if len(books) < 2:
             return None
 
     probs = {k: median(vs) for k, vs in per_outcome.items() if vs}
     if not probs:
         return None
+    if anchor_ages is not None:
+        anchor_ages.update(ages)
     return probs, len(books)
 
 
@@ -358,6 +390,8 @@ def _two_way_pair_ev_rows(
             for bk, pa in a_by_book.items():
                 if candidate is not None and bk not in candidate:
                     continue
+                if bk in OPT_IN_BOOKS:
+                    continue  # a price you'd post, not a market price
                 if _stale(pa, now, stale_seconds):
                     continue
                 pb = b_by_book.get(bk)
@@ -390,7 +424,7 @@ def _two_way_pair_ev_rows(
                 continue
             if source == "pinnacle" and book == "pinnacle":
                 continue
-            if books_filter is not None and book not in books_filter:
+            if not book_allowed(book, books_filter):
                 continue
             american = int(price["price_american"])
             if american > max_longshot_american:
@@ -406,12 +440,12 @@ def _two_way_pair_ev_rows(
             also_in_arb = False
             if arb_keys is not None:
                 arb_market = _canonical_arb_market(market_kind)
-                if arb_market == "spreads":
+                if _base_market(arb_market) == "spreads":
                     arb_pt = (
                         None if point_for_display is None
                         else round(abs(point_for_display), 1)
                     )
-                elif arb_market == "totals":
+                elif _base_market(arb_market) == "totals":
                     arb_pt = (
                         None if point_for_display is None
                         else round(point_for_display, 1)
@@ -447,6 +481,7 @@ def _two_way_pair_ev_rows(
                 "also_in_arb": also_in_arb,
                 "confidence": confidence,
                 "wager_type": price.get("wager_type"),
+                "counterpart_price_american": price.get("counterpart_price_american"),
             })
     return ops
 
@@ -529,10 +564,19 @@ def scan_game_ev(
 
         source = "pinnacle"
         anchor_count = 1
-        fair = _pinnacle_fair(by_outcome, market_key, now, stale_seconds)
+        reference_limit = prop_reference_limit(game, market_key, now, stale_seconds)
+        # Direct books keep the strict freshness target even when the slower
+        # comparison feed is allowed its normal polling interval.
+        reference_outcomes = {k: {bk: pr for bk, pr in prices.items()
+            if bk not in OPT_IN_BOOKS
+            and (bk not in {"coral33", "kalshi", "polymarket"}
+                 or not _stale(pr, now, stale_seconds))}
+            for k, prices in by_outcome.items()}
+        anchor_ages: dict = {}
+        fair = _pinnacle_fair(reference_outcomes, market_key, now, reference_limit, anchor_ages)
         if fair is None:
             res = _consensus_fair(
-                by_outcome, market_key, now, stale_seconds, sharp_books,
+                reference_outcomes, market_key, now, reference_limit, sharp_books, anchor_ages,
             )
             if res is None:
                 continue
@@ -549,7 +593,7 @@ def scan_game_ev(
                 if source == "pinnacle" and book == "pinnacle":
                     # Don't emit "Pinnacle +X%" — that's the anchor.
                     continue
-                if books_filter is not None and book not in books_filter:
+                if not book_allowed(book, books_filter):
                     continue
                 american = int(price["price_american"])
                 if american > max_longshot_american:
@@ -565,12 +609,12 @@ def scan_game_ev(
                 also_in_arb = False
                 if arb_keys is not None:
                     arb_market = _canonical_arb_market(market_key)
-                    if arb_market == "spreads":
+                    if _base_market(arb_market) == "spreads":
                         arb_pt = None if point is None else round(abs(point), 1)
-                    elif arb_market == "totals":
+                    elif _base_market(arb_market) == "totals":
                         arb_pt = None if point is None else round(point, 1)
                     else:
-                        arb_pt = None
+                        arb_pt = None if point is None else round(point, 1)
                     also_in_arb = (game["event_id"], arb_market, arb_pt) in arb_keys
 
                 ops.append({
@@ -592,9 +636,12 @@ def scan_game_ev(
                     "source": source,
                     "anchor_book_count": anchor_count,
                     "offered_age_s": int(_age_seconds(price, now)),
+                    "anchor_age_s": int(anchor_ages.get(out_key, 0)),
+                    "reference_delayed": anchor_ages.get(out_key, 0) > stale_seconds,
                     "also_in_arb": also_in_arb,
                     "confidence": confidence,
                     "wager_type": price.get("wager_type"),
+                "counterpart_price_american": price.get("counterpart_price_american"),
                 })
     return ops
 
@@ -602,10 +649,12 @@ def scan_game_ev(
 def _canonical_arb_market(market_key: str) -> str:
     """Arbitrage scanner collapses alternate_* into the main market_kind when
     emitting. Mirror that for the also_in_arb tag."""
-    if market_key in ("spreads", "alternate_spreads"):
-        return "spreads"
-    if market_key in ("totals", "alternate_totals"):
-        return "totals"
+    base = _base_market(market_key)
+    suffix = _period_suffix(market_key)
+    if base in ("spreads", "alternate_spreads"):
+        return f"spreads{suffix}"
+    if base in ("totals", "alternate_totals"):
+        return f"totals{suffix}"
     return market_key
 
 

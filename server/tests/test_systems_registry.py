@@ -1,12 +1,11 @@
 from server.systems.registry import PRIMARY_SYSTEMS, SUBSET_SYSTEMS
 
 
-def test_registry_exposes_26_primary_systems_and_nested_football_2b():
-    assert len(PRIMARY_SYSTEMS) == 26
-    assert len({system.system_id for system in PRIMARY_SYSTEMS}) == 26
+def test_registry_exposes_53_primary_systems_and_nested_football_2b():
+    assert len(PRIMARY_SYSTEMS) == 53
+    assert len({system.system_id for system in PRIMARY_SYSTEMS}) == 53
     assert {system.system_id for system in PRIMARY_SYSTEMS if not system.enabled} == {
         "FOOTBALL_8_CFB_MAC_BOWL_FADE_TBD",
-        "FOOTBALL_11_NFL_EARLY_DIVISIONAL_DOG_TBD",
         "FOOTBALL_13_NFL_OVER_AFTER_BOTH_UNDER",
     }
     assert [system.system_id for system in SUBSET_SYSTEMS] == [

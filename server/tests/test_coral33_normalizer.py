@@ -25,11 +25,40 @@ def _load(name: str) -> dict:
 def _always_match(sport, home, away, commence):
     """Stub matcher — produces a deterministic event_id from the team names so
     tests can assert on structure without a real cache."""
-    return f"EV:{sport}:{home}|{away}@{commence.isoformat()}"
+    return {
+        "event_id": f"EV:{sport}:{home}|{away}@{commence.isoformat()}",
+        "home_team": home,
+        "away_team": away,
+    }
 
 
 def _never_match(sport, home, away, commence):
     return None
+
+
+@pytest.mark.parametrize("parent_hour,expected_count", [(0, 2), (1, 0)])
+def test_alternate_lines_can_join_parent_by_correlation_id(parent_hour, expected_count):
+    response = {"Lines": [{
+        "Status": "O", "Team1ID": "Patriots Alt Line",
+        "Team2ID": "Seahawks Alt Line", "CorrelationID": "451-g  ",
+        "GameDateTime": "2026-09-09 18:20:01.000",
+        "TotalPoints": 54.5, "TtlPtsAdj1": 290, "TtlPtsAdj2": -390,
+    }]}
+    parent = {
+        "event_id": "nfl-game", "home_team": "Seattle Seahawks",
+        "away_team": "New England Patriots",
+        "commence_time": datetime(2026, 9, 10, parent_hour, 20, 1, tzinfo=timezone.utc),
+    }
+    rows = normalize_league_lines(
+        response, "Game", "nfl", datetime(2026, 9, 9, tzinfo=timezone.utc),
+        _never_match, is_alternate=True,
+        match_correlation=lambda key: parent if key == "451-g" else None,
+    )
+    assert len(rows) == expected_count
+    if not expected_count:
+        return
+    assert {r["market_key"] for r in rows} == {"alternate_totals"}
+    assert all(r["event_id"] == "nfl-game" and r["home_team"] == "Seattle Seahawks" for r in rows)
 
 
 def test_nba_game_main_lines_emit_expected_markets():

@@ -4,9 +4,13 @@ import asyncio
 import functools
 import logging
 import sqlite3
+import time
+from contextlib import contextmanager
+from collections.abc import Iterator
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Iterable
+from zoneinfo import ZoneInfo
 
 
 logger = logging.getLogger(__name__)
@@ -26,6 +30,7 @@ logger = logging.getLogger(__name__)
 # in events.py — both batch state-change signals at the boundary
 # closest to consumers.
 VERSION_FLUSH_INTERVAL_S = 0.2
+DIRECT_READ_GENERATION_INTERVAL_S = 15.0
 
 
 VALID_ODDS_SOURCES = ("native", "betting_db")
@@ -203,57 +208,6 @@ CREATE INDEX IF NOT EXISTS idx_bets_event    ON bets(event_id);
 CREATE INDEX IF NOT EXISTS idx_bets_book     ON bets(source_book);
 CREATE INDEX IF NOT EXISTS idx_bets_status   ON bets(status);
 
--- Auto-bet sidecar: one row per placement attempt (live or dry-run, success
--- or refusal). Audit-grade — never deleted by code. trigger_source records
--- whether the user clicked Auto-place ('user') or the delta-tick loop fired
--- a refresh ('delta_tick').
-CREATE TABLE IF NOT EXISTS sidecar_placements (
-  placement_id     TEXT PRIMARY KEY,
-  job_id           TEXT NOT NULL,
-  created_at       INTEGER NOT NULL,
-  ev_row_id        TEXT NOT NULL,
-  ev_leg           TEXT NOT NULL,
-  parlay_name      TEXT NOT NULL DEFAULT '10 team',
-  kelly_fraction   TEXT NOT NULL,
-  target_stake     REAL NOT NULL,
-  stake            REAL,
-  mode             TEXT NOT NULL,
-  picked_account   TEXT,
-  result           TEXT NOT NULL,
-  ticket_number    TEXT,
-  accepted_payload TEXT,
-  error_message    TEXT,
-  trigger_source   TEXT NOT NULL DEFAULT 'user'    -- 'user' | 'delta_tick'
-);
-CREATE INDEX IF NOT EXISTS sidecar_placements_job_id
-  ON sidecar_placements(job_id);
-CREATE INDEX IF NOT EXISTS sidecar_placements_ev_row_id
-  ON sidecar_placements(ev_row_id);
-CREATE INDEX IF NOT EXISTS sidecar_placements_created_at
-  ON sidecar_placements(created_at DESC);
-
--- Auto-bet sidecar: one row per armed +EV signal currently in-flight. The
--- delta-tick loop reads this table to know which rows to revisit; rows are
--- inserted when the user arms a signal and removed when the signal expires
--- (commence_time passed) or is manually cleared.
-CREATE TABLE IF NOT EXISTS sidecar_active_signals (
-  ev_row_id          TEXT PRIMARY KEY,
-  kelly_fraction     TEXT NOT NULL,
-  bankroll_at_arm    INTEGER NOT NULL,
-  commence_time      INTEGER NOT NULL,
-  total_placed       REAL NOT NULL DEFAULT 0,
-  first_armed_at     INTEGER NOT NULL,
-  last_checked_at    INTEGER,
-  last_delta_at      INTEGER,
-  last_target        REAL,
-  -- Pinned account for the autonomous delta-tick: when the user armed
-  -- the signal via the account-first /sidecar flow, future top-ups must
-  -- fire on the SAME account (not splitter-picked). NULL = pre-account-
-  -- first signal; delta-tick falls back to legacy splitter for it.
-  armed_customer_id  TEXT
-);
-CREATE INDEX IF NOT EXISTS sidecar_active_signals_commence
-  ON sidecar_active_signals(commence_time);
 """
 
 
@@ -274,10 +228,6 @@ _MIGRATIONS = [
     # rows (no depth data) and pre-migration rows; populated by the
     # Polymarket WS ingest path and the Kalshi orderbook poller.
     "ALTER TABLE odds_snapshot ADD COLUMN max_stake_dollars REAL",
-    # 0.6: account-first sidecar — pin signals to the customer_id the
-    # user picked at arm time. Existing rows (pre-account-first) keep
-    # NULL and the delta-tick falls back to the legacy splitter for them.
-    "ALTER TABLE sidecar_active_signals ADD COLUMN armed_customer_id TEXT",
     # 0.7: Odds API's soccer competition identifiers and names. NULL for
     # non-soccer rows and direct-book rows without provider metadata.
     "ALTER TABLE odds_snapshot ADD COLUMN league_key TEXT",
@@ -316,6 +266,8 @@ def _init_schema(conn: sqlite3.Connection) -> None:
         "CREATE INDEX IF NOT EXISTS idx_odds_sport ON odds_snapshot(sport_key)",
         "CREATE INDEX IF NOT EXISTS idx_odds_fetched_at ON odds_snapshot(fetched_at)",
         "CREATE INDEX IF NOT EXISTS idx_odds_sport_market ON odds_snapshot(sport_key, market_key)",
+        "CREATE INDEX IF NOT EXISTS idx_odds_book_sport_market "
+        "ON odds_snapshot(bookmaker_key, sport_key, market_key)",
         "CREATE INDEX IF NOT EXISTS idx_odds_commence_time ON odds_snapshot(commence_time)",
         # Composite covering index for distinct_events() / events_in_close_window().
         # Even with the HAVING pushdown those queries still SCAN odds_snapshot
@@ -365,6 +317,11 @@ class OddsCache:
         # Python bool is atomic under the GIL; a write between the
         # loop's read and clear is captured on the next iteration.
         self._version_dirty: bool = False
+        self._direct_read_generation: int = 0
+        self._direct_read_generation_dirty: bool = False
+        self._last_direct_read_generation_flush = (
+            time.monotonic() - DIRECT_READ_GENERATION_INTERVAL_S
+        )
 
     @property
     def version(self) -> int:
@@ -381,6 +338,29 @@ class OddsCache:
         """
         return self._version
 
+    @property
+    def direct_read_generation(self) -> int:
+        """Debounced identity for native direct-book rows.
+
+        Betting-db supplies Odds API rows, but Coral33/Kalshi/Polymarket are
+        unioned from this cache. Their high-frequency writes must invalidate
+        scanner results without turning every websocket row into a rebuild.
+        """
+        return self._direct_read_generation
+
+    @property
+    def read_version(self) -> tuple:
+        """Hashable identity of every store contributing to odds reads."""
+        source = _odds_source()
+        if source == "betting_db":
+            from . import bettingdb_source
+            return (
+                "betting_db",
+                bettingdb_source.source_fingerprint(),
+                self._direct_read_generation,
+            )
+        return ("native", self._version)
+
     def _bump_version(self) -> None:
         """Mark the cache version as dirty. The actual counter
         increment is deferred to the next `_version_flush_loop` tick,
@@ -392,6 +372,7 @@ class OddsCache:
         `server/odds/events.py`'s `mark_dirty()` / `flush_loop()`.
         """
         self._version_dirty = True
+        self._direct_read_generation_dirty = True
         # Notify the SSE event broadcaster that cache state changed.
         # Sync flag-set — safe to call from any context (no running
         # event loop required, no awaits). The SSE flush_loop coalesces
@@ -400,7 +381,12 @@ class OddsCache:
         # instantiate OddsCache without the rest of the server stack.
         try:
             from . import events as _events
-            _events.mark_dirty()
+            event_type = (
+                "direct_books_changed"
+                if _odds_source() == "betting_db"
+                else "tick"
+            )
+            _events.mark_dirty(event_type)
         except Exception:  # pragma: no cover — never let SSE break upserts
             pass
 
@@ -426,6 +412,22 @@ class OddsCache:
             return True
         return False
 
+    def _flush_direct_read_generation_now(self, *, force: bool = False) -> bool:
+        """Advance the direct-book read identity at most once per window."""
+        if not self._direct_read_generation_dirty:
+            return False
+        now = time.monotonic()
+        if (
+            not force
+            and now - self._last_direct_read_generation_flush
+            < DIRECT_READ_GENERATION_INTERVAL_S
+        ):
+            return False
+        self._direct_read_generation_dirty = False
+        self._last_direct_read_generation_flush = now
+        self._direct_read_generation += 1
+        return True
+
     async def version_flush_loop(self) -> None:
         """Background task: every VERSION_FLUSH_INTERVAL_S, increment
         the version counter ONCE if any `_bump_version()` calls have
@@ -444,6 +446,7 @@ class OddsCache:
             try:
                 await asyncio.sleep(VERSION_FLUSH_INTERVAL_S)
                 self._flush_version_now()
+                self._flush_direct_read_generation_now()
             except asyncio.CancelledError:
                 logger.info("OddsCache version_flush_loop cancelled")
                 raise
@@ -483,7 +486,8 @@ class OddsCache:
             return self.all_current()
         return self._all_current_for_version(self.version)
 
-    def _conn(self) -> sqlite3.Connection:
+    @contextmanager
+    def _conn(self) -> Iterator[sqlite3.Connection]:
         conn = sqlite3.connect(
             self.path,
             detect_types=sqlite3.PARSE_DECLTYPES,
@@ -505,7 +509,11 @@ class OddsCache:
         cur.execute("PRAGMA temp_store=MEMORY")         # closest-line ORDER BY uses temp btrees
         cur.execute("PRAGMA wal_autocheckpoint=1000")   # checkpoint every 1000 pages (~4MB)
         cur.close()
-        return conn
+        try:
+            with conn:
+                yield conn
+        finally:
+            conn.close()
 
     def init(self) -> None:
         with self._conn() as c:
@@ -570,6 +578,59 @@ class OddsCache:
             return bettingdb_source.all_current(self, sport_key)
         return self._all_current_native(sport_key)
 
+    def all_current_markets(
+        self,
+        sport_key: str,
+        market_keys: tuple[str, ...],
+    ) -> list[dict]:
+        """Current rows for one sport restricted to exact market keys.
+
+        The filter is pushed into the active odds source so consumers that
+        only need mainlines do not materialize six figures of props and
+        alternate-line rows first.
+        """
+        if _odds_source() == "betting_db":
+            from . import bettingdb_source
+            return bettingdb_source.all_current_markets(
+                self, sport_key, market_keys,
+            )
+        if not market_keys:
+            return []
+        placeholders = ",".join("?" for _ in market_keys)
+        with self._conn() as c:
+            rows = [dict(row) for row in c.execute(
+                f"SELECT * FROM odds_snapshot WHERE sport_key = ? "
+                f"AND market_key IN ({placeholders})",
+                (sport_key, *market_keys),
+            )]
+        for row in rows:
+            if row.get("market_key") == "h2h":
+                row["outcome_point"] = None
+        return rows
+
+    def all_current_family(
+        self,
+        sport_key: str,
+        *,
+        prop_family: bool,
+        commence_before: datetime | None = None,
+    ) -> list[dict]:
+        """Rows for one sport restricted to prop or non-prop markets."""
+        if _odds_source() == "betting_db":
+            from . import bettingdb_source
+            return bettingdb_source.all_current_family(
+                self, sport_key, prop_family, commence_before,
+            )
+        from .market_config import is_prop_market
+        rows = [
+            row for row in self._all_current_native(sport_key)
+            if is_prop_market(row["market_key"]) is prop_family
+        ]
+        if commence_before is not None:
+            cutoff = commence_before.isoformat()
+            rows = [row for row in rows if row["commence_time"] <= cutoff]
+        return rows
+
     def _all_current_native(self, sport_key: str | None = None) -> list[dict]:
         q = "SELECT * FROM odds_snapshot"
         args: tuple = ()
@@ -633,6 +694,16 @@ class OddsCache:
             row = c.execute("SELECT * FROM fetcher_status WHERE key='default'").fetchone()
             return dict(row) if row else None
 
+    def newest_fetched_at(self) -> datetime | None:
+        """Newest timestamp on an actual currently stored offered-price row."""
+        with self._conn() as c:
+            row = c.execute("SELECT MAX(fetched_at) FROM odds_snapshot").fetchone()
+        value = row[0] if row else None
+        if not value:
+            return None
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        return parsed.replace(tzinfo=timezone.utc) if parsed.tzinfo is None else parsed
+
     def purge_finished_games(self, now: datetime, past_hours: int = 6) -> int:
         """Delete rows for any event whose commence_time is more than `past_hours`
         behind `now`. Returns count removed."""
@@ -669,6 +740,29 @@ class OddsCache:
                 (bookmaker_key, cutoff),
             )
             removed = cur.rowcount
+        if removed:
+            self._bump_version()
+        return removed
+
+    def delete_rows(self, keys: Iterable[tuple]) -> int:
+        """Delete rows by primary key: (event_id, bookmaker_key, market_key,
+        outcome_name, outcome_point). Used by direct fetchers to drop a
+        quote the moment the book stops offering it, instead of waiting
+        for the 600s TTL."""
+        params = [
+            (e, b, m, o, 0.0 if p is None else float(p))
+            for e, b, m, o, p in keys
+        ]
+        if not params:
+            return 0
+        with self._conn() as c:
+            before = c.total_changes
+            c.executemany(
+                "DELETE FROM odds_snapshot WHERE event_id = ? AND bookmaker_key = ? "
+                "AND market_key = ? AND outcome_name = ? AND outcome_point = ?",
+                params,
+            )
+            removed = c.total_changes - before
         if removed:
             self._bump_version()
         return removed
@@ -1042,7 +1136,7 @@ class OddsCache:
             rows = c.execute(
                 """
                 SELECT customer_id, captured_at, local_date,
-                       current_balance, pending, available, free_play
+                       current_balance, pending, available, free_play, source
                 FROM balance_snapshots
                 WHERE customer_id = ?
                 ORDER BY captured_at ASC
@@ -1052,6 +1146,18 @@ class OddsCache:
         out: dict[str, dict] = {}
         for r in rows:
             d = dict(r)
+            # Early scraper-refresh rows stored UTC's calendar date, which
+            # moves evening Mountain-time captures onto tomorrow's bar.
+            # Re-bucket those rows from their timestamp at read time so the
+            # correction also repairs existing data. Explicit dates from
+            # manual/import sources remain authoritative.
+            if d.get("source") == "scraper_refresh":
+                captured = datetime.fromisoformat(
+                    d["captured_at"].replace("Z", "+00:00")
+                )
+                d["local_date"] = captured.astimezone(
+                    ZoneInfo("America/Denver")
+                ).date().isoformat()
             # Ascending order means the LAST row per date overwrites,
             # leaving the latest captured_at as the final value.
             out[d["local_date"]] = d
@@ -1090,6 +1196,20 @@ class OddsCache:
             )
         return self._distinct_events_native(
             within_hours_ahead, sport_key, now,
+        )
+
+    async def distinct_events_async(
+        self,
+        within_hours_ahead: int | None = None,
+        sport_key: str | None = None,
+        now: datetime | None = None,
+    ) -> list[dict]:
+        """Event discovery for async schedulers without blocking the loop."""
+        return await asyncio.to_thread(
+            self.distinct_events,
+            within_hours_ahead,
+            sport_key,
+            now,
         )
 
     def _distinct_events_native(

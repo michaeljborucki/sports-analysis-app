@@ -1,18 +1,14 @@
-/* Hallmark · pre-emit critique: P4 H4 E4 S5 R5 V4
- * genre: modern-minimal · macrostructure: Workbench · tone: technical/utilitarian
- * theme: existing betting-site dark tokens · enrichment: none
- */
 "use client";
 
 import { Suspense } from "react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
-import clsx from "clsx";
 
 import { RefreshButton } from "@/components/refresh-button";
 import { SystemsWorkbench } from "@/components/systems/systems-workbench";
+import { ErrorBanner, PageHeader, Segmented } from "@/components/ui";
 import { apiPaths } from "@/lib/api";
+import { useIsMounted } from "@/lib/use-is-mounted";
 import { parseTimeframe, type SystemsResponse, type SystemsTimeframe } from "@/lib/systems";
 
 const TIMEFRAMES: { value: SystemsTimeframe; label: string }[] = [
@@ -30,6 +26,8 @@ export default function SystemsPage() {
 }
 
 function SystemsPageInner() {
+  const router = useRouter();
+  const mounted = useIsMounted();
   const searchParams = useSearchParams();
   const timeframe = parseTimeframe(searchParams.get("timeframe"));
   const { data, error, isLoading, isValidating, mutate } = useSWR<SystemsResponse>(
@@ -37,41 +35,45 @@ function SystemsPageInner() {
     { refreshInterval: 60_000 },
   );
 
-  return (
-    <div className="flex min-w-0 flex-col gap-5">
-      <header className="flex min-w-0 items-end justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex min-w-0 items-baseline gap-3">
-            <h1 className="text-[28px] leading-[34px] font-semibold tracking-tight text-text-1">Systems</h1>
-            <span className="hidden text-xs text-text-3 sm:inline">forward-looking system signals</span>
-          </div>
-          <p className="mt-1 text-xs text-text-2">
-            {data ? `${data.requested_date} · ${data.timezone} · evaluated ${new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", second: "2-digit" }).format(new Date(data.evaluated_at))}` : `Evaluating ${timeframe === "upcoming" ? "all upcoming" : timeframe === "tomorrow" ? "tomorrow’s" : "today’s"} cached MLB, college football, and NFL slate`}
-          </p>
-        </div>
-        <RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />
-      </header>
+  const description = data ? (
+    <>
+      Slate for <span className="tabular">{data.requested_date}</span> in {data.timezone}
+      {mounted && (
+        <>
+          , evaluated at{" "}
+          <span className="tabular">
+            {new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", second: "2-digit" }).format(new Date(data.evaluated_at))}
+          </span>
+        </>
+      )}
+    </>
+  ) : (
+    `Evaluating ${timeframe === "upcoming" ? "all upcoming" : timeframe === "tomorrow" ? "tomorrow’s" : "today’s"} cached MLB, college football and NFL slate`
+  );
 
-      <div className="flex w-fit rounded-md border border-border-subtle bg-bg-1 p-1" role="group" aria-label="Systems timeframe">
-        {TIMEFRAMES.map(option => (
-          <Link
-            key={option.value}
-            href={`/systems?timeframe=${option.value}`}
-            aria-current={timeframe === option.value ? "page" : undefined}
-            className={clsx(
-              "inline-flex min-h-8 items-center rounded px-3 text-xs font-medium transition-colors",
-              timeframe === option.value
-                ? "bg-accent text-bg-0"
-                : "text-text-2 hover:bg-bg-2 hover:text-text-1",
-            )}
-          >
-            {option.label}
-          </Link>
-        ))}
-      </div>
+  return (
+    <div className="flex min-w-0 flex-col">
+      <PageHeader
+        title="Systems"
+        description={description}
+        inline={
+          <Segmented<SystemsTimeframe>
+            ariaLabel="Systems timeframe"
+            value={timeframe}
+            onChange={v => router.push(`/systems?timeframe=${v}`)}
+            options={TIMEFRAMES}
+          />
+        }
+        actions={<RefreshButton onRefresh={() => mutate()} isValidating={isValidating} />}
+      />
 
       {error && (
-        <div role="alert" className="rounded-md border border-price-down/40 bg-price-down/10 px-4 py-3 text-sm text-price-down">Systems API is unavailable. Check the FastAPI server logs.</div>
+        <ErrorBanner
+          tone="loss"
+          title="The systems API is unavailable. Check the FastAPI server logs."
+          details={String(error)}
+          className="mb-5"
+        />
       )}
       {isLoading && !data && <SystemsLoading />}
       {data && <SystemsWorkbench data={data} timeframe={timeframe} />}
@@ -82,7 +84,7 @@ function SystemsPageInner() {
 function SystemsPageLoading() {
   return (
     <div className="flex min-w-0 flex-col gap-5">
-      <div className="h-16 animate-pulse rounded-md bg-bg-1" />
+      <div className="skeleton h-16 rounded-lg" />
       <SystemsLoading />
     </div>
   );
@@ -91,9 +93,9 @@ function SystemsPageLoading() {
 function SystemsLoading() {
   return (
     <div aria-label="Loading systems" className="grid gap-4">
-      <div className="h-20 animate-pulse rounded-md border border-border-subtle bg-bg-1" />
-      <div className="h-48 animate-pulse rounded-md border border-border-subtle bg-bg-1" />
-      <div className="h-72 animate-pulse rounded-md border border-border-subtle bg-bg-1" />
+      <div className="skeleton h-20 rounded-lg" />
+      <div className="skeleton h-48 rounded-lg" />
+      <div className="skeleton h-72 rounded-lg" />
     </div>
   );
 }

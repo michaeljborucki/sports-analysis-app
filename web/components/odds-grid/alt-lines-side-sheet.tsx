@@ -3,7 +3,9 @@
 import type { Game } from "@/lib/api";
 import type { Sport, MarketGroup } from "@/lib/sports";
 import { renderTeam } from "@/lib/sports";
+import { Chip } from "@/components/ui";
 import { SideSheet } from "../side-sheet";
+import { sentenceCaseLabel } from "./grid-style";
 import { MarketExpansionPanel } from "./market-expansion-panel";
 
 /**
@@ -39,17 +41,15 @@ export function AltLinesSideSheet({
       }
       header={
         game ? (
-          <div className="flex flex-col gap-1 min-w-0">
-            <div className="text-text-1 font-semibold text-sm truncate">
+          <div className="flex min-w-0 flex-col gap-1">
+            <h2 className="truncate text-[length:var(--fs-16)] leading-[var(--lh-16)] font-semibold text-text-1">
               {renderTeam(game.away_team, sport)}{" "}
-              <span className="text-text-3 font-normal">@</span>{" "}
+              <span className="font-normal text-text-3">@</span>{" "}
               {renderTeam(game.home_team, sport)}
-            </div>
+            </h2>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center px-1.5 h-4 rounded-sm text-[9px] font-semibold uppercase tracking-wider bg-accent/15 text-accent">
-                {group.label}
-              </span>
-              <span className="text-[11px] text-text-3">
+              <Chip>{sentenceCaseLabel(group.label)}</Chip>
+              <span className="text-[length:var(--fs-12)] text-text-3">
                 Alt lines across books
               </span>
             </div>

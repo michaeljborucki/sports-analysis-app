@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import clsx from "clsx";
+import { RefreshCw } from "lucide-react";
 
 import { apiPaths } from "@/lib/api";
 
@@ -40,7 +41,7 @@ export function Coral33RefreshButton() {
         (a, b) => a + b,
         0
       );
-      const summary = `${total} rows · ${data.duration_s.toFixed(1)}s`;
+      const summary = `${total.toLocaleString()} rows in ${data.duration_s.toFixed(1)}s`;
       setStatus({ kind: "done", summary });
       setTimeout(() => setStatus({ kind: "idle" }), 6000);
     } catch (e) {
@@ -55,48 +56,31 @@ export function Coral33RefreshButton() {
   const busy = status.kind === "refreshing";
 
   return (
-    <div className="inline-flex items-center gap-2">
+    <div className="inline-flex items-center gap-3">
+      {status.kind === "done" && (
+        <span role="status" className="text-[length:var(--fs-12)] text-text-2">
+          {status.summary}
+        </span>
+      )}
+      {status.kind === "error" && (
+        <span role="status" className="text-[length:var(--fs-12)] text-loss">
+          Refresh failed: {status.message}
+        </span>
+      )}
       <button
+        type="button"
         onClick={onClick}
         disabled={busy}
         className={clsx(
-          "h-8 px-3 rounded-md text-xs font-medium transition-colors inline-flex items-center gap-2",
-          "border",
-          busy
-            ? "bg-bg-1 border-border-subtle text-text-3 cursor-wait"
-            : "bg-bg-1 border-border-subtle text-text-2 hover:text-text-1"
+          "inline-flex h-8 items-center gap-2 rounded-md border border-border-subtle bg-bg-1 px-3",
+          "text-[length:var(--fs-13)] font-medium transition-colors",
+          busy ? "cursor-wait text-text-3" : "text-text-2 hover:bg-bg-2 hover:text-text-1",
         )}
-        title="Kick off a coral33 refresh cycle immediately (main → alt/prop). ~5–10s."
+        title="Kick off a Coral33 refresh cycle immediately (main, then alternates and props). Takes about 5 to 10 seconds."
       >
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={busy ? "animate-spin" : ""}
-          aria-hidden
-        >
-          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-          <path d="M21 3v5h-5" />
-          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-          <path d="M8 16H3v5" />
-        </svg>
-        <span>
-          {busy ? "Refreshing coral33…" : "Refresh coral33"}
-        </span>
+        <RefreshCw size={13} aria-hidden className={clsx(busy && "animate-spin")} />
+        {busy ? "Refreshing Coral33…" : "Refresh Coral33"}
       </button>
-      {status.kind === "done" && (
-        <span className="text-[11px] text-accent tabular">{status.summary}</span>
-      )}
-      {status.kind === "error" && (
-        <span className="text-[11px] text-price-down tabular">
-          error · {status.message}
-        </span>
-      )}
     </div>
   );
 }

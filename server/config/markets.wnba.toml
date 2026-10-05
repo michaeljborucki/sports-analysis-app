@@ -73,25 +73,3 @@ markets = [
 [on_demand]
 enabled          = true
 debounce_seconds = 60
-
-# Picks filter — bet types surfaced on /picks/wnba once a wnba-agents
-# directory exists. Until then picks endpoint returns no_picks_today.
-[picks]
-include_bet_types = [
-  "moneyline",
-  "spread",
-  "total",
-  "team_total_home",
-  "team_total_away",
-  "first_half_ml",
-  "first_half_spread",
-  "first_half_total",
-  "first_quarter_ml",
-  "first_quarter_spread",
-  "first_quarter_total",
-  "player_points",
-  "player_rebounds",
-  "player_assists",
-  "player_threes",
-  "player_points_rebounds_assists",
-]

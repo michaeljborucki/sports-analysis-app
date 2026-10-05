@@ -46,12 +46,3 @@ markets             = []
 [on_demand]
 enabled          = true
 debounce_seconds = 60
-
-# Picks filter — which bet types surface on /picks/ufc.
-# UFC agent (if/when we build one) is expected to write moneyline picks
-# and rounds-total picks; both flow through here.
-[picks]
-include_bet_types = [
-  "moneyline",
-  "total_rounds",
-]

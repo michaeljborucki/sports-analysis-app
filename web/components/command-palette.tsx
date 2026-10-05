@@ -52,9 +52,12 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
   // Reset the search string whenever the palette closes so next-open starts
   // clean. Keeping stale input across sessions feels broken.
-  React.useEffect(() => {
+  // (Adjust-state-during-render pattern; avoids a setState-in-effect.)
+  const [prevOpen, setPrevOpen] = React.useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (!open) setSearch("");
-  }, [open]);
+  }
 
   // Escape-to-close. cmdk's dialog component would handle this for us, but
   // we render inline (not via Radix Dialog) so we can control the visual
@@ -102,7 +105,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       // propagation so clicks inside don't bubble here.
       className={clsx(
         "fixed inset-0 z-[100]",
-        "bg-black/40 backdrop-blur-[2px]",
+        "bg-bg-0/70 backdrop-blur-[2px]",
         "flex items-start justify-center"
       )}
       style={{ paddingTop: "20vh" }}
@@ -112,7 +115,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       <div
         className={clsx(
           "w-[640px] max-w-[calc(100vw-2rem)]",
-          "bg-bg-1/95 backdrop-blur-md",
+          "bg-bg-1",
           "border border-border-subtle rounded-lg shadow-2xl",
           "overflow-hidden"
         )}
@@ -141,14 +144,14 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
               placeholder="Type a command or search…"
               className={clsx(
                 "flex-1 bg-transparent outline-none border-0",
-                "text-sm text-text-1 placeholder:text-text-3"
+                "text-text-1 placeholder:text-text-3"
               )}
               style={{
                 fontSize: "var(--fs-13)",
                 lineHeight: "var(--lh-13)",
               }}
             />
-            <KeyChip>ESC</KeyChip>
+            <KeyChip>Esc</KeyChip>
           </div>
 
           {/* Results list */}
@@ -159,9 +162,9 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             )}
           >
             <CmdkCommand.Empty
-              className="px-3 py-6 text-center text-xs text-text-3"
+              className="px-3 py-6 text-center text-[length:var(--fs-13)] text-text-3"
             >
-              No results. Try &ldquo;odds&rdquo;, &ldquo;picks&rdquo;, or
+              No results. Try &ldquo;odds&rdquo;, &ldquo;edges&rdquo;, or
               &ldquo;density&rdquo;.
             </CmdkCommand.Empty>
 
@@ -179,11 +182,9 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                     "[&_[cmdk-group-heading]]:px-2",
                     "[&_[cmdk-group-heading]]:pt-3",
                     "[&_[cmdk-group-heading]]:pb-1.5",
-                    "[&_[cmdk-group-heading]]:uppercase",
-                    "[&_[cmdk-group-heading]]:tracking-wider",
                     "[&_[cmdk-group-heading]]:text-text-3",
                     "[&_[cmdk-group-heading]]:font-medium",
-                    "[&_[cmdk-group-heading]]:text-[10px]"
+                    "[&_[cmdk-group-heading]]:text-[length:var(--fs-12)]"
                   )}
                 >
                   {items.map(cmd => (
@@ -201,11 +202,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
               "border-t border-border-subtle",
               "text-text-3"
             )}
-            style={{ fontSize: "10px", lineHeight: "12px" }}
+            style={{ fontSize: "var(--fs-11)", lineHeight: "var(--lh-11)" }}
           >
             <FooterHint keyName="↵">to select</FooterHint>
             <FooterHint keyName="↑↓">to navigate</FooterHint>
-            <FooterHint keyName="esc">to dismiss</FooterHint>
+            <FooterHint keyName="Esc">to dismiss</FooterHint>
           </div>
         </CmdkCommand>
       </div>
@@ -227,13 +228,11 @@ function PaletteRow({ cmd, ctx }: { cmd: Command; ctx: CommandContext }) {
       }}
       className={clsx(
         "group flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer",
-        "border-l-2 border-l-transparent",
         "text-text-2",
         // cmdk sets data-selected="true" on the active row. Use it to drive
         // the selection highlight; Tailwind arbitrary selectors do the rest.
         "data-[selected=true]:bg-bg-2",
         "data-[selected=true]:text-text-1",
-        "data-[selected=true]:border-l-accent",
         "transition-colors"
       )}
     >
@@ -254,10 +253,7 @@ function PaletteRow({ cmd, ctx }: { cmd: Command; ctx: CommandContext }) {
         {cmd.label}
       </span>
       {cmd.hint && (
-        <span
-          className="shrink-0 text-text-3 text-[10px] tracking-wide uppercase"
-          style={{ fontFamily: "var(--font-mono)" }}
-        >
+        <span className="shrink-0 text-text-3 text-[length:var(--fs-12)]">
           {cmd.hint}
         </span>
       )}
@@ -274,9 +270,8 @@ function KeyChip({ children }: { children: React.ReactNode }) {
         "inline-flex items-center justify-center",
         "h-5 px-1.5 rounded",
         "bg-bg-2 border border-border-subtle",
-        "text-[10px] tracking-wide uppercase text-text-3"
+        "text-[length:var(--fs-11)] text-text-3"
       )}
-      style={{ fontFamily: "var(--font-mono)" }}
     >
       {children}
     </span>
@@ -292,12 +287,7 @@ function FooterHint({
 }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <span
-        className="text-text-2"
-        style={{ fontFamily: "var(--font-mono)" }}
-      >
-        {keyName}
-      </span>
+      <span className="text-text-2">{keyName}</span>
       <span>{children}</span>
     </span>
   );

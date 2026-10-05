@@ -198,6 +198,30 @@ async def test_cache_upsert_triggers_mark_dirty(tmp_path):
         events.unsubscribe(q)
 
 
+async def test_typed_direct_book_events_are_debounced():
+    """Continuous direct-book writes produce at most one scanner refresh
+    inside the 15-second stabilization window, while retaining a pending
+    refresh for the next eligible flush."""
+    q = events.subscribe()
+    events.mark_dirty("direct_books_changed")
+    events._flush_pending(now=100.0)
+    assert [e["type"] for e in _drain_queue(q)] == ["direct_books_changed"]
+
+    events.mark_dirty("direct_books_changed")
+    events._flush_pending(now=101.0)
+    assert _drain_queue(q) == []
+
+    events._flush_pending(now=116.0)
+    assert [e["type"] for e in _drain_queue(q)] == ["direct_books_changed"]
+
+
+async def test_default_tick_remains_backward_compatible():
+    q = events.subscribe()
+    events.mark_dirty()
+    events._flush_pending(now=100.0)
+    assert [e["type"] for e in _drain_queue(q)] == ["tick"]
+
+
 # ──────────────────────────────────────────────────────────────────────
 # Endpoint tests — /api/stream/odds wire-protocol behavior
 # ──────────────────────────────────────────────────────────────────────
@@ -295,8 +319,7 @@ async def _fast_flush_loop():
         try:
             await asyncio.sleep(0.01)
             if events._pending_dirty:
-                events._pending_dirty = False
-                events._broadcast({"type": "tick", "ts": time.time()})
+                events._flush_pending()
         except asyncio.CancelledError:
             raise
 

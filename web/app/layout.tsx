@@ -1,21 +1,28 @@
 import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
+import { JetBrains_Mono, Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 import { SwrProvider } from "@/lib/swr";
 import { NavShell } from "@/components/nav-shell";
 import { CommandPaletteMount } from "@/components/command-palette-mount";
 import { ShortcutOverlayMount } from "@/components/shortcut-overlay-mount";
 
-// Geist Sans + Mono from Vercel. Each font's `variable` property injects a
-// CSS custom property (`--font-geist-sans`, `--font-geist-mono`) that we
-// consume in `globals.css` for the body font stack and the `.tabular`
-// monospace utility. Geist Mono ships with tabular-style numerics, ss01,
-// and the trading-desk friendly alternates we want for odds cells.
+// Schibsted Grotesk for UI text, JetBrains Mono for numbers only (spec:
+// docs/superpowers/specs/2026-10-02-gunmetal-redesign.md §2). Self-hosted
+// by next/font; the CSS variables feed --font-sans / --font-mono.
+const sans = Schibsted_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-schibsted",
+  display: "swap",
+});
+const mono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Betting Site",
-  description: "MLB odds aggregator + agent picks",
+  description: "Sports odds aggregator and edge finder",
 };
 
 export default function RootLayout({
@@ -26,14 +33,13 @@ export default function RootLayout({
   // Next 16's dev overlay (which adds `isolation: isolate` to body). It does
   // NOT suppress warnings for children — real hydration bugs still surface.
   //
-  // `data-density="comfortable"` is the default density; Wave 2 will add a
-  // user-facing toggle that flips this attribute at runtime. Density vars
-  // (--row-h, --row-pad-y, --row-pad-x) cascade from globals.css.
+  // `data-density="comfortable"` is the default; useDensity() flips it at
+  // runtime from the stored preference.
   return (
     <html
       lang="en"
       data-density="comfortable"
-      className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased`}
+      className={`${sans.variable} ${mono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body

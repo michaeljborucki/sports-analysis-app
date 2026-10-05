@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
-import { Check, ChevronRight, Eye } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 
 import { BOOKS, BOOK_ORDER, DEFAULT_VISIBLE_BOOKS, type Region } from "@/lib/books";
 import { BookLogo } from "@/components/book-logo";
@@ -63,6 +63,8 @@ export function BookVisibilitySettings({
     } catch {}
   }, [expanded]);
 
+  const dirtyHint = ". Save at the top to persist.";
+
   function toggle(key: string) {
     const next = new Set(value);
     if (next.has(key)) next.delete(key);
@@ -73,54 +75,43 @@ export function BookVisibilitySettings({
     onChange(new Set(keys));
   }
 
+  const quiet =
+    "h-7 rounded-md px-2 text-[length:var(--fs-12)] font-medium text-text-2 transition-colors hover:bg-bg-2 hover:text-text-1";
+
   return (
-    <div className="border border-border-subtle rounded-md bg-bg-0 overflow-hidden">
+    <section className="overflow-hidden rounded-lg border border-border-subtle bg-bg-1">
       <div
         className={clsx(
-          "flex items-center gap-3 px-4 py-3 bg-bg-1",
+          "flex h-11 items-center gap-3 px-4",
           expanded && "border-b border-border-subtle",
         )}
       >
         <button
           type="button"
           onClick={() => setExpanded(v => !v)}
-          className="flex items-center gap-2 text-left hover:text-accent transition-colors"
+          className="flex items-center gap-2 text-left"
           title={expanded ? "Collapse book list" : "Expand book list"}
           aria-expanded={expanded}
         >
           <ChevronRight
             aria-hidden
-            size={12}
-            className={clsx(
-              "text-text-3 transition-transform",
-              expanded ? "rotate-90" : "rotate-0",
-            )}
+            size={14}
+            className={clsx("text-text-3 transition-transform", expanded && "rotate-90")}
           />
-          <Eye size={14} aria-hidden className="text-text-2" />
-          <span className="text-sm font-semibold text-text-1">Visible Books</span>
+          <h2 className="text-[length:var(--fs-14)] font-semibold text-text-1">Visible books</h2>
         </button>
-        <span className="text-[11px] text-text-3 tabular">
-          {shown} / {total} enabled{expanded ? " · click Save at the top to persist" : ""}
+        <span className="text-[length:var(--fs-12)] text-text-3">
+          <span className="tabular">{shown}</span> of <span className="tabular">{total}</span> shown
+          {expanded && dirtyHint}
         </span>
-        <div className="ml-auto flex items-center gap-2 text-xs">
-          <button
-            onClick={() => setAll(BOOK_ORDER)}
-            className="text-accent hover:underline"
-          >
+        <div className="ml-auto flex items-center gap-1">
+          <button type="button" onClick={() => setAll(BOOK_ORDER)} className={quiet}>
             All
           </button>
-          <span className="text-text-3">·</span>
-          <button
-            onClick={() => setAll([])}
-            className="text-text-2 hover:text-text-1"
-          >
+          <button type="button" onClick={() => setAll([])} className={quiet}>
             None
           </button>
-          <span className="text-text-3">·</span>
-          <button
-            onClick={() => setAll(DEFAULT_VISIBLE_BOOKS)}
-            className="text-text-2 hover:text-text-1"
-          >
+          <button type="button" onClick={() => setAll(DEFAULT_VISIBLE_BOOKS)} className={quiet}>
             Defaults
           </button>
         </div>
@@ -132,34 +123,33 @@ export function BookVisibilitySettings({
         return (
           <div
             key={r.key}
-            className="px-4 py-3 border-b border-border-subtle last:border-b-0"
+            className="border-b border-border-subtle px-4 py-3 last:border-b-0"
           >
-            <div className="pb-2 text-[10px] uppercase tracking-wider text-text-3">
-              {r.label} · {keys.length}
+            <div className="pb-2 text-[length:var(--fs-12)] text-text-3">
+              {r.label} <span className="tabular">({keys.length})</span>
             </div>
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {keys.map(key => {
                 const info = BOOKS[key];
                 const on = value.has(key);
                 return (
                   <button
+                    type="button"
                     key={key}
                     onClick={() => toggle(key)}
+                    aria-pressed={on}
                     className={clsx(
-                      "flex items-center gap-2 h-8 px-2 rounded-sm text-left",
-                      "text-xs transition-colors",
-                      on
-                        ? "bg-bg-2 text-text-1"
-                        : "bg-transparent text-text-2 hover:bg-bg-2/50"
+                      "flex h-8 items-center gap-2 rounded-md px-2 text-left text-[length:var(--fs-13)] transition-colors",
+                      on ? "bg-bg-2 text-text-1" : "text-text-3 hover:bg-bg-2 hover:text-text-2",
                     )}
                   >
                     <span
                       className={clsx(
-                        "inline-flex w-3.5 h-3.5 rounded-sm border items-center justify-center shrink-0",
-                        on ? "bg-accent border-accent text-bg-0" : "border-text-3"
+                        "inline-flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+                        on ? "border-text-1 bg-text-1 text-bg-0" : "border-text-3",
                       )}
                     >
-                      {on && <Check size={10} strokeWidth={3} aria-hidden />}
+                      {on && <Check size={11} strokeWidth={3} aria-hidden />}
                     </span>
                     <BookLogo bookKey={key} mode="label" />
                     <span className="truncate">{info.name}</span>
@@ -170,6 +160,6 @@ export function BookVisibilitySettings({
           </div>
         );
       })}
-    </div>
+    </section>
   );
 }

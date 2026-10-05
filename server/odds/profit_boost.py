@@ -35,6 +35,7 @@ from __future__ import annotations
 from .arbitrage import _find_market
 from .devig import american_to_decimal, american_to_implied_prob
 from .pairing import collect_spread_pairs, collect_total_pairs
+from .venues import book_allowed
 
 
 def decimal_to_american(decimal: float) -> int:
@@ -66,9 +67,9 @@ def _filter_prices(
     outcome: dict, books_filter: set[str] | None
 ) -> list[dict]:
     prices = outcome.get("prices") or []
-    if books_filter is None:
-        return list(prices)
-    return [p for p in prices if p["bookmaker_key"] in books_filter]
+    # Opt-in books (novig_maker) never qualify unless named — a resting
+    # order can't be a guaranteed promo leg or hedge.
+    return [p for p in prices if book_allowed(p["bookmaker_key"], books_filter)]
 
 
 def _boosted_payout_ratio(american: int, boost_pct: float) -> float:

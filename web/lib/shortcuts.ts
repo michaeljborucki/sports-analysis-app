@@ -70,7 +70,7 @@ export const SHORTCUTS: ShortcutEntry[] = [
   // ─── Display ───
   {
     keys: ["⌘", "Shift", "D"],
-    label: "Cycle row density (compact / comfortable / spacious)",
+    label: "Cycle row density: compact, comfortable, spacious",
     group: "Display",
     running: true,
   },

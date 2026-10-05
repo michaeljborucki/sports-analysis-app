@@ -27,13 +27,13 @@ def test_systems_endpoint_returns_all_primary_systems_without_fetching_odds(tmp_
     response = TestClient(app).get("/api/systems?date=2026-08-29")
     assert response.status_code == 200
     body = response.json()
-    assert len(body["evaluations"]) == 26
-    assert body["summary"]["disabled"] == 3
+    assert len(body["evaluations"]) == 53
+    assert body["summary"]["disabled"] == 2
     assert body["summary"]["qualifying_wagers"] == 0
     # An empty odds cache is an empty calendar, not missing context.
     assert all(item["status"] in ("disabled", "no_slate") for item in body["evaluations"])
     assert all(item["missing_fields"] == [] for item in body["evaluations"])
-    assert body["summary"]["no_slate"] == 23
+    assert body["summary"]["no_slate"] == 51
 
 
 def test_systems_endpoint_memoizes_unchanged_analysis_and_invalidates_on_odds_version(tmp_path, monkeypatch):

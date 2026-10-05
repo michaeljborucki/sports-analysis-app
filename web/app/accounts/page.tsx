@@ -4,19 +4,33 @@ import useSWR from "swr";
 import clsx from "clsx";
 import {
   AlertCircle,
+  ArrowRight,
   ChevronDown,
   ChevronRight,
   RefreshCw,
   Wallet,
 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { fetchJson } from "@/lib/api";
-import { FreshnessChip } from "@/components/freshness-chip";
+import { buildTotalHistory } from "@/lib/balance-history";
 import { EmptyState } from "@/components/empty-state";
-import { useEffect, useMemo, useState } from "react";
+import {
+  BackendUnreachable,
+  Chip,
+  type ChipTone,
+  Freshness,
+  PageHeader,
+  Panel,
+  Segmented,
+  StatTile,
+} from "@/components/ui";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
+
+/** Account balances are scraped on demand; older than this reads as stale. */
+const BALANCES_STALE_AFTER_S = 30 * 60;
 
 interface WagerSummary {
   open_count: number;
@@ -24,7 +38,9 @@ interface WagerSummary {
   open_amount_to_win: number;
   straight_count: number;
   parlay_count: number;
-  parlay_partial_count: number;
+  won_open_slot_count: number;
+  pending_open_slot_count: number;
+  fulfilled_count: number;
   free_play_count: number;
 }
 
@@ -40,6 +56,7 @@ interface WagerLeg {
   final_money: number | null;
   spread: number | null;
   total_points: number | null;
+  total_side: "over" | "under" | null;
   game_datetime: string | null;
   outcome: string | null;
   leg_amount_wagered: number;
@@ -114,42 +131,6 @@ interface HistoryRollup {
   accounts: AccountHistory[];
 }
 
-interface BetEntry {
-  customer_id: string;
-  account_label: string;
-  ticket_number: number;
-  accepted_at: string;
-  settled_at: string | null;
-  wager_status: string;     // 'O' | 'W' | 'L' | 'P' | 'X' | other coral codes
-  wager_type: string;       // 'S'|'P'|'T'|'M'|'L'|'E'|'R'|...
-  total_picks: number;      // 1 for straight, N for parlay (head leg shown)
-  amount_wagered: number;
-  to_win_amount: number;
-  amount_won: number;
-  amount_lost: number;
-  is_free_play: boolean;
-  sport_type: string | null;
-  sport_sub_type: string | null;
-  period: string | null;
-  team1_id: string | null;
-  team2_id: string | null;
-  chosen_team_id: string | null;
-  description: string | null;
-  final_money: number | null;
-  adj_spread: number | null;
-  adj_total_points: number | null;
-  // CLV — null until the closing-line snapshot pipeline is wired.
-  clv_pct: number | null;
-}
-
-interface BetsResponse {
-  bets: BetEntry[];
-  total_count: number;
-  backfill_weeks: number;
-}
-
-type BetsTab = "balance" | "bets";
-
 function fmtUsd(n: number, opts?: { compact?: boolean }): string {
   const sign = n < 0 ? "-" : "";
   if (opts?.compact && Math.abs(n) >= 1000) {
@@ -167,17 +148,6 @@ function fmtSignedUsd(n: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
-}
-
-function fmtAge(iso: string | null): string {
-  if (!iso) return "never";
-  const ms = Date.now() - new Date(iso).getTime();
-  const m = Math.round(ms / 60_000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.round(h / 24)}d ago`;
 }
 
 function fmtAmericanOdds(n: number | null): string {
@@ -199,15 +169,24 @@ function fmtAcceptedAt(iso: string | null): string {
   });
 }
 
+/** Wall clock that ticks so the freshness age keeps counting between fetches. */
+function useNow(intervalMs: number): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
+  return now;
+}
+
 export default function AccountsPage() {
-  const { data, mutate, isValidating } = useSWR<AccountsRollup>(
+  const { data, error, mutate } = useSWR<AccountsRollup>(
     "/api/coral33/accounts",
     fetchJson,
     { refreshInterval: 30_000 },
   );
   const [busy, setBusy] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [tab, setTab] = useState<BetsTab>("balance");
 
   const { data: history } = useSWR<HistoryRollup>(
     "/api/coral33/accounts/history?weeks=12",
@@ -215,15 +194,9 @@ export default function AccountsPage() {
     { refreshInterval: 5 * 60_000 },
   );
 
-  // Bets fetch is gated on the tab — switching to Bets triggers the
-  // initial load; switching away pauses revalidation. The endpoint is
-  // cheap (reads from the persisted wager-log JSONs), but there's no
-  // need to poll it when the tab isn't visible.
-  const { data: betsData } = useSWR<BetsResponse>(
-    tab === "bets" ? "/api/coral33/accounts/bets" : null,
-    fetchJson,
-    { refreshInterval: 5 * 60_000 },
-  );
+  const now = useNow(15_000);
+  const refreshedMs = data?.refreshed_at ? Date.parse(data.refreshed_at) : NaN;
+  const ageSeconds = Number.isNaN(refreshedMs) ? null : (now - refreshedMs) / 1000;
 
   function toggleExpanded(customerId: string) {
     setExpanded(prev => {
@@ -259,58 +232,67 @@ export default function AccountsPage() {
   // process and gets wiped on every backend restart, so without this the
   // page renders blank (account_count > 0, snapshots = []) until the user
   // remembers to click Refresh.
-  const [autoRefreshTried, setAutoRefreshTried] = useState(false);
+  // A ref, not state: the flag only gates this effect and never renders.
+  const autoRefreshTried = useRef(false);
   useEffect(() => {
-    if (autoRefreshTried) return;
+    if (autoRefreshTried.current) return;
     if (!data) return;  // wait for first SWR fetch
     if (data.account_count > 0 && data.snapshots.length === 0 && !data.refreshing) {
-      setAutoRefreshTried(true);
+      autoRefreshTried.current = true;
+      // Kicking off the async scrape is the point of this effect; refresh()
+      // flips `busy` so the button shows progress immediately.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void refresh();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, autoRefreshTried]);
+  }, [data]);
+
+  const okCount = data ? data.snapshots.filter(s => !s.error).length : 0;
 
   return (
     <div className="flex flex-col gap-5">
-      <header className="flex items-end justify-between gap-4 flex-wrap">
-        <div className="flex items-baseline gap-4">
-          <h1 className="text-[28px] leading-[30px] font-semibold tracking-tight text-text-1">
-            Accounts
-          </h1>
-          <span className="text-xs text-text-3 tabular hidden sm:inline">
-            coral33 multi-account roll-up
-          </span>
-          {data?.refreshed_at && (
-            <span className="text-xs text-text-3 tabular">
-              refreshed {fmtAge(data.refreshed_at)}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          <FreshnessChip />
+      <PageHeader
+        className="mb-0"
+        title="Accounts"
+        description="Coral33 sub-accounts"
+        meta={
+          <Freshness
+            what="Balances"
+            ageSeconds={ageSeconds}
+            staleAfter={BALANCES_STALE_AFTER_S}
+          />
+        }
+        actions={
           <button
             type="button"
             onClick={refresh}
             disabled={refreshing}
+            title="Scrape fresh balances from every Coral33 account"
             className={clsx(
-              "inline-flex items-center gap-2 h-8 px-3 rounded-md text-xs font-medium",
-              "bg-bg-1 border border-border-subtle text-text-2 hover:text-text-1",
-              "transition-colors disabled:cursor-not-allowed disabled:opacity-70",
+              "inline-flex items-center gap-2 h-8 px-3 rounded-md text-[length:var(--fs-13)] font-medium",
+              "border border-border-subtle bg-bg-1 text-text-2 hover:text-text-1 hover:bg-bg-2",
+              "transition-colors disabled:cursor-wait disabled:opacity-70",
             )}
           >
-            <RefreshCw
-              size={12}
-              aria-hidden
-              className={clsx("transition-transform", refreshing && "animate-spin")}
-            />
-            <span>{refreshing ? "Refreshing…" : "Refresh"}</span>
+            <RefreshCw size={13} aria-hidden className={clsx(refreshing && "animate-spin")} />
+            {refreshing ? "Refreshing…" : "Refresh"}
           </button>
-        </div>
-      </header>
+        }
+      />
+
+      {error && !data && <BackendUnreachable error={error} />}
+
+      {!data && !error && (
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3" aria-hidden>
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="h-[86px] rounded-lg border border-border-subtle bg-bg-1 animate-pulse" />
+          ))}
+        </section>
+      )}
 
       {data && data.account_count === 0 && (
         <EmptyState
-          title="No coral33 accounts configured"
+          title="No Coral33 accounts configured"
           body="Set the CORAL33_ACCOUNTS environment variable as a JSON list of {customer_id, password, label} to enable the multi-account roll-up. Falls back to CORAL33_CUSTOMER_ID + CORAL33_PASSWORD for a single account."
           icon={<Wallet aria-hidden />}
         />
@@ -319,118 +301,69 @@ export default function AccountsPage() {
       {data &&
         data.account_count > 0 &&
         data.snapshots.length === 0 && (
-          <div className="text-text-2 text-sm">
-            {refreshing
-              ? `Scraping ${data.account_count} coral33 account${data.account_count === 1 ? "" : "s"}…`
-              : "No cached account data — pulling now."}
+          <div className="rounded-lg border border-border-subtle bg-bg-1 px-4 py-6 text-[length:var(--fs-13)] text-text-2">
+            {refreshing ? (
+              <>
+                Scraping <span className="tabular">{data.account_count}</span> Coral33 account
+                {data.account_count === 1 ? "" : "s"}…
+              </>
+            ) : (
+              "No cached account data. Pulling now."
+            )}
           </div>
         )}
 
       {data && data.snapshots.length > 0 && (
         <>
-          {/* Roll-up tiles */}
           <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <RollupTile
+            <StatTile
               label="Total balance"
               value={fmtUsd(data.total_current_balance)}
-              tone={data.total_current_balance >= 0 ? "neutral" : "warning"}
-              sub={`${data.snapshots.filter(s => !s.error).length} of ${data.account_count} accounts`}
+              tone={data.total_current_balance < 0 ? "loss" : undefined}
+              sub={
+                <>
+                  <span className="tabular">{okCount}</span> of{" "}
+                  <span className="tabular">{data.account_count}</span> accounts
+                </>
+              }
             />
-            <RollupTile
+            <StatTile
               label="Available"
               value={fmtUsd(data.total_available_balance)}
+              tone={data.total_available_balance < 0 ? "loss" : undefined}
             />
-            <RollupTile
+            <StatTile
               label="Pending"
               value={fmtUsd(data.total_pending_balance)}
-              sub={`${data.total_open_wagers} open wager${data.total_open_wagers === 1 ? "" : "s"}`}
+              sub={
+                <>
+                  <span className="tabular">{data.total_open_wagers}</span> open wager
+                  {data.total_open_wagers === 1 ? "" : "s"}
+                </>
+              }
             />
-            <RollupTile
-              label="Free play"
-              value={fmtUsd(data.total_free_play)}
-              tone={data.total_free_play > 0 ? "positive" : "neutral"}
-            />
+            <StatTile label="Free play" value={fmtUsd(data.total_free_play)} sub="Credit, not cash" />
           </section>
 
-          {/* Sub-tab nav: Balance (chart + per-account table) vs Bets
-              (flat ticket history across all accounts). State is local
-              to the page — switching tabs doesn't change the URL since
-              the same data populates both views from the same wager-log
-              cache. */}
-          <div
-            role="tablist"
-            aria-label="Accounts view"
-            className="inline-flex h-8 rounded-md border border-border-subtle bg-bg-1 p-0.5 text-[11px] font-medium uppercase tracking-wider"
-          >
-            <ChartModeButton
-              active={tab === "balance"}
-              onClick={() => setTab("balance")}
-              label="Balance"
-            />
-            <ChartModeButton
-              active={tab === "bets"}
-              onClick={() => setTab("bets")}
-              label={`Bets${
-                betsData?.total_count ? ` · ${betsData.total_count}` : ""
-              }`}
-            />
-          </div>
-
-          {tab === "bets" ? (
-            <div className="rounded border border-border-subtle bg-bg-1 p-6 flex items-center justify-between">
-              <div className="text-sm text-text-2">
-                Bet history moved to the new{" "}
-                <Link href="/bets" className="text-accent underline">
-                  /bets
-                </Link>{" "}
-                page — it now includes Kalshi, Polymarket, and CSV imports
-                alongside Coral33.
-              </div>
-              <Link
-                href="/bets"
-                className="rounded border border-border-subtle bg-bg-2 px-3 py-1.5 text-sm"
-              >
-                View bets →
-              </Link>
-            </div>
-          ) : (
-            <>
-
-          {/* Cumulative P&L chart */}
           {history && history.accounts.length > 0 && (
             <PnLChart history={history} />
           )}
 
-          {/* Per-account table */}
-          <section className="border border-border-subtle rounded-md bg-bg-0 overflow-hidden">
-            <table className="w-full text-xs">
-              <thead className="bg-bg-1 text-text-2">
+          <section className="rounded-lg border border-border-subtle bg-bg-1 overflow-x-auto">
+            <table className="w-full">
+              <thead className="dt-head">
                 <tr>
-                  <th className="text-left px-3 py-2 font-medium uppercase tracking-wide text-[11px] w-[28px]"></th>
-                  <th className="text-left px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-                    Account
-                  </th>
-                  <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-                    Balance
-                  </th>
-                  <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-                    Available
-                  </th>
-                  <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-                    Pending
-                  </th>
-                  <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-                    Free play
-                  </th>
-                  <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-                    Open bets
-                  </th>
-                  <th className="text-left px-2 py-2 font-medium uppercase tracking-wide text-[11px] w-[180px]">
-                    Bet mix
-                  </th>
+                  <th className="dt-th w-[36px]"><span className="sr-only">Expand</span></th>
+                  <th className="dt-th">Account</th>
+                  <th className="dt-th text-right">Balance</th>
+                  <th className="dt-th text-right">Available</th>
+                  <th className="dt-th text-right">Pending</th>
+                  <th className="dt-th text-right">Free play</th>
+                  <th className="dt-th text-right">Open bets</th>
+                  <th className="dt-th w-[240px]">Bet mix</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="bg-bg-0">
                 {data.snapshots.map(s => (
                   <AccountRow
                     key={s.customer_id}
@@ -442,42 +375,19 @@ export default function AccountsPage() {
               </tbody>
             </table>
           </section>
-            </>
-          )}
+
+          <p className="text-[length:var(--fs-13)] text-text-3">
+            Bet history, ROI and CLV are on the{" "}
+            <Link
+              href="/bets"
+              className="inline-flex items-center gap-1 font-medium text-text-2 hover:text-text-1 underline-offset-2 hover:underline"
+            >
+              Bets page
+              <ArrowRight size={12} aria-hidden />
+            </Link>
+          </p>
         </>
       )}
-    </div>
-  );
-}
-
-
-function RollupTile({
-  label,
-  value,
-  sub,
-  tone = "neutral",
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  tone?: "neutral" | "positive" | "warning";
-}) {
-  return (
-    <div className="border border-border-subtle rounded-md bg-bg-1 px-4 py-3 flex flex-col gap-0.5">
-      <span className="text-[10px] uppercase tracking-wider text-text-3">
-        {label}
-      </span>
-      <span
-        className={clsx(
-          "text-[20px] font-semibold tabular",
-          tone === "positive" && "text-price-up",
-          tone === "warning" && "text-price-down",
-          tone === "neutral" && "text-text-1",
-        )}
-      >
-        {value}
-      </span>
-      {sub && <span className="text-[11px] text-text-3 tabular">{sub}</span>}
     </div>
   );
 }
@@ -499,96 +409,139 @@ function AccountRow({
     <>
       <tr
         className={clsx(
-          "border-t border-border-subtle hover:bg-bg-1/40 cursor-pointer",
-          isExpanded && "bg-bg-1/40",
+          "dt-row",
+          hasDetail && "cursor-pointer",
+          isExpanded && "bg-bg-2",
         )}
         onClick={hasDetail ? onToggle : undefined}
       >
-        <td className="px-2 py-2 align-top">
+        <td className="dt-td align-top">
           {hasDetail ? (
-            isExpanded ? (
-              <ChevronDown size={14} className="text-text-3" aria-hidden />
-            ) : (
-              <ChevronRight size={14} className="text-text-3" aria-hidden />
-            )
+            <button
+              type="button"
+              aria-expanded={isExpanded}
+              aria-label={`${isExpanded ? "Collapse" : "Expand"} ${display}`}
+              onClick={e => {
+                e.stopPropagation();
+                onToggle();
+              }}
+              className="inline-flex h-5 w-5 items-center justify-center rounded text-text-3 hover:text-text-1 hover:bg-bg-2"
+            >
+              {isExpanded ? (
+                <ChevronDown size={14} aria-hidden />
+              ) : (
+                <ChevronRight size={14} aria-hidden />
+              )}
+            </button>
           ) : null}
         </td>
-        <td className="px-2 py-2 align-top">
+        <td className="dt-td align-top">
           <div className="flex flex-col gap-0.5">
             <span className="text-text-1 font-medium">{display}</span>
-            <span className="text-text-3 text-[10px] tabular">
-              {snap.customer_id}
-              {snap.agent_id && ` · agent ${snap.agent_id}`}
+            <span className="flex flex-wrap gap-x-2 text-[length:var(--fs-11)] text-text-3">
+              <span className="tabular">{snap.customer_id}</span>
+              {snap.agent_id && (
+                <span>
+                  Agent <span className="tabular">{snap.agent_id}</span>
+                </span>
+              )}
             </span>
             {snap.error && (
-              <span className="inline-flex items-center gap-1 text-[10px] text-price-down mt-1">
-                <AlertCircle size={10} aria-hidden />
+              <span className="mt-1 inline-flex items-center gap-1 text-[length:var(--fs-11)] text-stale">
+                <AlertCircle size={11} aria-hidden />
                 {snap.error}
               </span>
             )}
           </div>
         </td>
         <td className={clsx(
-          "px-2 py-2 text-right tabular align-top",
-          snap.current_balance < 0 && "text-price-down",
-          snap.current_balance > 0 && "text-text-1",
+          "dt-td text-right tabular align-top",
+          snap.current_balance < 0 ? "text-loss" : "text-text-1",
         )}>
           {fmtUsd(snap.current_balance)}
         </td>
-        <td className="px-2 py-2 text-right tabular text-text-1 align-top">
+        <td className={clsx(
+          "dt-td text-right tabular align-top",
+          snap.available_balance < 0 ? "text-loss" : "text-text-1",
+        )}>
           {fmtUsd(snap.available_balance)}
         </td>
-        <td className="px-2 py-2 text-right tabular text-text-2 align-top">
+        <td className="dt-td text-right tabular text-text-2 align-top">
           {fmtUsd(snap.pending_wager_balance)}
         </td>
         <td className={clsx(
-          "px-2 py-2 text-right tabular align-top",
-          snap.free_play_balance > 0 ? "text-price-up" : "text-text-3",
+          "dt-td text-right tabular align-top",
+          snap.free_play_balance > 0 ? "text-text-1" : "text-text-3",
         )}>
           {fmtUsd(snap.free_play_balance)}
         </td>
-        <td className="px-2 py-2 text-right tabular align-top">
+        <td className="dt-td text-right align-top">
           <span className={clsx(
-            "text-text-1 font-medium",
-            w.open_count === 0 && "text-text-3",
+            "tabular font-medium",
+            w.open_count === 0 ? "text-text-3" : "text-text-1",
           )}>
             {w.open_count}
           </span>
           {w.open_count > 0 && (
-            <span className="text-text-3 text-[10px] block tabular">
-              risk {fmtUsd(w.open_amount_risked)}
+            <span className="block text-[length:var(--fs-11)] text-text-3">
+              <span className="tabular">{fmtUsd(w.open_amount_risked)}</span> at risk
             </span>
           )}
         </td>
-        <td className="px-2 py-2 align-top">
+        <td className="dt-td align-top">
           {w.open_count === 0 ? (
-            <span className="text-text-3 text-[10px]">—</span>
+            <span className="text-text-3">—</span>
           ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {w.straight_count > 0 && (
-                <BetMixChip label="Straight" count={w.straight_count} tone="neutral" />
-              )}
-              {w.parlay_count > 0 && (
-                <BetMixChip label="Parlay" count={w.parlay_count} tone="accent" />
-              )}
-              {w.parlay_partial_count > 0 && (
-                <BetMixChip
-                  label="Partial"
-                  count={w.parlay_partial_count}
-                  tone="warning"
-                  title="Parlays where some legs are graded but others still open"
-                />
-              )}
-              {w.free_play_count > 0 && (
-                <BetMixChip label="Free Play" count={w.free_play_count} tone="positive" />
-              )}
+            <div className="flex flex-col gap-1">
+              {/* Type — mutually exclusive, sums to open_count. */}
+              <div className="flex flex-wrap gap-1.5">
+                {w.straight_count > 0 && (
+                  <BetMixChip label="Straight" count={w.straight_count} />
+                )}
+                {w.parlay_count > 0 && (
+                  <BetMixChip
+                    label="Parlay"
+                    count={w.parlay_count}
+                    title="Parlays that are not free plays"
+                  />
+                )}
+                {w.free_play_count > 0 && (
+                  <BetMixChip label="Free play" count={w.free_play_count} />
+                )}
+              </div>
+              {/* Progress — the same open bets bucketed by leg state. */}
+              <div className="flex flex-wrap gap-1.5">
+                {w.won_open_slot_count > 0 && (
+                  <BetMixChip
+                    label="Won, slot open"
+                    count={w.won_open_slot_count}
+                    tone="edge"
+                    title="A leg has won and the second leg has not been taken yet: a slot to fill"
+                  />
+                )}
+                {w.pending_open_slot_count > 0 && (
+                  <BetMixChip
+                    label="Pending"
+                    count={w.pending_open_slot_count}
+                    title="Leg still pending and the second leg has not been taken yet"
+                  />
+                )}
+                {w.fulfilled_count > 0 && (
+                  <BetMixChip
+                    label="Fulfilled"
+                    count={w.fulfilled_count}
+                    tone="gain"
+                    title="A leg won and the second leg has been taken"
+                  />
+                )}
+              </div>
             </div>
           )}
         </td>
       </tr>
       {isExpanded && (
-        <tr className="border-t border-border-subtle bg-bg-1/20">
-          <td colSpan={8} className="px-3 py-3">
+        <tr className="border-b border-border-subtle bg-bg-1">
+          <td colSpan={8} className="px-4 py-4">
             <ExpandedDetail snap={snap} />
           </td>
         </tr>
@@ -614,7 +567,7 @@ function ExpandedDetail({ snap }: { snap: AccountSnapshot }) {
     <div className="flex flex-col gap-4">
       {/* Limit utilization bars */}
       {(snap.credit_limit > 0 || snap.wager_limit > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
           {snap.credit_limit > 0 && (
             <UtilizationBar
               label="Credit utilization"
@@ -638,13 +591,14 @@ function ExpandedDetail({ snap }: { snap: AccountSnapshot }) {
 
       {/* Pending wagers */}
       {snap.pending_wagers.length === 0 ? (
-        <div className="text-text-3 text-[11px]">No open wagers</div>
+        <div className="text-[length:var(--fs-12)] text-text-3">No open wagers</div>
       ) : (
         <div className="flex flex-col gap-2">
-          <div className="text-[10px] uppercase tracking-wider text-text-3">
-            Open wagers ({snap.pending_wagers.length})
+          <div className="text-[length:var(--fs-12)] font-medium text-text-2">
+            Open wagers{" "}
+            <span className="tabular text-text-3">{snap.pending_wagers.length}</span>
           </div>
-          <div className="flex flex-col gap-1.5">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
             {snap.pending_wagers.map(w => (
               <WagerCard key={`${w.ticket_number}-${w.wager_number}`} wager={w} />
             ))}
@@ -670,23 +624,30 @@ function UtilizationBar({
   tone: "neutral" | "caution" | "warning";
 }) {
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between text-[11px]">
-        <span className="text-text-3 uppercase tracking-wider text-[10px]">
-          {label}
-        </span>
-        <span className="text-text-2 tabular">
-          {fmtUsd(used)} / {fmtUsd(limit)}
-          <span className="text-text-3 ml-1.5">{pct.toFixed(0)}%</span>
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-baseline justify-between gap-3 text-[length:var(--fs-12)]">
+        <span className="text-text-3">{label}</span>
+        <span className="text-text-2">
+          <span className="tabular">{fmtUsd(used)}</span>
+          <span className="text-text-3"> of </span>
+          <span className="tabular">{fmtUsd(limit)}</span>
+          <span
+            className={clsx(
+              "tabular ml-2",
+              tone === "neutral" ? "text-text-3" : "text-stale",
+            )}
+          >
+            {pct.toFixed(0)}%
+          </span>
         </span>
       </div>
-      <div className="h-1.5 rounded-full bg-bg-0 border border-border-subtle overflow-hidden">
+      <div className="h-1.5 rounded-full bg-bg-2 overflow-hidden">
         <div
           className={clsx(
-            "h-full transition-all",
-            tone === "warning" && "bg-price-down",
-            tone === "caution" && "bg-flash",
-            tone === "neutral" && "bg-accent",
+            "h-full rounded-full transition-all",
+            tone === "warning" && "bg-stale",
+            tone === "caution" && "bg-[rgb(var(--stale-rgb)/0.55)]",
+            tone === "neutral" && "bg-[rgb(var(--text-rgb)/0.45)]",
           )}
           style={{ width: `${pct}%` }}
         />
@@ -704,39 +665,31 @@ function WagerCard({ wager }: { wager: PendingWager }) {
     (isParlay ? `${wager.legs.length}-leg ${wager.bet_type}` : wager.bet_type);
 
   return (
-    <div className="border border-border-subtle rounded-md bg-bg-0 p-2.5 flex flex-col gap-1.5">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-text-1 text-[11px] font-medium capitalize">
+    <div className="rounded-md border border-border-subtle bg-bg-0 px-3 py-2.5 flex flex-col gap-2">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
+          <span className="text-[length:var(--fs-13)] font-medium text-text-1 first-letter:uppercase">
             {title}
           </span>
-          {wager.is_partial && (
-            <span className="inline-flex items-center px-1.5 h-4 rounded-sm bg-flash/15 border border-flash/40 text-flash text-[9px] font-medium uppercase">
-              Partial
-            </span>
-          )}
-          {wager.is_free_play && (
-            <span className="inline-flex items-center px-1.5 h-4 rounded-sm bg-price-up/15 border border-price-up/40 text-price-up text-[9px] font-medium uppercase">
-              Free Play
-            </span>
-          )}
-          <span className="text-text-3 text-[10px] tabular">
+          {wager.is_partial && <Chip>Partial</Chip>}
+          {wager.is_free_play && <Chip>Free play</Chip>}
+          <span className="tabular text-[length:var(--fs-11)] text-text-3">
             #{wager.ticket_number}
           </span>
         </div>
-        <div className="flex items-center gap-3 text-[11px] tabular">
-          <span className="text-text-3">
-            risk <span className="text-text-1">{fmtUsd(wager.amount_wagered)}</span>
+        <div className="flex items-baseline gap-3 text-[length:var(--fs-12)] text-text-3">
+          <span>
+            Risk <span className="tabular text-text-1">{fmtUsd(wager.amount_wagered)}</span>
           </span>
-          <span className="text-text-3">
-            win <span className="text-text-1">{fmtUsd(wager.to_win_amount)}</span>
+          <span>
+            To win <span className="tabular text-text-1">{fmtUsd(wager.to_win_amount)}</span>
           </span>
-          <span className="text-text-3 hidden sm:inline">
+          <span className="tabular hidden sm:inline">
             {fmtAcceptedAt(wager.accepted_at)}
           </span>
         </div>
       </div>
-      <div className="flex flex-col gap-1 pl-1">
+      <div className="flex flex-col">
         {wager.legs.map((leg, i) => (
           <LegRow key={`${i}-${leg.play_number}`} leg={leg} />
         ))}
@@ -753,7 +706,12 @@ function LegRow({ leg }: { leg: WagerLeg }) {
       return s;
     }
     if (leg.total_points != null && leg.total_points !== 0) {
-      return `o/u ${leg.total_points}`;
+      // Which side was taken matters more than the number. Coral33 only puts
+      // it in the description text, so it can be absent — fall back to the
+      // neutral "o/u" rather than guessing a side.
+      const side =
+        leg.total_side === "over" ? "Over" : leg.total_side === "under" ? "Under" : "o/u";
+      return `${side} ${leg.total_points}`;
     }
     return null;
   })();
@@ -762,32 +720,24 @@ function LegRow({ leg }: { leg: WagerLeg }) {
     leg.team1 && leg.team2 ? `${leg.team1} @ ${leg.team2}` : null;
 
   return (
-    <div className="flex items-start justify-between gap-3 py-1 border-t border-border-subtle/50 first:border-t-0 first:pt-0">
-      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <LegStatusDot outcome={leg.outcome} />
-          <span className="text-text-1 text-[11px] font-medium">
-            {leg.chosen_team || leg.description.split(" ")[0]}
-          </span>
-          {lineLabel && (
-            <span className="text-text-2 text-[11px] tabular">{lineLabel}</span>
-          )}
-          <span className="text-text-3 text-[11px] tabular">
-            {fmtAmericanOdds(leg.final_money)}
-          </span>
-          {leg.period && leg.period !== "Game" && (
-            <span className="text-text-3 text-[10px] uppercase tracking-wider">
-              {leg.period}
-            </span>
-          )}
-        </div>
-        {matchup && (
-          <span className="text-text-3 text-[10px] truncate">
-            {matchup}
-            {leg.sport_sub_type && ` · ${leg.sport_sub_type}`}
-          </span>
+    <div className="flex flex-col gap-0.5 py-1.5 border-t border-border-subtle first:border-t-0 first:pt-0 last:pb-0 min-w-0">
+      <div className="flex items-center gap-2 flex-wrap text-[length:var(--fs-12)]">
+        <LegStatusDot outcome={leg.outcome} />
+        <span className="font-medium text-text-1">
+          {leg.chosen_team || leg.description.split(" ")[0]}
+        </span>
+        {lineLabel && <span className="tabular text-text-2">{lineLabel}</span>}
+        <span className="tabular text-text-3">{fmtAmericanOdds(leg.final_money)}</span>
+        {leg.period && leg.period !== "Game" && (
+          <span className="text-text-3">{leg.period}</span>
         )}
       </div>
+      {matchup && (
+        <span className="flex gap-2 pl-3.5 text-[length:var(--fs-11)] text-text-3 truncate">
+          <span className="truncate">{matchup}</span>
+          {leg.sport_sub_type && <span>{leg.sport_sub_type}</span>}
+        </span>
+      )}
     </div>
   );
 }
@@ -796,12 +746,14 @@ function LegRow({ leg }: { leg: WagerLeg }) {
 function LegStatusDot({ outcome }: { outcome: string | null }) {
   const tone =
     outcome === "won"
-      ? "bg-price-up"
+      ? "bg-gain"
       : outcome === "lost"
-        ? "bg-price-down"
+        ? "bg-loss"
         : outcome === "push"
           ? "bg-text-3"
-          : "bg-accent";
+          : outcome === "pending"
+            ? "bg-text-2"
+            : "border border-text-3 bg-transparent";
   const title =
     outcome === "won"
       ? "Won"
@@ -809,11 +761,14 @@ function LegStatusDot({ outcome }: { outcome: string | null }) {
         ? "Lost"
         : outcome === "push"
           ? "Push"
-          : "Open";
+          : outcome === "pending"
+            ? "Pending"
+            : "Open";
   return (
     <span
       title={title}
-      className={clsx("inline-block w-1.5 h-1.5 rounded-full", tone)}
+      aria-label={title}
+      className={clsx("inline-block w-1.5 h-1.5 shrink-0 rounded-full", tone)}
     />
   );
 }
@@ -822,41 +777,41 @@ function LegStatusDot({ outcome }: { outcome: string | null }) {
 function BetMixChip({
   label,
   count,
-  tone,
+  tone = "neutral",
   title,
 }: {
   label: string;
   count: number;
-  tone: "neutral" | "accent" | "positive" | "warning";
+  tone?: ChipTone;
   title?: string;
 }) {
   return (
-    <span
-      title={title}
-      className={clsx(
-        "inline-flex items-center gap-1 px-1.5 h-5 rounded-sm border text-[10px] font-medium tabular",
-        tone === "neutral" && "bg-bg-1 border-border-subtle text-text-2",
-        tone === "accent" && "bg-accent/10 border-accent/40 text-accent",
-        tone === "positive" && "bg-price-up/10 border-price-up/40 text-price-up",
-        tone === "warning" && "bg-flash/10 border-flash/40 text-flash",
-      )}
-    >
-      <span>{label}</span>
-      <span>{count}</span>
-    </span>
+    <Chip tone={tone} title={title}>
+      {label}
+      <span className="tabular">{count}</span>
+    </Chip>
   );
 }
 
 
-// ─── Cumulative P&L chart ─────────────────────────────────────────────────
+// ─── Daily balance chart ─────────────────────────────────────────────────
 
-const CHART_COLORS = [
-  "var(--color-accent)",
-  "var(--color-price-up)",
-  "var(--color-flash)",
-  "var(--color-price-down)",
-  "#a78bfa", // violet-400 fallback
-  "#60a5fa", // blue-400 fallback
+/** Cleared balance and pending wagers are neutral ink — they're amounts,
+ * not wins or losses. Only the P&L delta carries gain/loss. */
+const CLEARED_FILL = "rgb(var(--text-rgb) / 0.55)";
+const PENDING_FILL = "rgb(var(--text-rgb) / 0.22)";
+
+/** Per-account lines: no hue carries account identity (every hue has a job),
+ * so accounts are told apart by ink weight plus dash pattern. */
+const SPLIT_STYLES: { color: string; dash?: string }[] = [
+  { color: "rgb(var(--text-rgb) / 0.92)" },
+  { color: "rgb(var(--text-rgb) / 0.70)" },
+  { color: "rgb(var(--text-rgb) / 0.50)" },
+  { color: "rgb(var(--text-rgb) / 0.34)" },
+  { color: "rgb(var(--text-rgb) / 0.92)", dash: "5 3" },
+  { color: "rgb(var(--text-rgb) / 0.70)", dash: "5 3" },
+  { color: "rgb(var(--text-rgb) / 0.50)", dash: "2 3" },
+  { color: "rgb(var(--text-rgb) / 0.34)", dash: "2 3" },
 ];
 
 type ChartMode = "total" | "split";
@@ -865,7 +820,16 @@ interface ChartSeries {
   customer_id: string;
   label: string;
   color: string;
+  dash?: string;
   points: HistoryPoint[];
+}
+
+function SeriesSwatch({ color, dash }: { color: string; dash?: string }) {
+  return (
+    <svg width="14" height="6" aria-hidden className="shrink-0">
+      <line x1="0" x2="14" y1="3" y2="3" stroke={color} strokeWidth="2" strokeDasharray={dash} />
+    </svg>
+  );
 }
 
 function PnLChart({ history }: { history: HistoryRollup }) {
@@ -875,12 +839,16 @@ function PnLChart({ history }: { history: HistoryRollup }) {
   const accountSeries = useMemo<ChartSeries[]>(() => {
     return history.accounts
       .filter(a => a.points.length > 0)
-      .map((a, i) => ({
-        customer_id: a.customer_id,
-        label: a.label,
-        color: CHART_COLORS[i % CHART_COLORS.length],
-        points: a.points,
-      }));
+      .map((a, i) => {
+        const style = SPLIT_STYLES[i % SPLIT_STYLES.length];
+        return {
+          customer_id: a.customer_id,
+          label: a.label,
+          color: style.color,
+          dash: style.dash,
+          points: a.points,
+        };
+      });
   }, [history]);
 
   // Combined-total series: at each timestep, sum balance and net across
@@ -888,36 +856,7 @@ function PnLChart({ history }: { history: HistoryRollup }) {
   // re-render rather than a recompute.
   const totalSeries = useMemo<ChartSeries | null>(() => {
     if (accountSeries.length === 0) return null;
-    const numPoints = accountSeries[0].points.length;
-    const totalPoints: HistoryPoint[] = [];
-    for (let i = 0; i < numPoints; i++) {
-      let balance = 0;
-      let net = 0;
-      let pending = 0;
-      let date = "";
-      for (const s of accountSeries) {
-        const p = s.points[i];
-        if (!p) continue;
-        balance += p.balance;
-        net += p.net;
-        pending += p.pending;
-        if (!date) date = p.date;
-      }
-      totalPoints.push({
-        date,
-        won: 0,
-        lost: 0,
-        net,
-        balance,
-        pending,
-      });
-    }
-    return {
-      customer_id: "__total__",
-      label: "All accounts",
-      color: "var(--color-accent)",
-      points: totalPoints,
-    };
+    return { ...buildTotalHistory(accountSeries), color: CLEARED_FILL };
   }, [accountSeries]);
 
   if (accountSeries.length === 0 || !totalSeries) return null;
@@ -941,6 +880,8 @@ function PnLChart({ history }: { history: HistoryRollup }) {
   const endBalance =
     totalSeries.points[totalSeries.points.length - 1]?.balance ?? 0;
   const totalChange = endBalance - startBalance;
+  const latestPending =
+    totalSeries.points[totalSeries.points.length - 1]?.pending ?? 0;
 
   // SVG layout
   const W = 800;
@@ -975,93 +916,78 @@ function PnLChart({ history }: { history: HistoryRollup }) {
   // Hover crosshair
   const hoverX = hoverIdx != null ? xAt(hoverIdx) : null;
 
+  const axisText = { fontSize: "var(--fs-11)" } as const;
+
   return (
-    <section className="border border-border-subtle rounded-md bg-bg-0 p-3 flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-baseline gap-3">
-          <span className="text-[10px] uppercase tracking-wider text-text-3">
-            Daily balance · {history.weeks}w
+    <Panel
+      title={
+        <>
+          Daily balance{" "}
+          <span className="font-normal text-text-3">
+            last <span className="tabular">{history.weeks}</span> weeks
           </span>
-          <span className="text-[15px] font-semibold tabular text-text-1">
+        </>
+      }
+      actions={
+        <Segmented<ChartMode>
+          size="sm"
+          ariaLabel="Chart aggregation"
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: "total", label: "Total" },
+            { value: "split", label: "Per account" },
+          ]}
+        />
+      }
+      bodyClassName="px-4 pt-3 pb-3 flex flex-col gap-2"
+    >
+      <div className="flex items-baseline justify-between gap-x-6 gap-y-2 flex-wrap">
+        <div className="flex items-baseline gap-3">
+          <span className="tabular text-[length:var(--fs-22)] leading-[var(--lh-22)] font-semibold text-text-1">
             {fmtUsd(endBalance)}
           </span>
           <span
             className={clsx(
-              "text-[11px] tabular",
-              totalChange > 0 && "text-price-up",
-              totalChange < 0 && "text-price-down",
+              "tabular text-[length:var(--fs-13)]",
+              totalChange > 0 && "text-gain",
+              totalChange < 0 && "text-loss",
               totalChange === 0 && "text-text-3",
             )}
           >
             {fmtSignedUsd(totalChange)}
           </span>
+          <span className="text-[length:var(--fs-12)] text-text-3">over the period</span>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          {mode === "total" && (
-            <div className="flex flex-wrap gap-2.5 text-[11px] text-text-2">
+
+        {mode === "total" ? (
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[length:var(--fs-12)] text-text-2">
+            <span className="inline-flex items-center gap-1.5">
+              <span aria-hidden className="inline-block h-2 w-2 rounded-[2px]" style={{ background: CLEARED_FILL }} />
+              Cleared
+              <span className="tabular text-text-3">{fmtUsd(endBalance)}</span>
+            </span>
+            {latestPending > 0 && (
               <span className="inline-flex items-center gap-1.5">
-                <span
-                  className="inline-block w-2 h-2"
-                  style={{ background: "var(--color-accent)", opacity: 0.85 }}
-                />
-                <span>Cleared</span>
-                <span className="tabular text-text-3">{fmtUsd(endBalance)}</span>
+                <span aria-hidden className="inline-block h-2 w-2 rounded-[2px]" style={{ background: PENDING_FILL }} />
+                Pending
+                <span className="tabular text-text-3">{fmtUsd(latestPending)}</span>
               </span>
-              {(() => {
-                const lastPoint = totalSeries.points[totalSeries.points.length - 1];
-                const pending = lastPoint?.pending ?? 0;
-                if (pending <= 0) return null;
-                return (
-                  <span className="inline-flex items-center gap-1.5">
-                    <span
-                      className="inline-block w-2 h-2"
-                      style={{ background: "var(--color-flash)", opacity: 0.7 }}
-                    />
-                    <span>Pending</span>
-                    <span className="tabular text-text-3">{fmtUsd(pending)}</span>
-                  </span>
-                );
-              })()}
-            </div>
-          )}
-          {mode === "split" && (
-            <div className="flex flex-wrap gap-2.5">
-              {accountSeries.map(s => (
-                <span
-                  key={s.customer_id}
-                  className="inline-flex items-center gap-1.5 text-[11px] text-text-2"
-                >
-                  <span
-                    className="inline-block w-2 h-2 rounded-full"
-                    style={{ background: s.color }}
-                  />
-                  <span>{s.label}</span>
-                  <span className="tabular text-text-3">
-                    {fmtUsd(
-                      s.points[s.points.length - 1]?.balance ?? 0,
-                    )}
-                  </span>
-                </span>
-              ))}
-            </div>
-          )}
-          <div
-            role="tablist"
-            aria-label="Chart aggregation"
-            className="inline-flex h-6 rounded-md border border-border-subtle bg-bg-1 p-0.5 text-[10px] font-medium uppercase tracking-wider"
-          >
-            <ChartModeButton
-              active={mode === "total"}
-              onClick={() => setMode("total")}
-              label="Total"
-            />
-            <ChartModeButton
-              active={mode === "split"}
-              onClick={() => setMode("split")}
-              label="Per account"
-            />
+            )}
           </div>
-        </div>
+        ) : (
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[length:var(--fs-12)] text-text-2">
+            {accountSeries.map(s => (
+              <span key={s.customer_id} className="inline-flex items-center gap-1.5">
+                <SeriesSwatch color={s.color} dash={s.dash} />
+                {s.label}
+                <span className="tabular text-text-3">
+                  {fmtUsd(s.points[s.points.length - 1]?.balance ?? 0)}
+                </span>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <svg
@@ -1100,21 +1026,31 @@ function PnLChart({ history }: { history: HistoryRollup }) {
               y1={yAt(tv)}
               y2={yAt(tv)}
               stroke="var(--color-border-subtle)"
-              strokeDasharray={tv === 0 ? "0" : "2 3"}
-              strokeWidth={tv === 0 ? 1 : 0.5}
+              strokeDasharray="2 3"
+              strokeWidth={0.5}
             />
             <text
               x={padL - 6}
               y={yAt(tv) + 3}
               textAnchor="end"
-              className="text-text-3 tabular"
-              fontSize="10"
+              className="tabular text-text-3"
+              style={axisText}
               fill="currentColor"
             >
               {fmtUsd(tv, { compact: true })}
             </text>
           </g>
         ))}
+
+        {/* Zero baseline */}
+        <line
+          x1={padL}
+          x2={W - padR}
+          y1={yAt(0)}
+          y2={yAt(0)}
+          stroke="var(--color-text-3)"
+          strokeWidth={0.75}
+        />
 
         {/* X-axis labels — first, middle, last */}
         {[0, Math.floor(numPoints / 2), numPoints - 1].map(i => {
@@ -1126,8 +1062,8 @@ function PnLChart({ history }: { history: HistoryRollup }) {
               x={xAt(i)}
               y={H - 8}
               textAnchor="middle"
-              className="text-text-3 tabular"
-              fontSize="10"
+              className="tabular text-text-3"
+              style={axisText}
               fill="currentColor"
             >
               {p.date.slice(5)}
@@ -1136,12 +1072,12 @@ function PnLChart({ history }: { history: HistoryRollup }) {
         })}
 
         {/* Bars (total mode) or lines (split mode).
-            Total mode renders ONE stacked bar per day: a solid balance
-            segment + a striped pending cap on top. Pending only has data
+            Total mode renders ONE stacked bar per day: a cleared balance
+            segment + a lighter pending cap on top. Pending only has data
             on the latest point today — older bars omit the cap.
-            Split mode keeps the existing thin-line per-account view since
-            stacking 8 accounts × 84 days into bars produces sub-pixel
-            widths and a busy frame. */}
+            Split mode keeps the thin-line per-account view since stacking
+            8 accounts × 84 days into bars produces sub-pixel widths and a
+            busy frame. */}
         {mode === "total" ? (
           (() => {
             const s = series[0];
@@ -1163,15 +1099,16 @@ function PnLChart({ history }: { history: HistoryRollup }) {
               // Pending stacks above the (positive) balance.
               const yBalPlusPending = yAt(p.balance + p.pending);
               const pendingH = Math.max(0, yBal - yBalPlusPending);
+              const dim = hoverIdx != null && hoverIdx !== i;
               return (
-                <g key={i}>
+                <g key={i} opacity={dim ? 0.55 : 1}>
                   <rect
                     x={x}
                     y={balTop}
                     width={barW}
                     height={balH}
-                    fill={s.color}
-                    opacity={hoverIdx == null || hoverIdx === i ? 0.85 : 0.55}
+                    rx={1}
+                    fill={CLEARED_FILL}
                   />
                   {p.pending > 0 && pendingH > 0 && (
                     <rect
@@ -1179,8 +1116,8 @@ function PnLChart({ history }: { history: HistoryRollup }) {
                       y={yBalPlusPending}
                       width={barW}
                       height={pendingH}
-                      fill="var(--color-flash)"
-                      opacity={hoverIdx == null || hoverIdx === i ? 0.7 : 0.4}
+                      rx={1}
+                      fill={PENDING_FILL}
                     >
                       <title>Pending wagers (open bets)</title>
                     </rect>
@@ -1201,6 +1138,7 @@ function PnLChart({ history }: { history: HistoryRollup }) {
                 fill="none"
                 stroke={s.color}
                 strokeWidth={1.5}
+                strokeDasharray={s.dash}
                 strokeLinejoin="round"
                 strokeLinecap="round"
               />
@@ -1208,11 +1146,9 @@ function PnLChart({ history }: { history: HistoryRollup }) {
           })
         )}
 
-        {/* Hover crosshair. In split mode it's a dashed vertical line +
-            a dot on each line. In total mode it's a faint highlight box
-            spanning the hovered bar's slot — so the cursor visibly maps
-            to a specific bar even when the opacity diff is hard to see
-            at 7px bar widths. */}
+        {/* Hover marker. Total mode: a faint highlight spanning the
+            hovered bar's slot. Split mode: dashed vertical line + a dot on
+            each line. */}
         {hoverX != null && hoverIdx != null && mode === "total" && (
           <rect
             x={xAtBar(hoverIdx) - slotW / 2}
@@ -1245,7 +1181,7 @@ function PnLChart({ history }: { history: HistoryRollup }) {
                   cy={yAt(p.balance)}
                   r={3}
                   fill={s.color}
-                  stroke="var(--color-bg-0)"
+                  stroke="var(--color-bg-1)"
                   strokeWidth={1.5}
                 />
               );
@@ -1254,367 +1190,46 @@ function PnLChart({ history }: { history: HistoryRollup }) {
         )}
       </svg>
 
-      {hoverIdx != null && (
-        <div className="text-[11px] text-text-2 tabular flex flex-wrap gap-x-4 gap-y-1 px-2">
-          <span className="text-text-3">
-            {series[0].points[hoverIdx]?.date}
-          </span>
-          {series.map(s => {
-            const p = s.points[hoverIdx];
-            if (!p) return null;
-            return (
-              <span key={s.customer_id} className="inline-flex items-center gap-1.5">
-                <span
-                  className="inline-block w-1.5 h-1.5 rounded-full"
-                  style={{ background: s.color }}
-                />
-                <span className="text-text-3">{s.label}</span>
-                <span
-                  className={clsx(
-                    p.net > 0 && "text-price-up",
-                    p.net < 0 && "text-price-down",
-                    p.net === 0 && "text-text-2",
-                  )}
-                >
-                  {fmtSignedUsd(p.net)}
-                </span>
-                <span className="text-text-3">
-                  ({fmtUsd(p.balance)}
+      {/* Fixed-height readout so hovering never shifts the layout. */}
+      <div className="min-h-[18px] flex flex-wrap gap-x-4 gap-y-1 text-[length:var(--fs-12)] text-text-2">
+        {hoverIdx != null ? (
+          <>
+            <span className="tabular text-text-3">
+              {series[0].points[hoverIdx]?.date}
+            </span>
+            {series.map(s => {
+              const p = s.points[hoverIdx];
+              if (!p) return null;
+              return (
+                <span key={s.customer_id} className="inline-flex items-center gap-1.5">
+                  {mode === "split" && <SeriesSwatch color={s.color} dash={s.dash} />}
+                  <span className="text-text-3">{s.label}</span>
+                  <span
+                    className={clsx(
+                      "tabular",
+                      p.net > 0 && "text-gain",
+                      p.net < 0 && "text-loss",
+                      p.net === 0 && "text-text-2",
+                    )}
+                  >
+                    {fmtSignedUsd(p.net)}
+                  </span>
+                  <span className="text-text-3">
+                    balance <span className="tabular text-text-2">{fmtUsd(p.balance)}</span>
+                  </span>
                   {p.pending > 0 && (
-                    <>
-                      {" + "}
-                      <span className="text-flash">
-                        {fmtUsd(p.pending)} pending
-                      </span>
-                    </>
+                    <span className="text-text-3">
+                      pending <span className="tabular text-text-2">{fmtUsd(p.pending)}</span>
+                    </span>
                   )}
-                  )
                 </span>
-              </span>
-            );
-          })}
-        </div>
-      )}
-    </section>
-  );
-}
-
-
-function ChartModeButton({
-  active,
-  onClick,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className={clsx(
-        "px-2 rounded-sm transition-colors",
-        active
-          ? "bg-bg-0 text-text-1 border border-border-subtle"
-          : "text-text-3 hover:text-text-2",
-      )}
-    >
-      {label}
-    </button>
-  );
-}
-
-
-// ─────────────────────────── Bets table ─────────────────────────────
-
-type BetStatusFilter = "any" | "open" | "settled";
-
-// Map Coral33 wager-status codes → human-readable label + tone. Values
-// not in this map render as the raw code (so unexpected statuses still
-// surface rather than silently dropping into "settled").
-const STATUS_LABEL: Record<string, { label: string; tone: "open" | "win" | "loss" | "push" | "void" }> = {
-  O: { label: "Open",   tone: "open" },
-  W: { label: "Won",    tone: "win" },
-  L: { label: "Lost",   tone: "loss" },
-  P: { label: "Push",   tone: "push" },
-  X: { label: "Void",   tone: "void" },
-};
-
-// Coral33 wager-type codes → display chip. S = straight (no chip; the
-// default), everything else gets a small label.
-const WAGER_TYPE_LABEL: Record<string, string> = {
-  S: "",         // straight — no chip
-  M: "",         // money-line single — same as straight visually
-  P: "Parlay",
-  T: "Teaser",
-  R: "RR",       // round-robin
-  I: "If-Bet",
-  L: "Live",     // observed coral code; treat as live single
-  E: "Event",    // observed coral code; treat as event/special
-};
-
-function formatBetPick(b: BetEntry): string {
-  // Compose the chosen-side + line into one column. Spread bets get the
-  // signed point glued to the team; total bets get O/U + the line; ML
-  // and miscellany fall back to just the chosen-team or the raw
-  // description.
-  const team = b.chosen_team_id || b.description || "—";
-  if (b.adj_spread != null && b.adj_spread !== 0) {
-    const sign = b.adj_spread > 0 ? "+" : "";
-    return `${team} ${sign}${b.adj_spread}`;
-  }
-  if (b.adj_total_points != null && b.adj_total_points !== 0) {
-    // Chosen team for totals is often "Over <line>" or "Under <line>" —
-    // use the line directly.
-    return `${team} ${b.adj_total_points}`;
-  }
-  return team;
-}
-
-function formatBetMatchup(b: BetEntry): string {
-  if (!b.team1_id && !b.team2_id) return b.description || "—";
-  return `${b.team1_id ?? "?"} @ ${b.team2_id ?? "?"}`;
-}
-
-function formatAmericanOdds2(n: number | null): string {
-  if (n == null) return "—";
-  return n > 0 ? `+${n}` : String(n);
-}
-
-function fmtBetDate(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-function BetsTable({
-  bets,
-  weeks,
-}: {
-  bets: BetEntry[] | undefined;
-  weeks: number | undefined;
-}) {
-  const [statusFilter, setStatusFilter] = useState<BetStatusFilter>("any");
-
-  // Client-side status filter — the API also supports `?status=`, but
-  // filtering in-memory makes toggling instant (no refetch).
-  const filtered = useMemo(() => {
-    if (!bets) return undefined;
-    if (statusFilter === "open")
-      return bets.filter(b => b.wager_status === "O");
-    if (statusFilter === "settled")
-      return bets.filter(b => b.wager_status !== "O");
-    return bets;
-  }, [bets, statusFilter]);
-
-  if (!bets) {
-    return (
-      <section className="border border-border-subtle rounded-md bg-bg-0 p-4 text-text-3 text-xs">
-        Loading bet history…
-      </section>
-    );
-  }
-
-  return (
-    <section className="flex flex-col gap-2">
-      {/* Filter row + meta */}
-      <div className="flex items-center justify-between gap-3 flex-wrap text-[11px]">
-        <div className="flex items-center gap-2">
-          <span className="text-text-3 uppercase tracking-wider">Status</span>
-          <div
-            role="tablist"
-            aria-label="Status filter"
-            className="inline-flex h-7 rounded-md border border-border-subtle bg-bg-1 p-0.5 font-medium uppercase tracking-wider"
-          >
-            <ChartModeButton
-              active={statusFilter === "any"}
-              onClick={() => setStatusFilter("any")}
-              label="Any"
-            />
-            <ChartModeButton
-              active={statusFilter === "open"}
-              onClick={() => setStatusFilter("open")}
-              label="Open"
-            />
-            <ChartModeButton
-              active={statusFilter === "settled"}
-              onClick={() => setStatusFilter("settled")}
-              label="Settled"
-            />
-          </div>
-        </div>
-        <div className="text-text-3 tabular">
-          {filtered ? filtered.length : 0} of {bets.length} bets
-          {weeks != null && (
-            <span className="text-text-3"> · last {weeks}w</span>
-          )}
-        </div>
-      </div>
-
-      <div className="border border-border-subtle rounded-md bg-bg-0 overflow-hidden">
-        <table className="w-full text-xs">
-          <thead className="bg-bg-1 text-text-2">
-            <tr>
-              <th className="text-left px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-                Placed
-              </th>
-              <th className="text-left px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-                Account
-              </th>
-              <th className="text-left px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-                Sport
-              </th>
-              <th className="text-left px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-                Matchup
-              </th>
-              <th className="text-left px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-                Bet
-              </th>
-              <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-                Price
-              </th>
-              <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-                Stake
-              </th>
-              <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-                To Win
-              </th>
-              <th className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px]">
-                Result
-              </th>
-              <th
-                className="text-right px-2 py-2 font-medium uppercase tracking-wide text-[11px] text-text-3"
-                title="Closing-line value — coming soon (requires closing-line snapshots)"
-              >
-                CLV
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered && filtered.length === 0 ? (
-              <tr>
-                <td colSpan={10} className="px-3 py-6 text-center text-text-3">
-                  No bets match this filter.
-                </td>
-              </tr>
-            ) : (
-              filtered?.map(b => (
-                <BetRow key={`${b.customer_id}-${b.ticket_number}`} b={b} />
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-
-function BetRow({ b }: { b: BetEntry }) {
-  const status = STATUS_LABEL[b.wager_status] ?? {
-    label: b.wager_status,
-    tone: "void" as const,
-  };
-  const wagerTypeChip =
-    WAGER_TYPE_LABEL[b.wager_type] !== undefined
-      ? WAGER_TYPE_LABEL[b.wager_type]
-      : b.wager_type;
-  const showParlayCount = b.total_picks > 1;
-
-  // Net P&L on the result column. Open bets show "—"; pushes show $0;
-  // wins show the won amount, losses the negated stake.
-  const net = (() => {
-    if (b.wager_status === "O") return null;
-    if (b.wager_status === "W") return b.amount_won;
-    if (b.wager_status === "L") return -b.amount_lost;
-    return 0; // push / void
-  })();
-
-  return (
-    <tr className="border-t border-border-subtle hover:bg-bg-1">
-      <td className="px-2 py-1.5 align-middle whitespace-nowrap text-text-2">
-        {fmtBetDate(b.accepted_at)}
-      </td>
-      <td className="px-2 py-1.5 align-middle whitespace-nowrap text-text-1">
-        {b.account_label}
-      </td>
-      <td className="px-2 py-1.5 align-middle whitespace-nowrap text-text-2">
-        {b.sport_sub_type ?? b.sport_type ?? "—"}
-      </td>
-      <td className="px-2 py-1.5 align-middle text-text-2 truncate max-w-[260px]">
-        <span title={formatBetMatchup(b)}>{formatBetMatchup(b)}</span>
-      </td>
-      <td className="px-2 py-1.5 align-middle text-text-1">
-        <span className="inline-flex items-center gap-1.5">
-          {wagerTypeChip && (
-            <span
-              className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-accent bg-accent/10"
-              title={
-                showParlayCount
-                  ? `${wagerTypeChip} of ${b.total_picks} legs — head leg shown`
-                  : wagerTypeChip
-              }
-            >
-              {wagerTypeChip}
-              {showParlayCount ? ` ×${b.total_picks}` : ""}
-            </span>
-          )}
-          {b.is_free_play && (
-            <span className="inline-flex items-center px-1 rounded-sm text-[9px] font-semibold tracking-wider text-flash bg-flash/15">
-              FREE
-            </span>
-          )}
-          <span>{formatBetPick(b)}</span>
-        </span>
-      </td>
-      <td className="px-2 py-1.5 align-middle text-right tabular text-text-1">
-        {formatAmericanOdds2(b.final_money)}
-      </td>
-      <td className="px-2 py-1.5 align-middle text-right tabular text-text-2">
-        {fmtUsd(b.amount_wagered)}
-      </td>
-      <td className="px-2 py-1.5 align-middle text-right tabular text-text-3">
-        {fmtUsd(b.to_win_amount)}
-      </td>
-      <td className="px-2 py-1.5 align-middle text-right whitespace-nowrap">
-        <span
-          className={clsx(
-            "inline-flex items-center px-1.5 rounded-sm text-[10px] font-semibold tracking-wider",
-            status.tone === "open" && "text-text-2 bg-bg-2",
-            status.tone === "win" && "text-price-up bg-price-up/15",
-            status.tone === "loss" && "text-price-down bg-price-down/15",
-            status.tone === "push" && "text-text-2 bg-bg-2",
-            status.tone === "void" && "text-text-3 bg-bg-2",
-          )}
-        >
-          {status.label}
-        </span>
-        {net != null && (
-          <span
-            className={clsx(
-              "tabular ml-1.5",
-              net > 0 && "text-price-up",
-              net < 0 && "text-price-down",
-              net === 0 && "text-text-3",
-            )}
-          >
-            {net > 0 ? "+" : ""}{fmtUsd(Math.abs(net))}
-          </span>
+              );
+            })}
+          </>
+        ) : (
+          <span className="text-text-3">Hover the chart for a day&apos;s P&amp;L</span>
         )}
-      </td>
-      <td
-        className="px-2 py-1.5 align-middle text-right tabular text-text-3"
-        title="Closing-line value — placeholder until the closing-line snapshot pipeline lands"
-      >
-        {b.clv_pct == null ? "—" : `${b.clv_pct.toFixed(2)}%`}
-      </td>
-    </tr>
+      </div>
+    </Panel>
   );
 }

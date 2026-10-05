@@ -5,15 +5,29 @@ import useSWR from "swr";
 import clsx from "clsx";
 import { EyeOff, FilterX, Inbox, MoreHorizontal, SearchX, Star } from "lucide-react";
 
-import { apiPaths, type Game, type Market, type MarketOutcome, type SettingsResponse } from "@/lib/api";
+import { apiPaths, type Game, type MarketOutcome, type SettingsResponse } from "@/lib/api";
 import { useVisibleBooks } from "@/lib/use-visible-books";
 import { useLiveFilter } from "@/lib/use-live-filter";
 import { usePinnedMarkets } from "@/lib/use-pinned-markets";
 import { BOOK_ORDER } from "@/lib/books";
 import type { SportKey } from "@/lib/sports";
 import { matchesLiveFilter } from "./live-status-filter";
+import { Segmented, type SegmentedOption } from "@/components/ui";
 import { BookMatrixTable, type MatrixRow } from "./book-matrix-table";
 import { EmptyState } from "./empty-state";
+
+
+type SideMode = "both" | "over" | "under";
+
+const SIDE_OPTIONS: SegmentedOption<SideMode>[] = [
+  { value: "both", label: "Both" },
+  { value: "over", label: "Over" },
+  { value: "under", label: "Under" },
+];
+
+// Shared look for the filter-bar input and select (matches Segmented height).
+const CONTROL_CLASS =
+  "h-[40px] rounded-lg border border-border-subtle bg-bg-1 text-[length:var(--fs-13)] text-text-1 outline-none transition-colors focus:border-text-3";
 
 
 /**
@@ -102,7 +116,7 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
   const [activeMarket, setActiveMarket] = useState<string | null>(null);
   const [playerFilter, setPlayerFilter] = useState("");
   const [gameFilter, setGameFilter] = useState<string>("all");
-  const [sideMode, setSideMode] = useState<"both" | "over" | "under">("both");
+  const [sideMode, setSideMode] = useState<SideMode>("both");
   const [moreOpen, setMoreOpen] = useState(false);
 
   // Remember the last-used market tab per sport so the props page doesn't
@@ -123,6 +137,7 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
         ? window.localStorage.getItem(activeMarketStorageKey)
         : null;
     if (persisted && enabledTabs.includes(persisted)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- preserve the existing persisted-tab seeding
       setActiveMarket(persisted);
       return;
     }
@@ -227,54 +242,56 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
   return (
     <div className="flex flex-col gap-3">
       {/* Market tabs: pinned tabs + (optional) transient active + More chip.
-          The strip NEVER wraps — a horizontal scroll with a subtle right-edge
-          fade handles the rare "user pinned a ton" case. Unpinned markets
+          The strip NEVER wraps — a horizontal scroll handles the rare "user
+          pinned a ton" case. Unpinned markets
           hide behind the More popover to keep the default tab set usable. */}
       {enabledTabs.length > 0 && (
-        <div className="relative">
-          <div className="overflow-x-auto no-scrollbar pr-6">
-            <div className="inline-flex items-center gap-2 min-w-max">
-              {pinnedTabs.map(key => (
-                <MarketTab
-                  key={key}
-                  marketKey={key}
-                  active={activeMarket === key}
-                  pinned
-                  onActivate={() => setActiveMarket(key)}
-                  onTogglePin={() => togglePin(key)}
-                />
-              ))}
-              {activeIsTransient && activeMarket && (
-                <MarketTab
-                  key={`transient-${activeMarket}`}
-                  marketKey={activeMarket}
-                  active
-                  pinned={false}
-                  transient
-                  onActivate={() => { /* already active */ }}
-                  onTogglePin={() => togglePin(activeMarket)}
-                />
-              )}
-              <MoreChip
-                count={unpinnedTabs.length}
-                open={moreOpen}
-                onOpenChange={setMoreOpen}
-                unpinned={unpinnedTabs}
-                activeMarket={activeMarket}
-                onActivate={key => {
-                  setActiveMarket(key);
-                  setMoreOpen(false);
-                }}
-                onTogglePin={togglePin}
-                isPinned={isPinned}
-              />
+        <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="overflow-x-auto no-scrollbar">
+              <div
+                role="tablist"
+                aria-label="Prop market"
+                className="inline-flex min-w-max items-center gap-0.5 rounded-lg border border-border-subtle bg-bg-1 p-[3px]"
+              >
+                {pinnedTabs.map(key => (
+                  <MarketTab
+                    key={key}
+                    marketKey={key}
+                    active={activeMarket === key}
+                    pinned
+                    onActivate={() => setActiveMarket(key)}
+                    onTogglePin={() => togglePin(key)}
+                  />
+                ))}
+                {activeIsTransient && activeMarket && (
+                  <MarketTab
+                    key={`transient-${activeMarket}`}
+                    marketKey={activeMarket}
+                    active
+                    pinned={false}
+                    transient
+                    onActivate={() => { /* already active */ }}
+                    onTogglePin={() => togglePin(activeMarket)}
+                  />
+                )}
+              </div>
             </div>
           </div>
-          {/* Right-edge fade hints at horizontal overflow without a visible
-              scrollbar. pointer-events-none so it doesn't eat clicks. */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute top-0 right-0 h-full w-6 bg-gradient-to-l from-bg-0 to-transparent"
+          {/* More sits outside the scroll strip so its popover is never
+              clipped by the strip's overflow. */}
+          <MoreChip
+            count={unpinnedTabs.length}
+            open={moreOpen}
+            onOpenChange={setMoreOpen}
+            unpinned={unpinnedTabs}
+            activeMarket={activeMarket}
+            onActivate={key => {
+              setActiveMarket(key);
+              setMoreOpen(false);
+            }}
+            onTogglePin={togglePin}
+            isPinned={isPinned}
           />
         </div>
       )}
@@ -317,42 +334,37 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
 
       {/* Filter bar */}
       {activeMarket && (
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           <input
             type="text"
-            placeholder="Filter players…"
+            placeholder="Filter players"
+            aria-label="Filter players"
             value={playerFilter}
             onChange={e => setPlayerFilter(e.target.value)}
-            className="h-8 px-3 rounded-md text-xs bg-bg-1 border border-border-subtle text-text-1 outline-none focus:border-accent/70 w-48"
+            className={clsx(CONTROL_CLASS, "w-52 px-3 placeholder:text-text-3")}
           />
           <select
+            aria-label="Game"
             value={gameFilter}
             onChange={e => setGameFilter(e.target.value)}
-            className="h-8 px-2 rounded-md text-xs bg-bg-1 border border-border-subtle text-text-1 outline-none"
+            className={clsx(CONTROL_CLASS, "max-w-72 px-2.5")}
           >
             <option value="all">All games ({filteredGames.length})</option>
             {gameOptions.map(o => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
-          <div className="inline-flex rounded-md bg-bg-1 border border-border-subtle p-0.5">
-            {(["both", "over", "under"] as const).map(m => (
-              <button
-                key={m}
-                onClick={() => setSideMode(m)}
-                className={clsx(
-                  "px-2.5 py-1 text-[11px] tracking-wide uppercase rounded-sm transition-colors",
-                  sideMode === m
-                    ? "bg-bg-2 text-text-1"
-                    : "text-text-2 hover:text-text-1"
-                )}
-              >
-                {m === "both" ? "O / U" : m === "over" ? "Over" : "Under"}
-              </button>
-            ))}
-          </div>
-          <span className="text-[11px] text-text-3 tabular ml-2">
-            {rows.length} row{rows.length === 1 ? "" : "s"} · {bookColumns.length} book{bookColumns.length === 1 ? "" : "s"}
+          <Segmented
+            ariaLabel="Side"
+            value={sideMode}
+            onChange={setSideMode}
+            options={SIDE_OPTIONS}
+          />
+          <span className="ml-1 text-[length:var(--fs-12)] text-text-3">
+            <span className="tabular">{rows.length}</span> row
+            {rows.length === 1 ? "" : "s"} across{" "}
+            <span className="tabular">{bookColumns.length}</span> book
+            {bookColumns.length === 1 ? "" : "s"}
           </span>
         </div>
       )}
@@ -450,9 +462,9 @@ export function PropsMatrix({ sport, games }: { sport: SportKey; games: Game[] }
 
 
 /**
- * Single market tab pill. Star icon on the right toggles pin; body click
- * activates the tab. "Transient" variant (active-but-unpinned) gets a
- * dashed accent border and italic label — a restrained hint that this
+ * Single market tab inside the segmented-style strip. Star on the right
+ * toggles pin; body click activates the tab. "Transient" variant
+ * (active-but-unpinned) gets a dashed outline — a restrained hint that this
  * tab isn't in the user's pinned set.
  */
 function MarketTab({
@@ -473,23 +485,18 @@ function MarketTab({
   return (
     <div
       className={clsx(
-        "inline-flex items-center rounded-md text-xs font-medium tracking-wide transition-colors border",
-        active
-          ? "bg-bg-2 text-text-1"
-          : "bg-bg-1 text-text-2 hover:text-text-1",
-        active && !transient && "border-accent/50",
-        active && transient && "border-accent/40 border-dashed",
-        !active && "border-border-subtle"
+        "inline-flex h-8 items-center rounded-md border text-[length:var(--fs-13)] font-medium whitespace-nowrap transition-colors",
+        active ? "bg-bg-2 text-text-1" : "text-text-2 hover:text-text-1",
+        transient ? "border-dashed border-text-3" : "border-transparent",
       )}
       title={marketKey}
     >
       <button
         type="button"
+        role="tab"
+        aria-selected={active}
         onClick={onActivate}
-        className={clsx(
-          "pl-3 pr-1.5 py-1 outline-none",
-          transient && "italic"
-        )}
+        className="h-full pl-3 pr-1 outline-none"
       >
         {formatMarketLabel(marketKey)}
       </button>
@@ -504,14 +511,12 @@ function MarketTab({
         aria-label={pinned ? "Unpin market" : "Pin market"}
         title={pinned ? "Unpin market" : "Pin market"}
         className={clsx(
-          "px-1.5 py-1 rounded-r-md transition-colors outline-none",
-          pinned
-            ? "text-accent hover:text-accent/80"
-            : "text-text-3 hover:text-text-1"
+          "h-full rounded-r-md pl-1 pr-2.5 transition-colors outline-none",
+          pinned ? "text-text-1 hover:text-text-2" : "text-text-3 hover:text-text-1",
         )}
       >
         <Star
-          size={11}
+          size={12}
           aria-hidden
           strokeWidth={1.6}
           fill={pinned ? "currentColor" : "none"}
@@ -577,27 +582,27 @@ function MoreChip({
         type="button"
         onClick={() => onOpenChange(!open)}
         className={clsx(
-          "inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium tracking-wide transition-colors",
-          "bg-bg-1 text-text-2 hover:text-text-1 border border-border-subtle",
-          open && "text-text-1 border-accent/40"
+          "inline-flex h-[40px] shrink-0 items-center gap-1.5 rounded-lg border border-border-subtle px-3 text-[length:var(--fs-13)] font-medium transition-colors",
+          open ? "bg-bg-2 text-text-1" : "bg-bg-1 text-text-2 hover:text-text-1",
         )}
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <MoreHorizontal size={10} aria-hidden />
-        More ({count})
+        <MoreHorizontal size={14} aria-hidden />
+        More
+        <span className="tabular text-[length:var(--fs-11)] text-text-3">{count}</span>
       </button>
       {open && (
         <div
           className={clsx(
-            "absolute top-full left-0 mt-2 z-20",
+            "absolute top-full right-0 mt-2 z-30",
             "w-[260px] max-h-[70vh] overflow-y-auto",
-            "bg-bg-1 border border-border-subtle rounded-md shadow-2xl"
+            "bg-bg-1 border border-border-subtle rounded-lg shadow-2xl"
           )}
           role="listbox"
         >
           <div className="sticky top-0 bg-bg-1 border-b border-border-subtle px-3 py-2 z-10">
-            <span className="text-[11px] text-text-3 uppercase tracking-wider">
+            <span className="text-[length:var(--fs-12)] text-text-3">
               Unpinned markets
             </span>
           </div>
@@ -609,8 +614,8 @@ function MoreChip({
                 <div
                   key={key}
                   className={clsx(
-                    "flex items-center w-full text-xs transition-colors",
-                    isActive ? "bg-bg-2 text-text-1" : "text-text-2 hover:bg-bg-2/50"
+                    "flex items-center w-full text-[length:var(--fs-13)] transition-colors",
+                    isActive ? "bg-bg-2 text-text-1" : "text-text-2 hover:bg-bg-2"
                   )}
                 >
                   <button
@@ -631,12 +636,12 @@ function MoreChip({
                     className={clsx(
                       "px-2 py-1.5 transition-colors outline-none",
                       pinnedNow
-                        ? "text-accent hover:text-accent/80"
+                        ? "text-text-1 hover:text-text-2"
                         : "text-text-3 hover:text-text-1"
                     )}
                   >
                     <Star
-                      size={11}
+                      size={12}
                       aria-hidden
                       strokeWidth={1.6}
                       fill={pinnedNow ? "currentColor" : "none"}
@@ -681,8 +686,7 @@ function firstPoint(o: MarketOutcome): number | null {
 
 function formatMarketLabel(key: string): string {
   // Strip a leading sport-prefix (`player_`, `pitcher_`, `batter_`) and
-  // title-case the rest. `player_points` → "Points",
-  // `batter_total_bases` → "Total Bases".
+  // sentence-case the rest. `player_points` → "Points".
   let core = key;
   for (const prefix of ["player_", "pitcher_", "batter_"]) {
     if (core.startsWith(prefix)) {
@@ -690,8 +694,7 @@ function formatMarketLabel(key: string): string {
       break;
     }
   }
-  return core
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, c => c.toUpperCase())
-    .replace(/Rbis/g, "RBIs");
+  // Sentence case (spec §2): `batter_total_bases` → "Total bases".
+  const words = core.replace(/_/g, " ");
+  return (words.charAt(0).toUpperCase() + words.slice(1)).replace(/\brbis\b/gi, "RBIs");
 }

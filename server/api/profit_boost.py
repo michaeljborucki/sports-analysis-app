@@ -18,7 +18,9 @@ from ..odds.cache import OddsCache
 from ..odds.coalesce import memoized_coalesced
 from ..odds.normalize import rows_to_games
 from ..odds.profit_boost import scan_all_profit_boost
+from ..odds.scanner_runtime import run_scanner
 from ..util import TTLCache
+from ..odds.latest_snapshot import LatestOddsSnapshotService
 
 
 class ProfitBoostLeg(BaseModel):
@@ -64,7 +66,10 @@ class ProfitBoostResponse(BaseModel):
     min_conversion_pct: float
 
 
-def build_router(cache: OddsCache) -> APIRouter:
+def build_router(
+    cache: OddsCache,
+    snapshot_service: LatestOddsSnapshotService | None = None,
+) -> APIRouter:
     router = APIRouter()
     memo = TTLCache(ttl_seconds=20.0)
 
@@ -97,12 +102,20 @@ def build_router(cache: OddsCache) -> APIRouter:
         # this memo survives past its 20s TTL during quiet stretches.
         # `memoized_coalesced` collapses simultaneous duplicate requests into
         # one underlying scan. See server/odds/coalesce.py for details.
+        snapshot = await snapshot_service.get() if snapshot_service else None
+        source_version = (
+            ("snapshot", snapshot.generation)
+            if snapshot is not None else cache.read_version
+        )
         cache_key = (
-            "pb", str(cache.path), cache.version, boost_pct, books, boost_books,
+            "pb", str(cache.path), source_version, boost_pct, books, boost_books,
             min_conversion, min_boost_odds,
         )
 
         async def _compute() -> ProfitBoostResponse:
+            return await run_scanner("profit-boost", _compute_sync)
+
+        def _compute_sync() -> ProfitBoostResponse:
             hedge_books_set: set[str] | None = None
             if books.strip():
                 hedge_books_set = {b for b in books.split(",") if b}
@@ -111,8 +124,11 @@ def build_router(cache: OddsCache) -> APIRouter:
                 boost_books_set = {b for b in boost_books.split(",") if b}
 
             now = datetime.now(timezone.utc)
-            rows = cache.all_current()
-            games = rows_to_games(rows, now=now)
+            if snapshot is not None:
+                games = snapshot.non_prop_games
+            else:
+                rows = cache.all_current()
+                games = rows_to_games(rows, now=now)
 
             opps = scan_all_profit_boost(
                 games,

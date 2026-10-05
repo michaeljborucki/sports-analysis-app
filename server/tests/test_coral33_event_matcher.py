@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+import pytest
 
 from server.odds.books.coral33.event_matcher import Coral33EventMatcher
+from server.odds.books.coral33.mapping import load_coral33_config
 
 
 def _events_nba():
@@ -130,9 +134,80 @@ def test_picks_closest_event_when_multiple_match():
     assert eid is not None and eid["event_id"] == "late"  # 2 min off vs 17 min off
 
 
+def test_ncaaf_uniquely_matches_school_prefixes_to_mascot_names():
+    events = [{
+        "event_id": "ncaaf-1",
+        "home_team": "Mississippi State Bulldogs",
+        "away_team": "Southern Miss Golden Eagles",
+        "commence_time": datetime(2026, 8, 29, 19, 0, tzinfo=timezone.utc),
+    }]
+    matcher = Coral33EventMatcher(lambda sport: events if sport == "ncaaf" else [])
+
+    match = matcher.match(
+        "ncaaf",
+        home="Mississippi St",
+        away="Southern Miss",
+        commence=datetime(2026, 8, 29, 19, 0, tzinfo=timezone.utc),
+    )
+
+    assert match == {
+        "event_id": "ncaaf-1",
+        "home_team": "Mississippi State Bulldogs",
+        "away_team": "Southern Miss Golden Eagles",
+    }
+
+
+@pytest.mark.parametrize(("coral_name", "odds_name"), [
+    ("North Carolina St", "NC State Wolfpack"),
+    ("Massachusetts", "UMass Minutemen"),
+    ("Miami Florida", "Miami Hurricanes"),
+    ("Miami Ohio", "Miami (OH) RedHawks"),
+    ("Mississippi", "Ole Miss Rebels"),
+])
+def test_ncaaf_config_maps_verified_coral_school_aliases(coral_name, odds_name):
+    events = [{
+        "event_id": "ncaaf-alias",
+        "home_team": odds_name,
+        "away_team": "Louisville Cardinals",
+        "commence_time": datetime(2026, 9, 6, 23, 30, tzinfo=timezone.utc),
+    }]
+    config = load_coral33_config(Path("server/config/coral33.toml"))
+    matcher = Coral33EventMatcher(
+        lambda sport: events if sport == "ncaaf" else [],
+        team_aliases=config.team_aliases,
+    )
+
+    match = matcher.match(
+        "ncaaf",
+        home=coral_name,
+        away="Louisville",
+        commence=datetime(2026, 9, 6, 23, 30, tzinfo=timezone.utc),
+    )
+
+    assert match is not None and match["event_id"] == "ncaaf-alias"
+
+
+def test_ncaaf_accepts_confirmed_thirty_minute_kickoff_drift():
+    events = [{
+        "event_id": "ncaaf-drift",
+        "home_team": "Michigan Wolverines",
+        "away_team": "Western Michigan Broncos",
+        "commence_time": datetime(2026, 9, 5, 23, 0, tzinfo=timezone.utc),
+    }]
+    matcher = Coral33EventMatcher(lambda sport: events if sport == "ncaaf" else [])
+
+    match = matcher.match(
+        "ncaaf",
+        home="Michigan",
+        away="Western Michigan",
+        commence=datetime(2026, 9, 5, 23, 30, tzinfo=timezone.utc),
+    )
+
+    assert match is not None and match["event_id"] == "ncaaf-drift"
+
+
 # --- Tennis name normalization regression tests ---
 
-import pytest
 from server.odds.books.coral33.event_matcher import _normalize_team
 
 

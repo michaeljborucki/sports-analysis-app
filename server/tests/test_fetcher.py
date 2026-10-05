@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -37,13 +36,12 @@ def _make_registry(resolve_return=None, resolve_raises: Exception | None = None)
 
 def _sport(key: str = "tennis", odds_api_keys: list[str] | None = None) -> Sport:
     """Build a Sport with the exact dataclass shape (frozen, with
-    Path-typed agent_dir and tuple-typed odds_api_sport_keys)."""
+    tuple-typed odds_api_sport_keys)."""
     keys = tuple(odds_api_keys) if odds_api_keys else (f"{key}_atp_*",)
     return Sport(
         key=key,
         label=key.upper(),
         odds_api_sport_keys=keys,
-        agent_dir=Path("/tmp"),
         markets_config="",
     )
 
@@ -206,7 +204,7 @@ async def test_per_event_uses_instance_sem_not_fresh_one():
     reg, client = _make_registry(resolve_return=["a"])
 
     # Stub event listing to return a handful of synthetic events.
-    reg.cache.distinct_events = MagicMock(
+    reg.cache.distinct_events_async = AsyncMock(
         return_value=[{"event_id": f"evt_{i}"} for i in range(8)]
     )
     reg.cache.upsert = MagicMock()
@@ -252,7 +250,7 @@ async def test_per_event_uses_instance_sem_not_fresh_one():
 async def test_per_event_uses_tier_games_window_for_event_lookup():
     sp = _sport(key="soccer")
     reg, _client = _make_registry()
-    reg.cache.distinct_events = MagicMock(return_value=[])
+    reg.cache.distinct_events_async = AsyncMock(return_value=[])
     tier = TierConfig(
         name="alternates",
         enabled=True,
@@ -264,7 +262,7 @@ async def test_per_event_uses_tier_games_window_for_event_lookup():
 
     await reg._run_per_event(sp, tier)
 
-    reg.cache.distinct_events.assert_called_once_with(
+    reg.cache.distinct_events_async.assert_awaited_once_with(
         within_hours_ahead=12,
         sport_key="soccer",
     )

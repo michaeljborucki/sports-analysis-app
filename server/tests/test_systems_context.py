@@ -6,6 +6,8 @@ from server.odds.cache import OddsCache, init_schema_on_path
 from server.systems.context import (
     build_evaluation_games,
     college_games_played_context,
+    college_previous_game_context,
+    college_revenge_context,
     college_team_directory_context,
     football_scoreboard_context,
     football_schedule_enricher,
@@ -200,9 +202,62 @@ def test_football_scoreboard_confirms_fbs_week_and_conference_classes():
     assert result["odds-1"] == {
         "is_fbs_game": True,
         "week": 1,
+        "neutral_site": False,
+        # Carried so the AP poll can be matched by id rather than by name.
+        "home_espn_team_id": None,
+        "away_espn_team_id": None,
+        "is_conference_game": False,
+        "home_conference_id": 5,
+        "away_conference_id": 17,
+        "home_is_fbs": True,
+        "away_is_fbs": True,
         "home_conference_class": "p4",
         "away_conference_class": "g5",
     }
+
+
+def test_football_scoreboard_reports_neutral_site_and_same_conference_play():
+    game = EvaluationGame(
+        event_id="odds-2", sport="ncaaf", home_team="Florida State Seminoles",
+        away_team="SMU Mustangs",
+        commence_time=datetime(2026, 9, 8, 0, 0, tzinfo=timezone.utc),
+        data_timestamp=datetime(2026, 9, 3, 16, 0, tzinfo=timezone.utc),
+    )
+    payload = {
+        "week": {"number": 1},
+        "events": [{"competitions": [{
+            "neutralSite": True,
+            "competitors": [
+                {"homeAway": "home", "team": {"displayName": "Florida State Seminoles", "conferenceId": "1"}},
+                {"homeAway": "away", "team": {"displayName": "SMU Mustangs", "conferenceId": "1"}},
+            ],
+        }]}],
+    }
+    result = football_scoreboard_context([game], payload)["odds-2"]
+    assert result["neutral_site"] is True
+    assert result["is_conference_game"] is True
+    assert result["home_conference_id"] == result["away_conference_id"] == 1
+
+
+def test_football_scoreboard_marks_an_fcs_side_without_blanking_the_other():
+    """`is_fbs_game` collapses both sides; the Game 2 rules need them apart."""
+    game = EvaluationGame(
+        event_id="odds-3", sport="ncaaf", home_team="Georgia Bulldogs",
+        away_team="Tennessee State Tigers",
+        commence_time=datetime(2026, 9, 6, 0, 0, tzinfo=timezone.utc),
+        data_timestamp=datetime(2026, 9, 3, 16, 0, tzinfo=timezone.utc),
+    )
+    payload = {
+        "week": {"number": 1},
+        "events": [{"competitions": [{"competitors": [
+            {"homeAway": "home", "team": {"displayName": "Georgia Bulldogs", "conferenceId": "8"}},
+            {"homeAway": "away", "team": {"displayName": "Tennessee State Tigers", "conferenceId": "21"}},
+        ]}]}],
+    }
+    result = football_scoreboard_context([game], payload)["odds-3"]
+    assert result["is_fbs_game"] is False
+    assert result["home_is_fbs"] is True
+    assert result["away_is_fbs"] is False
 
 
 def test_college_games_played_counts_only_completed_games_before_kickoff():
@@ -364,8 +419,13 @@ def test_college_team_directory_marks_two_fcs_teams_not_fbs():
         56: {"conference_id": 28, "parent_group_id": 81},
     }
     assert college_team_directory_context([game], directory, details, week=1) == {
-        "fcs": {"is_fbs_game": False, "week": 1,
-                "home_conference_class": None, "away_conference_class": None}
+        "fcs": {
+            "is_fbs_game": False, "week": 1,
+            "home_conference_id": 21, "away_conference_id": 28,
+            "home_is_fbs": False, "away_is_fbs": False,
+            "is_conference_game": False,
+            "home_conference_class": None, "away_conference_class": None,
+        }
     }
 
 
@@ -474,7 +534,9 @@ def test_scoreboard_date_key_uses_espns_eastern_date_not_utc():
         commence_time=datetime(2026, 9, 4, 0, 0, tzinfo=timezone.utc),
         data_timestamp=datetime(2026, 9, 3, 16, 0, tzinfo=timezone.utc),
     )
-    assert scoreboard_date_key([night_game], date(2026, 9, 3)) == "20260903"
+    # Range form even for one day — ESPN truncates a bare date. What this
+    # test guards is the Eastern-vs-UTC date, which is unchanged.
+    assert scoreboard_date_key([night_game], date(2026, 9, 3)) == "20260903-20260903"
 
 
 def test_kickoff_weather_skips_null_hours_from_the_provider():
@@ -502,3 +564,221 @@ def test_kickoff_weather_returns_nothing_when_every_hour_is_null():
     }
     kickoff = datetime(2026, 9, 19, 0, 0, tzinfo=timezone.utc)
     assert select_kickoff_weather(hourly, kickoff) == {}
+
+
+def _finished(date_str, home, home_conf, home_score, away, away_conf, away_score, *, neutral=False):
+    return {
+        "date": date_str,
+        "status": {"type": {"completed": True}},
+        "competitions": [{
+            "neutralSite": neutral,
+            "competitors": [
+                {"homeAway": "home", "score": str(home_score),
+                 "team": {"id": home, "displayName": home, "conferenceId": home_conf}},
+                {"homeAway": "away", "score": str(away_score),
+                 "team": {"id": away, "displayName": away, "conferenceId": away_conf}},
+            ],
+        }],
+    }
+
+
+def _game_two(home="Sacramento State", away="Mississippi Valley State"):
+    return EvaluationGame(
+        event_id="game-2", sport="ncaaf", home_team=home, away_team=away,
+        commence_time=datetime(2026, 9, 6, 0, 0, tzinfo=timezone.utc),
+        data_timestamp=datetime(2026, 9, 3, 16, 0, tzinfo=timezone.utc),
+    )
+
+
+def test_previous_game_context_reports_the_last_completed_outing_per_side():
+    history = {"events": [
+        _finished("2026-08-30T00:00:00Z", "Sacramento State", "20", 7, "Fresno State", "17", 28),
+        _finished("2026-08-30T00:00:00Z", "Mississippi Valley State", "21", 3, "Tennessee State", "21", 24),
+    ]}
+    values = college_previous_game_context([_game_two()], history)["game-2"]
+    assert values["home_previous_game_played"] is True
+    assert values["home_previous_opponent_is_fbs"] is True
+    assert values["home_previous_game_won"] is False
+    assert values["home_previous_margin"] == -21
+    assert values["home_previous_points"] == 7
+    assert values["away_previous_opponent_is_fbs"] is False
+
+
+def test_previous_game_context_ignores_games_at_or_after_kickoff():
+    history = {"events": [
+        _finished("2026-08-30T00:00:00Z", "Sacramento State", "20", 7, "Fresno State", "17", 28),
+        _finished("2026-09-13T00:00:00Z", "Sacramento State", "20", 45, "Idaho", "20", 10),
+    ]}
+    values = college_previous_game_context([_game_two()], history)["game-2"]
+    assert values["home_previous_points"] == 7
+
+
+def test_previous_game_context_calls_an_absent_team_zero_games_not_unknown():
+    """Week 1 must read as a confirmed no-match, never as missing context."""
+    values = college_previous_game_context([_game_two()], {"events": []})["game-2"]
+    assert values["home_previous_game_played"] is False
+    assert values["away_previous_game_played"] is False
+    assert values["home_previous_margin"] is None
+
+
+def test_revenge_context_marks_only_the_side_that_lost_the_prior_meeting():
+    prior_season = {"events": [
+        _finished("2025-09-01T00:00:00Z", "Auburn Tigers", "8", 21, "Baylor Bears", "4", 24),
+    ]}
+    game = EvaluationGame(
+        event_id="rematch", sport="ncaaf", home_team="Auburn Tigers",
+        away_team="Baylor Bears",
+        commence_time=datetime(2026, 9, 6, 0, 0, tzinfo=timezone.utc),
+        data_timestamp=datetime(2026, 9, 3, 16, 0, tzinfo=timezone.utc),
+    )
+    values = college_revenge_context([game], [prior_season])["rematch"]
+    assert values["home_revenge"] is True
+    assert values["away_revenge"] is False
+
+
+def test_revenge_context_ignores_a_prior_meeting_the_teams_did_not_play():
+    prior_season = {"events": [
+        _finished("2025-09-01T00:00:00Z", "Auburn Tigers", "8", 31, "Alabama Crimson Tide", "8", 24),
+    ]}
+    game = EvaluationGame(
+        event_id="rematch", sport="ncaaf", home_team="Auburn Tigers",
+        away_team="Baylor Bears",
+        commence_time=datetime(2026, 9, 6, 0, 0, tzinfo=timezone.utc),
+        data_timestamp=datetime(2026, 9, 3, 16, 0, tzinfo=timezone.utc),
+    )
+    values = college_revenge_context([game], [prior_season])["rematch"]
+    assert values == {"home_revenge": False, "away_revenge": False}
+
+
+def test_notre_dame_classifies_as_power_four_despite_being_an_independent():
+    """ESPN files Notre Dame under Independents, which is neither P4 nor G5."""
+    game = EvaluationGame(
+        event_id="lambeau", sport="ncaaf", home_team="Notre Dame Fighting Irish",
+        away_team="Wisconsin Badgers",
+        commence_time=datetime(2026, 9, 6, 20, 0, tzinfo=timezone.utc),
+        data_timestamp=datetime(2026, 9, 3, 16, 0, tzinfo=timezone.utc),
+    )
+    payload = {
+        "week": {"number": 1},
+        "events": [{"competitions": [{
+            "neutralSite": True,
+            "competitors": [
+                {"homeAway": "home", "team": {"id": "87", "displayName": "Notre Dame Fighting Irish", "conferenceId": "18"}},
+                {"homeAway": "away", "team": {"id": "275", "displayName": "Wisconsin Badgers", "conferenceId": "5"}},
+            ],
+        }]}],
+    }
+    result = football_scoreboard_context([game], payload)["lambeau"]
+    assert result["home_conference_class"] == "p4"
+    assert result["away_conference_class"] == "p4"
+    assert result["is_conference_game"] is False
+    assert result["neutral_site"] is True
+
+
+def test_other_fbs_independents_are_not_promoted_to_power_four():
+    game = EvaluationGame(
+        event_id="independent", sport="ncaaf", home_team="UConn Huskies",
+        away_team="Wisconsin Badgers",
+        commence_time=datetime(2026, 9, 6, 20, 0, tzinfo=timezone.utc),
+        data_timestamp=datetime(2026, 9, 3, 16, 0, tzinfo=timezone.utc),
+    )
+    payload = {
+        "week": {"number": 1},
+        "events": [{"competitions": [{"competitors": [
+            {"homeAway": "home", "team": {"id": "41", "displayName": "UConn Huskies", "conferenceId": "18"}},
+            {"homeAway": "away", "team": {"id": "275", "displayName": "Wisconsin Badgers", "conferenceId": "5"}},
+        ]}]}],
+    }
+    result = football_scoreboard_context([game], payload)["independent"]
+    assert result["home_conference_class"] is None
+    assert result["home_is_fbs"] is True
+
+
+@pytest.mark.asyncio
+async def test_upcoming_range_does_not_stamp_the_current_week_on_later_games(
+    tmp_path, monkeypatch
+):
+    """A November game read through the fallback must not read as Week 1.
+
+    The scoreboard reports the week it is being asked about, so over a
+    multi-week range that number describes only the first game. Carrying it
+    onto everything else put late-season games in front of opening-week
+    rules, which then "qualified" on games months away.
+    """
+    requests: list[dict] = []
+
+    class Response:
+        def __init__(self, payload):
+            self._payload = payload
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self._payload
+
+    class Client:
+        async def get(self, url, params=None, **kwargs):
+            requests.append({"url": url, "params": params or {}})
+            if "scoreboard" in url:
+                return Response({"week": {"number": 1}, "events": []})
+            if url.endswith("/teams"):
+                return Response({"sports": [{"leagues": [{"teams": [
+                    {"team": {"id": 87, "displayName": "Notre Dame Fighting Irish"}},
+                    {"team": {"id": 275, "displayName": "Wisconsin Badgers"}},
+                ]}]}]})
+            return Response({"team": {"id": 87, "groups": {
+                "id": "18", "parent": {"id": "80"}}}})
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+    monkeypatch.setattr("server.systems.context.httpx.AsyncClient", lambda **kw: Client())
+
+    games = [
+        EvaluationGame(
+            event_id="opener", sport="ncaaf",
+            home_team="Notre Dame Fighting Irish", away_team="Wisconsin Badgers",
+            commence_time=datetime(2026, 9, 6, 20, 0, tzinfo=timezone.utc),
+            data_timestamp=datetime(2026, 9, 3, 16, 0, tzinfo=timezone.utc),
+        ),
+        EvaluationGame(
+            event_id="november", sport="ncaaf",
+            home_team="Wisconsin Badgers", away_team="Notre Dame Fighting Irish",
+            commence_time=datetime(2026, 11, 28, 20, 0, tzinfo=timezone.utc),
+            data_timestamp=datetime(2026, 9, 3, 16, 0, tzinfo=timezone.utc),
+        ),
+    ]
+    additions, _ = await football_schedule_enricher(games, date(2026, 9, 3))
+
+    assert additions["opener"]["week"] is None
+    assert additions["november"]["week"] is None
+    scoreboard = next(r for r in requests if "scoreboard" in r["url"])
+    assert "-" in scoreboard["params"]["dates"]
+    assert scoreboard["params"]["limit"] == 1000
+
+
+def test_scoreboard_date_key_always_uses_the_range_form():
+    """A bare ESPN date returns a truncated FBS-only subset.
+
+    Live check on 2026-09-05: `dates=20260905` answers with 25 events,
+    `dates=20260905-20260905` with 68. The bare form starved the matcher
+    and blanked every context field for the games it could not find.
+    """
+    game = EvaluationGame(
+        event_id="one", sport="ncaaf",
+        home_team="Mercer", away_team="Presbyterian",
+        commence_time=datetime(2026, 9, 5, 18, 0, tzinfo=timezone.utc),
+        data_timestamp=datetime(2026, 9, 5, 12, 0, tzinfo=timezone.utc),
+    )
+    assert scoreboard_date_key([game], date(2026, 9, 5)) == "20260905-20260905"
+
+
+def test_is_single_day_survives_the_range_form():
+    from server.systems.context import _is_single_day
+    assert _is_single_day("20260905-20260905") is True
+    assert _is_single_day("20260905") is True
+    assert _is_single_day("20260905-20260913") is False

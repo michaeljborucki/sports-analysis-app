@@ -1,14 +1,11 @@
 import type { components } from "@/types/api";
 
 export type OddsResponse = components["schemas"]["OddsResponse"];
-export type PicksResponse = components["schemas"]["PicksResponse"];
 export type Game = components["schemas"]["Game"];
-export type Pick = components["schemas"]["Pick"];
 export type Market = components["schemas"]["Market"];
 export type MarketOutcome = components["schemas"]["MarketOutcome"];
 export type BookPrice = components["schemas"]["BookPrice"];
 export type FetcherStatus = components["schemas"]["FetcherStatus"];
-export type PickTier = components["schemas"]["PickTier"];
 
 export const BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
@@ -24,19 +21,34 @@ export const apiPaths = {
   sports: "/api/sports",
   odds: (sport: string) => `/api/odds/${sport}`,
   props: (sport: string) => `/api/props/${sport}`,
-  picks: (sport: string) => `/api/picks/${sport}`,
-  arbitrage: (books: string[]) =>
-    `/api/arbitrage${books.length ? `?books=${books.join(",")}` : ""}`,
-  lowHold: (books: string[], maxHoldPct = 1) => {
+  systems: (timeframe: "today" | "tomorrow" | "upcoming" = "today") =>
+    `/api/systems?timeframe=${timeframe}`,
+  arbitrage: (
+    books: string[],
+    wagerFilter: "any" | "straight" | "parlay" = "any",
+  ) => {
+    const qs = new URLSearchParams();
+    if (books.length) qs.set("books", books.join(","));
+    if (wagerFilter !== "any") qs.set("wager_filter", wagerFilter);
+    const q = qs.toString();
+    return `/api/arbitrage${q ? `?${q}` : ""}`;
+  },
+  lowHold: (
+    books: string[],
+    maxHoldPct = 1,
+    wagerFilter: "any" | "straight" | "parlay" = "any",
+  ) => {
     const qs = new URLSearchParams();
     if (books.length) qs.set("books", books.join(","));
     qs.set("max_hold_pct", String(maxHoldPct));
+    if (wagerFilter !== "any") qs.set("wager_filter", wagerFilter);
     return `/api/low-hold?${qs.toString()}`;
   },
   freeBets: (
     books: string[],
     minFreeOdds = 100,
     freeBetBooks: string[] = [],
+    wagerFilter: "any" | "straight" | "parlay" = "any",
   ) => {
     const qs = new URLSearchParams();
     if (books.length) qs.set("books", books.join(","));
@@ -45,6 +57,7 @@ export const apiPaths = {
     // leg is free to use any of `books`. Empty = no promo restriction.
     if (freeBetBooks.length) qs.set("free_bet_books", freeBetBooks.join(","));
     qs.set("min_free_odds", String(minFreeOdds));
+    if (wagerFilter !== "any") qs.set("wager_filter", wagerFilter);
     return `/api/free-bets?${qs.toString()}`;
   },
   ev: (

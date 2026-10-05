@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 from pathlib import Path
+import sqlite3
+from contextlib import contextmanager
 
 import pytest
 
@@ -11,6 +13,48 @@ def cache(tmp_path: Path) -> OddsCache:
     c = OddsCache(tmp_path / "cache.db")
     c.init()
     return c
+
+
+def test_connection_context_closes_database_handle(cache: OddsCache):
+    with cache._conn() as conn:
+        conn.execute("SELECT 1").fetchone()
+
+    with pytest.raises(sqlite3.ProgrammingError, match="closed"):
+        conn.execute("SELECT 1")
+
+
+def test_balance_history_rebuckets_scraper_refreshes_but_preserves_import_dates(
+    cache: OddsCache,
+):
+    """Live scraper timestamps use Denver dates; explicit dates from imported
+    history remain authoritative."""
+    cache.upsert_balance_snapshots([
+        {
+            "customer_id": "VR1",
+            "captured_at": "2026-08-20T02:30:00+00:00",
+            "local_date": "2026-08-20",
+            "current_balance": 100,
+            "pending": 20,
+            "available": 80,
+            "free_play": 0,
+            "source": "scraper_refresh",
+        },
+        {
+            "customer_id": "VR1",
+            "captured_at": "2026-08-20T03:00:00+00:00",
+            "local_date": "2026-08-18",
+            "current_balance": 90,
+            "pending": 10,
+            "available": 80,
+            "free_play": 0,
+            "source": "manual_import",
+        },
+    ])
+
+    by_date = cache.latest_balance_snapshot_per_date("VR1")
+
+    assert sorted(by_date) == ["2026-08-18", "2026-08-19"]
+    assert by_date["2026-08-19"]["current_balance"] == 100
 
 
 def test_upsert_and_read_single_row(cache: OddsCache):
@@ -524,6 +568,46 @@ def test_flush_version_collapses_burst_to_single_increment(tmp_path):
     assert cache._version_dirty is False
 
 
+def test_direct_read_generation_collapses_burst(tmp_path):
+    cache = OddsCache(tmp_path / "cache.db")
+    for _ in range(100):
+        cache._bump_version()
+
+    assert cache.direct_read_generation == 0
+    assert cache._flush_direct_read_generation_now(force=True) is True
+    assert cache.direct_read_generation == 1
+    assert cache._flush_direct_read_generation_now(force=True) is False
+    assert cache.direct_read_generation == 1
+
+
+def test_direct_book_union_query_has_covering_index(tmp_path):
+    cache = OddsCache(tmp_path / "cache.db")
+    cache.init()
+    with cache._conn() as conn:
+        indexes = {
+            row[1] for row in conn.execute("PRAGMA index_list('odds_snapshot')")
+        }
+    assert "idx_odds_book_sport_market" in indexes
+
+
+async def test_distinct_events_async_runs_read_off_event_loop(tmp_path, monkeypatch):
+    import threading
+
+    cache = OddsCache(tmp_path / "cache.db")
+    event_loop_thread = threading.get_ident()
+    read_thread = None
+
+    def fake_distinct(*args, **kwargs):
+        nonlocal read_thread
+        read_thread = threading.get_ident()
+        return []
+
+    monkeypatch.setattr(cache, "distinct_events", fake_distinct)
+
+    assert await cache.distinct_events_async(sport_key="mlb") == []
+    assert read_thread != event_loop_thread
+
+
 def test_flush_with_no_pending_bump_is_noop(tmp_path):
     """A flush with no dirty flag set must not move the counter and
     must report no bump applied."""
@@ -716,13 +800,14 @@ def test_find_closing_lines_bulk_fires_one_query(tmp_path):
     select_count = {"n": 0}
     original_conn = cache._conn
 
+    @contextmanager
     def traced_conn():
-        conn = original_conn()
-        def callback(stmt: str):
-            if "FROM closing_lines" in stmt or "FROM CLOSING_LINES" in stmt.upper():
-                select_count["n"] += 1
-        conn.set_trace_callback(callback)
-        return conn
+        with original_conn() as conn:
+            def callback(stmt: str):
+                if "FROM closing_lines" in stmt or "FROM CLOSING_LINES" in stmt.upper():
+                    select_count["n"] += 1
+            conn.set_trace_callback(callback)
+            yield conn
 
     cache._conn = traced_conn  # type: ignore[method-assign]
     try:

@@ -1,38 +1,22 @@
 "use client";
+import { ErrorBanner, formatAgeShort } from "@/components/ui";
 
-function formatAge(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}m ${s.toString().padStart(2, "0")}s`;
-}
-
+/**
+ * Escalation for badly stale grids (> 5 min). Mild staleness is already
+ * shown by the header's <Freshness>, so this only fires when the fetcher
+ * looks stuck.
+ */
 export function StaleBanner({ staleSeconds }: { staleSeconds: number }) {
-  if (staleSeconds <= 90) return null;
+  if (staleSeconds <= 300) return null;
   return (
-    <div
-      role="alert"
-      className="flex items-center gap-3 bg-flash/10 border border-flash/30 text-flash px-4 py-2 rounded-md text-sm"
-    >
-      <span
-        aria-hidden
-        className="inline-block w-1.5 h-1.5 rounded-full bg-flash"
-      />
-      <span>
-        <span className="tabular font-semibold">
-          Odds last updated {formatAge(staleSeconds)} ago
-        </span>{" "}
-        — the fetcher may be stuck. Check{" "}
-        <a
-          className="underline decoration-flash/50 hover:decoration-flash"
-          href="http://127.0.0.1:8000/api/health"
-          target="_blank"
-          rel="noreferrer"
-        >
-          /api/health
-        </a>
-        .
-      </span>
-    </div>
+    <ErrorBanner
+      title={
+        <>
+          Prices haven&apos;t updated in{" "}
+          <span className="tabular">{formatAgeShort(staleSeconds)}</span>. The
+          fetcher may be stuck or the data source is set to Latest.
+        </>
+      }
+    />
   );
 }

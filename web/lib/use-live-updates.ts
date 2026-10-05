@@ -3,6 +3,10 @@
 import { useEffect, useRef } from "react";
 import { useSWRConfig } from "swr";
 import type { ScopedMutator } from "swr";
+import {
+  LIVE_UPDATE_EVENT_TYPES,
+  prefixesForLiveEvent,
+} from "./live-update-prefixes";
 
 /**
  * Subscribe to the backend's SSE event stream (`/api/stream/odds`) and
@@ -29,7 +33,6 @@ import type { ScopedMutator } from "swr";
  *     revalidate so the UI catches up on anything that changed during
  *     the disconnect gap. EventSource auto-reconnects on TCP drop.
  *   - `tick`      : scanner endpoints only (see TYPE_TO_PREFIXES).
- *   - `sidecar_*` : sidecar endpoints only.
  *   - `heartbeat` : ignored (idle keepalive only).
  *   - unknown     : full revalidate, so new event types added on the
  *                   backend don't silently fail to surface in the UI.
@@ -41,30 +44,8 @@ import type { ScopedMutator } from "swr";
  * bare-path keys (`/api/ev`) and querystring variants (`/api/ev?...`).
  *
  * Keep this in sync with `server/odds/events.py` (mark_dirty / publish
- * call sites) and `server/sidecar/sse.py` for sidecar event types.
+ * call sites).
  */
-const TYPE_TO_PREFIXES: Record<string, readonly string[]> = {
-  // Dumb-tick from the odds cache → every scanner-style endpoint.
-  // Note: backend route is `/api/profit_boost` (underscore), not hyphen.
-  tick: [
-    "/api/ev",
-    "/api/arbitrage",
-    "/api/low-hold",
-    "/api/free-bets",
-    "/api/profit_boost",
-    "/api/odds",
-    "/api/dashboard",
-  ],
-  // Sidecar events — see server/sidecar/sse.py for the emitters.
-  sidecar_placement: [
-    "/api/sidecar/runs",
-    "/api/sidecar/active-signals",
-  ],
-  sidecar_topup_required: ["/api/sidecar/runs"],
-  sidecar_signal_skipped: ["/api/sidecar/runs"],
-  sidecar_partial_fill: ["/api/sidecar/runs"],
-};
-
 /**
  * Invalidate SWR keys matching any of the given prefixes. We only ever
  * use string keys in this app, so non-string keys (arrays, objects) are
@@ -109,13 +90,13 @@ export function useLiveUpdates(): void {
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
     const handleScopedEvent = (type: string) => {
-      const prefixes = TYPE_TO_PREFIXES[type];
-      if (prefixes) {
-        revalidateByPrefixes(mutateRef.current, prefixes);
-      } else {
+      const prefixes = prefixesForLiveEvent(type);
+      if (prefixes === null) {
         // Unknown event type — fall back to full revalidate so new
-        // backend events surface in the UI without a frontend deploy.
+        // backend events surface without a frontend deploy.
         revalidateAll(mutateRef.current);
+      } else if (prefixes.length > 0) {
+        revalidateByPrefixes(mutateRef.current, prefixes);
       }
     };
 
@@ -137,7 +118,7 @@ export function useLiveUpdates(): void {
 
       // Typed event handlers — each only invalidates the keys that
       // could plausibly be stale. See TYPE_TO_PREFIXES above.
-      for (const type of Object.keys(TYPE_TO_PREFIXES)) {
+      for (const type of LIVE_UPDATE_EVENT_TYPES) {
         es.addEventListener(type, () => handleScopedEvent(type));
       }
 

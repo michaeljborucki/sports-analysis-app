@@ -15,7 +15,7 @@ import { ArrowRight, Filter, Keyboard, Search, Zap } from "lucide-react";
 
 import type { LiveStatus } from "@/components/live-status-filter";
 import type { Density } from "@/lib/use-density";
-import { SPORTS, type SportKey } from "@/lib/sports";
+import { SPORTS, SPORT_ORDER, type SportKey } from "@/lib/sports";
 
 // ─────────────────────────── Types ───────────────────────────
 
@@ -41,9 +41,6 @@ export interface Command {
   run: (ctx: CommandContext) => void | Promise<void>;
 }
 
-/** Global custom event that pages listen to for manual refresh. */
-export const REFRESH_ALL_EVENT = "edges:refresh-all";
-
 // Default icons rendered when a command doesn't supply its own.
 export const GROUP_ICONS: Record<CommandGroup, React.ReactNode> = {
   Navigate: React.createElement(ArrowRight, { size: 14 }),
@@ -54,11 +51,10 @@ export const GROUP_ICONS: Record<CommandGroup, React.ReactNode> = {
 
 // ─────────────────────── Command builders ───────────────────────
 
-// Sports available in the nav for per-sport sections. The section registry
-// says Props is NBA/MLB/NHL only (tennis/ncaa props aren't wired); Odds
-// and Picks support every sport in SPORTS. Edges is global.
+// Props is NBA/MLB/NHL only (tennis/ncaa props aren't wired); Odds covers
+// every sport in SPORT_ORDER. Edges is global.
 const PROP_SPORTS: SportKey[] = ["mlb", "nba", "nhl"];
-const NAV_SPORTS: SportKey[] = ["mlb", "nba", "nhl", "tennis"];
+const NAV_SPORTS: SportKey[] = SPORT_ORDER;
 
 function navCommand(
   id: string,
@@ -83,7 +79,7 @@ function liveFilterCommand(value: LiveStatus, label: string): Command {
     id: `filter.live.${value}`,
     label: `Live filter: ${label}`,
     group: "Filter",
-    hint: value.toUpperCase(),
+    hint: label,
     keywords: ["live", "pre", "all", "status", value],
     run: ({ setLiveFilter, close }) => {
       setLiveFilter(value);
@@ -115,10 +111,33 @@ export const COMMANDS: Command[] = [
     "home",
     "overview",
   ]),
+  navCommand("nav.systems", "Go to Systems", "/systems", [
+    "systems",
+    "signals",
+    "angles",
+  ]),
+  navCommand("nav.accounts", "Go to Accounts", "/accounts", [
+    "accounts",
+    "balances",
+    "coral33",
+  ]),
+  navCommand("nav.bets", "Go to Bets", "/bets", [
+    "bets",
+    "wagers",
+    "history",
+    "clv",
+    "ledger",
+  ]),
   navCommand("nav.settings", "Go to Settings", "/settings", [
     "preferences",
     "config",
   ]),
+  navCommand(
+    "nav.settings.mapping_health",
+    "Go to Mapping health",
+    "/settings/mapping-health",
+    ["mapping", "names", "unmatched", "diagnostics"]
+  ),
 
   // ────── Navigate: Odds (per-sport) ──────
   ...NAV_SPORTS.map(s =>
@@ -140,16 +159,6 @@ export const COMMANDS: Command[] = [
     )
   ),
 
-  // ────── Navigate: Picks (per-sport) ──────
-  ...NAV_SPORTS.map(s =>
-    navCommand(
-      `nav.picks.${s}`,
-      `Go to Picks — ${SPORTS[s].label}`,
-      `/picks/${s}`,
-      ["picks", "bets", s, SPORTS[s].label.toLowerCase()]
-    )
-  ),
-
   // ────── Navigate: Edges (mode-scoped) ──────
   navCommand("nav.edges", "Go to Edges", "/edges", [
     "edges",
@@ -163,7 +172,7 @@ export const COMMANDS: Command[] = [
   ),
   navCommand(
     "nav.edges.low_hold",
-    "Go to Edges — Low Hold",
+    "Go to Edges — Low hold",
     "/edges?modes=low_hold",
     ["low hold", "low-hold", "lh", "edges"]
   ),
@@ -175,72 +184,21 @@ export const COMMANDS: Command[] = [
   ),
   navCommand(
     "nav.edges.free_bet",
-    "Go to Edges — Free Bets",
+    "Go to Edges — Free bets",
     "/edges?modes=free_bet",
     ["free bet", "freebet", "fb", "promo", "edges"]
+  ),
+  navCommand(
+    "nav.edges.profit_boost",
+    "Go to Edges — Profit boost",
+    "/edges?modes=profit_boost",
+    ["profit boost", "boost", "pb", "promo", "edges"]
   ),
 
   // ────── Filter: live status ──────
   liveFilterCommand("all", "All"),
   liveFilterCommand("pre", "Pre"),
   liveFilterCommand("live", "Live"),
-
-  // ────── Filter: fetcher (direct API call — no shared hook) ──────
-  {
-    id: "filter.fetcher.on",
-    label: "Fetcher: on",
-    group: "Filter",
-    hint: "START",
-    keywords: ["fetcher", "poll", "live", "start", "on", "resume"],
-    run: async ({ close }) => {
-      // TODO: wire this to a shared useFetcher() hook once exposed by the
-      // fetcher-toggle component. For now we POST directly to keep the
-      // palette functional.
-      try {
-        const base =
-          process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
-        await fetch(`${base}/api/fetcher/start`, { method: "POST" });
-      } catch {
-        /* swallow — fetcher-toggle will surface errors via its SWR status */
-      }
-      close();
-    },
-  },
-  {
-    id: "filter.fetcher.off",
-    label: "Fetcher: off",
-    group: "Filter",
-    hint: "STOP",
-    keywords: ["fetcher", "freeze", "stop", "off", "pause"],
-    run: async ({ close }) => {
-      try {
-        const base =
-          process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
-        await fetch(`${base}/api/fetcher/stop`, { method: "POST" });
-      } catch {
-        /* swallow */
-      }
-      close();
-    },
-  },
-
-  // ────── Action: refresh-all (fire custom event) ──────
-  {
-    id: "action.refresh",
-    label: "Refresh all",
-    group: "Action",
-    hint: "R",
-    keywords: ["refresh", "reload", "mutate", "update"],
-    run: ({ close }) => {
-      // Pages that want to participate listen for `edges:refresh-all` and
-      // call their SWR `mutate()`. If no page is listening, nothing
-      // breaks — this is a soft-refresh event.
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent(REFRESH_ALL_EVENT));
-      }
-      close();
-    },
-  },
 
   // ────── Action: density cycling ──────
   densityCommand("compact"),

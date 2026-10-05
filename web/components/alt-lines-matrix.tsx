@@ -1,13 +1,13 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
-import clsx from "clsx";
 import { ChevronsUpDown } from "lucide-react";
 
 import { apiPaths, type Game, type Market, type MarketOutcome, type SettingsResponse } from "@/lib/api";
 import { BOOK_ORDER } from "@/lib/books";
 import { renderTeam } from "@/lib/sports";
 import type { Sport } from "@/lib/sports";
+import { Segmented } from "@/components/ui";
 import { BookMatrixTable, type MatrixRow, type SideLabels } from "./book-matrix-table";
 
 
@@ -77,11 +77,11 @@ export function AltLinesMatrix({
       },
       {
         key: "team_totals",
-        label: "Team Totals",
+        label: "Team totals",
         mainKey: "team_totals",
         altKey: "alternate_team_totals",
         sideLabels: { over: "O", under: "U" },
-        rowLabelHeader: "Team · Line",
+        rowLabelHeader: "Team and line",
       },
     ];
 
@@ -118,6 +118,7 @@ export function AltLinesMatrix({
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   useEffect(() => {
     if (!availableTabs.some(t => t.key === activeTab)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- preserve the existing clamp when a sub-tab disappears
       setActiveTab(availableTabs[0]?.key ?? "spreads");
     }
   }, [availableTabs, activeTab]);
@@ -144,6 +145,7 @@ export function AltLinesMatrix({
   // carry the user's last choice from a different market family.
   const [expanded, setExpanded] = useState(false);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- preserve the existing reset-on-tab-switch behavior
     setExpanded(false);
   }, [activeTab]);
 
@@ -155,41 +157,43 @@ export function AltLinesMatrix({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex flex-wrap items-center gap-3">
         {availableTabs.length > 1 && (
-          <div className="inline-flex self-start rounded-md bg-bg-1 border border-border-subtle p-0.5">
-            {availableTabs.map(t => (
-              <button
-                key={t.key}
-                onClick={() => setActiveTab(t.key)}
-                className={clsx(
-                  "px-3 py-1 text-xs tracking-wide uppercase transition-colors rounded-sm",
-                  activeTab === t.key
-                    ? "bg-bg-2 text-text-1"
-                    : "text-text-2 hover:text-text-1"
-                )}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
+          <Segmented
+            size="sm"
+            ariaLabel="Alt-line market"
+            className="self-start"
+            value={activeTab}
+            onChange={setActiveTab}
+            options={availableTabs.map(t => ({ value: t.key, label: t.label }))}
+          />
         )}
         {(hiddenCount > 0 || expanded) && (
           <button
+            type="button"
             onClick={() => setExpanded(v => !v)}
-            className="inline-flex items-center gap-1 text-[11px] px-2 h-7 rounded-md border border-border-subtle text-text-2 hover:text-text-1 hover:border-accent/50 transition-colors tracking-wide"
+            className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border-subtle px-2.5 text-[length:var(--fs-12)] font-medium text-text-2 transition-colors hover:bg-bg-2 hover:text-text-1"
             title={
               expanded
                 ? `Collapse back to ±${COLLAPSE_WINDOW} alts around each main line`
                 : `${hiddenCount} more alt line${hiddenCount === 1 ? "" : "s"} hidden`
             }
           >
-            <ChevronsUpDown size={10} aria-hidden />
-            {expanded ? "Collapse" : `Show all (${rows.length})`}
+            <ChevronsUpDown size={12} aria-hidden />
+            {expanded ? (
+              "Collapse"
+            ) : (
+              <>
+                Show all <span className="tabular">{rows.length}</span>
+              </>
+            )}
           </button>
         )}
-        <span className="text-[11px] text-text-3 tabular">
-          {displayedRows.length} row{displayedRows.length === 1 ? "" : "s"} · {books.length} book{books.length === 1 ? "" : "s"}
+        <span className="text-[length:var(--fs-12)] text-text-3">
+          <span className="tabular">{displayedRows.length}</span> row
+          {displayedRows.length === 1 ? "" : "s"} across{" "}
+          <span className="tabular">{books.length}</span> book
+          {books.length === 1 ? "" : "s"}
         </span>
       </div>
 

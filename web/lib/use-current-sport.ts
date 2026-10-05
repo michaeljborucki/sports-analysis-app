@@ -9,7 +9,7 @@ const STORAGE_KEY = "last_sport_v1";
 /**
  * Resolves the current sport. Priority:
  *   1. URL second segment if it's a valid SportKey (the authoritative source
- *      when the user is on /odds/mlb, /picks/tennis, etc.).
+ *      when the user is on /odds/mlb, /props/nba, etc.).
  *   2. Last sport stored in localStorage (survives across global→per-sport
  *      navigation — e.g., you're on /arbitrage and click "Odds", you land
  *      on /odds/{lastSport} instead of always bouncing to MLB).

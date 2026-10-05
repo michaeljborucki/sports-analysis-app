@@ -47,6 +47,14 @@ _ALIASES = {
     # this the resolver correctly refuses it (Houston is a different team).
     "houstonbaptist": "houstonchristian",
     "houstonbaptisthuskies": "houstonchristianhuskies",
+    # ESPN abbreviates the compass point; the feed spells it out. No prefix
+    # rule can bridge these, and pass C deliberately refuses the name (the
+    # module docstring cites it) so "Southeastern" cannot swallow it.
+    "southeasternlouisiana": "selouisiana",
+    "southeasternlouisianalions": "selouisianalions",
+    # Same shape: the feed says Southern Mississippi, ESPN says Southern Miss.
+    "southernmississippi": "southernmiss",
+    "southernmississippigoldeneagles": "southernmissgoldeneagles",
 }
 
 # Tokens that carry no identity and only break prefix comparisons.

@@ -1,5 +1,7 @@
 "use client";
 
+import { StatTile } from "@/components/ui";
+
 interface Window {
   count: number;
   wagered: number;
@@ -7,51 +9,63 @@ interface Window {
   roi_pct: number;
 }
 
-interface Rollups {
+export interface Rollups {
   window_30d: Window;
   window_90d: Window;
   lifetime: Window;
 }
 
-const fmtPct = (v: number) =>
-  `${v > 0 ? "+" : ""}${v.toFixed(2)}%`;
+const fmtPct = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(2)}%`;
 const fmtUsd = (v: number) =>
   v.toLocaleString("en-US", { style: "currency", currency: "USD" });
+const fmtSignedUsd = (v: number) => `${v > 0 ? "+" : ""}${fmtUsd(v)}`;
+
+const tone = (v: number) => (v > 0 ? "gain" : v < 0 ? "loss" : undefined);
+
+function WindowTile({ label, w }: { label: string; w: Window }) {
+  return (
+    <StatTile
+      label={`${label} ROI`}
+      value={fmtPct(w.roi_pct)}
+      tone={w.count > 0 ? tone(w.roi_pct) : undefined}
+      sub={
+        <>
+          <span className="tabular">{w.count}</span> {w.count === 1 ? "bet" : "bets"}, net{" "}
+          <span className="tabular">{fmtSignedUsd(w.net)}</span>
+        </>
+      }
+    />
+  );
+}
 
 export function RollupTiles({ data }: { data: Rollups | undefined }) {
   if (!data) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3" aria-hidden>
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-24 rounded bg-bg-1 animate-pulse" />
+          <div
+            key={i}
+            className="h-[86px] rounded-lg border border-border-subtle bg-bg-1 animate-pulse"
+          />
         ))}
       </div>
     );
   }
-  const tile = (label: string, w: Window) => (
-    <div className="rounded border border-border-subtle bg-bg-1 p-3">
-      <div className="text-[10px] uppercase tracking-wider text-text-3">{label}</div>
-      <div className="mt-1 text-lg font-semibold tabular">
-        ROI {fmtPct(w.roi_pct)}
-      </div>
-      <div className="text-xs text-text-2">
-        {w.count} bets · {fmtUsd(w.wagered)}
-      </div>
-    </div>
-  );
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {tile("30 DAY", data.window_30d)}
-      {tile("90 DAY", data.window_90d)}
-      {tile("LIFETIME", data.lifetime)}
-      <div className="rounded border border-border-subtle bg-bg-1 p-3">
-        <div className="text-[10px] uppercase tracking-wider text-text-3">
-          NET LIFETIME
-        </div>
-        <div className="mt-1 text-lg font-semibold tabular">
-          {fmtUsd(data.lifetime.net)}
-        </div>
-      </div>
+      <WindowTile label="30 day" w={data.window_30d} />
+      <WindowTile label="90 day" w={data.window_90d} />
+      <WindowTile label="Lifetime" w={data.lifetime} />
+      <StatTile
+        label="Lifetime net"
+        value={fmtSignedUsd(data.lifetime.net)}
+        tone={tone(data.lifetime.net)}
+        sub={
+          <>
+            <span className="tabular">{fmtUsd(data.lifetime.wagered)}</span> wagered
+          </>
+        }
+      />
     </div>
   );
 }

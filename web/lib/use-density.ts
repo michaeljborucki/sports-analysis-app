@@ -136,8 +136,8 @@ function getServerSnapshot(): Density {
  *
  * @param options.installHotkey — when true, installs the global
  *   Cmd/Ctrl+Shift+D hotkey for the lifetime of this hook. Exactly one
- *   caller per app should opt in (we wire it through the DensityToggle
- *   which renders inside Settings). Multiple callers with the flag set is
+ *   caller per app should opt in (ShortcutOverlayMount, which is
+ *   mounted globally in the root layout). Multiple callers with the flag set is
  *   safe — the listener is ref-counted.
  */
 export function useDensity(options?: { installHotkey?: boolean }): {

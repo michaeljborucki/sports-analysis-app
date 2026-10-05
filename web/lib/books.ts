@@ -58,6 +58,10 @@ const BOOK_LIST: BookInfo[] = [
   { key: "prophetx",       name: "Prophet Exchange", label: "PRX", bg: "#0F172A", fg: "#F59E0B", region: "US", priority: 41, domain: "prophetx.co",    commission: 0.02 },
   { key: "rebet_exchange", name: "Rebet Exchange",   label: "REX", bg: "#3B82F6", fg: "#FDE047", region: "US", priority: 42, domain: "rebet.app",      commission: 0.02 },
   { key: "novig",          name: "Novig",            label: "NVG", bg: "#0F172A", fg: "#A78BFA", region: "US", priority: 43, domain: "novig.us",       commission: 0 },
+  // Virtual book: the price you'd POST on Novig (one tick above the best
+  // bid, or joining it on a one-tick spread). Only scanned when the Edges
+  // page's "take + maker" toggle is on — never a default-visible book.
+  { key: "novig_maker",    name: "Novig maker",      label: "NVM", bg: "#0F172A", fg: "#C4B5FD", region: "US", priority: 43.5, domain: "novig.us",     commission: 0 },
   { key: "kalshi",         name: "Kalshi",           label: "KAL", bg: "#0F172A", fg: "#00D6A9", region: "US", priority: 44, domain: "kalshi.com",     commission: 0 },
   { key: "polymarket",     name: "Polymarket",       label: "POLY",bg: "#1652F0", fg: "#FFFFFF", region: "US", priority: 45, domain: "polymarket.com", commission: 0 },
 
@@ -111,6 +115,7 @@ export const BOOK_ORDER: string[] = [...BOOK_LIST]
 
 /** Default books shown on first load — top ~10 US books a sharp would care about. */
 export const DEFAULT_VISIBLE_BOOKS: string[] = [
+  "coral33",
   "draftkings",
   "fanduel",
   "betmgm",
@@ -129,8 +134,8 @@ export function bookInfo(key: string): BookInfo {
       key,
       name: key,
       label: key.slice(0, 3).toUpperCase(),
-      bg: "#1C2530",
-      fg: "#9AA5B4",
+      bg: "#36393D", // bg-2
+      fg: "#AEACA7", // text-2
       region: "ROW" as Region,
       priority: 999,
     }

@@ -76,6 +76,28 @@ export interface SystemsResponse {
   context_warnings: string[];
 }
 
+/** Opposing system directions, even at different lines; not a bet settlement test. */
+export function conflictingWagers(wagers: WagerCandidate[]): Set<WagerCandidate> {
+  const groups = new Map<string, { sides: Set<string>; wagers: WagerCandidate[] }>();
+  for (const wager of wagers) {
+    let side: string | undefined;
+    if (wager.bet_type === "total") {
+      side = /^(over|under)\b/i.exec(wager.selection)?.[1].toLowerCase();
+    } else if (wager.bet_type === "spread" || wager.bet_type === "moneyline") {
+      for (const team of [wager.home_team, wager.away_team]) {
+        if (wager.selection === team || wager.selection.startsWith(`${team} `)) side = team;
+      }
+    }
+    if (!side) continue;
+    const key = JSON.stringify([wager.sport, wager.event_id, wager.bet_type]);
+    const group = groups.get(key) ?? { sides: new Set<string>(), wagers: [] };
+    group.sides.add(side);
+    group.wagers.push(wager);
+    groups.set(key, group);
+  }
+  return new Set([...groups.values()].filter(group => group.sides.size > 1).flatMap(group => group.wagers));
+}
+
 export const SPORT_LABELS = {
   mlb: "MLB",
   ncaaf: "College football",
@@ -109,4 +131,25 @@ export function statusLabel(status: SystemStatus, timeframe: SystemsTimeframe = 
 export function formatAmerican(value: number | null): string {
   if (value == null) return "—";
   return value > 0 ? `+${value}` : String(value);
+}
+
+const CONTEXT_SPORTS: [RegExp, string][] = [
+  [/college-football|\bncaaf\b/i, "College football"],
+  [/\/football\/nfl|\bnfl\b/i, "NFL"],
+  [/\/baseball\/mlb|\bmlb\b/i, "MLB"],
+];
+
+/**
+ * Plain-language headline for the raw context warnings. The raw messages
+ * (upstream URLs, HTTP errors) belong in a details disclosure, not here.
+ */
+export function contextWarningTitle(warnings: string[], unableToEvaluate: number): string {
+  const text = warnings.join("\n");
+  const sports = CONTEXT_SPORTS.filter(([re]) => re.test(text)).map(([, label]) => label);
+  const what = sports.length > 0 ? `${sports.join(" and ")} context` : "Some game context";
+  const source = /espn/i.test(text) ? " from ESPN" : "";
+  if (unableToEvaluate > 0) {
+    return `${what}${source} is unavailable, so ${unableToEvaluate} system${unableToEvaluate === 1 ? "" : "s"} can't be evaluated.`;
+  }
+  return `${what}${source} couldn't be refreshed. Results may use older cached context.`;
 }

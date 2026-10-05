@@ -117,6 +117,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/systems": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Systems */
+        get: operations["get_systems_api_systems_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -126,6 +143,23 @@ export interface paths {
         };
         /** Health */
         get: operations["health_api_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mapping-health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Mapping Health */
+        get: operations["get_mapping_health_api_mapping_health_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -160,23 +194,6 @@ export interface paths {
         };
         /** Get Props */
         get: operations["get_props_api_props__sport__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/picks/{sport}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Picks */
-        get: operations["get_picks_api_picks__sport__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -286,10 +303,16 @@ export interface paths {
         };
         /**
          * Get Arbs
-         * @description Scan the cache for two-way arbitrage opportunities.
+         * @description Scan the cache for complete two- and three-way arbitrage opportunities.
          *
          *     `books` is an optional comma-separated allowlist — only prices from
          *     these bookmaker keys are considered. Empty = all books in the cache.
+         *
+         *     `wager_filter` ("any" | "straight" | "parlay") filters by Coral33
+         *     betslip eligibility — see server/odds/wager_filter.py. For these
+         *     cross-book pairs it keys off the opportunity's coral33 leg (if any):
+         *     "straight" drops pairs whose coral33 leg is parlay-only; "parlay"
+         *     keeps only pairs with a parlay-eligible coral33 leg.
          *
          *     Memoized for 20s so the Edges page's burst-of-four simultaneous
          *     SWR pulls collapses to one actual scan.
@@ -333,6 +356,8 @@ export interface paths {
          *     free_bet_books = books where you have a promo credit — the free leg
          *     is locked to one of these. Omit to treat any visible book as a
          *     potential promo leg.
+         *     wager_filter ("any"|"straight"|"parlay") — Coral33 betslip filter
+         *     applied across the free + hedge legs; see server/odds/wager_filter.py.
          */
         get: operations["get_free_bets_api_free_bets_get"];
         put?: never;
@@ -564,133 +589,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/sidecar/place": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Post Place */
-        post: operations["post_place_api_sidecar_place_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sidecar/runs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Runs
-         * @description Recent placements across all jobs, newest-first.
-         *
-         *     The dashboard's RunLog calls this once on mount and re-polls on
-         *     ``sidecar_placement`` SSE invalidations.
-         */
-        get: operations["get_runs_api_sidecar_runs_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sidecar/runs/{job_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Run
-         * @description All placements for one job, oldest-first. 404 if the job_id has
-         *     no rows (either it's still pending or never existed).
-         */
-        get: operations["get_run_api_sidecar_runs__job_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sidecar/mode": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Mode */
-        get: operations["get_mode_api_sidecar_mode_get"];
-        put?: never;
-        /** Post Mode */
-        post: operations["post_mode_api_sidecar_mode_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sidecar/settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Sidecar Settings
-         * @description Return the sidecar-specific user settings (bankroll + default
-         *     Kelly fraction). The /sidecar SignalFeed reads this to render the
-         *     Kelly-derived dollar stake on each row and the AutoPlace button
-         *     label without opening the confirm modal.
-         */
-        get: operations["get_sidecar_settings_api_sidecar_settings_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sidecar/active-signals": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Active Signals
-         * @description List active (pre-game) signals tracked by the delta-tick loop.
-         *
-         *     Returns ``{"signals": [...]}`` so the frontend can extend the
-         *     shape without churn (vs a bare list). Each signal includes
-         *     ``armed_customer_id`` — the customer_id the user pinned at arm
-         *     time, or NULL for pre-account-first signals.
-         */
-        get: operations["get_active_signals_api_sidecar_active_signals_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/kalshi/refresh": {
         parameters: {
             query?: never;
@@ -765,6 +663,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/novig/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh
+         * @description Re-list Novig's catalog and rebuild the book-poll target set.
+         */
+        post: operations["refresh_api_novig_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/novig/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Status
+         * @description Fetcher health: targets, overdue count, books polled, 429s.
+         */
+        get: operations["status_api_novig_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/cache-mode": {
         parameters: {
             query?: never;
@@ -830,7 +768,21 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Dashboard */
+        /**
+         * Dashboard
+         * @description Cross-sport summary. The full-cache read + arb scan is CPU/SQLite
+         *     heavy, so it runs in the threadpool (never on the event loop, which
+         *     used to stall every other request for 30-60s), and the result is
+         *     memoized + coalesced like the scanner endpoints: concurrent polls
+         *     from several tabs or SSE-driven revalidations share one computation.
+         *     Deliberately NOT routed through run_scanner — its single slot would
+         *     queue the dashboard behind the page's own concurrent /api/ev scan.
+         *
+         *     When the shared odds snapshot is available (always, in the running
+         *     app) the dashboard reuses its pre-normalized non-prop games — the
+         *     same data the Edges scanners read — instead of re-reading ~350k
+         *     cache rows per request.
+         */
         get: operations["dashboard_api_dashboard_get"];
         put?: never;
         post?: never;
@@ -927,11 +879,8 @@ export interface components {
              * Format: date-time
              */
             commence_time: string;
-            /**
-             * Market Kind
-             * @enum {string}
-             */
-            market_kind: "h2h" | "spreads" | "totals";
+            /** Market Kind */
+            market_kind: string;
             /** Point */
             point?: number | null;
             /** Roi Pct */
@@ -967,6 +916,10 @@ export interface components {
             stake_pct: number;
             /** Max Stake Dollars */
             max_stake_dollars?: number | null;
+            /** Wager Type */
+            wager_type?: string | null;
+            /** Counterpart Price American */
+            counterpart_price_american?: number | null;
         };
         /**
          * BetEntryModel
@@ -1174,8 +1127,6 @@ export interface components {
             sports: components["schemas"]["SportSummary"][];
             /** Top Arbs */
             top_arbs: components["schemas"]["ArbOpportunity"][];
-            /** Top Picks */
-            top_picks: components["schemas"]["Pick"][];
             /** Upcoming Games */
             upcoming_games: components["schemas"]["Game"][];
             fetcher: components["schemas"]["FetcherStatus"];
@@ -1227,6 +1178,13 @@ export interface components {
             source: "pinnacle" | "consensus";
             /** Anchor Book Count */
             anchor_book_count: number;
+            /** Anchor Age S */
+            anchor_age_s?: number | null;
+            /**
+             * Reference Delayed
+             * @default false
+             */
+            reference_delayed: boolean;
             /** Offered Age S */
             offered_age_s: number;
             /** Also In Arb */
@@ -1238,8 +1196,8 @@ export interface components {
             confidence: "normal" | "low";
             /** Wager Type */
             wager_type?: ("straight" | "parlay" | "both") | null;
-            /** Ev Row Id */
-            ev_row_id: string;
+            /** Counterpart Price American */
+            counterpart_price_american?: number | null;
         };
         /** EVResponse */
         EVResponse: {
@@ -1296,6 +1254,8 @@ export interface components {
             price_american: number;
             /** Point */
             point?: number | null;
+            /** Wager Type */
+            wager_type?: string | null;
         };
         /** FreeBetOpportunity */
         FreeBetOpportunity: {
@@ -1312,11 +1272,8 @@ export interface components {
              * Format: date-time
              */
             commence_time: string;
-            /**
-             * Market Kind
-             * @enum {string}
-             */
-            market_kind: "h2h" | "spreads" | "totals";
+            /** Market Kind */
+            market_kind: string;
             /** Point */
             point?: number | null;
             /** Conversion Pct */
@@ -1480,11 +1437,8 @@ export interface components {
              * Format: date-time
              */
             commence_time: string;
-            /**
-             * Market Kind
-             * @enum {string}
-             */
-            market_kind: "h2h" | "spreads" | "totals";
+            /** Market Kind */
+            market_kind: string;
             /** Point */
             point?: number | null;
             /** Hold Pct */
@@ -1514,6 +1468,10 @@ export interface components {
             price_american: number;
             /** Point */
             point?: number | null;
+            /** Wager Type */
+            wager_type?: string | null;
+            /** Counterpart Price American */
+            counterpart_price_american?: number | null;
         };
         /** Market */
         Market: {
@@ -1554,15 +1512,20 @@ export interface components {
             /** Consensus Price American */
             consensus_price_american?: number | null;
         };
-        /** ModeBody */
-        ModeBody: {
-            /** Mode */
-            mode: string;
-        };
-        /** ModeResponse */
-        ModeResponse: {
-            /** Mode */
-            mode: string;
+        /** NovigRefreshResponse */
+        NovigRefreshResponse: {
+            /** Status */
+            status: string;
+            /** Sports Refreshed */
+            sports_refreshed: string[];
+            /** Duration S */
+            duration_s: number;
+            /** Errors */
+            errors: string[];
+            /** Last Cycle Rows */
+            last_cycle_rows: {
+                [key: string]: number;
+            };
         };
         /** OddsResponse */
         OddsResponse: {
@@ -1606,95 +1569,6 @@ export interface components {
             has_graded_legs: boolean;
             /** Is Partial */
             is_partial: boolean;
-        };
-        /** Pick */
-        Pick: {
-            /** Id */
-            id: string;
-            tier: components["schemas"]["PickTier"];
-            /** Game Label */
-            game_label: string;
-            /** Market Label */
-            market_label: string;
-            /** Pick Side */
-            pick_side: string;
-            /** Odds American */
-            odds_american: number;
-            /** Best Book */
-            best_book?: string | null;
-            /** Stake Units */
-            stake_units: number;
-            /** Probability Pct */
-            probability_pct: number;
-            /** Market Probability Pct */
-            market_probability_pct: number;
-            /** Edge Pct */
-            edge_pct: number;
-            /** Stats */
-            stats?: components["schemas"]["PickStat"][];
-            /** Reasoning */
-            reasoning: string;
-            /**
-             * Agent Key
-             * @default baseball-agents
-             */
-            agent_key: string;
-            /**
-             * Agent Record 30D
-             * @default
-             */
-            agent_record_30d: string;
-            /** Commence Time */
-            commence_time?: string | null;
-            /** Sport Key */
-            sport_key?: string | null;
-        };
-        /** PickStat */
-        PickStat: {
-            /** Label */
-            label: string;
-            /** Value */
-            value: string;
-        };
-        /**
-         * PickTier
-         * @enum {string}
-         */
-        PickTier: "high" | "sweet" | "lean";
-        /** PicksResponse */
-        PicksResponse: {
-            /** Picks */
-            picks: components["schemas"]["Pick"][];
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "ok" | "no_picks_today";
-            /**
-             * Last Checked At
-             * Format: date-time
-             */
-            last_checked_at: string;
-            /** Bet Card Date */
-            bet_card_date?: string | null;
-        };
-        /** PlaceBody */
-        PlaceBody: {
-            /** Ev Row Id */
-            ev_row_id: string;
-            /** Kelly Fraction */
-            kelly_fraction: string;
-            /** Customer Id */
-            customer_id?: string | null;
-        };
-        /** PlaceResponse */
-        PlaceResponse: {
-            /** Job Id */
-            job_id: string;
-            /** Plan Preview */
-            plan_preview?: {
-                [key: string]: unknown;
-            } | null;
         };
         /** PolymarketRefreshResponse */
         PolymarketRefreshResponse: {
@@ -1857,22 +1731,6 @@ export interface components {
             /** Reload Status */
             reload_status: string;
         };
-        /**
-         * SidecarSettingsResponse
-         * @description Bankroll + default Kelly used by the sidecar dashboard.
-         *
-         *     These are stored as opaque extra keys in user_settings.json (the
-         *     UserSettings dataclass deliberately ignores them — see Task B3), so we
-         *     expose them via a small dedicated endpoint rather than the general
-         *     /api/settings response. The /sidecar SignalFeed reads this to display
-         *     the Kelly-derived dollar stake on each row + AutoPlace button label.
-         */
-        SidecarSettingsResponse: {
-            /** Bankroll */
-            bankroll: number;
-            /** Default Kelly */
-            default_kelly: string;
-        };
         /** SportModel */
         SportModel: {
             /** Key */
@@ -1903,15 +1761,139 @@ export interface components {
             upcoming_games: number;
             /** Starting In 3H */
             starting_in_3h: number;
-            /** Picks Today */
-            picks_today: number;
-            /** Bet Card Date */
-            bet_card_date?: string | null;
         };
         /** SportsResponse */
         SportsResponse: {
             /** Sports */
             sports: components["schemas"]["SportModel"][];
+        };
+        /** SystemEvaluation */
+        SystemEvaluation: {
+            /** System Id */
+            system_id: string;
+            /** Short Id */
+            short_id: string;
+            /** System Name */
+            system_name: string;
+            /** Sport */
+            sport: string;
+            /** Bet Type */
+            bet_type: string;
+            /** Source Claim */
+            source_claim: string;
+            /** Rule Status */
+            rule_status: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "qualified" | "no_match" | "no_slate" | "unable_to_evaluate" | "disabled";
+            /**
+             * Match Count
+             * @default 0
+             */
+            match_count: number;
+            /**
+             * Evaluated Games
+             * @default 0
+             */
+            evaluated_games: number;
+            /**
+             * Skipped Games
+             * @default 0
+             */
+            skipped_games: number;
+            /** Missing Fields */
+            missing_fields?: string[];
+        };
+        /** SystemSignal */
+        SystemSignal: {
+            /** System Id */
+            system_id: string;
+            /** System Name */
+            system_name: string;
+            /** Sport */
+            sport: string;
+            /** Event Id */
+            event_id: string;
+            /** Home Team */
+            home_team: string;
+            /** Away Team */
+            away_team: string;
+            /**
+             * Commence Time
+             * Format: date-time
+             */
+            commence_time: string;
+            /**
+             * Bet Type
+             * @enum {string}
+             */
+            bet_type: "spread" | "total" | "moneyline";
+            /** Selection */
+            selection: string;
+            /** Market Line */
+            market_line?: number | null;
+            /** Price American */
+            price_american?: number | null;
+            /** Book */
+            book?: string | null;
+            /** Qualification Reason */
+            qualification_reason: string;
+            /**
+             * Data Timestamp
+             * Format: date-time
+             */
+            data_timestamp: string;
+            /**
+             * Evaluated At
+             * Format: date-time
+             */
+            evaluated_at: string;
+        };
+        /** SystemsResponse */
+        SystemsResponse: {
+            /**
+             * Requested Date
+             * Format: date
+             */
+            requested_date: string;
+            /**
+             * Timeframe
+             * @enum {string}
+             */
+            timeframe: "today" | "tomorrow" | "upcoming" | "date";
+            /** Timezone */
+            timezone: string;
+            /**
+             * Evaluated At
+             * Format: date-time
+             */
+            evaluated_at: string;
+            /** Evaluations */
+            evaluations: components["schemas"]["SystemEvaluation"][];
+            /** Signals */
+            signals: components["schemas"]["SystemSignal"][];
+            /** Wagers */
+            wagers: components["schemas"]["WagerCandidate"][];
+            summary: components["schemas"]["SystemsSummary"];
+            /** Context Warnings */
+            context_warnings?: string[];
+        };
+        /** SystemsSummary */
+        SystemsSummary: {
+            /** Qualifying Systems */
+            qualifying_systems: number;
+            /** Qualifying Wagers */
+            qualifying_wagers: number;
+            /** No Match */
+            no_match: number;
+            /** No Slate */
+            no_slate: number;
+            /** Unable To Evaluate */
+            unable_to_evaluate: number;
+            /** Disabled */
+            disabled: number;
         };
         /** TierOption */
         TierOption: {
@@ -1932,6 +1914,43 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** WagerCandidate */
+        WagerCandidate: {
+            /** Sport */
+            sport: string;
+            /** Event Id */
+            event_id: string;
+            /** Home Team */
+            home_team: string;
+            /** Away Team */
+            away_team: string;
+            /**
+             * Commence Time
+             * Format: date-time
+             */
+            commence_time: string;
+            /** Bet Type */
+            bet_type: string;
+            /** Selection */
+            selection: string;
+            /** Market Line */
+            market_line?: number | null;
+            /** Price American */
+            price_american?: number | null;
+            /** Book */
+            book?: string | null;
+            /** Qualification Reason */
+            qualification_reason: string;
+            /**
+             * Data Timestamp
+             * Format: date-time
+             */
+            data_timestamp: string;
+            /** Supporting System Ids */
+            supporting_system_ids: string[];
+            /** Supporting System Names */
+            supporting_system_names: string[];
         };
         /** WagerLegModel */
         WagerLegModel: {
@@ -1957,6 +1976,8 @@ export interface components {
             spread?: number | null;
             /** Total Points */
             total_points?: number | null;
+            /** Total Side */
+            total_side?: string | null;
             /** Game Datetime */
             game_datetime?: string | null;
             /** Outcome */
@@ -1984,10 +2005,14 @@ export interface components {
             straight_count: number;
             /** Parlay Count */
             parlay_count: number;
-            /** Parlay Partial Count */
-            parlay_partial_count: number;
             /** Free Play Count */
             free_play_count: number;
+            /** Won Open Slot Count */
+            won_open_slot_count: number;
+            /** Pending Open Slot Count */
+            pending_open_slot_count: number;
+            /** Fulfilled Count */
+            fulfilled_count: number;
         };
         /** WindowRollup */
         WindowRollup: {
@@ -2178,6 +2203,39 @@ export interface operations {
             };
         };
     };
+    get_systems_api_systems_get: {
+        parameters: {
+            query?: {
+                date?: string | null;
+                timeframe?: ("today" | "tomorrow" | "upcoming") | null;
+                timezone?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_api_health_get: {
         parameters: {
             query?: never;
@@ -2194,6 +2252,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FetcherStatus"];
+                };
+            };
+        };
+    };
+    get_mapping_health_api_mapping_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
@@ -2247,37 +2325,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OddsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_picks_api_picks__sport__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sport: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PicksResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2406,6 +2453,7 @@ export interface operations {
         parameters: {
             query?: {
                 books?: string;
+                wager_filter?: string;
             };
             header?: never;
             path?: never;
@@ -2438,6 +2486,7 @@ export interface operations {
             query?: {
                 books?: string;
                 max_hold_pct?: number;
+                wager_filter?: string;
             };
             header?: never;
             path?: never;
@@ -2472,6 +2521,7 @@ export interface operations {
                 free_bet_books?: string;
                 min_free_odds?: number;
                 max_results?: number;
+                wager_filter?: string;
             };
             header?: never;
             path?: never;
@@ -2758,200 +2808,6 @@ export interface operations {
             };
         };
     };
-    post_place_api_sidecar_place_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PlaceBody"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PlaceResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_runs_api_sidecar_runs_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_run_api_sidecar_runs__job_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                job_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_mode_api_sidecar_mode_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ModeResponse"];
-                };
-            };
-        };
-    };
-    post_mode_api_sidecar_mode_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ModeBody"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ModeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_sidecar_settings_api_sidecar_settings_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SidecarSettingsResponse"];
-                };
-            };
-        };
-    };
-    get_active_signals_api_sidecar_active_signals_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-    };
     refresh_api_kalshi_refresh_post: {
         parameters: {
             query?: never;
@@ -3028,6 +2884,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PolymarketStatusResponse"];
+                };
+            };
+        };
+    };
+    refresh_api_novig_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NovigRefreshResponse"];
+                };
+            };
+        };
+    };
+    status_api_novig_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };

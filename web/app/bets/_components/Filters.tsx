@@ -1,9 +1,67 @@
 "use client";
 
+import clsx from "clsx";
+import { ChevronDown } from "lucide-react";
+
+import { SPORTS, SPORT_ORDER } from "@/lib/sports";
+import { LEDGER_BOOKS } from "./labels";
+
 export interface BetFilters {
   book: string;
   sport: string;
   status: string;
+}
+
+const SPORT_OPTIONS = SPORT_ORDER.map(k => ({ value: k, label: SPORTS[k].label }));
+
+const STATUS_OPTIONS = [
+  { value: "open", label: "Open" },
+  { value: "win", label: "Win" },
+  { value: "loss", label: "Loss" },
+  { value: "push", label: "Push" },
+  { value: "pending", label: "Pending" },
+];
+
+function Select({
+  label,
+  value,
+  allLabel,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  allLabel: string;
+  options: { value: string; label: string }[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <label className="relative inline-flex items-center">
+      <span className="sr-only">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={clsx(
+          "h-8 appearance-none rounded-md border border-border-subtle pl-3 pr-7",
+          "text-[length:var(--fs-13)] font-medium transition-colors cursor-pointer",
+          "hover:text-text-1 focus-visible:outline-none focus-visible:border-text-3",
+          value ? "bg-bg-2 text-text-1" : "bg-bg-1 text-text-2",
+        )}
+      >
+        <option value="">{allLabel}</option>
+        {options.map(o => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        size={12}
+        aria-hidden
+        className="pointer-events-none absolute right-2.5 text-text-3"
+      />
+    </label>
+  );
 }
 
 export function Filters({
@@ -13,47 +71,39 @@ export function Filters({
   value: BetFilters;
   onChange: (next: BetFilters) => void;
 }) {
-  const sel =
-    "rounded border border-border-subtle bg-bg-1 text-sm px-2 py-1";
+  const active = Boolean(value.book || value.sport || value.status);
   return (
     <div className="flex flex-wrap gap-2 items-center">
-      <select
-        className={sel}
+      <Select
+        label="Book"
         value={value.book}
-        onChange={(e) => onChange({ ...value, book: e.target.value })}
-      >
-        <option value="">All books</option>
-        <option value="coral33">Coral33</option>
-        <option value="kalshi">Kalshi</option>
-        <option value="polymarket">Polymarket</option>
-        <option value="imported">Imported</option>
-      </select>
-      <select
-        className={sel}
+        allLabel="All books"
+        options={LEDGER_BOOKS}
+        onChange={(book) => onChange({ ...value, book })}
+      />
+      <Select
+        label="Sport"
         value={value.sport}
-        onChange={(e) => onChange({ ...value, sport: e.target.value })}
-      >
-        <option value="">All sports</option>
-        <option value="mlb">MLB</option>
-        <option value="nba">NBA</option>
-        <option value="nfl">NFL</option>
-        <option value="nhl">NHL</option>
-        <option value="tennis">Tennis</option>
-        <option value="soccer">Soccer</option>
-        <option value="ufc">UFC</option>
-      </select>
-      <select
-        className={sel}
+        allLabel="All sports"
+        options={SPORT_OPTIONS}
+        onChange={(sport) => onChange({ ...value, sport })}
+      />
+      <Select
+        label="Status"
         value={value.status}
-        onChange={(e) => onChange({ ...value, status: e.target.value })}
-      >
-        <option value="">All statuses</option>
-        <option value="open">Open</option>
-        <option value="win">Win</option>
-        <option value="loss">Loss</option>
-        <option value="push">Push</option>
-        <option value="pending">Pending</option>
-      </select>
+        allLabel="All statuses"
+        options={STATUS_OPTIONS}
+        onChange={(status) => onChange({ ...value, status })}
+      />
+      {active && (
+        <button
+          type="button"
+          onClick={() => onChange({ book: "", sport: "", status: "" })}
+          className="h-8 px-2 text-[length:var(--fs-13)] text-text-3 hover:text-text-1"
+        >
+          Clear
+        </button>
+      )}
     </div>
   );
 }

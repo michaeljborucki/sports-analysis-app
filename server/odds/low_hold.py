@@ -1,9 +1,9 @@
 """Low-hold scanner.
 
-A "low-hold" line is a two-way market where the best available prices across
-books sum to a small overround — the book's cut is near zero, meaning the
-market is tightly priced. Strictly positive hold (hold < 0 is an arb, which
-lives on /arbitrage).
+A "low-hold" line is a complete two- or three-way market where the best
+available prices across books sum to a small overround — the book's cut is
+near zero, meaning the market is tightly priced. Negative hold is an arb;
+those rows are intentionally included here and display as positive edge.
 
 Hold % = (sum_implied - 1) / sum_implied × 100
   -110 / -110 → sum 1.0476, hold 4.55%  (typical retail)
@@ -13,7 +13,8 @@ Prices passed in are already commission-adjusted by `rows_to_games`.
 """
 from __future__ import annotations
 
-from .arbitrage import _best_visible, _find_market
+from .arbitrage import _best_visible, _find_market, best_cross_venue_pair
+from .venues import venue
 from .devig import american_to_implied_prob
 from .pairing import collect_spread_pairs, collect_total_pairs
 
@@ -31,23 +32,52 @@ def _try_low_hold_pair(
     books_filter: set[str] | None,
     max_hold_pct: float,
 ) -> tuple[dict, dict, float] | None:
-    best_a = _best_visible(side_a, books_filter)
-    best_b = _best_visible(side_b, books_filter)
-    if not best_a or not best_b:
+    pair = best_cross_venue_pair(side_a, side_b, books_filter)
+    if pair is None:
         return None
-    if best_a["bookmaker_key"] == best_b["bookmaker_key"]:
-        return None
+    best_a, best_b = pair
     imp_a = american_to_implied_prob(best_a["price_american"])
     imp_b = american_to_implied_prob(best_b["price_american"])
     total = imp_a + imp_b
-    if total < 1.0:
-        return None  # strict arbitrage territory — belongs on /arbitrage
-    # total == 1.0 → 0% hold (perfectly fair line). Inclusive here so the
-    # low-hold page surfaces it as the cleanest possible no-vig pair.
+    # Negative hold is arbitrage. Keep it in the low-hold continuum so this
+    # view spans negative edge (vig) through zero to positive edge (arb).
     hold = _hold_pct(imp_a, imp_b)
     if hold > max_hold_pct:
         return None
     return best_a, best_b, hold
+
+
+def _try_low_hold_n_way(
+    sides: list[dict], books_filter: set[str] | None, max_hold_pct: float,
+) -> tuple[list[dict], float] | None:
+    bests = [_best_visible(side, books_filter) for side in sides]
+    if any(best is None for best in bests):
+        return None
+    concrete = [best for best in bests if best is not None]
+    if len({venue(best["bookmaker_key"]) for best in concrete}) < 2:
+        return None
+    total = sum(american_to_implied_prob(best["price_american"]) for best in concrete)
+    hold = (total - 1.0) / total * 100.0
+    if hold > max_hold_pct:
+        return None
+    return concrete, hold
+
+
+def _emit_n_way(game: dict, market_kind: str, point: float | None,
+                sides: list[dict], bests: list[dict], hold: float) -> dict:
+    emitted = _emit(game, market_kind, point, sides[0], sides[1], bests[0], bests[1], hold)
+    emitted["sides"] = [
+        {
+            "outcome_name": side["outcome_name"],
+            "book": best["bookmaker_key"],
+            "price_american": best["price_american"],
+            "point": best.get("point"),
+            "wager_type": best.get("wager_type"),
+            "counterpart_price_american": best.get("counterpart_price_american"),
+        }
+        for side, best in zip(sides, bests)
+    ]
+    return emitted
 
 
 def _emit(
@@ -75,12 +105,16 @@ def _emit(
                 "book": best_a["bookmaker_key"],
                 "price_american": best_a["price_american"],
                 "point": best_a.get("point"),
+                "wager_type": best_a.get("wager_type"),
+                "counterpart_price_american": best_a.get("counterpart_price_american"),
             },
             {
                 "outcome_name": side_b["outcome_name"],
                 "book": best_b["bookmaker_key"],
                 "price_american": best_b["price_american"],
                 "point": best_b.get("point"),
+                "wager_type": best_b.get("wager_type"),
+                "counterpart_price_american": best_b.get("counterpart_price_american"),
             },
         ],
     }
@@ -93,38 +127,51 @@ def scan_game_low_hold(
 ) -> list[dict]:
     out: list[dict] = []
 
-    # H2H
-    h2h = _find_market(game, "h2h")
-    if h2h and len(h2h.get("outcomes", [])) == 2:
-        a, b = h2h["outcomes"]
-        pair = _try_low_hold_pair(a, b, books_filter, max_hold_pct)
-        if pair:
-            best_a, best_b, hold = pair
-            out.append(_emit(game, "h2h", None, a, b, best_a, best_b, hold))
+    from .arbitrage import _ev_pairing_helpers
+    base_market, buckets, expect_count, outcome_key, period_suffix = _ev_pairing_helpers()
+    spread_suffixes: set[str] = set()
+    total_suffixes: set[str] = set()
+    for market in game.get("markets") or []:
+        mk = market.get("market_key", "")
+        base, suffix = base_market(mk), period_suffix(mk)
+        if base in ("spreads", "alternate_spreads"):
+            spread_suffixes.add(suffix)
+        elif base in ("totals", "alternate_totals"):
+            total_suffixes.add(suffix)
 
-    # Spreads — pair by complementary signed points (main + alt merged)
-    for abs_pt, home_side, away_side in collect_spread_pairs(game):
-        pair = _try_low_hold_pair(
-            home_side, away_side, books_filter, max_hold_pct
-        )
-        if pair:
-            best_a, best_b, hold = pair
-            out.append(
-                _emit(game, "spreads", abs_pt, home_side, away_side,
-                      best_a, best_b, hold)
-            )
+    handled: set[str] = set()
+    for suffix in spread_suffixes:
+        main_mk, alt_mk = f"spreads{suffix}", f"alternate_spreads{suffix}"
+        for pt, a, b in collect_spread_pairs(game, (main_mk, alt_mk)):
+            pair = _try_low_hold_pair(a, b, books_filter, max_hold_pct)
+            if pair:
+                best_a, best_b, hold = pair
+                out.append(_emit(game, main_mk, pt, a, b, best_a, best_b, hold))
+        handled.update((main_mk, alt_mk))
+    for suffix in total_suffixes:
+        main_mk, alt_mk = f"totals{suffix}", f"alternate_totals{suffix}"
+        for pt, a, b in collect_total_pairs(game, (main_mk, alt_mk)):
+            pair = _try_low_hold_pair(a, b, books_filter, max_hold_pct)
+            if pair:
+                best_a, best_b, hold = pair
+                out.append(_emit(game, main_mk, pt, a, b, best_a, best_b, hold))
+        handled.update((main_mk, alt_mk))
 
-    # Totals — pair Over and Under at same point (main + alt merged)
-    for pt, over_side, under_side in collect_total_pairs(game):
-        pair = _try_low_hold_pair(
-            over_side, under_side, books_filter, max_hold_pct
-        )
-        if pair:
-            best_a, best_b, hold = pair
-            out.append(
-                _emit(game, "totals", pt, over_side, under_side,
-                      best_a, best_b, hold)
-            )
+    for market in game.get("markets") or []:
+        mk = market.get("market_key")
+        if not mk or mk in handled:
+            continue
+        keyed = {outcome_key(o): o for o in market.get("outcomes") or []}
+        expected = expect_count(mk, {k: {} for k in keyed})
+        for _bucket, keys in buckets(mk, list(keyed)).items():
+            if len(keys) != expected:
+                continue
+            sides = [keyed[k] for k in keys]
+            point = keys[0][1] if all(k[1] == keys[0][1] for k in keys) else None
+            result = _try_low_hold_n_way(sides, books_filter, max_hold_pct)
+            if result:
+                bests, hold = result
+                out.append(_emit_n_way(game, mk, point, sides, bests, hold))
 
     return out
 

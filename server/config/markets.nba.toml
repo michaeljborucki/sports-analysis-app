@@ -110,29 +110,3 @@ markets = [
 [on_demand]
 enabled          = true
 debounce_seconds = 60
-
-[picks]
-include_bet_types = [
-  "moneyline",
-  "spread",
-  "total",
-  "first_half_ml",
-  "first_half_spread",
-  "first_half_total",
-  "first_quarter_ml",
-  "first_quarter_spread",
-  "first_quarter_total",
-  "player_points",
-  "player_rebounds",
-  "player_assists",
-  "player_threes",
-  "player_blocks",
-  "player_steals",
-  "player_turnovers",
-  "player_points_rebounds_assists",
-  "player_points_rebounds",
-  "player_points_assists",
-  "player_rebounds_assists",
-  "player_double_double",
-  "player_triple_double",
-]

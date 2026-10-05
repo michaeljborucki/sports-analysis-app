@@ -1,7 +1,6 @@
 """
 Sport registry — single source of truth for which sports the backend supports,
-which Odds API sport keys to pull for each, where each sport's agent writes its
-picks, and which markets config file to use.
+which Odds API sport keys to pull for each, and which markets config file to use.
 
 To add a sport: append a `Sport(...)` entry here, create
 `config/markets.<key>.toml`, and the frontend's `lib/sports.ts` entry.
@@ -19,7 +18,6 @@ class Sport:
     # Odds API sport keys. If any string ends in "*" it's a prefix match against
     # /sports (used for tennis's per-tournament sport keys).
     odds_api_sport_keys: tuple[str, ...]
-    agent_dir: Path                           # where the sibling agent writes bet_card + bets.csv
     markets_config: str                       # filename in server/config/ (e.g. "markets.mlb.toml")
     # Market families this sport exposes. Drives both main-grid market tabs and
     # the per-game expansion tabs (main + alt lines). Order matters.
@@ -44,7 +42,6 @@ SPORTS: dict[str, Sport] = {
         key="mlb",
         label="MLB",
         odds_api_sport_keys=("baseball_mlb",),
-        agent_dir=HOME / "personal_workspace/agents/baseball-agents/data",
         markets_config="markets.mlb.toml",
         market_groups=(
             MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
@@ -64,7 +61,6 @@ SPORTS: dict[str, Sport] = {
         key="tennis",
         label="Tennis",
         odds_api_sport_keys=("tennis_atp_*", "tennis_wta_*"),
-        agent_dir=HOME / "personal_workspace/agents/tennis-agents/data",
         markets_config="markets.tennis.toml",
         market_groups=(
             MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
@@ -75,8 +71,16 @@ SPORTS: dict[str, Sport] = {
     "nba": Sport(
         key="nba",
         label="NBA",
-        odds_api_sport_keys=("basketball_nba",),
-        agent_dir=HOME / "personal_workspace/agents/nba-agents/data",
+        # basketball_nba_summer_league folds into the NBA tab: it's the Vegas/
+        # Salt Lake/California summer slate (July). Coral33 files the same games
+        # under sportType=BASKETBALL / sportSubType="NBA PRESEASO" (see
+        # coral33.toml) so they cross-shop under this one sport_key. NOTE: this
+        # mapping is seasonally correct — in Oct the Odds API summer-league key
+        # goes dark while that same coral33 subtype flips to real preseason.
+        # Summer League only posts game lines in practice; the halves/quarters/
+        # props tiers below are requested against this key too and come back
+        # empty (silent 422), which is a modest live-quota cost.
+        odds_api_sport_keys=("basketball_nba", "basketball_nba_summer_league"),
         markets_config="markets.nba.toml",
         market_groups=(
             MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
@@ -98,7 +102,6 @@ SPORTS: dict[str, Sport] = {
         key="wnba",
         label="WNBA",
         odds_api_sport_keys=("basketball_wnba",),
-        agent_dir=HOME / "personal_workspace/agents/wnba-agents/data",
         markets_config="markets.wnba.toml",
         market_groups=(
             MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
@@ -116,9 +119,6 @@ SPORTS: dict[str, Sport] = {
         key="nhl",
         label="NHL",
         odds_api_sport_keys=("icehockey_nhl",),
-        # No NHL agent dir today; path is a placeholder so the picks reader
-        # gracefully returns no_picks_today until/unless one is created.
-        agent_dir=HOME / "personal_workspace/agents/nhl-agents/data",
         markets_config="markets.nhl.toml",
         market_groups=(
             MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
@@ -129,11 +129,47 @@ SPORTS: dict[str, Sport] = {
             MarketGroup("1P Total", main_key="totals_p1", alt_key="alternate_totals_p1", display="total"),
         ),
     ),
+    # Regular season and preseason are distinct Odds API feeds. Keep both
+    # under the stable app key `nfl` so the page transitions between slates
+    # without changing stored/cache sport keys.
+    "nfl": Sport(
+        key="nfl",
+        label="NFL",
+        odds_api_sport_keys=(
+            "americanfootball_nfl",
+            "americanfootball_nfl_preseason",
+        ),
+        markets_config="markets.nfl.toml",
+        market_groups=(
+            MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
+            MarketGroup("Spread", main_key="spreads", alt_key="alternate_spreads", display="spread"),
+            MarketGroup("Total", main_key="totals", alt_key="alternate_totals", display="total"),
+            MarketGroup("1H ML", main_key="h2h_h1", display="moneyline"),
+            MarketGroup("1H Spread", main_key="spreads_h1", display="spread"),
+            MarketGroup("1H Total", main_key="totals_h1", display="total"),
+        ),
+    ),
+    "ncaaf": Sport(
+        key="ncaaf",
+        label="College Football",
+        odds_api_sport_keys=(
+            "americanfootball_ncaaf",
+            "americanfootball_ncaaf_fcs",
+        ),
+        markets_config="markets.ncaaf.toml",
+        market_groups=(
+            MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
+            MarketGroup("Spread", main_key="spreads", display="spread"),
+            MarketGroup("Total", main_key="totals", display="total"),
+            MarketGroup("1H ML", main_key="h2h_h1", display="moneyline"),
+            MarketGroup("1H Spread", main_key="spreads_h1", display="spread"),
+            MarketGroup("1H Total", main_key="totals_h1", display="total"),
+        ),
+    ),
     "baseball_ncaa": Sport(
         key="baseball_ncaa",
         label="NCAA Baseball",
         odds_api_sport_keys=("baseball_ncaa",),
-        agent_dir=HOME / "personal_workspace/agents/baseball-ncaa-agents/data",
         markets_config="markets.baseball_ncaa.toml",
         market_groups=(
             MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
@@ -151,7 +187,6 @@ SPORTS: dict[str, Sport] = {
         key="asian_baseball",
         label="Asian Baseball",
         odds_api_sport_keys=("baseball_npb", "baseball_kbo"),
-        agent_dir=HOME / "personal_workspace/agents/asian-baseball-agents/data",
         markets_config="markets.asian_baseball.toml",
         market_groups=(
             MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
@@ -167,7 +202,6 @@ SPORTS: dict[str, Sport] = {
         key="ufc",
         label="UFC",
         odds_api_sport_keys=("mma_mixed_martial_arts",),
-        agent_dir=HOME / "personal_workspace/agents/ufc-agents/data",
         markets_config="markets.ufc.toml",
         market_groups=(
             MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
@@ -181,7 +215,6 @@ SPORTS: dict[str, Sport] = {
         key="boxing",
         label="Boxing",
         odds_api_sport_keys=("boxing_boxing",),
-        agent_dir=HOME / "personal_workspace/agents/boxing-agents/data",
         markets_config="markets.boxing.toml",
         market_groups=(
             MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
@@ -199,7 +232,6 @@ SPORTS: dict[str, Sport] = {
         key="cricket",
         label="Cricket",
         odds_api_sport_keys=("cricket_ipl", "cricket_international_t20"),
-        agent_dir=HOME / "personal_workspace/agents/cricket-agents/data",
         markets_config="markets.cricket.toml",
         market_groups=(
             MarketGroup("Moneyline", main_key="h2h", display="moneyline"),
@@ -232,7 +264,6 @@ SPORTS: dict[str, Sport] = {
             # Asia-Pacific
             "soccer_japan_j_league",
         ),
-        agent_dir=HOME / "personal_workspace/agents/soccer-agents/data",
         markets_config="markets.soccer.toml",
         market_groups=(
             # h2h is 3-way for soccer — the odds grid renders 2 outcomes per

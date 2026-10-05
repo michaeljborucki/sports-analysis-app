@@ -127,10 +127,12 @@ class KalshiFetcher:
             self._config = load_kalshi_config(self.config_path)
         return self._config
 
-    def _matcher(self) -> KalshiEventMatcher:
+    def _matcher(self, events: list[dict] | None = None) -> KalshiEventMatcher:
         cfg = self._load_config()
 
         def events_for(sport_key: str) -> list[dict]:
+            if events is not None:
+                return events
             return self.cache.distinct_events(sport_key=sport_key)
 
         return KalshiEventMatcher(events_for, team_aliases=cfg.team_aliases)
@@ -337,7 +339,10 @@ class KalshiFetcher:
         if purged:
             logger.info("kalshi %s: purged %d live rows", sport_key, purged)
 
-        matcher = self._matcher()
+        cache_events = await self.cache.distinct_events_async(
+            sport_key=sport_key,
+        )
+        matcher = self._matcher(cache_events)
         total_rows = 0
 
         # Phase 2: iterate ALL series slots (main + spread + total +

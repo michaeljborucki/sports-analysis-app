@@ -13,7 +13,11 @@ def build_router(cache: OddsCache, fetcher: FetcherRegistry) -> APIRouter:
     router = APIRouter()
 
     @router.get("/api/health", response_model=FetcherStatus)
-    async def health() -> FetcherStatus:
+    # Sync on purpose: every read below is blocking sqlite. As `async def`
+    # it ran on the event loop and stalled the whole server (SSE included)
+    # for as long as the cache took to answer. Starlette runs a plain `def`
+    # in its threadpool, so a slow read costs this request alone.
+    def health() -> FetcherStatus:
         status = cache.get_status() or {}
         last_fetch = status.get("last_fetch_at")
         if isinstance(last_fetch, str):

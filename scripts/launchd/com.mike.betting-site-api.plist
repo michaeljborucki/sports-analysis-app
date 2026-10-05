@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.mike.betting-site-api</string>
+
+    <!--
+      FastAPI backend on :8000. Runs the venv uvicorn directly (no shell, no
+      `source activate`) so launchd owns the actual server process and can
+      restart it. WorkingDirectory is the repo root because server/config.py
+      calls load_dotenv() with a relative lookup — the .env at the repo root
+      carries the Odds API key, Coral33 credentials and proxy creds.
+    -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/mikeborucki/personal_workspace/betting-site/.venv/bin/uvicorn</string>
+        <string>server.main:app</string>
+        <string>--host</string>
+        <string>127.0.0.1</string>
+        <string>--port</string>
+        <string>8000</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/mikeborucki/personal_workspace/betting-site</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <!--
+      ThrottleInterval: minimum seconds launchd waits between restarts.
+      60s (vs the launchd default of 10s) is restart-burst damping: if the
+      server crash-loops on a bad key or an unreachable proxy, 10s would mean
+      hundreds of restarts an hour, each one potentially firing a metered
+      Odds API pass in cache_mode=live. 60s caps it and leaves a window to
+      notice and intervene. Matches com.mike.betting-db.
+    -->
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+
+    <key>StandardOutPath</key>
+    <string>/Users/mikeborucki/personal_workspace/betting-site/logs/launchd-api.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/mikeborucki/personal_workspace/betting-site/logs/launchd-api.err.log</string>
+</dict>
+</plist>
