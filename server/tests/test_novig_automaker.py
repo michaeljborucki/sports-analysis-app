@@ -93,3 +93,30 @@ def test_order_is_target_minus_what_already_filled():
 def test_no_order_once_filled_stake_meets_target():
     # Target $40, already filled $45 (target dropped since) -> post nothing.
     assert kelly_qty(0.52, 0.50, 2000.0, held=45.0) == (0, 0.0)
+
+
+def test_net_positions_nets_both_sides_of_a_market():
+    from server.automaker.novig_maker import net_positions
+    gross = [
+        {"marketId": "M", "outcomeId": "A", "qty": 3314, "cost": "16.07290"},
+        {"marketId": "M", "outcomeId": "B", "qty": 1020, "cost": "5.20200"},
+        {"marketId": "N", "outcomeId": "C", "qty": 500, "cost": "2.50000"},
+        {"marketId": "P", "outcomeId": "D", "qty": 100, "cost": "0.50000"},
+        {"marketId": "P", "outcomeId": "E", "qty": 100, "cost": "0.49000"},
+    ]
+    net = {p["outcomeId"]: p for p in net_positions(gross)}
+    assert set(net) == {"A", "C"}                     # P fully hedged -> gone
+    assert net["A"]["qty"] == 2294
+    assert float(net["A"]["cost"]) == pytest.approx(2294 * 16.0729 / 3314)
+
+
+def test_hedge_ids_reload_from_event_log(tmp_path):
+    import json
+    from server.automaker.novig_maker import load_hedge_ids
+    log = tmp_path / "m.jsonl"
+    log.write_text("\n".join(json.dumps(r) for r in [
+        {"mode": "live", "action": "hedge_place", "order_id": "h1", "outcome_id": "B"},
+        {"mode": "shadow", "action": "hedge_place", "order_id": None, "outcome_id": "C"},
+        {"mode": "live", "action": "place", "order_id": "e1", "outcome_id": "A"},
+    ]) + "\n")
+    assert set(load_hedge_ids(log)) == {"h1"}

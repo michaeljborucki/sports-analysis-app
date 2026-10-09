@@ -21,9 +21,17 @@ Strategy (user-set, 2026-10-09):
   * Best EV first. Post-only (never takes), each order expires on its own
     after ORDER_TTL_S and is re-posted.
 
+Event-driven (2026-10-09): the maker holds its own signed Novig websocket —
+`bbo` for every candidate event plus PRIVATE `orders`/`positions` — so open
+orders, positions and best bids are live state, not per-cycle REST polls. A
+cycle runs ~DEBOUNCE_S after any relevant change (outbid, fill, position)
+and at least every LOOP_S; fair prices refresh from the API every FEED_S;
+REST re-syncs orders/positions every RECONCILE_S as a safety net.
+
 Fail-safes (these guard against acting on BAD DATA, not against losing
-bets): a kill file, an unreachable/stale candidate feed, or the Novig stream
-being down each cancel every resting order and stop posting until healthy.
+bets): a kill file, an unreachable/stale candidate feed, or either Novig
+stream being down each cancel every resting order and stop posting until
+healthy.
 """
 from __future__ import annotations
 
@@ -77,11 +85,20 @@ MIN_ARB_ROI = float(os.environ.get("AUTOMAKER_MIN_ARB_PCT", "1.0")) / 100.0
 # Capital utilization = open position cost / (position cost + cash). At or
 # above PAUSE the maker stops EV betting (cancels resting EV orders, posts no
 # new ones) and only manages hedges; EV resumes below RESUME (hysteresis so
-# it doesn't flap at the line). User's rule, 2026-10-09: pause at 90%.
+# it doesn't flap at the line). User's rule, 2026-10-09: pause at 90%, resume <85%.
+# Hedges are NOT gated: they post on every fill at any utilization.
 UTIL_PAUSE = float(os.environ.get("AUTOMAKER_UTIL_PAUSE_PCT", "90")) / 100.0
-UTIL_RESUME = float(os.environ.get("AUTOMAKER_UTIL_RESUME_PCT", "88")) / 100.0
-# Live placement pacing: the account's `place` bucket refills 8/s (cap 256).
+UTIL_RESUME = float(os.environ.get("AUTOMAKER_UTIL_RESUME_PCT", "85")) / 100.0
+# Live placement pacing: the account's `place` bucket refills 8/s (cap 256);
+# `cancel` refills 16/s.
 PLACE_GAP_S = float(os.environ.get("AUTOMAKER_PLACE_GAP_S", "0.16"))
+CANCEL_GAP_S = float(os.environ.get("AUTOMAKER_CANCEL_GAP_S", "0.08"))
+DEBOUNCE_S = 0.25          # coalesce a burst of stream events into one cycle
+FEED_S = 5.0               # fair-price / candidate refresh from the API
+MAX_FEED_AGE_S = 20.0      # older than this -> fail-safe
+RECONCILE_S = 30.0         # REST re-sync of orders + positions
+BALANCE_S = 10.0           # REST balance refresh
+SUMMARY_EVERY_S = 30.0     # cycle summary log line cadence when idle
 
 
 def make_price(c: dict) -> float | None:
@@ -119,6 +136,50 @@ def kelly_qty(fair: float, q: float, bankroll: float, held: float = 0.0) -> tupl
     return qty, qty * q / 100.0
 
 
+def net_positions(positions: list[dict]) -> list[dict]:
+    """Net each binary market's two sides. Novig pays out matched pairs as
+    SETTLEMENT cash but /portfolio/positions keeps listing BOTH sides at full
+    size (verified live 2026-10-09: 13 markets, 17 payouts, quantities
+    unchanged). Exposure is the excess on the bigger side, at its avg cost."""
+    by_market: dict[str, list[dict]] = {}
+    for p in positions:
+        if int(p.get("qty") or 0) > 0:
+            by_market.setdefault(p["marketId"], []).append(p)
+    out: list[dict] = []
+    for ps in by_market.values():
+        if len(ps) != 2:
+            out.extend(ps)
+            continue
+        big, small = sorted(ps, key=lambda p: -int(p["qty"]))
+        rq = int(big["qty"]) - int(small["qty"])
+        if rq <= 0:
+            continue
+        avg = float(big["cost"]) / int(big["qty"])
+        out.append({**big, "qty": rq, "cost": f"{rq * avg:.5f}"})
+    return out
+
+
+def load_hedge_ids(path: Path) -> dict[str, dict]:
+    """Hedge orders survive a restart: without this, resting hedges look like
+    foreign bids (hedge_plan then thinks it must outbid them, and the 90%
+    pause would cancel them as EV orders). Orders since gone are harmless —
+    lookups are by live orderId."""
+    out: dict[str, dict] = {}
+    if not path.exists():
+        return out
+    with path.open() as f:
+        for line in f:
+            if '"hedge_place"' not in line:
+                continue
+            try:
+                r = json.loads(line)
+            except ValueError:
+                continue
+            if r.get("mode") == "live" and r.get("order_id"):
+                out[r["order_id"]] = r
+    return out
+
+
 class Maker:
     def __init__(self, mode: str):
         self.mode = mode
@@ -133,11 +194,24 @@ class Maker:
         # startup cancels every order, so nothing outlives a restart.
         self.hedge_ids: dict[str, dict] = {}
         self.ev_paused = False
+        # Live state from the private stream (REST re-sync every RECONCILE_S).
+        self.orders: dict[str, dict] = {}       # orderId -> open order
+        self.gross_pos: dict[str, dict] = {}    # outcomeId -> position (gross)
+        self.priv_ready = mode != "live"
+        self.feed: dict | None = None
+        self.feed_at = 0.0
+        self._balance = (0.0, 0.0)              # (value, monotonic time)
+        self.interesting: set[str] = set()      # market ids worth waking for
+        self.wake = asyncio.Event()
+        self.last_summary = 0.0
+        self.stream = self._make_stream()
         self.failsafe_active = False
         self.last_fills_ms = int(time.time() * 1000)
         self.last_fills_check = 0.0
         self.stop = asyncio.Event()
         LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        if mode == "live":
+            self.hedge_ids.update(load_hedge_ids(LOG_PATH))
         self._log = LOG_PATH.open("a")
 
     def log(self, action: str, **fields) -> None:
@@ -150,14 +224,115 @@ class Maker:
 
     async def open_orders(self) -> list[dict]:
         if self.mode == "live":
-            return await self.trader.open_orders()
+            return list(self.orders.values())
         return [dict(o, outcomeId=oid) for oid, o in self.virtual.items()]
 
     async def cash(self) -> float:
         if self.mode == "live":
-            return await self.trader.balance()
+            value, at = self._balance
+            if time.monotonic() - at > BALANCE_S:
+                value = await self.trader.balance()
+                self._balance = (value, time.monotonic())
+            return value
         tied = sum(o["qty"] * float(o["price"]) / 100.0 for o in self.virtual.values())
         return SHADOW_BANKROLL - tied
+
+    # ───────────────────────── live streams ─────────────────────────
+
+    def _make_stream(self):
+        from ..odds.books.novig.ws_feed import NovigBboStream
+        if self.mode == "live":
+            from ..odds.books.novig.client import _Signer
+            from ..odds.books.novig.trading import CONFIG_PATH
+            cfg = json.loads(CONFIG_PATH.read_text())
+            signer = _Signer(cfg["key_id"], Path(cfg["pem"]).expanduser())
+            private = ("orders", "positions")
+        else:
+            from ..odds.books.novig.client import _signer_from_env
+            signer, private = _signer_from_env(), ()
+            if signer is None:
+                return None
+        return NovigBboStream(
+            signer, desired=self._stream_desired,
+            on_change=self._on_bbo_change, on_lost=lambda _m: self.wake.set(),
+            private=private, on_private=self._on_private if private else None,
+        )
+
+    def _stream_desired(self) -> list[tuple[str, int]]:
+        """Novig events to watch, soonest game first, from the candidate feed."""
+        if not self.feed:
+            return []
+        seen: dict[str, tuple[str, int]] = {}
+        for c in self.feed.get("candidates") or []:
+            eid = c.get("novig_event_id")
+            if eid and eid not in seen:
+                seen[eid] = (c["commence_time"], int(c.get("novig_event_market_count") or 1))
+        return [(eid, n) for eid, (_, n) in sorted(seen.items(), key=lambda kv: kv[1][0])]
+
+    def _on_bbo_change(self, market_id: str) -> None:
+        if market_id in self.interesting:
+            self.wake.set()
+
+    def _on_private(self, msg: dict) -> None:
+        o, p = msg.get("orders"), msg.get("positions")
+        if o:
+            if "open" in o:                      # subscribe snapshot
+                self.orders = {x["orderId"]: x for x in o["open"]}
+                self.priv_ready = True
+            for d in o.get("deltas") or []:
+                kind, oid = d.get("kind"), d.get("orderId")
+                if kind == "open":
+                    self.orders[oid] = {k: v for k, v in d.items() if k != "kind"}
+                elif kind == "fill":
+                    rem = int(d.get("remaining") or 0)
+                    if rem > 0 and oid in self.orders:
+                        self.orders[oid]["qty"] = rem
+                    else:
+                        self.orders.pop(oid, None)
+                    self.log("fill_event", order_id=oid, outcome_id=d.get("outcomeId"),
+                             price=d.get("price"), qty=d.get("qty"), remaining=rem,
+                             hedge=oid in self.hedge_ids)
+                elif kind in ("cancel", "reject"):
+                    self.orders.pop(oid, None)
+                    if kind == "reject":
+                        self.log("reject", order_id=oid)
+        if p:
+            if "positions" in p:
+                self.gross_pos = {x["outcomeId"]: x for x in p["positions"]}
+            for d in p.get("deltas") or []:
+                if int(d.get("qty") or 0) > 0:
+                    self.gross_pos[d["outcomeId"]] = d
+                else:
+                    self.gross_pos.pop(d["outcomeId"], None)
+        self.wake.set()
+
+    async def _feed_loop(self) -> None:
+        while not self.stop.is_set():
+            try:
+                r = await self.http.get(CANDIDATES_URL)
+                r.raise_for_status()
+                self.feed, self.feed_at = r.json(), time.monotonic()
+            except Exception as e:
+                logger.warning("candidate feed: %s", e)
+            await asyncio.sleep(FEED_S)
+
+    async def _reconcile_loop(self) -> None:
+        """REST is the ground truth: periodically replace stream-built state."""
+        while not self.stop.is_set():
+            await asyncio.sleep(RECONCILE_S)
+            try:
+                orders = await self.trader.open_orders()
+                positions = await self.trader.positions()
+            except Exception as e:
+                self.log("error", op="reconcile", error=str(e))
+                continue
+            rest_ids = {x["orderId"] for x in orders}
+            drift = len(rest_ids ^ set(self.orders))
+            self.orders = {x["orderId"]: x for x in orders}
+            self.gross_pos = {x["outcomeId"]: x for x in positions}
+            if drift:
+                self.log("reconcile", order_id_drift=drift)
+            self.wake.set()
 
     async def cancel(self, order: dict, reason: str, cand: dict | None) -> None:
         if self.mode == "live":
@@ -170,6 +345,8 @@ class Maker:
                     return
                 # Already filled or expired between our read and the cancel.
                 reason = f"{reason} (already gone)"
+            self.orders.pop(order["orderId"], None)
+            await asyncio.sleep(CANCEL_GAP_S)
         else:
             self.virtual.pop(order["outcomeId"], None)
         self.log("cancel", reason=reason, order_id=order.get("orderId"),
@@ -198,6 +375,11 @@ class Maker:
             try:
                 resp = await self.trader.place_post_only(oid, q, qty, ORDER_TTL_S * 1000)
                 order_id = resp.get("orderId")
+                # Visible to the next cycle before the stream's `open` lands.
+                self.orders[order_id] = {
+                    "orderId": order_id, "outcomeId": oid, "marketId": cand.get("market_id"),
+                    "price": f"{q:.3f}", "qty": qty,
+                    "expiresAt": int(expires.timestamp() * 1000)}
             except NovigTradeError as e:
                 self.log("error", op="place", outcome_id=oid, price=q, qty=qty,
                          error=str(e), **_desc(cand))
@@ -242,37 +424,48 @@ class Maker:
                 await self.cancel_everything("kill file")
                 self.failsafe_active = True
             return
-        try:
-            r = await self.http.get(CANDIDATES_URL)
-            r.raise_for_status()
-            feed = r.json()
-        except Exception as e:
+        feed = self.feed
+        if feed is None and self.feed_at == 0.0:
+            return          # startup: first candidate fetch hasn't landed yet
+        feed_age = time.monotonic() - self.feed_at
+        own_ok = self.stream is not None and self.stream.connected and self.priv_ready
+        age = (feed or {}).get("snapshot_age_s")
+        problem = None
+        if feed is None or feed_age > MAX_FEED_AGE_S:
+            problem = f"candidate feed stale ({feed_age:.0f}s)"
+        elif not feed.get("stream_connected") or age is None or age > MAX_SNAPSHOT_AGE_S:
+            problem = f"stale data (api stream={feed.get('stream_connected')}, snapshot_age={age})"
+        elif not own_ok:
+            problem = "maker stream down"
+        if problem:
             if not self.failsafe_active:
-                await self.cancel_everything(f"candidate feed unreachable: {e}")
-                self.failsafe_active = True
-            return
-        age = feed.get("snapshot_age_s")
-        if not feed.get("stream_connected") or age is None or age > MAX_SNAPSHOT_AGE_S:
-            if not self.failsafe_active:
-                await self.cancel_everything(
-                    f"stale data (stream={feed.get('stream_connected')}, snapshot_age={age})")
+                await self.cancel_everything(problem)
                 self.failsafe_active = True
             return
         if self.failsafe_active:
             self.log("failsafe_cleared")
             self.failsafe_active = False
 
-        cands = {c["outcome_id"]: c for c in feed["candidates"] if c.get("bbo_live")}
+        # Best bids from the maker's OWN stream (live) where it covers the
+        # market; otherwise the API's copy (<= FEED_S old).
+        cands: dict[str, dict] = {}
+        for c in feed["candidates"]:
+            mid = c["market_id"]
+            if self.stream is not None and self.stream.covers(mid):
+                lv = self.stream.state.get(mid, {})
+                own, opp = lv.get(c["outcome_id"]), lv.get(c.get("other_outcome_id"))
+                c = dict(c, own_best_bid=list(own) if own else None,
+                         other_best_bid=list(opp) if opp else None, bbo_live=True)
+            elif not c.get("bbo_live"):
+                continue
+            cands[c["outcome_id"]] = c
         cutoff = now + timedelta(seconds=START_BUFFER_S)
         now_ms = now.timestamp() * 1000
 
         orders = await self.open_orders()
         positions: list[dict] = []
         if self.mode == "live":
-            try:
-                positions = await self.trader.positions()
-            except Exception as e:
-                self.log("error", op="positions", error=str(e))
+            positions = net_positions(list(self.gross_pos.values()))
         hedge_want = self.hedge_plan(cands, orders, cutoff, positions) if self.mode == "live" else {}
 
         # Capital utilization gate for EV betting (hedges always run).
@@ -290,12 +483,18 @@ class Maker:
                 self.log("ev_resumed", utilization=round(util, 4), positions_cost=round(pos_cost, 2), cash=round(balance, 2))
                 logger.warning("EV betting RESUMED: utilization %.1f%% < %.0f%%", util * 100, UTIL_RESUME * 100)
 
+        self.interesting = (
+            {c["market_id"] for c in cands.values()}
+            | {o.get("marketId") for o in orders}
+            | {p.get("marketId") for p in positions}
+        )
+
         # Sizing inputs: equity bankroll and what's already filled per outcome.
         if self.mode == "live":
             # Size against total equity (cash + open positions at cost), not
             # cash alone: cash shrinks as orders fill, which was shrinking
             # every new bet even though the bankroll hadn't changed.
-            bankroll = await self.cash() + sum(float(p.get("cost") or 0) for p in positions)
+            bankroll = balance + sum(float(p.get("cost") or 0) for p in positions)
         else:
             bankroll = SHADOW_BANKROLL
         held = {p["outcomeId"]: float(p.get("cost") or 0) for p in positions}
@@ -429,6 +628,10 @@ class Maker:
 
         resting = sum(int(o["qty"]) * float(o["price"]) / 100.0 for o in kept.values()) + posted
         await self.log_fills()
+        acted = placed or hedged or touched
+        if not acted and time.monotonic() - self.last_summary < SUMMARY_EVERY_S:
+            return
+        self.last_summary = time.monotonic()
         logger.info(
             "cycle: %d candidates, %d +EV, kept %d, cancelled %d, placed %d, "
             "hedges wanted %d (resting %d, posted %d), resting $%.2f vs bankroll $%.2f, "
@@ -500,6 +703,10 @@ class Maker:
                      price=want["price"], qty=want["qty"], error=str(e))
             return False
         self.hedge_ids[resp["orderId"]] = want
+        self.orders[resp["orderId"]] = {
+            "orderId": resp["orderId"], "outcomeId": want["outcome_id"],
+            "marketId": want["market_id"], "price": f"{want['price']:.3f}", "qty": want["qty"],
+            "expiresAt": int((time.time() + ORDER_TTL_S) * 1000)}
         self.log("hedge_place", order_id=resp["orderId"], outcome_id=want["outcome_id"],
                  price=want["price"], price_american=prob_to_american(want["price"]),
                  qty=want["qty"], cost=round(want["qty"] * want["price"] / 100.0, 2),
@@ -529,18 +736,30 @@ class Maker:
             # Start from a clean book: nothing left over from a previous run.
             await self.cancel_everything("startup")
             self.failsafe_active = False
+        tasks = [asyncio.create_task(self._feed_loop())]
+        if self.stream is not None:
+            tasks.append(asyncio.create_task(self.stream.run()))
+        if self.mode == "live":
+            tasks.append(asyncio.create_task(self._reconcile_loop()))
         try:
             while not self.stop.is_set():
+                waker = asyncio.create_task(self.wake.wait())
+                stopper = asyncio.create_task(self.stop.wait())
+                await asyncio.wait({waker, stopper}, timeout=LOOP_S,
+                                   return_when=asyncio.FIRST_COMPLETED)
+                waker.cancel(); stopper.cancel()
+                if self.stop.is_set():
+                    break
+                await asyncio.sleep(DEBOUNCE_S)   # coalesce the burst
+                self.wake.clear()
                 try:
                     await self.cycle()
                 except Exception:
                     logger.exception("cycle failed")
                     self.log("error", op="cycle")
-                try:
-                    await asyncio.wait_for(self.stop.wait(), timeout=LOOP_S)
-                except asyncio.TimeoutError:
-                    pass
         finally:
+            for t in tasks:
+                t.cancel()
             await self.cancel_everything("shutdown")
             self.log("stop")
             await self.http.aclose()

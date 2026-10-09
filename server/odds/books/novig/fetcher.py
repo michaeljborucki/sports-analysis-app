@@ -540,6 +540,9 @@ class NovigFetcher:
                 "outcome_name": op["outcome_name"],
                 "point": op.get("point"),
                 "market_id": mid,
+                "novig_event_id": t.market.get("eventId"),
+                "novig_event_market_count": getattr(self, "_event_market_counts", {}).get(
+                    t.market.get("eventId"), 1),
                 "outcome_id": oid,
                 "other_outcome_id": other,
                 "fair_probability": op["fair_probability"],

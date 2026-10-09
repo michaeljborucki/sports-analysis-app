@@ -8,7 +8,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.gzip import GZipMiddleware
 
 from .config import Config
 from .odds.books.coral33 import Coral33Fetcher
@@ -438,12 +437,6 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
     )
-    # Scanner payloads are large, repetitive JSON (profit_boost ~4MB, low-hold
-    # ~1MB) that compress ~10x. Starlette's GZipMiddleware never compresses
-    # `text/event-stream` (DEFAULT_EXCLUDED_CONTENT_TYPES), so the SSE feed at
-    # /api/stream/odds still streams unbuffered — pinned by
-    # server/tests/test_gzip.py.
-    app.add_middleware(GZipMiddleware, minimum_size=1024)
 
     from .api.health import build_router as health_router
     from .api.odds import build_router as odds_router

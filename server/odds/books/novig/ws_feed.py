@@ -59,6 +59,8 @@ class NovigBboStream:
         on_change: Callable[[str], None],
         on_lost: Callable[[set[str]], None],
         on_new_market: Callable[[str], None] | None = None,
+        private: tuple[str, ...] = (),
+        on_private: Callable[[dict], None] | None = None,
     ):
         """`desired()` returns (event_id, open_market_count) in priority order
         (soonest first);
@@ -69,6 +71,11 @@ class NovigBboStream:
         self._on_change = on_change
         self._on_lost = on_lost
         self._on_new_market = on_new_market
+        # Optional PRIVATE channels ("orders", "positions") for a trading-
+        # scope key: every message carrying them is handed to on_private
+        # (subscribe snapshot first, then deltas). Read-only either way.
+        self._private = tuple(private)
+        self._on_private = on_private
         self.state: dict[str, Bbo] = {}
         self._seq: dict[str, int] = {}
         self._live: set[str] = set()        # markets with a snapshot on this connection
@@ -133,6 +140,8 @@ class NovigBboStream:
             self._ws = ws
             self.connected = True
             logger.info("novig ws: connected")
+            if self._private:
+                await self._send("subscribe", {"private": list(self._private)})
             sync = asyncio.create_task(self._sync_loop())
             try:
                 async for raw in ws:
@@ -206,6 +215,8 @@ class NovigBboStream:
     # ───────────────────────── messages ─────────────────────────
 
     def _handle(self, msg: dict) -> None:
+        if self._on_private is not None and ("orders" in msg or "positions" in msg):
+            self._on_private(msg)
         nonce = msg.get("nonce")
         if "code" in msg and "message" in msg:
             failed = self._pending.pop(nonce, None)
