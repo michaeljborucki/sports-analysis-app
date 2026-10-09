@@ -172,20 +172,67 @@ def _collect_market_outcomes(
     return by_outcome
 
 
+# betting-db main-line cadence (bettingdb_source.CADENCE_MAIN_BANDS) out to
+# the Novig horizon. Inside 1h the 60s band + grace is under the 300s default,
+# so the default stands there.
+_MAIN_REFERENCE_BANDS = ((1, 60), (12, 300), (48, 1800), (168, 3600))
+_PROP_PREFIXES = ("player_", "batter_", "pitcher_")
+_NOVIG_BOOKS = frozenset({"novig", "novig_maker"})
+
+
+def _hours_to_start(game: dict, now: datetime) -> float | None:
+    commence = game.get("commence_time")
+    if isinstance(commence, str):
+        commence = datetime.fromisoformat(commence.replace("Z", "+00:00"))
+    if commence is None:
+        return None
+    return (commence - now).total_seconds() / 3600
+
+
+def reference_limit(game: dict, market_key: str, now: datetime, offer_limit: float) -> float:
+    """Reference TTL: the collector's cadence for this distance to start plus
+    120s delivery grace — far-out lines are polled every 30-60 min, so a
+    flat 300s would drop every game more than a few hours away.
+
+    Explicit limits below the API default remain strict. Missed polling
+    cycles are not accepted.
+    """
+    if offer_limit < 300:
+        return offer_limit
+    if market_key.startswith(_PROP_PREFIXES):
+        return prop_reference_limit(game, market_key, now, offer_limit)
+    hours = _hours_to_start(game, now)
+    if hours is None:
+        return offer_limit
+    for max_hours, interval in _MAIN_REFERENCE_BANDS:
+        if 0 < hours <= max_hours:
+            return max(offer_limit, interval + 120)
+    return offer_limit
+
+
+def offer_limit(book: str, game: dict, now: datetime, stale_seconds: float) -> float:
+    """Novig books not on the websocket are REST-polled on a cadence that
+    slows with distance to start; one missed poll plus grace is still live."""
+    if stale_seconds < 300 or book not in _NOVIG_BOOKS:
+        return stale_seconds
+    hours = _hours_to_start(game, now)
+    if hours is None or hours <= 0:
+        return stale_seconds
+    from .books.novig.cadence import poll_interval_s
+    return max(stale_seconds, poll_interval_s(hours) + 120)
+
+
 def prop_reference_limit(game: dict, market_key: str, now: datetime, offer_limit: float) -> float:
     """Prop reference TTL: collector cadence plus 120s delivery grace.
 
     Offers retain the caller's limit. Explicit limits below the API default
     remain strict for references too. Missed polling cycles are not accepted.
     """
-    if offer_limit < 300 or not market_key.startswith(("player_", "batter_", "pitcher_")):
+    if offer_limit < 300 or not market_key.startswith(_PROP_PREFIXES):
         return offer_limit
-    commence = game.get("commence_time")
-    if isinstance(commence, str):
-        commence = datetime.fromisoformat(commence.replace("Z", "+00:00"))
-    if commence is None:
+    hours = _hours_to_start(game, now)
+    if hours is None:
         return offer_limit
-    hours = (commence - now).total_seconds() / 3600
     # NFL in-season overrides in betting-db/config.toml; other sports keep
     # the collector's global cadence. The caller's stricter limit wins above.
     bands = ((1, 60), (12, 180), (48, 600)) if game.get("sport_key") == "nfl" else ((1, 300), (12, 900), (48, 3600))
@@ -355,6 +402,7 @@ def _two_way_pair_ev_rows(
     max_longshot_american: int,
     stale_seconds: float,
     arb_keys: set[tuple] | None,
+    ref_limit: float | None = None,
 ) -> list[dict]:
     """Emit EV rows for a single complementary 2-way pair (spreads or totals).
     Handles both orientations of spreads correctly by construction — the pair
@@ -369,12 +417,13 @@ def _two_way_pair_ev_rows(
     anchor_count = 0
     fair_a: float | None = None
     fair_b: float | None = None
+    ref_s = stale_seconds if ref_limit is None else ref_limit
     pin_a = a_by_book.get("pinnacle")
     pin_b = b_by_book.get("pinnacle")
     if (
         pin_a and pin_b
-        and not _stale(pin_a, now, stale_seconds)
-        and not _stale(pin_b, now, stale_seconds)
+        and not _stale(pin_a, now, ref_s)
+        and not _stale(pin_b, now, ref_s)
     ):
         fair_a, fair_b = devig_two_way(
             int(pin_a["price_american"]), int(pin_b["price_american"]),
@@ -392,10 +441,11 @@ def _two_way_pair_ev_rows(
                     continue
                 if bk in OPT_IN_BOOKS:
                     continue  # a price you'd post, not a market price
-                if _stale(pa, now, stale_seconds):
+                lim = stale_seconds if bk in {"coral33", "kalshi", "polymarket"} else ref_s
+                if _stale(pa, now, lim):
                     continue
                 pb = b_by_book.get(bk)
-                if pb is None or _stale(pb, now, stale_seconds):
+                if pb is None or _stale(pb, now, lim):
                     continue
                 fa, fb = devig_two_way(
                     int(pa["price_american"]), int(pb["price_american"]),
@@ -420,7 +470,7 @@ def _two_way_pair_ev_rows(
         if p_true <= 0.0 or p_true >= 1.0:
             continue
         for book, price in side_prices.items():
-            if _stale(price, now, stale_seconds):
+            if _stale(price, now, offer_limit(book, game, now, stale_seconds)):
                 continue
             if source == "pinnacle" and book == "pinnacle":
                 continue
@@ -527,6 +577,7 @@ def scan_game_ev(
                 min_ev_pct=min_ev_pct,
                 max_longshot_american=max_longshot_american,
                 stale_seconds=stale_seconds, arb_keys=arb_keys,
+                ref_limit=reference_limit(game, main_mk, now, stale_seconds),
             ))
         handled_markets.add(main_mk)
         handled_markets.add(alt_mk)
@@ -544,6 +595,7 @@ def scan_game_ev(
                 min_ev_pct=min_ev_pct,
                 max_longshot_american=max_longshot_american,
                 stale_seconds=stale_seconds, arb_keys=arb_keys,
+                ref_limit=reference_limit(game, main_mk, now, stale_seconds),
             ))
         handled_markets.add(main_mk)
         handled_markets.add(alt_mk)
@@ -564,7 +616,7 @@ def scan_game_ev(
 
         source = "pinnacle"
         anchor_count = 1
-        reference_limit = prop_reference_limit(game, market_key, now, stale_seconds)
+        ref_limit = reference_limit(game, market_key, now, stale_seconds)
         # Direct books keep the strict freshness target even when the slower
         # comparison feed is allowed its normal polling interval.
         reference_outcomes = {k: {bk: pr for bk, pr in prices.items()
@@ -573,10 +625,10 @@ def scan_game_ev(
                  or not _stale(pr, now, stale_seconds))}
             for k, prices in by_outcome.items()}
         anchor_ages: dict = {}
-        fair = _pinnacle_fair(reference_outcomes, market_key, now, reference_limit, anchor_ages)
+        fair = _pinnacle_fair(reference_outcomes, market_key, now, ref_limit, anchor_ages)
         if fair is None:
             res = _consensus_fair(
-                reference_outcomes, market_key, now, reference_limit, sharp_books, anchor_ages,
+                reference_outcomes, market_key, now, ref_limit, sharp_books, anchor_ages,
             )
             if res is None:
                 continue
@@ -588,7 +640,7 @@ def scan_game_ev(
             if p_true is None or p_true <= 0.0 or p_true >= 1.0:
                 continue
             for book, price in books_prices.items():
-                if _stale(price, now, stale_seconds):
+                if _stale(price, now, offer_limit(book, game, now, stale_seconds)):
                     continue
                 if source == "pinnacle" and book == "pinnacle":
                     # Don't emit "Pinnacle +X%" — that's the anchor.

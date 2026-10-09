@@ -51,3 +51,22 @@ def test_nfl_faster_polling_tightens_reference_expiry():
     assert scan(sport='nfl',market='player_receptions',age=301)==[]
     assert scan(sport='nfl',market='player_receptions',hours=24,age=700)
     assert scan(sport='nfl',market='player_receptions',hours=24,age=721)==[]
+
+
+def test_main_line_reference_follows_collector_cadence():
+    # h2h at 24h out: betting-db polls every 30 min -> 1920s allowed.
+    assert scan(market='h2h', hours=24, age=1800)
+    assert scan(market='h2h', hours=24, age=1921) == []
+    # 1-12h band: 300s polls -> 420s allowed.
+    assert scan(market='h2h', hours=4, age=400)
+    assert scan(market='h2h', hours=4, age=421) == []
+    # Inside 1h the 300s default stands.
+    assert scan(market='h2h', hours=.5, age=301) == []
+
+
+def test_novig_offer_follows_its_rest_poll_cadence():
+    from server.odds.ev import offer_limit
+    g = {'commence_time': NOW + timedelta(hours=24)}
+    assert offer_limit('novig_maker', g, NOW, 300) == 900 + 120
+    assert offer_limit('coral33', g, NOW, 300) == 300
+    assert offer_limit('novig_maker', g, NOW, 60) == 60      # strict callers stay strict

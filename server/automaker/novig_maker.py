@@ -81,7 +81,7 @@ RESIZE_UNDER = 0.25
 # Hedge (arb) leg: once a position fills on side A at avg price q, post a
 # make bid on side B one tick above B's best bid (b) while the matched pair
 # locks at least this ROI: 1 / (q + b) - 1. Novig redeems matched pairs.
-MIN_ARB_ROI = float(os.environ.get("AUTOMAKER_MIN_ARB_PCT", "1.0")) / 100.0
+MIN_ARB_ROI = float(os.environ.get("AUTOMAKER_MIN_ARB_PCT", "1.5")) / 100.0
 # Capital utilization = open position cost / (position cost + cash). At or
 # above PAUSE the maker stops EV betting (cancels resting EV orders, posts no
 # new ones) and only manages hedges; EV resumes below RESUME (hysteresis so

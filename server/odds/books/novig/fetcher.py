@@ -33,6 +33,7 @@ from datetime import datetime, timedelta, timezone
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+from .cadence import poll_interval_s
 from ...cache import OddsCache, _odds_source
 from ..coral33.mapping import load_coral33_config
 from .client import NovigAPIError, NovigClient
@@ -65,16 +66,6 @@ NEW_MARKET_CATALOG_DEBOUNCE_S = 30
 # and its hand-curated entries (e.g. "mick parkin" → "michael parkin") are
 # exactly the name drift Novig shows too.
 _CORAL33_CONFIG = Path(__file__).resolve().parents[3] / "config" / "coral33.toml"
-
-
-def poll_interval_s(hours_to_start: float) -> int:
-    if hours_to_start < 1:
-        return 60
-    if hours_to_start < 3:
-        return 120
-    if hours_to_start < 6:
-        return 240
-    return 480
 
 
 @dataclass
