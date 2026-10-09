@@ -3,17 +3,18 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Literal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 from pydantic import BaseModel
 
-from ..odds.arbitrage import scan_all_arbs
+from ..odds.arbitrage import arb_key_set
 from ..odds.cache import OddsCache
 from ..odds.coalesce import memoized_coalesced
 from ..odds.ev import SHARP_BOOKS, scan_all_ev
 from ..odds.normalize import rows_to_games
 from ..odds.scanner_runtime import run_scanner
-from ..odds.latest_snapshot import LatestOddsSnapshotService
+from ..odds.latest_snapshot import LatestOddsSnapshotService, snapshot_memo
 from ..util import TTLCache
+from .serialization import json_bytes_response, model_json_bytes
 
 
 class EVOpportunity(BaseModel):
@@ -74,7 +75,7 @@ def build_router(
         tag_arb: bool = True,
         sort: str = "desc",
         wager_filter: str = "any",
-    ) -> EVResponse:
+    ) -> Response:
         """Scan the cache for +EV opportunities.
 
         Query params:
@@ -119,10 +120,10 @@ def build_router(
             wager_filter,
         )
 
-        async def _compute() -> EVResponse:
+        async def _compute() -> bytes:
             return await run_scanner("ev", _compute_sync)
 
-        def _compute_sync() -> EVResponse:
+        def _compute_sync() -> bytes:
             books_set: set[str] | None = None
             if books.strip():
                 books_set = {b for b in books.split(",") if b}
@@ -143,13 +144,17 @@ def build_router(
                 rows = cache.all_current()
                 games = rows_to_games(rows, now=now)
 
-            arb_keys: set[tuple] | None = None
+            arb_keys: frozenset[tuple] | None = None
             if tag_arb:
-                arb_rows = scan_all_arbs(games)
-                arb_keys = {
-                    (a["event_id"], a["market_kind"], a["point"])
-                    for a in arb_rows
-                }
+                # The unfiltered arb scan depends only on the snapshot, not
+                # on any EV query param — compute it once per snapshot
+                # generation and share it across every EV variant.
+                if snapshot is not None:
+                    arb_keys = snapshot_memo(
+                        snapshot, "ev_arb_keys", lambda: arb_key_set(games),
+                    )
+                else:
+                    arb_keys = arb_key_set(games)
 
             opps = scan_all_ev(
                 games,
@@ -182,13 +187,15 @@ def build_router(
                     and o.get("wager_type") in ("parlay", "both")
                 ]
 
-            return EVResponse(
+            return model_json_bytes(EVResponse(
                 opportunities=[EVOpportunity.model_validate(o) for o in opps],
                 scanned_at=now,
                 min_ev_pct=min_ev,
                 sharp_anchor_books=sorted(sharp_set),
-            )
+            ))
 
-        return await memoized_coalesced(memo, cache_key, _compute)
+        return json_bytes_response(
+            await memoized_coalesced(memo, cache_key, _compute)
+        )
 
     return router

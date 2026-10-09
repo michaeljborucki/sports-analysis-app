@@ -9,7 +9,9 @@ POST /api/cache-snapshot      — capture the current cache.db into cache.snapsh
 from __future__ import annotations
 
 import asyncio
+import logging
 import sqlite3
+import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -56,30 +58,70 @@ def _vacuum_into(src: Path, dest: Path) -> None:
         conn.close()
 
 
+logger = logging.getLogger(__name__)
+
 _INSPECT_TTL_S = 30.0
 _inspect_memo: dict[Path, tuple[float, tuple, tuple[int, str | None]]] = {}
+_inspect_lock = threading.Lock()
+_inspect_refreshing: set[Path] = set()
+
+
+def _file_stamp(path: Path, track_changes: bool) -> tuple | None:
+    if not track_changes:
+        return None
+    try:
+        st = path.stat()
+        return (st.st_mtime_ns, st.st_size)
+    except OSError:
+        return None
+
+
+def _refresh_inspect(path: Path, stamp: tuple | None) -> None:
+    """Background worker: recompute one file's numbers, then publish."""
+    try:
+        result = _inspect_db_uncached(path)
+        with _inspect_lock:
+            _inspect_memo[path] = (time.monotonic(), stamp, result)
+    except Exception:
+        logger.exception("cache-mode inspect refresh failed for %s", path)
+    finally:
+        with _inspect_lock:
+            _inspect_refreshing.discard(path)
 
 
 def _inspect_db(path: Path, *, track_changes: bool = False) -> tuple[int, str | None]:
-    """Memoized `_inspect_db_uncached`. The COUNT(*) scans took up to ~4.5s
-    on the large cache files and run on every /api/cache-mode poll, but the
-    numbers are display-only (cache-mode dropdown), so they are reused for
-    30s. `track_changes` also recomputes as soon as the file's size/mtime
-    changes — for the snapshot file, which only changes on a fresh capture
-    (the live cache changes on nearly every write, so it relies on the TTL)."""
-    stamp = None
-    if track_changes:
-        try:
-            st = path.stat()
-            stamp = (st.st_mtime_ns, st.st_size)
-        except OSError:
-            pass
+    """Memoized, stale-while-revalidate `_inspect_db_uncached`.
+
+    The COUNT(*) scans take 1-4.5s on the large cache files and run on every
+    /api/cache-mode poll, but the numbers are display-only (cache-mode
+    dropdown). So:
+      - fresh memo (< 30s, same file stamp)  -> returned as-is;
+      - TTL expired                          -> the LAST KNOWN value is
+        returned immediately and one background thread recomputes it;
+      - no memo yet, or `track_changes` and the file's size/mtime changed
+                                             -> computed inline.
+    `track_changes` is for the snapshot file, which only changes on a fresh
+    capture — that must report the new row count at once (POST
+    /api/cache-snapshot reads it right after VACUUM INTO), so a changed
+    stamp still recomputes inline, exactly as before. The live cache
+    changes on nearly every write, so it relies on the TTL alone."""
+    stamp = _file_stamp(path, track_changes)
     now = time.monotonic()
-    hit = _inspect_memo.get(path)
-    if hit is not None and hit[1] == stamp and now - hit[0] < _INSPECT_TTL_S:
-        return hit[2]
+    with _inspect_lock:
+        hit = _inspect_memo.get(path)
+        if hit is not None and hit[1] == stamp:
+            if now - hit[0] >= _INSPECT_TTL_S and path not in _inspect_refreshing:
+                _inspect_refreshing.add(path)
+                threading.Thread(
+                    target=_refresh_inspect,
+                    args=(path, stamp),
+                    name="cache-mode-inspect",
+                    daemon=True,
+                ).start()
+            return hit[2]
     result = _inspect_db_uncached(path)
-    _inspect_memo[path] = (now, stamp, result)
+    with _inspect_lock:
+        _inspect_memo[path] = (time.monotonic(), stamp, result)
     return result
 
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 from pydantic import BaseModel
 
 from ..odds.cache import OddsCache
@@ -13,6 +13,7 @@ from ..odds.normalize import rows_to_games
 from ..odds.scanner_runtime import run_scanner
 from ..odds.wager_filter import legs_pass_wager_filter, normalize_wager_filter
 from ..util import TTLCache
+from .serialization import json_bytes_response, model_json_bytes
 from ..odds.latest_snapshot import LatestOddsSnapshotService
 
 
@@ -59,7 +60,7 @@ def build_router(
         min_free_odds: int = 100,
         max_results: int = 150,
         wager_filter: str = "any",
-    ) -> FreeBetResponse:
+    ) -> Response:
         """books = hedge-leg universe (your funded accounts).
         free_bet_books = books where you have a promo credit — the free leg
         is locked to one of these. Omit to treat any visible book as a
@@ -82,10 +83,10 @@ def build_router(
             min_free_odds, max_results, wf,
         )
 
-        async def _compute() -> FreeBetResponse:
+        async def _compute() -> bytes:
             return await run_scanner("free-bets", _compute_sync)
 
-        def _compute_sync() -> FreeBetResponse:
+        def _compute_sync() -> bytes:
             hedge_set: set[str] | None = None
             if books.strip():
                 hedge_set = {b for b in books.split(",") if b}
@@ -115,12 +116,14 @@ def build_router(
                 ]
             ops = ops[:max_results]
 
-            return FreeBetResponse(
+            return model_json_bytes(FreeBetResponse(
                 opportunities=[FreeBetOpportunity.model_validate(o) for o in ops],
                 scanned_at=now,
                 min_free_odds=min_free_odds,
-            )
+            ))
 
-        return await memoized_coalesced(memo, cache_key, _compute)
+        return json_bytes_response(
+            await memoized_coalesced(memo, cache_key, _compute)
+        )
 
     return router

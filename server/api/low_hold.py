@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 from pydantic import BaseModel
 
 from ..odds.cache import OddsCache
@@ -12,6 +12,7 @@ from ..odds.scanner_runtime import run_scanner
 from ..odds.wager_filter import legs_pass_wager_filter, normalize_wager_filter
 from ..odds.latest_snapshot import LatestOddsSnapshotService
 from ..util import TTLCache
+from .serialization import json_bytes_response, model_json_bytes
 
 
 class LowHoldSide(BaseModel):
@@ -56,7 +57,7 @@ def build_router(
         books: str = "",
         max_hold_pct: float = 1.0,
         wager_filter: str = "any",
-    ) -> LowHoldResponse:
+    ) -> Response:
         # `cache.version` folds in the OddsCache's monotonic state version
         # so this memo can survive past its 20s TTL during quiet stretches.
         # `memoized_coalesced` additionally collapses simultaneous duplicate
@@ -74,8 +75,8 @@ def build_router(
             "low_hold", str(cache.path), source_version, books, max_hold_pct, wf,
         )
 
-        async def _compute() -> LowHoldResponse:
-            def compute() -> LowHoldResponse:
+        async def _compute() -> bytes:
+            def compute() -> bytes:
                 books_set: set[str] | None = None
                 if books.strip():
                     books_set = {b for b in books.split(",") if b}
@@ -95,16 +96,18 @@ def build_router(
                         if legs_pass_wager_filter(o["sides"], wf)
                     ]
 
-                return LowHoldResponse(
+                return model_json_bytes(LowHoldResponse(
                     opportunities=[
                         LowHoldOpportunity.model_validate(o) for o in ops
                     ],
                     scanned_at=now,
                     max_hold_pct=max_hold_pct,
-                )
+                ))
 
             return await run_scanner("low-hold", compute)
 
-        return await memoized_coalesced(memo, cache_key, _compute)
+        return json_bytes_response(
+            await memoized_coalesced(memo, cache_key, _compute)
+        )
 
     return router

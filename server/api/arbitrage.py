@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 from pydantic import BaseModel
 
 from ..odds.arbitrage import scan_all_arbs
@@ -12,6 +12,7 @@ from ..odds.scanner_runtime import run_scanner
 from ..odds.wager_filter import legs_pass_wager_filter, normalize_wager_filter
 from ..odds.latest_snapshot import LatestOddsSnapshotService
 from ..util import TTLCache
+from .serialization import json_bytes_response, model_json_bytes
 
 
 class ArbSide(BaseModel):
@@ -55,7 +56,7 @@ def build_router(
     memo = TTLCache(ttl_seconds=20.0)
 
     @router.get("/api/arbitrage", response_model=ArbResponse)
-    async def get_arbs(books: str = "", wager_filter: str = "any") -> ArbResponse:
+    async def get_arbs(books: str = "", wager_filter: str = "any") -> Response:
         """Scan the cache for complete two- and three-way arbitrage opportunities.
 
         `books` is an optional comma-separated allowlist — only prices from
@@ -85,8 +86,8 @@ def build_router(
         )
         cache_key = ("arb", str(cache.path), source_version, books, wf)
 
-        async def _compute() -> ArbResponse:
-            def compute() -> ArbResponse:
+        async def _compute() -> bytes:
+            def compute() -> bytes:
                 books_set: set[str] | None = None
                 if books.strip():
                     books_set = {b for b in books.split(",") if b}
@@ -104,16 +105,18 @@ def build_router(
                         if legs_pass_wager_filter(o["sides"], wf)
                     ]
 
-                return ArbResponse(
+                return model_json_bytes(ArbResponse(
                     opportunities=[
                         ArbOpportunity.model_validate(o) for o in opps
                     ],
                     scanned_at=now,
                     book_count=len(books_set) if books_set is not None else -1,
-                )
+                ))
 
             return await run_scanner("arbitrage", compute)
 
-        return await memoized_coalesced(memo, cache_key, _compute)
+        return json_bytes_response(
+            await memoized_coalesced(memo, cache_key, _compute)
+        )
 
     return router

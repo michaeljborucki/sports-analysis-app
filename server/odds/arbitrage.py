@@ -334,6 +334,15 @@ def scan_game_arbs(
     return out
 
 
+def arb_key_set(games) -> frozenset[tuple]:
+    """(event_id, market_kind, point) of every arb in an UNFILTERED scan —
+    the EV scanner's `also_in_arb` tag set."""
+    return frozenset(
+        (a["event_id"], a["market_kind"], a["point"])
+        for a in scan_all_arbs(games)
+    )
+
+
 def scan_all_arbs(
     games: list[dict], books_filter: set[str] | None = None
 ) -> list[dict]:

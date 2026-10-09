@@ -7,9 +7,10 @@ import os
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import logging
+import threading
 import time
 from types import MappingProxyType
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping, TypeVar
 
 from starlette.concurrency import run_in_threadpool
 
@@ -70,6 +71,35 @@ class OddsSnapshot:
     non_prop_games: tuple[dict, ...]
     non_prop_games_by_sport: Mapping[str, tuple[dict, ...]]
     system_rows: tuple[dict, ...]
+    # Generation-scoped cache of values derived purely from this snapshot's
+    # data (see `snapshot_memo`). Each overlay/rebuild publishes a new
+    # OddsSnapshot object, so entries can never outlive their generation.
+    derived: dict[str, Any] = field(
+        default_factory=dict, compare=False, repr=False,
+    )
+    derived_lock: Any = field(
+        default_factory=threading.RLock, compare=False, repr=False,
+    )
+
+
+_T = TypeVar("_T")
+
+
+def snapshot_memo(snapshot: Any, name: str, compute: Callable[[], _T]) -> _T:
+    """Compute `name` at most once per snapshot generation.
+
+    `compute` must depend only on the snapshot's (immutable) data. Concurrent
+    callers block on the per-snapshot lock rather than racing to compute the
+    same value twice. Objects without the memo slots (test doubles) just
+    compute every time."""
+    derived = getattr(snapshot, "derived", None)
+    lock = getattr(snapshot, "derived_lock", None)
+    if not isinstance(derived, dict) or lock is None:
+        return compute()
+    with lock:
+        if name not in derived:
+            derived[name] = compute()
+        return derived[name]
 
 
 class LatestOddsSnapshotService:

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 from pydantic import BaseModel
 
 from ..odds.cache import OddsCache
@@ -20,6 +20,7 @@ from ..odds.normalize import rows_to_games
 from ..odds.profit_boost import scan_all_profit_boost
 from ..odds.scanner_runtime import run_scanner
 from ..util import TTLCache
+from .serialization import json_bytes_response, model_json_bytes
 from ..odds.latest_snapshot import LatestOddsSnapshotService
 
 
@@ -80,7 +81,7 @@ def build_router(
         boost_books: str = "",
         min_conversion: float = 0.0,
         min_boost_odds: int = -10_000,
-    ) -> ProfitBoostResponse:
+    ) -> Response:
         """Scan for profit-boost conversion opportunities.
 
         Query params:
@@ -112,10 +113,10 @@ def build_router(
             min_conversion, min_boost_odds,
         )
 
-        async def _compute() -> ProfitBoostResponse:
+        async def _compute() -> bytes:
             return await run_scanner("profit-boost", _compute_sync)
 
-        def _compute_sync() -> ProfitBoostResponse:
+        def _compute_sync() -> bytes:
             hedge_books_set: set[str] | None = None
             if books.strip():
                 hedge_books_set = {b for b in books.split(",") if b}
@@ -139,15 +140,17 @@ def build_router(
                 min_conversion_pct=min_conversion,
             )
 
-            return ProfitBoostResponse(
+            return model_json_bytes(ProfitBoostResponse(
                 opportunities=[
                     ProfitBoostOpportunity.model_validate(o) for o in opps
                 ],
                 scanned_at=now,
                 boost_pct=boost_pct,
                 min_conversion_pct=min_conversion,
-            )
+            ))
 
-        return await memoized_coalesced(memo, cache_key, _compute)
+        return json_bytes_response(
+            await memoized_coalesced(memo, cache_key, _compute)
+        )
 
     return router
