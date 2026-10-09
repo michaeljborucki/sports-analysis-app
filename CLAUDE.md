@@ -54,5 +54,9 @@ Push everything to the monorepo EXCEPT: `.env` (account passwords + proxy
 credentials), HAR fixtures (contain JWTs), and keys. Repo size doesn't matter;
 leaks do.
 
+The Novig auto-maker is NOT in this repo: it lives in `../novig-maker` (own
+service). This app's `server/config` is symlinked into it (aliases, enabled
+sports), and it reads `server/cache.db` read-only.
+
 For `web/` specifics see `web/AGENTS.md`: this Next.js version differs from
 training data — read `node_modules/next/dist/docs/` before writing web code.
