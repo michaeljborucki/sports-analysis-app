@@ -256,7 +256,7 @@ class PolymarketFetcher:
         now = datetime.now(timezone.utc)
         # Live-game purge mirroring Kalshi: drop in-play rows so the sharp-
         # devig model never sees uncalibrated live prices.
-        purged = self.cache.purge_live_rows_for_book("polymarket", now)
+        purged = await self.cache.purge_live_rows_for_book_async("polymarket", now)
         if purged:
             logger.info("polymarket %s: purged %d live rows", sport_key, purged)
 
@@ -298,7 +298,9 @@ class PolymarketFetcher:
                     return tight
             return matcher.match(sport_k, a, b, anchor)
 
-        rows = normalize_events(
+        # Normalize + team matching is pure CPU; keep it off the loop.
+        rows = await asyncio.to_thread(
+            normalize_events,
             events,
             sport_key=sport_key,
             slug_prefixes=sport_cfg.slug_prefixes,
@@ -307,7 +309,7 @@ class PolymarketFetcher:
         )
 
         if rows:
-            self.cache.upsert(rows)
+            await self.cache.upsert_async(rows)
             # Register so the WS consumer picks up new asset_ids on its
             # next reconnect. Idempotent — known assets just refresh
             # their template (no duplicate subscribe attempts).

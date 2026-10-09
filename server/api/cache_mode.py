@@ -8,7 +8,9 @@ POST /api/cache-snapshot      — capture the current cache.db into cache.snapsh
 """
 from __future__ import annotations
 
+import asyncio
 import sqlite3
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -45,7 +47,43 @@ class CacheSnapshotResponse(BaseModel):
     row_count: int
 
 
-def _inspect_db(path: Path) -> tuple[int, str | None]:
+def _vacuum_into(src: Path, dest: Path) -> None:
+    """Blocking `VACUUM INTO` copy of the live cache (seconds on a large DB)."""
+    conn = sqlite3.connect(src)
+    try:
+        conn.execute(f"VACUUM INTO '{dest}'")
+    finally:
+        conn.close()
+
+
+_INSPECT_TTL_S = 30.0
+_inspect_memo: dict[Path, tuple[float, tuple, tuple[int, str | None]]] = {}
+
+
+def _inspect_db(path: Path, *, track_changes: bool = False) -> tuple[int, str | None]:
+    """Memoized `_inspect_db_uncached`. The COUNT(*) scans took up to ~4.5s
+    on the large cache files and run on every /api/cache-mode poll, but the
+    numbers are display-only (cache-mode dropdown), so they are reused for
+    30s. `track_changes` also recomputes as soon as the file's size/mtime
+    changes — for the snapshot file, which only changes on a fresh capture
+    (the live cache changes on nearly every write, so it relies on the TTL)."""
+    stamp = None
+    if track_changes:
+        try:
+            st = path.stat()
+            stamp = (st.st_mtime_ns, st.st_size)
+        except OSError:
+            pass
+    now = time.monotonic()
+    hit = _inspect_memo.get(path)
+    if hit is not None and hit[1] == stamp and now - hit[0] < _INSPECT_TTL_S:
+        return hit[2]
+    result = _inspect_db_uncached(path)
+    _inspect_memo[path] = (now, stamp, result)
+    return result
+
+
+def _inspect_db_uncached(path: Path) -> tuple[int, str | None]:
     """Return (row_count, newest_fetched_at) for a given sqlite cache file."""
     if not path.exists():
         return 0, None
@@ -156,7 +194,7 @@ def build_router(
             if snapshot_path.exists()
             else None
         )
-        snap_rows, snap_newest = _inspect_db(snapshot_path)
+        snap_rows, snap_newest = _inspect_db(snapshot_path, track_changes=True)
         live_rows, live_newest = _inspect_db(live_path)
         return CacheModeStatus(
             mode=mode.value,
@@ -184,7 +222,7 @@ def build_router(
             )
         _apply_mode(next_mode)
         mode_store.set(next_mode)
-        return await get_mode()
+        return await asyncio.to_thread(get_mode)
 
     @router.post("/api/cache-snapshot", response_model=CacheSnapshotResponse)
     async def capture_snapshot() -> CacheSnapshotResponse:
@@ -207,11 +245,7 @@ def build_router(
         try:
             if snapshot_path.exists():
                 snapshot_path.unlink()
-            conn = sqlite3.connect(live_path)
-            try:
-                conn.execute(f"VACUUM INTO '{snapshot_path}'")
-            finally:
-                conn.close()
+            await asyncio.to_thread(_vacuum_into, live_path, snapshot_path)
         finally:
             if was_live:
                 fetcher.start_all()
@@ -222,7 +256,9 @@ def build_router(
                     polymarket_fetcher.start_all()
                 if novig_fetcher is not None:
                     novig_fetcher.start_all()
-        rows, _newest = _inspect_db(snapshot_path)
+        rows, _newest = await asyncio.to_thread(
+            _inspect_db, snapshot_path, track_changes=True,
+        )
         return CacheSnapshotResponse(
             status="captured",
             path=str(snapshot_path),

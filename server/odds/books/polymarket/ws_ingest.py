@@ -225,7 +225,7 @@ class PolymarketIngestor:
             "max_stake_dollars": max_stake_dollars,
         }
         try:
-            self.cache.upsert([new_row])
+            self.cache.upsert_nowait([new_row], label="polymarket WS")
         except Exception:
             logger.exception(
                 "polymarket WS: upsert failed for event %s outcome %s",

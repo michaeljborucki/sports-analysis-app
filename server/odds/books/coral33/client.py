@@ -5,6 +5,7 @@ import base64
 import json
 import logging
 import time
+from contextlib import asynccontextmanager
 from typing import Any
 
 from curl_cffi.requests import AsyncSession
@@ -89,7 +90,8 @@ class Coral33Client:
     """
 
     def __init__(self, customer_id: str, password: str,
-                 proxy_url: str | None = None):
+                 proxy_url: str | None = None,
+                 persistent_session: bool = False):
         if not customer_id or not password:
             raise Coral33AuthError("coral33 credentials missing")
         self.customer_id = customer_id.strip()
@@ -98,6 +100,35 @@ class Coral33Client:
         self._token: str | None = None
         self._token_exp: int | None = None   # unix seconds
         self._lock = asyncio.Lock()
+        # Long-lived pollers reuse one session (kept-alive connections, like
+        # the browser it impersonates). A fresh session per request re-parsed
+        # the CA bundle and re-did the TLS handshake on the event loop ~36x
+        # per sport cycle. One-off clients keep the per-request session.
+        self._persistent_session = persistent_session
+        self._session: AsyncSession | None = None
+
+    @asynccontextmanager
+    async def _http(self):
+        if not self._persistent_session:
+            async with AsyncSession(
+                impersonate="chrome",
+                timeout=TIMEOUT,
+                proxies=self._proxies(),
+            ) as http:
+                yield http
+            return
+        if self._session is None:
+            self._session = AsyncSession(
+                impersonate="chrome",
+                timeout=TIMEOUT,
+                proxies=self._proxies(),
+            )
+        yield self._session
+
+    async def aclose(self) -> None:
+        if self._session is not None:
+            session, self._session = self._session, None
+            await session.close()
 
     def _proxies(self) -> dict[str, str] | None:
         if not self.proxy_url:
@@ -137,11 +168,7 @@ class Coral33Client:
             **_browser_headers(),
             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
         }
-        async with AsyncSession(
-            impersonate="chrome",
-            timeout=TIMEOUT,
-            proxies=self._proxies(),
-        ) as http:
+        async with self._http() as http:
             resp = await http.post(
                 f"{BASE_URL}/System/authenticateCustomer",
                 data=body,
@@ -205,11 +232,7 @@ class Coral33Client:
             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
             "authorization": f"Bearer {self._token}",
         }
-        async with AsyncSession(
-            impersonate="chrome",
-            timeout=TIMEOUT,
-            proxies=self._proxies(),
-        ) as http:
+        async with self._http() as http:
             resp = await http.post(
                 f"{BASE_URL}/{_operation_path(operation)}",
                 data=body,

@@ -901,6 +901,9 @@ def _group_events(rows: list[dict]) -> list[dict]:
     return list(by_event.values())
 
 
+_EVENTS_FLOOR_SLACK = timedelta(hours=24)
+
+
 def _betting_db_events_uncached(
     sport_key: str | None = None,
     *,
@@ -913,8 +916,18 @@ def _betting_db_events_uncached(
     eligible only when at least one of its latest-odds rows passes the same
     cadence-aware filter used by the odds reader.
     """
-    fresh_sql, fresh_params = _freshness_sql(datetime.now(timezone.utc))
+    now = datetime.now(timezone.utc)
+    fresh_sql, fresh_params = _freshness_sql(now)
     fresh_sql = fresh_sql.replace("commence_time", "l.commence_time")
+    # Seekable floor on the event itself. The EXISTS below already requires
+    # l.commence_time >= now - past_hours, but without a bound on
+    # e.commence_time SQLite walks every archived event and scans each one's
+    # latest_odds rows (52s all-sport, 20s MLB on the live DB). The extra
+    # day of slack keeps an event whose `events` row still carries a stale,
+    # earlier start time (postponement) than its latest_odds rows.
+    floor = now - timedelta(hours=_past_hours()) - _EVENTS_FLOOR_SLACK
+    if window_start is None or window_start < floor:
+        window_start = floor
     fresh_sql = fresh_sql.replace("fetched_at", "l.fetched_at")
     sport_sql, sport_params = _sport_filter_sql(sport_key)
     sport_sql = sport_sql.replace("sport_key", "e.sport_key")

@@ -193,6 +193,7 @@ class Coral33Fetcher:
         self.client = Coral33Client(
             customer_id=customer_id, password=password,
             proxy_url=os.environ.get("CORAL33_PROXY_URL") or None,
+            persistent_session=True,
         )
         self.scheduler = AsyncIOScheduler()
         self._running = False
@@ -344,7 +345,7 @@ class Coral33Fetcher:
         # 30-minute grace window: don't purge a row whose commence_time
         # is within the last 30 minutes. Catches the common rain-delay /
         # soft-start case without polling Coral33 for live game status.
-        purged = self.cache.purge_live_rows_for_book(
+        purged = await self.cache.purge_live_rows_for_book_async(
             "coral33", now, grace_seconds=1800,
         )
         if purged:
@@ -436,42 +437,50 @@ class Coral33Fetcher:
                 # Correlation index is fed from the Straight pull only —
                 # both wager types return the same Lines metadata, but we
                 # only need to ingest once.
-                if (
-                    ingest_correlation
-                    and period == "Game"
-                    and straight_data is not None
-                ):
-                    self._ingest_correlation_index(straight_data, sport_key, matcher)
+                # Normalize + team matching (and the mapping-health writes it
+                # triggers) is CPU + SQLite work; run it off the event loop.
+                def normalize_pair(
+                    straight_data=straight_data, parlay_data=parlay_data,
+                    period=period,
+                ) -> list[dict]:
+                    if (
+                        ingest_correlation
+                        and period == "Game"
+                        and straight_data is not None
+                    ):
+                        self._ingest_correlation_index(straight_data, sport_key, matcher)
 
-                straight_rows = (
-                    normalize_league_lines(
-                        straight_data, period=period, sport_key=sport_key,
-                        fetched_at=now, match_event=matcher.match,
-                        is_alternate=is_alt,
-                        match_correlation=lambda c: self._correlation_index.get(
-                            correlation_key(sport_key, c)
-                        ),
-                        report_issue=report_team_issue,
+                    straight_rows = (
+                        normalize_league_lines(
+                            straight_data, period=period, sport_key=sport_key,
+                            fetched_at=now, match_event=matcher.match,
+                            is_alternate=is_alt,
+                            match_correlation=lambda c: self._correlation_index.get(
+                                correlation_key(sport_key, c)
+                            ),
+                            report_issue=report_team_issue,
+                        )
+                        if straight_data is not None
+                        else []
                     )
-                    if straight_data is not None
-                    else []
-                )
-                parlay_rows = (
-                    normalize_league_lines(
-                        parlay_data, period=period, sport_key=sport_key,
-                        fetched_at=now, match_event=matcher.match,
-                        is_alternate=is_alt,
-                        match_correlation=lambda c: self._correlation_index.get(
-                            correlation_key(sport_key, c)
-                        ),
-                        report_issue=report_team_issue,
+                    parlay_rows = (
+                        normalize_league_lines(
+                            parlay_data, period=period, sport_key=sport_key,
+                            fetched_at=now, match_event=matcher.match,
+                            is_alternate=is_alt,
+                            match_correlation=lambda c: self._correlation_index.get(
+                                correlation_key(sport_key, c)
+                            ),
+                            report_issue=report_team_issue,
+                        )
+                        if parlay_data is not None
+                        else []
                     )
-                    if parlay_data is not None
-                    else []
-                )
-                merged = _merge_with_wager_type(straight_rows, parlay_rows)
+                    return _merge_with_wager_type(straight_rows, parlay_rows)
+
+                merged = await asyncio.to_thread(normalize_pair)
                 if merged:
-                    self.cache.upsert(merged)
+                    await self.cache.upsert_async(merged)
                     tier_rows += len(merged)
             return tier_rows
 
@@ -597,27 +606,33 @@ class Coral33Fetcher:
                     sport_type, subtype, period,
                 )
                 continue
-            straight_rows = (
-                normalize_player_props(
-                    straight_data, sport_key=sport_key, fetched_at=now,
-                    game_num_lookup=lookup,
-                    report_issue=self._report_mapping_issue,
+            # Normalize (+ mapping-health writes) off the event loop.
+            def normalize_pair(
+                straight_data=straight_data, parlay_data=parlay_data,
+            ) -> list[dict]:
+                straight_rows = (
+                    normalize_player_props(
+                        straight_data, sport_key=sport_key, fetched_at=now,
+                        game_num_lookup=lookup,
+                        report_issue=self._report_mapping_issue,
+                    )
+                    if straight_data is not None
+                    else []
                 )
-                if straight_data is not None
-                else []
-            )
-            parlay_rows = (
-                normalize_player_props(
-                    parlay_data, sport_key=sport_key, fetched_at=now,
-                    game_num_lookup=lookup,
-                    report_issue=self._report_mapping_issue,
+                parlay_rows = (
+                    normalize_player_props(
+                        parlay_data, sport_key=sport_key, fetched_at=now,
+                        game_num_lookup=lookup,
+                        report_issue=self._report_mapping_issue,
+                    )
+                    if parlay_data is not None
+                    else []
                 )
-                if parlay_data is not None
-                else []
-            )
-            merged = _merge_with_wager_type(straight_rows, parlay_rows)
+                return _merge_with_wager_type(straight_rows, parlay_rows)
+
+            merged = await asyncio.to_thread(normalize_pair)
             if merged:
-                self.cache.upsert(merged)
+                await self.cache.upsert_async(merged)
                 tier_rows += len(merged)
         return tier_rows
 
@@ -669,25 +684,32 @@ class Coral33Fetcher:
                     sport_type, subtype, period,
                 )
                 continue
-            straight_rows = (
-                normalize_extras(
-                    straight_data, kind=kind, sport_key=sport_key,
-                    fetched_at=now, match_event=matcher.match,
+            # Normalize (+ mapping-health writes) off the event loop.
+            def normalize_pair(
+                straight_data=straight_data, parlay_data=parlay_data,
+                kind=kind,
+            ) -> list[dict]:
+                straight_rows = (
+                    normalize_extras(
+                        straight_data, kind=kind, sport_key=sport_key,
+                        fetched_at=now, match_event=matcher.match,
+                    )
+                    if straight_data is not None
+                    else []
                 )
-                if straight_data is not None
-                else []
-            )
-            parlay_rows = (
-                normalize_extras(
-                    parlay_data, kind=kind, sport_key=sport_key,
-                    fetched_at=now, match_event=matcher.match,
+                parlay_rows = (
+                    normalize_extras(
+                        parlay_data, kind=kind, sport_key=sport_key,
+                        fetched_at=now, match_event=matcher.match,
+                    )
+                    if parlay_data is not None
+                    else []
                 )
-                if parlay_data is not None
-                else []
-            )
-            merged = _merge_with_wager_type(straight_rows, parlay_rows)
+                return _merge_with_wager_type(straight_rows, parlay_rows)
+
+            merged = await asyncio.to_thread(normalize_pair)
             if merged:
-                self.cache.upsert(merged)
+                await self.cache.upsert_async(merged)
                 tier_rows += len(merged)
         return tier_rows
 

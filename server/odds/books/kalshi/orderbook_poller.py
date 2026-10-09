@@ -90,7 +90,7 @@ async def poll_kalshi_orderbooks(
 
         if rows_to_upsert:
             try:
-                cache.upsert(rows_to_upsert)
+                await cache.upsert_async(rows_to_upsert)
                 updated += len(rows_to_upsert)
             except Exception:
                 logger.exception(

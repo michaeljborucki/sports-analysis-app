@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import date as date_type, datetime, timedelta, timezone
 import time
 from typing import Callable, Literal
@@ -67,12 +68,13 @@ def build_router(
             include_after=timeframe == "upcoming",
             source_rows=snapshot.system_rows if snapshot is not None else None,
         )
-        result = evaluate_systems(
+        result = await asyncio.to_thread(
+            evaluate_systems,
             games, evaluated_at=now, requested_date=requested_date,
         )
         wagers = deduplicate_wagers(result.signals)
         try:
-            store.record(result.signals)
+            await asyncio.to_thread(store.record, result.signals)
         except Exception as exc:
             warnings.append(f"Signal persistence unavailable: {exc}")
         counts = {status: 0 for status in (

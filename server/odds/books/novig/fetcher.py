@@ -26,6 +26,7 @@ import asyncio
 import logging
 import os
 import random
+import zlib
 from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -50,6 +51,16 @@ HORIZON_HOURS = float(os.environ.get("NOVIG_HORIZON_HOURS", "12"))
 # sequential worker can't use the rate budget; the shared token bucket in
 # NovigClient is what actually bounds req/s.
 POLL_WORKERS = int(os.environ.get("NOVIG_POLL_WORKERS", "8"))
+# Streamed markets whose bbo hasn't moved are re-written this often so their
+# rows stay inside purge_stale_rows' 600s TTL.
+STREAM_REFRESH_S = 240
+# Each market's re-stamp is offset by up to this much (stable per market) so
+# the ~3k streamed rows don't all rewrite in the same second.
+STREAM_REFRESH_SPREAD_S = 120
+STREAM_REFRESH_MAX_PER_TICK = 40
+# A market that opens mid-game on a streamed event triggers an early catalog
+# refresh (so it gets planned and targeted), at most this often.
+NEW_MARKET_CATALOG_DEBOUNCE_S = 30
 # Team/fighter alias tables are shared with coral33 — same folding rules,
 # and its hand-curated entries (e.g. "mick parkin" → "michael parkin") are
 # exactly the name drift Novig shows too.
@@ -79,13 +90,47 @@ class _Target:
     maker: dict = field(default_factory=dict)
     maker_keys: set = field(default_factory=set)
     in_flight: bool = False
+    written_at: datetime | None = None
+
+
+def _join_market(mk: str) -> str:
+    """EV ops label spreads/totals by the MAIN key and fold prop alternates;
+    fold Novig plan keys the same way so the two can be joined."""
+    if mk.startswith("alternate_"):
+        mk = mk[len("alternate_"):]
+    return mk.removesuffix("_alternate")
+
+
+def _join_point(p) -> float | None:
+    return None if p is None else round(float(p), 2)
 
 
 class NovigFetcher:
-    def __init__(self, cache: OddsCache, settings_store=None):
+    def __init__(self, cache: OddsCache, settings_store=None, snapshot_rows=None):
         self.cache = cache
         self.settings_store = settings_store
+        # () -> published odds-snapshot rows (all books) or None. Supplies the
+        # fallback slot map for Novig markets betting-db has no Novig copy of.
+        self._snapshot_rows = snapshot_rows
         self.client = NovigClient()
+        # Live best-bid stream (signed websocket). Only with a signing key;
+        # NOVIG_WS_ENABLED=false keeps everything on REST polling.
+        self._stream = None
+        self._stream_tasks: list[asyncio.Task] = []
+        self._stream_dirty: set[str] = set()
+        self._ws_rows_written = 0
+        if self.client._signer is not None and os.environ.get(
+            "NOVIG_WS_ENABLED", "true"
+        ).strip().lower() not in ("0", "false", "no"):
+            from .ws_feed import NovigBboStream
+            self._stream = NovigBboStream(
+                self.client._signer,
+                desired=self._stream_desired,
+                # Late-bound: the flush loop swaps in a fresh set each tick.
+                on_change=lambda mid: self._stream_dirty.add(mid),
+                on_lost=self._stream_lost,
+                on_new_market=self._stream_new_market,
+            )
         self.scheduler = AsyncIOScheduler()
         self._running = False
         self._targets: dict[str, _Target] = {}
@@ -136,6 +181,11 @@ class NovigFetcher:
         self._poll_tasks = [
             asyncio.create_task(self._poll_loop()) for _ in range(POLL_WORKERS)
         ]
+        if self._stream is not None:
+            self._stream_tasks = [
+                asyncio.create_task(self._stream.run()),
+                asyncio.create_task(self._stream_flush_loop()),
+            ]
         logger.info(
             "novig fetcher started (catalog %ds, horizon %.0fh, %.1f req/s)",
             CATALOG_INTERVAL, HORIZON_HOURS, self.client.stats()["rps"],
@@ -149,10 +199,11 @@ class NovigFetcher:
             self.scheduler.remove_all_jobs()
         except Exception:
             logger.exception("novig: error removing jobs")
-        for task in self._poll_tasks:
+        for task in self._poll_tasks + self._stream_tasks:
             if not task.done():
                 task.cancel()
         self._poll_tasks = []
+        self._stream_tasks = []
         self._running = False
         logger.info("novig fetcher stopped")
         return {"status": "stopped"}
@@ -191,6 +242,10 @@ class NovigFetcher:
             "rows_written": self._rows_written,
             "last_book_at": self._last_book_at.isoformat() if self._last_book_at else None,
             "catalog": dict(self._last_catalog_stats),
+            "ws_enabled": self._stream is not None,
+            "ws_rows_written": self._ws_rows_written,
+            **({f"ws_{k}": v for k, v in self._stream.stats().items()}
+               if self._stream is not None else {}),
             **{f"http_{k}": v for k, v in self.client.stats().items()},
         }
 
@@ -222,10 +277,10 @@ class NovigFetcher:
         # games here can't touch anyone else's data. In native mode the Odds
         # API fetcher shares the slot, so leave live rows to the 600s TTL.
         if _odds_source() == "betting_db":
-            self.cache.purge_live_rows_for_book(BOOK_KEY, now)
+            await self.cache.purge_live_rows_for_book_async(BOOK_KEY, now)
         # Maker quotes are ours alone in every mode, and Novig voids
         # resting orders at kickoff — drop them for started games.
-        self.cache.purge_live_rows_for_book(MAKER_BOOK_KEY, now)
+        await self.cache.purge_live_rows_for_book_async(MAKER_BOOK_KEY, now)
 
         try:
             aliases = load_coral33_config(_CORAL33_CONFIG).team_aliases
@@ -257,6 +312,9 @@ class NovigFetcher:
         for m in markets:
             if m.get("status") == "OPEN":
                 by_event.setdefault(m["eventId"], []).append(m)
+        # An event subscription watches all of its markets, not just the ones
+        # we target; the stream sizes its watch cap with these counts.
+        self._event_market_counts = {eid: len(ms) for eid, ms in by_event.items()}
 
         new_targets: dict[str, _Target] = {}
         stats = {"events": 0, "events_matched": 0, "markets": len(markets),
@@ -273,6 +331,19 @@ class NovigFetcher:
             rows = await asyncio.to_thread(self._novig_rows, sport)
             events_by_id = {e["event_id"]: e for e in cache_events}
             index = build_sibling_index(rows, events_by_id)
+            # Novig's own catalog decides coverage, not the Odds API's: a
+            # market with no Novig sibling row takes its slot from the other
+            # books on the same line. Existing Novig slots win per key.
+            other_rows = self._other_book_rows(sport)
+            if other_rows:
+                fallback = await asyncio.to_thread(
+                    build_sibling_index, other_rows, events_by_id,
+                    exclude_books=frozenset({BOOK_KEY, MAKER_BOOK_KEY}),
+                )
+                stats["fallback_slots"] = stats.get("fallback_slots", 0) + sum(
+                    1 for k in fallback if k not in index
+                )
+                index = {**fallback, **index}
             for nev in novig_events:
                 stats["events"] += 1
                 starts = datetime.fromtimestamp(nev["startsTs"] / 1000, tz=timezone.utc)
@@ -296,6 +367,7 @@ class NovigFetcher:
                         quotes=prev.quotes if prev else {},
                         maker=prev.maker if prev else {},
                         maker_keys=prev.maker_keys if prev else set(),
+                        written_at=prev.written_at if prev else None,
                     )
                     per_sport_targets[sport] = per_sport_targets.get(sport, 0) + 1
 
@@ -309,6 +381,15 @@ class NovigFetcher:
             stats["events_matched"], stats["events"],
             stats["markets_targeted"], stats["markets"], per_sport_targets,
         )
+
+    def _other_book_rows(self, sport: str) -> list[dict]:
+        """This sport's rows from the published odds snapshot (no DB read)."""
+        if self._snapshot_rows is None:
+            return []
+        rows = self._snapshot_rows()
+        if not rows:
+            return []
+        return [r for r in rows if r.get("sport_key") == sport]
 
     def _novig_rows(self, sport: str) -> list[dict]:
         """Every Novig row currently readable for a sport: betting-db's copy
@@ -333,7 +414,12 @@ class NovigFetcher:
                     await asyncio.sleep(2)
                     continue
                 now = datetime.now(timezone.utc)
-                idle = [kv for kv in self._targets.items() if not kv[1].in_flight]
+                stream = self._stream
+                idle = [
+                    kv for kv in self._targets.items()
+                    if not kv[1].in_flight
+                    and not (stream is not None and stream.covers(kv[0]))
+                ]
                 if not idle:
                     await asyncio.sleep(0.5)
                     continue
@@ -376,9 +462,19 @@ class NovigFetcher:
         if book is None:
             self._books_unchanged += 1
         else:
+            t.etag = etag
+        self._last_book_at = now
+        written = await self._write_quotes(t, book, now)
+        self._rows_written += written
+        hours = (t.starts - now).total_seconds() / 3600
+        t.next_due = now + timedelta(seconds=poll_interval_s(hours))
+
+    async def _write_quotes(self, t: _Target, book: dict | None, now: datetime) -> int:
+        """Price `book` (None = unchanged, reuse the last quotes) and write the
+        take + maker rows. Shared by the REST poller and the websocket stream."""
+        if book is not None:
             t.quotes = take_quotes(t.market, book)
             t.maker = maker_quotes(t.market, book)
-            t.etag = etag
         rows = rows_for(t.market, t.plan, t.quotes, t.sport, t.cache_event, now)
         maker_rows = rows_for(
             t.market, t.plan, {k: (v, None) for k, v in t.maker.items()},
@@ -393,13 +489,151 @@ class NovigFetcher:
         }
         gone = t.maker_keys - maker_keys
         if gone:
-            self.cache.delete_rows(gone)
+            await self.cache.delete_rows_async(gone)
         t.maker_keys = maker_keys
         rows += maker_rows
         if rows:
-            self.cache.upsert(rows)
-            self._rows_written += len(rows)
+            await self.cache.upsert_async(rows)
             self._last_cycle_rows[t.sport] = self._last_cycle_rows.get(t.sport, 0) + len(rows)
-        self._last_book_at = now
-        hours = (t.starts - now).total_seconds() / 3600
-        t.next_due = now + timedelta(seconds=poll_interval_s(hours))
+        t.written_at = now
+        return len(rows)
+
+    # ───────────────────────── maker candidates ─────────────────────────
+
+    def maker_candidates(self, games: list[dict], now: datetime) -> list[dict]:
+        """Every Novig outcome we hold a make quote for, with its fair
+        probability (same devig as the EV page) and the live best bids.
+        Read-only input for the auto-maker process; places nothing."""
+        from ...ev import scan_all_ev
+        ops = scan_all_ev(
+            games, now, books_filter={MAKER_BOOK_KEY},
+            min_ev_pct=-1000.0, max_longshot_american=100_000,
+            stale_seconds=300.0, arb_keys=None, max_results=None,
+        )
+        index: dict[tuple, tuple[str, str, _Target]] = {}
+        for mid, t in self._targets.items():
+            for oid, mk, name, point in t.plan:
+                index[(t.cache_event["event_id"], _join_market(mk), name, _join_point(point))] = (mid, oid, t)
+        stream = self._stream
+        out: dict[str, dict] = {}
+        for op in ops:
+            hit = index.get((op["event_id"], _join_market(op["market_kind"]),
+                             op["outcome_name"], _join_point(op.get("point"))))
+            if hit is None:
+                continue
+            mid, oid, t = hit
+            if oid in out:
+                continue
+            others = [o["outcomeId"] for o in t.market.get("outcomes") or [] if o["outcomeId"] != oid]
+            other = others[0] if len(others) == 1 else None
+            live = stream is not None and stream.covers(mid)
+            levels = stream.state.get(mid, {}) if live else {}
+            own = levels.get(oid)
+            opp = levels.get(other) if other else None
+            out[oid] = {
+                "event_id": op["event_id"],
+                "sport_key": op["sport_key"],
+                "home_team": op["home_team"],
+                "away_team": op["away_team"],
+                "commence_time": t.starts.isoformat(),
+                "market_key": op["market_kind"],
+                "outcome_name": op["outcome_name"],
+                "point": op.get("point"),
+                "market_id": mid,
+                "outcome_id": oid,
+                "other_outcome_id": other,
+                "fair_probability": op["fair_probability"],
+                "fair_source": op["source"],
+                "anchor_book_count": op["anchor_book_count"],
+                "confidence": op["confidence"],
+                "fee_charged": (t.market.get("fee") or {}).get("charged"),
+                "bbo_live": live,
+                "own_best_bid": list(own) if own else None,
+                "other_best_bid": list(opp) if opp else None,
+            }
+        return list(out.values())
+
+    # ───────────────────────── websocket stream ─────────────────────────
+
+    def _stream_desired(self) -> list[tuple[str, int]]:
+        """(event_id, open market count) for events with targets, soonest
+        game first (the stream's watch cap keeps the head)."""
+        now = datetime.now(timezone.utc)
+        starts: dict[str, datetime] = {}
+        for t in self._targets.values():
+            eid = t.market.get("eventId")
+            if eid and t.starts > now and (eid not in starts or t.starts < starts[eid]):
+                starts[eid] = t.starts
+        counts = getattr(self, "_event_market_counts", {})
+        return [
+            (eid, counts.get(eid, 1))
+            for eid, _ in sorted(starts.items(), key=lambda kv: kv[1])
+        ]
+
+    def _stream_new_market(self, mid: str) -> None:
+        if mid not in self._targets:
+            self._catalog_wanted = True
+
+    def _refresh_offset(self, mid: str) -> float:
+        return (zlib.crc32(mid.encode()) % 1000) / 1000 * STREAM_REFRESH_SPREAD_S
+
+    def _stream_lost(self, mids: set[str]) -> None:
+        """Markets the stream stopped covering go straight back to polling."""
+        now = datetime.now(timezone.utc)
+        for mid in mids:
+            t = self._targets.get(mid)
+            if t is not None:
+                t.next_due = now
+
+    async def _stream_flush_loop(self) -> None:
+        """Write changed streamed markets once a second, and re-stamp quiet
+        ones every STREAM_REFRESH_S so a book that simply didn't move never
+        ages into the 600s stale purge while the socket vouches for it."""
+        from .ws_feed import bbo_book
+        try:
+            while self._running:
+                await asyncio.sleep(1.0)
+                stream = self._stream
+                now = datetime.now(timezone.utc)
+                dirty, self._stream_dirty = self._stream_dirty, set()
+                if (
+                    getattr(self, "_catalog_wanted", False)
+                    and not self._catalog_lock.locked()
+                    and (self._last_catalog_at is None
+                         or (now - self._last_catalog_at).total_seconds()
+                         >= NEW_MARKET_CATALOG_DEBOUNCE_S)
+                ):
+                    self._catalog_wanted = False
+                    asyncio.create_task(self.refresh_catalog())
+                due = [
+                    mid for mid in stream.live_ids() - dirty
+                    if (t := self._targets.get(mid)) is not None
+                    and (t.written_at is None
+                         or (now - t.written_at).total_seconds()
+                         >= STREAM_REFRESH_S - self._refresh_offset(mid))
+                ]
+                # Oldest first, capped: a fresh catalog (written_at reset)
+                # spreads over a few ticks instead of one burst.
+                due.sort(key=lambda m: self._targets[m].written_at
+                         or datetime.min.replace(tzinfo=timezone.utc))
+                refresh = set(due[:STREAM_REFRESH_MAX_PER_TICK])
+                for mid in dirty | refresh:
+                    t = self._targets.get(mid)
+                    if t is None or t.in_flight or not stream.covers(mid):
+                        continue
+                    if t.starts <= now:
+                        continue
+                    try:
+                        n = await self._write_quotes(t, bbo_book(stream.state.get(mid, {})), now)
+                    except Exception:
+                        logger.exception("novig ws %s: write failed", mid)
+                        continue
+                    self._ws_rows_written += n
+                    self._rows_written += n
+                    self._last_book_at = now
+                    hours = (t.starts - now).total_seconds() / 3600
+                    t.next_due = now + timedelta(seconds=poll_interval_s(hours))
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("novig ws flush loop crashed")

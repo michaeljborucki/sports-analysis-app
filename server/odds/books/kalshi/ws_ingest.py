@@ -141,7 +141,7 @@ class KalshiTickerIngestor:
             return 0
 
         try:
-            self.cache.upsert(rows_to_upsert)
+            self.cache.upsert_nowait(rows_to_upsert, label=f"kalshi WS {market_ticker}")
         except Exception:
             logger.exception("kalshi WS: upsert failed for %s", market_ticker)
             return 0

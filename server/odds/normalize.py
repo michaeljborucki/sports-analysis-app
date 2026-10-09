@@ -200,6 +200,28 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
     on every emitted BookPrice is the *effective* (post-commission) price.
     The cache still stores the listed price; commission is applied on read.
     """
+    return _rows_to_games(rows, now, with_non_prop=False)[0]
+
+
+def rows_to_games_with_non_prop(
+    rows: Iterable[dict], now: datetime,
+) -> tuple[list[dict], list[dict]]:
+    """`(rows_to_games(rows), rows_to_games(non-prop rows))` in one pass.
+
+    Identical output to the two separate calls. A non-prop market is built
+    from exactly the same rows either way, so the non-prop games reuse the
+    full pass's market objects; only the game header (taken from the game's
+    first non-prop row), `stale_seconds` (max over non-prop rows) and the
+    game set/order (first non-prop appearance, then the stable commence
+    sort) are tracked separately. Games share market objects — treat both
+    lists as read-only, as every snapshot consumer already does.
+    """
+    return _rows_to_games(rows, now, with_non_prop=True)
+
+
+def _rows_to_games(
+    rows: Iterable[dict], now: datetime, *, with_non_prop: bool,
+) -> tuple[list[dict], list[dict]]:
     from .best_odds import best_price_dict, median_american_odds
     from .commissions import effective_american
     from .market_config import is_prop_market
@@ -211,26 +233,31 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
     _check_outcome_name_collisions(rows)
 
     by_event: dict[str, dict] = {}
+    # with_non_prop: per-event header + staleness as a non-prop-only pass
+    # would compute them (setdefault on the first non-prop row).
+    np_by_event: dict[str, dict] = {}
     for r in rows:
-        if is_prop_market(r["market_key"]):
+        row_is_prop = is_prop_market(r["market_key"])
+        if row_is_prop:
             canonical = _canonical_cached_prop(r["outcome_name"], r.get("sport_key", "mlb"), r["market_key"])
             if canonical != r["outcome_name"]:
                 r = {**r, "outcome_name": canonical}
-        ev = by_event.setdefault(r["event_id"], {
-            "event_id": r["event_id"],
-            "sport_key": r.get("sport_key", "mlb"),
-            "league_key": r.get("league_key"),
-            "league_title": r.get("league_title"),
-            "home_team": r["home_team"],
-            "away_team": r["away_team"],
-            "commence_time": _coerce_dt(r["commence_time"]),
-            "markets_by_key": {},
-            "stale_seconds": 0,
-        })
+        ev = by_event.get(r["event_id"])
+        if ev is None:
+            ev = by_event[r["event_id"]] = _event_header(r)
         if not ev["league_key"] and r.get("league_key"):
             ev["league_key"] = r["league_key"]
         if not ev["league_title"] and r.get("league_title"):
             ev["league_title"] = r["league_title"]
+        np_ev = None
+        if with_non_prop and not row_is_prop:
+            np_ev = np_by_event.get(r["event_id"])
+            if np_ev is None:
+                np_ev = np_by_event[r["event_id"]] = _event_header(r)
+            if not np_ev["league_key"] and r.get("league_key"):
+                np_ev["league_key"] = r["league_key"]
+            if not np_ev["league_title"] and r.get("league_title"):
+                np_ev["league_title"] = r["league_title"]
         market_key = r["market_key"]
         numeric_prop = (
             is_prop_market(market_key)
@@ -284,11 +311,15 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
         age = max(0, int((now_utc - fetched_at).total_seconds()))
         if age > ev["stale_seconds"]:
             ev["stale_seconds"] = age
+        if np_ev is not None and age > np_ev["stale_seconds"]:
+            np_ev["stale_seconds"] = age
 
     games = []
+    markets_by_event: dict[str, list[dict]] = {}
     now_utc = now if now.tzinfo else now.replace(tzinfo=timezone.utc)
     for ev in by_event.values():
         markets = []
+        markets_by_event[ev["event_id"]] = markets
         for mk_key, outcomes in ev["markets_by_key"].items():
             out_list = []
             for out in outcomes.values():
@@ -319,7 +350,40 @@ def rows_to_games(rows: Iterable[dict], now: datetime) -> list[dict]:
             "stale_seconds": ev["stale_seconds"],
         })
     games.sort(key=lambda g: g["commence_time"])
-    return games
+
+    non_prop_games = []
+    for ev in np_by_event.values():
+        non_prop_games.append({
+            "event_id": ev["event_id"],
+            "sport_key": ev["sport_key"],
+            "league_key": ev["league_key"],
+            "league_title": ev["league_title"],
+            "home_team": ev["home_team"],
+            "away_team": ev["away_team"],
+            "commence_time": ev["commence_time"],
+            "is_live": ev["commence_time"] <= now_utc,
+            "markets": [
+                m for m in markets_by_event[ev["event_id"]]
+                if not is_prop_market(m["market_key"])
+            ],
+            "stale_seconds": ev["stale_seconds"],
+        })
+    non_prop_games.sort(key=lambda g: g["commence_time"])
+    return games, non_prop_games
+
+
+def _event_header(r: dict) -> dict:
+    return {
+        "event_id": r["event_id"],
+        "sport_key": r.get("sport_key", "mlb"),
+        "league_key": r.get("league_key"),
+        "league_title": r.get("league_title"),
+        "home_team": r["home_team"],
+        "away_team": r["away_team"],
+        "commence_time": _coerce_dt(r["commence_time"]),
+        "markets_by_key": {},
+        "stale_seconds": 0,
+    }
 
 
 def _coerce_dt(v) -> datetime:

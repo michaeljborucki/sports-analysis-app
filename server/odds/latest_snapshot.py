@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
+import gc
+import os
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import logging
 import time
@@ -11,11 +13,51 @@ from typing import Any, Mapping
 
 from starlette.concurrency import run_in_threadpool
 
-from .normalize import rows_to_games
-from .market_config import is_prop_market
+from .normalize import rows_to_games_with_non_prop
 
 
 logger = logging.getLogger(__name__)
+
+# Direct-book overlay cadence (betting_db mode). The full rebuild re-reads
+# ~235k betting-db rows every 60s; the directly-fed books (novig, kalshi,
+# polymarket, coral33 — a few thousand rows, some streamed in real time)
+# are re-merged this often, regrouping only the games whose rows moved.
+OVERLAY_INTERVAL_S = float(os.environ.get("SNAPSHOT_OVERLAY_SECONDS", "5"))
+_SYSTEM_SPORTS = frozenset({"mlb", "ncaaf", "nfl"})
+_SYSTEM_MARKETS = frozenset({"h2h", "spreads", "totals"})
+
+
+@dataclass
+class _OverlayBase:
+    """What the overlay needs from the last full build."""
+    base_by_event: dict[str, list[dict]]        # betting-db rows per event
+    direct_sig: dict[str, tuple] = field(default_factory=dict)
+
+
+def _is_system_row(row: dict) -> bool:
+    return row["sport_key"] in _SYSTEM_SPORTS and row["market_key"] in _SYSTEM_MARKETS
+
+
+def _direct_signature(rows: list[dict]) -> tuple:
+    """Order-independent identity of one event's direct-book rows: a quote
+    appearing, vanishing, or changing price, size or wager type re-prices
+    the game. `fetched_at` is deliberately left out — streamed books
+    re-stamp unchanged quotes every few minutes, and regrouping a 6k-row
+    game just to move a timestamp is what made the overlay expensive. The
+    60s full rebuild still refreshes every timestamp, as before."""
+    return tuple(sorted(
+        (r["bookmaker_key"], r["market_key"], r["outcome_name"],
+         str(r.get("outcome_point")), r["price_american"],
+         r.get("max_stake_dollars"), r.get("wager_type"))
+        for r in rows
+    ))
+
+
+def _group_by_event(rows) -> dict[str, list[dict]]:
+    out: dict[str, list[dict]] = {}
+    for r in rows:
+        out.setdefault(r["event_id"], []).append(r)
+    return out
 
 
 @dataclass(frozen=True)
@@ -49,6 +91,9 @@ class LatestOddsSnapshotService:
         self._lock = asyncio.Lock()
         self._last_error: str | None = None
         self._last_build_started = 0.0
+        self._overlay_base: _OverlayBase | None = None
+        self._overlay_task: asyncio.Task[None] | None = None
+        self.overlays_published = 0
 
     @property
     def current(self) -> OddsSnapshot | None:
@@ -115,8 +160,12 @@ class LatestOddsSnapshotService:
             return
         await self.get()
         self._loop_task = asyncio.create_task(self._refresh_loop())
+        self._overlay_task = asyncio.create_task(self._overlay_loop())
 
     async def stop(self) -> None:
+        if self._overlay_task is not None:
+            self._overlay_task.cancel()
+            self._overlay_task = None
         task = self._loop_task
         self._loop_task = None
         if task is None:
@@ -130,9 +179,13 @@ class LatestOddsSnapshotService:
     async def _refresh_loop(self) -> None:
         while True:
             await asyncio.sleep(self._refresh_interval_seconds)
+            age = self.age_seconds
             if (
                 self._current is None
                 or self._current.source_version != self._cache.read_version
+                # Backstop: never let the full (betting-db) build age past two
+                # intervals, whatever the version bookkeeping says.
+                or (age is not None and age >= 2 * self._refresh_interval_seconds)
             ):
                 await self._ensure_refresh(self._cache.read_version)
 
@@ -154,6 +207,7 @@ class LatestOddsSnapshotService:
                 non_prop_games_by_sport,
                 system_rows,
                 built_at,
+                overlay_base,
             ) = await run_in_threadpool(self._build_sync)
             generation = (
                 1 if self._current is None else self._current.generation + 1
@@ -173,7 +227,14 @@ class LatestOddsSnapshotService:
                 system_rows=system_rows,
             )
             self._current = snapshot
+            self._overlay_base = overlay_base
             self._last_error = None
+            # The snapshot is long-lived; move everything allocated so far
+            # into the permanent generation so gen-2 GC passes stop
+            # re-traversing ~200k row dicts (measured 120-990ms full passes,
+            # every ~9s, freezing the event loop and collecting ~nothing).
+            # Frozen objects are still freed by refcount when released.
+            gc.freeze()
             logger.info(
                 "odds snapshot published generation=%d rows=%d games=%d "
                 "build_ms=%.1f",
@@ -199,25 +260,45 @@ class LatestOddsSnapshotService:
         Mapping[str, tuple[dict, ...]],
         tuple[dict, ...],
         datetime,
+        _OverlayBase | None,
     ]:
         built_at = datetime.now(timezone.utc)
-        rows = tuple(self._cache.all_current())
-        games = tuple(rows_to_games(rows, now=built_at))
-        non_prop_rows = (
-            row for row in rows if not is_prop_market(row["market_key"])
-        )
-        non_prop_games = tuple(rows_to_games(non_prop_rows, now=built_at))
+        overlay_base = None
+        from .cache import _odds_source
+        if _odds_source() == "betting_db":
+            # Same merge as bettingdb_source.all_current, with the two halves
+            # kept apart so the overlay can re-merge just the direct books.
+            from . import bettingdb_source as bdb
+            base = bdb._mapped_rows(None)
+            direct = bdb._direct_book_rows(self._cache)
+            direct_pks = {bdb._pk(r) for r in direct}
+            merged = [
+                r for r in base
+                if r["bookmaker_key"] not in bdb.DIRECT_BOOK_KEYS
+                or bdb._pk(r) not in direct_pks
+            ]
+            merged.extend(direct)
+            rows = tuple(merged)
+            direct_by_event = _group_by_event(direct)
+            overlay_base = _OverlayBase(
+                base_by_event=_group_by_event(base),
+                direct_sig={e: _direct_signature(rs) for e, rs in direct_by_event.items()},
+            )
+        else:
+            rows = tuple(self._cache.all_current())
+        # One grouping pass for both views (was two full rows_to_games
+        # passes, ~half the 7-12s rebuild, contending with the event loop
+        # for the GIL). Output is identical — see rows_to_games_with_non_prop.
+        all_games, non_prop_list = rows_to_games_with_non_prop(rows, now=built_at)
+        games = tuple(all_games)
+        non_prop_games = tuple(non_prop_list)
         by_sport: dict[str, list[dict]] = {}
         for game in non_prop_games:
             by_sport.setdefault(game["sport_key"], []).append(game)
         non_prop_games_by_sport = MappingProxyType({
             sport: tuple(sport_games) for sport, sport_games in by_sport.items()
         })
-        system_rows = tuple(
-            row for row in rows
-            if row["sport_key"] in {"mlb", "ncaaf", "nfl"}
-            and row["market_key"] in {"h2h", "spreads", "totals"}
-        )
+        system_rows = tuple(row for row in rows if _is_system_row(row))
         return (
             rows,
             games,
@@ -225,4 +306,103 @@ class LatestOddsSnapshotService:
             non_prop_games_by_sport,
             system_rows,
             built_at,
+            overlay_base,
         )
+
+    # ───────────────────────── direct-book overlay ─────────────────────────
+
+    async def _overlay_loop(self) -> None:
+        while True:
+            await asyncio.sleep(OVERLAY_INTERVAL_S)
+            snap, base = self._current, self._overlay_base
+            if snap is None or base is None or self.refreshing:
+                continue
+            try:
+                result = await run_in_threadpool(self._overlay_sync, snap, base)
+            except Exception:
+                logger.exception("odds snapshot overlay failed")
+                continue
+            # A full build may have published meanwhile; its data is newer.
+            if result is None or self._current is not snap or self.refreshing:
+                continue
+            new_snap, new_sig = result
+            base.direct_sig = new_sig
+            self._current = new_snap
+            self.overlays_published += 1
+            gc.freeze()  # same reason as the full build
+
+    def _overlay_sync(
+        self, snap: OddsSnapshot, base: _OverlayBase,
+    ) -> tuple[OddsSnapshot, dict[str, tuple]] | None:
+        """Re-merge direct-book rows into `snap`, regrouping only the games
+        whose direct rows changed. Same merge rule and grouping code as the
+        full build, so a changed game comes out exactly as a full rebuild
+        would produce it at this moment."""
+        from . import bettingdb_source as bdb
+        now = datetime.now(timezone.utc)
+        direct_by_event = _group_by_event(bdb._direct_book_rows(self._cache))
+        sig = {e: _direct_signature(rs) for e, rs in direct_by_event.items()}
+        changed = {
+            e for e in sig.keys() | base.direct_sig.keys()
+            if sig.get(e) != base.direct_sig.get(e)
+        }
+        if not changed:
+            return None
+        rows_by_event: dict[str, list[dict]] = {}
+        new_games: list[dict] = []
+        new_non_prop: list[dict] = []
+        for e in changed:
+            direct = direct_by_event.get(e, [])
+            pks = {bdb._pk(r) for r in direct}
+            merged = [
+                r for r in base.base_by_event.get(e, ())
+                if r["bookmaker_key"] not in bdb.DIRECT_BOOK_KEYS
+                or bdb._pk(r) not in pks
+            ]
+            merged.extend(direct)
+            rows_by_event[e] = merged
+            if merged:
+                g, npg = rows_to_games_with_non_prop(merged, now=now)
+                new_games.extend(g)
+                new_non_prop.extend(npg)
+
+        def splice(old: tuple[dict, ...], fresh: list[dict]) -> tuple[dict, ...]:
+            kept = [g for g in old if g["event_id"] not in changed]
+            kept.extend(fresh)
+            kept.sort(key=lambda g: g["commence_time"])   # stable, as rows_to_games
+            return tuple(kept)
+
+        games = splice(snap.games, new_games)
+        non_prop_games = splice(snap.non_prop_games, new_non_prop)
+        by_sport: dict[str, list[dict]] = {}
+        for game in non_prop_games:
+            by_sport.setdefault(game["sport_key"], []).append(game)
+        system_rows = [r for r in snap.system_rows if r["event_id"] not in changed]
+        for merged in rows_by_event.values():
+            system_rows.extend(r for r in merged if _is_system_row(r))
+        # Only the direct-book part of the version advances here. Stamping the
+        # live read_version would also claim the betting-db rows are current,
+        # and the 60s loop would then never run a full rebuild — freezing
+        # every betting-db book (caught 2026-10-09: snapshot aged to 221s).
+        live_version = self._cache.read_version
+        old_version = snap.source_version
+        if (len(old_version) == 3 and len(live_version) == 3
+                and old_version[0] == live_version[0] == "betting_db"):
+            source_version = (old_version[0], old_version[1], live_version[2])
+        else:
+            source_version = old_version
+        return OddsSnapshot(
+            generation=snap.generation + 1,
+            built_at=snap.built_at,
+            source_version=source_version,
+            # Flat rows are carried from the last full build: their only
+            # readers (mapping-health audit, Novig slot map) run on minute
+            # cadences, and rebuilding 300k+ rows here cost ~0.2s a tick.
+            rows=snap.rows,
+            games=games,
+            non_prop_games=non_prop_games,
+            non_prop_games_by_sport=MappingProxyType({
+                sport: tuple(gs) for sport, gs in by_sport.items()
+            }),
+            system_rows=tuple(system_rows),
+        ), sig

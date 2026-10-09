@@ -12,6 +12,7 @@ show a spinner.
 """
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -304,7 +305,9 @@ def build_router(
             # overrides the wager-log value since the snapshot is a
             # direct measurement from Coral33 itself (no derivation).
             if cache is not None:
-                snap_by_date = cache.latest_balance_snapshot_per_date(cid)
+                snap_by_date = await asyncio.to_thread(
+                    cache.latest_balance_snapshot_per_date, cid,
+                )
                 if snap_by_date:
                     existing_dates = {p.date for p in point_models}
                     for p in point_models:

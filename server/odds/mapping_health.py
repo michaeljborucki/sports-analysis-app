@@ -142,10 +142,17 @@ class MappingHealth:
                          removed, older_than_days)
         return removed
 
-    async def run(self, cache):
+    async def run(self, cache, snapshot_rows=None):
+        """`snapshot_rows()` returns the published odds snapshot's rows (or
+        None before the first publish). Reusing them avoids a second full
+        betting-db read + ~200k-dict build every minute, which competed with
+        the event loop for the GIL and fed long gen-2 GC passes."""
         while True:
             try:
-                await asyncio.to_thread(self.audit_players, await asyncio.to_thread(cache.all_current_cached))
+                rows = snapshot_rows() if snapshot_rows is not None else None
+                if rows is None:
+                    rows = await asyncio.to_thread(cache.all_current_cached)
+                await asyncio.to_thread(self.audit_players, rows)
                 await asyncio.to_thread(self.purge)
             except Exception:
                 logging.exception('Mapping health player audit failed')

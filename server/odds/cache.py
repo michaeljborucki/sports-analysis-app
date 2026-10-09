@@ -4,9 +4,11 @@ import asyncio
 import functools
 import logging
 import sqlite3
+import threading
 import time
 from contextlib import contextmanager
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Iterable
@@ -300,6 +302,21 @@ def init_schema_on_path(path) -> None:
 class OddsCache:
     def __init__(self, path: Path):
         self.path = path
+        # Single writer thread for the `*_async` write methods. Async fetchers
+        # and WS ingests used to call upsert/purge/delete directly on the
+        # event loop, where a busy-timeout wait on the write lock (up to 10s)
+        # or a WAL checkpoint stalled every request. One worker keeps writes
+        # serialized in submission order, so a delete-then-upsert from the
+        # same caller still lands in that order.
+        self._writer = ThreadPoolExecutor(
+            max_workers=1, thread_name_prefix="odds-cache-writer",
+            initializer=self._mark_persistent_thread,
+        )
+        # Per-thread connection state. Only the writer thread opts into a
+        # persistent connection: opening a fresh one per write meant six
+        # PRAGMAs, and the last close checkpointed + unlinked the WAL, so
+        # the writer spent its time in open/fsync/unlink.
+        self._local = threading.local()
         # Monotonic in-memory version counter. Bumped at most once per
         # VERSION_FLUSH_INTERVAL_S window by `_version_flush_loop`.
         # Scanner endpoints fold this into their TTLCache keys so a
@@ -486,8 +503,45 @@ class OddsCache:
             return self.all_current()
         return self._all_current_for_version(self.version)
 
+    def _mark_persistent_thread(self) -> None:
+        self._local.persistent = True
+
     @contextmanager
     def _conn(self) -> Iterator[sqlite3.Connection]:
+        if getattr(self._local, "persistent", False):
+            with self._persistent_conn() as conn:
+                yield conn
+            return
+        conn = self._open_conn()
+        try:
+            with conn:
+                yield conn
+        finally:
+            conn.close()
+
+    @contextmanager
+    def _persistent_conn(self) -> Iterator[sqlite3.Connection]:
+        """The calling thread's long-lived connection, reopened if the cache
+        path changed (cache-mode flip) or the last use raised a SQLite error.
+        Same transaction semantics as `_conn`: commit on success, rollback
+        on exception."""
+        conn = getattr(self._local, "conn", None)
+        if conn is not None and self._local.conn_path != self.path:
+            conn.close()
+            conn = None
+        if conn is None:
+            conn = self._open_conn()
+            self._local.conn = conn
+            self._local.conn_path = self.path
+        try:
+            with conn:
+                yield conn
+        except sqlite3.Error:
+            conn.close()
+            self._local.conn = None
+            raise
+
+    def _open_conn(self) -> sqlite3.Connection:
         conn = sqlite3.connect(
             self.path,
             detect_types=sqlite3.PARSE_DECLTYPES,
@@ -509,11 +563,7 @@ class OddsCache:
         cur.execute("PRAGMA temp_store=MEMORY")         # closest-line ORDER BY uses temp btrees
         cur.execute("PRAGMA wal_autocheckpoint=1000")   # checkpoint every 1000 pages (~4MB)
         cur.close()
-        try:
-            with conn:
-                yield conn
-        finally:
-            conn.close()
+        return conn
 
     def init(self) -> None:
         with self._conn() as c:
@@ -743,6 +793,50 @@ class OddsCache:
         if removed:
             self._bump_version()
         return removed
+
+    async def _write_async(self, fn, /, *args, **kwargs):
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            self._writer, functools.partial(fn, *args, **kwargs),
+        )
+
+    async def upsert_async(self, rows: Iterable[dict]) -> None:
+        """`upsert` on the writer thread. Materializes `rows` first so a
+        generator is never consumed off-thread."""
+        await self._write_async(self.upsert, list(rows))
+
+    def upsert_nowait(self, rows: Iterable[dict], *, label: str = "") -> None:
+        """Fire-and-forget `upsert` for sync WS handlers that run on the event
+        loop: queued on the writer thread (ordered behind earlier writes),
+        failures logged there. With no running loop (scripts, sync tests) it
+        writes inline so callers can read their own write back."""
+        rows = list(rows)
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            self.upsert(rows)
+            return
+        fut = self._writer.submit(self.upsert, rows)
+
+        def _log_failure(f) -> None:
+            if f.exception() is not None:
+                logger.error(
+                    "background upsert failed (%s)", label or "unlabeled",
+                    exc_info=f.exception(),
+                )
+
+        fut.add_done_callback(_log_failure)
+
+    async def purge_live_rows_for_book_async(
+        self, bookmaker_key: str, now: datetime, grace_seconds: int = 0,
+    ) -> int:
+        return await self._write_async(
+            self.purge_live_rows_for_book, bookmaker_key, now,
+            grace_seconds=grace_seconds,
+        )
+
+    async def delete_rows_async(self, keys: Iterable[tuple]) -> int:
+        return await self._write_async(self.delete_rows, list(keys))
 
     def delete_rows(self, keys: Iterable[tuple]) -> int:
         """Delete rows by primary key: (event_id, bookmaker_key, market_key,

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -25,6 +26,13 @@ from .user_settings import UserSettingsStore
 
 
 logging.basicConfig(level=logging.INFO)
+
+# GIL handoff interval 5ms -> 1ms. While the minutely snapshot rebuild burns
+# ~5s of pure-Python CPU, every thread doing many short I/O calls (sqlite,
+# sockets) waits up to the interval to win the GIL back after each one — a
+# handful of SQLite calls added up to 1-1.8s on /api/health. Throughput cost
+# to the CPU-bound rebuild is ~1-2%.
+sys.setswitchinterval(0.001)
 
 
 def create_app() -> FastAPI:
@@ -94,7 +102,13 @@ def create_app() -> FastAPI:
     # Novig direct order-book reader — public REST, no key, read-only.
     # Overrides the Odds API's Novig rows (same PK) with fresher take
     # prices + size. NOVIG_FETCHER_ENABLED=false turns it off.
-    novig_fetcher = NovigFetcher(cache=cache, settings_store=settings_store)
+    novig_fetcher = NovigFetcher(
+        cache=cache, settings_store=settings_store,
+        snapshot_rows=lambda: (
+            snapshot_service.current.rows
+            if snapshot_service.current is not None else None
+        ),
+    )
     novig_enabled = os.environ.get("NOVIG_FETCHER_ENABLED", "true").strip().lower() not in ("0", "false", "no")
     # Multi-account roll-up scraper (Accounts page). Reads CORAL33_ACCOUNTS
     # env (JSON list) or falls back to the single-account env pair. The
@@ -175,7 +189,15 @@ def create_app() -> FastAPI:
         # Runs regardless of cache mode — harmless when no upserts
         # happen, no-op when the dirty flag stays clear.
         cache_version_flush_task = _asyncio.create_task(cache.version_flush_loop())
-        mapping_health_task = _asyncio.create_task(mapping_health.run(cache))
+        mapping_health_task = _asyncio.create_task(mapping_health.run(
+            cache,
+            snapshot_rows=lambda: (
+                snapshot_service.current.rows
+                if snapshot_service.current is not None else None
+            ),
+        ))
+        from . import loop_watchdog
+        loop_watchdog_task = _asyncio.create_task(loop_watchdog.run())
 
         # cache_mode is the single source of truth for whether fetchers run.
         # LIVE → both fetchers up. LATEST / SNAPSHOT → both off, serving the
@@ -384,7 +406,8 @@ def create_app() -> FastAPI:
         sse_heartbeat_task.cancel()
         cache_version_flush_task.cancel()
         mapping_health_task.cancel()
-        for t in (sse_flush_task, sse_heartbeat_task, cache_version_flush_task, mapping_health_task):
+        loop_watchdog_task.cancel()
+        for t in (sse_flush_task, sse_heartbeat_task, cache_version_flush_task, mapping_health_task, loop_watchdog_task):
             try:
                 await t
             except (asyncio.CancelledError, BaseException):
@@ -462,7 +485,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(kalshi_ctl_router(kalshi_fetcher))
     app.include_router(polymarket_ctl_router(polymarket_fetcher))
-    app.include_router(novig_ctl_router(novig_fetcher))
+    app.include_router(novig_ctl_router(novig_fetcher, snapshot_service))
     app.include_router(
         cache_mode_router(
             mode_store, cache, live_cache_path, snapshot_cache_path,

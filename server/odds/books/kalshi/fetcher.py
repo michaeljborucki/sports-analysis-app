@@ -335,7 +335,7 @@ class KalshiFetcher:
         # lifecycle is post-tip-off-trading-allowed). Mirror coral33's
         # behavior and drop rows for games that have started — our sharp-
         # devig model isn't calibrated against in-play prices.
-        purged = self.cache.purge_live_rows_for_book("kalshi", now)
+        purged = await self.cache.purge_live_rows_for_book_async("kalshi", now)
         if purged:
             logger.info("kalshi %s: purged %d live rows", sport_key, purged)
 
@@ -361,14 +361,16 @@ class KalshiFetcher:
             markets = await self._safe_list_markets(series_ticker, sport_key)
             if markets is None:
                 continue
-            rows = normalize_markets(
+            # Normalize + team matching is pure CPU; keep it off the loop.
+            rows = await asyncio.to_thread(
+                normalize_markets,
                 markets,
                 series_ticker=series_ticker,
                 fetched_at=now,
                 match_event=self._smart_match_event(matcher),
             )
             if rows:
-                self.cache.upsert(rows)
+                await self.cache.upsert_async(rows)
                 total_rows += len(rows)
                 # Hand the normalized rows to the WS ingestor so it knows
                 # which market_tickers map to which cache-row templates.

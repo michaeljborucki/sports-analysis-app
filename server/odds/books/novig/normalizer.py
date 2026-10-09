@@ -247,9 +247,15 @@ def _pt(x) -> float:
 
 def build_sibling_index(
     rows: Iterable[dict], events_by_id: dict[str, dict],
+    *, exclude_books: frozenset[str] | None = None,
 ) -> dict[tuple, set[str]]:
     """Index existing Novig rows by what identifies their market, ignoring
     the side, so either side of a Novig market can find its slot.
+
+    With `exclude_books`, index every OTHER book's rows instead (all books
+    except those listed) — the fallback slot map for Novig markets the
+    Odds API never carried a Novig copy of: the other books' market_key on
+    the same line is what Novig's price must share to pair with them.
 
     Key: (event_id, family_id, line, entity) → {market_key, …}
       ml         line=None,            entity=None
@@ -260,7 +266,11 @@ def build_sibling_index(
     """
     index: dict[tuple, set[str]] = {}
     for r in rows:
-        if r.get("bookmaker_key") != BOOK_KEY:
+        book = r.get("bookmaker_key")
+        if exclude_books is None:
+            if book != BOOK_KEY:
+                continue
+        elif book in exclude_books:
             continue
         mk = r["market_key"]
         kind = _kind_of(mk)
