@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
-from ..models import FetcherStatus, Game
+from ..models import FetcherStatus
 from ..odds.arbitrage import scan_all_arbs
 from ..odds.cache import OddsCache
 from ..odds.coalesce import memoized_coalesced
@@ -17,6 +17,7 @@ from ..odds.normalize import rows_to_games
 from ..sports import Sport
 from ..util import TTLCache
 from .arbitrage import ArbOpportunity
+from .serialization import json_bytes_response, model_json_bytes
 
 
 class SportSummary(BaseModel):
@@ -26,10 +27,21 @@ class SportSummary(BaseModel):
     starting_in_3h: int        # starting within the props-window
 
 
+class UpcomingGame(BaseModel):
+    """Slim game header for the dashboard's "Starting soon" card. The full
+    `Game` (with its markets tree) made /api/dashboard ~366KB; the card only
+    reads these fields."""
+    event_id: str
+    sport_key: str = "mlb"
+    home_team: str
+    away_team: str
+    commence_time: datetime
+
+
 class DashboardResponse(BaseModel):
     sports: list[SportSummary]
     top_arbs: list[ArbOpportunity]
-    upcoming_games: list[Game]     # games starting in the next 3h, all sports
+    upcoming_games: list[UpcomingGame]  # games starting in the next 3h, all sports
     fetcher: FetcherStatus
     scanned_at: datetime
 
@@ -48,7 +60,7 @@ def build_router(
     memo = TTLCache(ttl_seconds=20.0)
 
     @router.get("/api/dashboard", response_model=DashboardResponse)
-    async def dashboard(books: str = "") -> DashboardResponse:
+    async def dashboard(books: str = "") -> Response:
         """Cross-sport summary. The full-cache read + arb scan is CPU/SQLite
         heavy, so it runs in the threadpool (never on the event loop, which
         used to stall every other request for 30-60s), and the result is
@@ -69,10 +81,17 @@ def build_router(
         )
         cache_key = ("dashboard", str(cache.path), source_version, books)
 
-        async def _compute() -> DashboardResponse:
-            return await run_in_threadpool(_build, books, snapshot)
+        async def _compute() -> bytes:
+            return await run_in_threadpool(_build_json, books, snapshot)
 
-        return await memoized_coalesced(memo, cache_key, _compute)
+        return json_bytes_response(
+            await memoized_coalesced(memo, cache_key, _compute)
+        )
+
+    def _build_json(books: str, snapshot: OddsSnapshot | None) -> bytes:
+        # Rendered in the threadpool and memoized as bytes, so memo hits
+        # skip FastAPI's per-request re-validation + re-serialization.
+        return model_json_bytes(_build(books, snapshot))
 
     def _build(books: str, snapshot: OddsSnapshot | None) -> DashboardResponse:
         books_set: set[str] | None = None
@@ -148,7 +167,9 @@ def build_router(
         return DashboardResponse(
             sports=summaries,
             top_arbs=[ArbOpportunity.model_validate(o) for o in top_arbs],
-            upcoming_games=[Game.model_validate(g) for g in upcoming_all[:12]],
+            upcoming_games=[
+                UpcomingGame.model_validate(g) for g in upcoming_all[:12]
+            ],
             fetcher=fetcher_status,
             scanned_at=now,
         )

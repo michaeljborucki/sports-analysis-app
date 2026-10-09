@@ -663,6 +663,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/novig/maker-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Maker Candidates
+         * @description Read-only feed for the Novig auto-maker process: each Novig outcome
+         *     we can post on, its fair probability, and live best bids.
+         */
+        get: operations["maker_candidates_api_novig_maker_candidates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/novig/refresh": {
         parameters: {
             query?: never;
@@ -1128,7 +1149,7 @@ export interface components {
             /** Top Arbs */
             top_arbs: components["schemas"]["ArbOpportunity"][];
             /** Upcoming Games */
-            upcoming_games: components["schemas"]["Game"][];
+            upcoming_games: components["schemas"]["UpcomingGame"][];
             fetcher: components["schemas"]["FetcherStatus"];
             /**
              * Scanned At
@@ -1905,6 +1926,30 @@ export interface components {
             interval_seconds: number;
             /** Markets */
             markets: components["schemas"]["MarketOption"][];
+        };
+        /**
+         * UpcomingGame
+         * @description Slim game header for the dashboard's "Starting soon" card. The full
+         *     `Game` (with its markets tree) made /api/dashboard ~366KB; the card only
+         *     reads these fields.
+         */
+        UpcomingGame: {
+            /** Event Id */
+            event_id: string;
+            /**
+             * Sport Key
+             * @default mlb
+             */
+            sport_key: string;
+            /** Home Team */
+            home_team: string;
+            /** Away Team */
+            away_team: string;
+            /**
+             * Commence Time
+             * Format: date-time
+             */
+            commence_time: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -2884,6 +2929,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PolymarketStatusResponse"];
+                };
+            };
+        };
+    };
+    maker_candidates_api_novig_maker_candidates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };

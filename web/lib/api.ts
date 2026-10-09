@@ -172,6 +172,7 @@ export interface ProfitBoostResponse {
   min_conversion_pct: number;
 }
 export type DashboardResponse = components["schemas"]["DashboardResponse"];
+export type UpcomingGame = components["schemas"]["UpcomingGame"];
 export type SportSummary = components["schemas"]["SportSummary"];
 export type SettingsResponse = components["schemas"]["SettingsResponse"];
 export type SportOption = components["schemas"]["SportOption"];

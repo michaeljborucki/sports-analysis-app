@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 
-import type { Game } from "@/lib/api";
+import type { UpcomingGame } from "@/lib/api";
 import { Chip, Panel } from "@/components/ui";
 
 import { StartsCell, sportLabel } from "./best-now-panel";
@@ -15,7 +15,7 @@ export function StartingSoonCard({
   games,
   onRefresh,
 }: {
-  games: Game[];
+  games: UpcomingGame[];
   onRefresh: () => void;
 }) {
   const router = useRouter();
