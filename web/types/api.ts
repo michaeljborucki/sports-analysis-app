@@ -663,27 +663,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/novig/maker-candidates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Maker Candidates
-         * @description Read-only feed for the Novig auto-maker process: each Novig outcome
-         *     we can post on, its fair probability, and live best bids.
-         */
-        get: operations["maker_candidates_api_novig_maker_candidates_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/novig/refresh": {
         parameters: {
             query?: never;
@@ -2929,28 +2908,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PolymarketStatusResponse"];
-                };
-            };
-        };
-    };
-    maker_candidates_api_novig_maker_candidates_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
                 };
             };
         };

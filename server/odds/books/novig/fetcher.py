@@ -84,18 +84,6 @@ class _Target:
     written_at: datetime | None = None
 
 
-def _join_market(mk: str) -> str:
-    """EV ops label spreads/totals by the MAIN key and fold prop alternates;
-    fold Novig plan keys the same way so the two can be joined."""
-    if mk.startswith("alternate_"):
-        mk = mk[len("alternate_"):]
-    return mk.removesuffix("_alternate")
-
-
-def _join_point(p) -> float | None:
-    return None if p is None else round(float(p), 2)
-
-
 class NovigFetcher:
     def __init__(self, cache: OddsCache, settings_store=None, snapshot_rows=None):
         self.cache = cache
@@ -488,64 +476,6 @@ class NovigFetcher:
             self._last_cycle_rows[t.sport] = self._last_cycle_rows.get(t.sport, 0) + len(rows)
         t.written_at = now
         return len(rows)
-
-    # ───────────────────────── maker candidates ─────────────────────────
-
-    def maker_candidates(self, games: list[dict], now: datetime) -> list[dict]:
-        """Every Novig outcome we hold a make quote for, with its fair
-        probability (same devig as the EV page) and the live best bids.
-        Read-only input for the auto-maker process; places nothing."""
-        from ...ev import scan_all_ev
-        ops = scan_all_ev(
-            games, now, books_filter={MAKER_BOOK_KEY},
-            min_ev_pct=-1000.0, max_longshot_american=100_000,
-            stale_seconds=300.0, arb_keys=None, max_results=None,
-        )
-        index: dict[tuple, tuple[str, str, _Target]] = {}
-        for mid, t in self._targets.items():
-            for oid, mk, name, point in t.plan:
-                index[(t.cache_event["event_id"], _join_market(mk), name, _join_point(point))] = (mid, oid, t)
-        stream = self._stream
-        out: dict[str, dict] = {}
-        for op in ops:
-            hit = index.get((op["event_id"], _join_market(op["market_kind"]),
-                             op["outcome_name"], _join_point(op.get("point"))))
-            if hit is None:
-                continue
-            mid, oid, t = hit
-            if oid in out:
-                continue
-            others = [o["outcomeId"] for o in t.market.get("outcomes") or [] if o["outcomeId"] != oid]
-            other = others[0] if len(others) == 1 else None
-            live = stream is not None and stream.covers(mid)
-            levels = stream.state.get(mid, {}) if live else {}
-            own = levels.get(oid)
-            opp = levels.get(other) if other else None
-            out[oid] = {
-                "event_id": op["event_id"],
-                "sport_key": op["sport_key"],
-                "home_team": op["home_team"],
-                "away_team": op["away_team"],
-                "commence_time": t.starts.isoformat(),
-                "market_key": op["market_kind"],
-                "outcome_name": op["outcome_name"],
-                "point": op.get("point"),
-                "market_id": mid,
-                "novig_event_id": t.market.get("eventId"),
-                "novig_event_market_count": getattr(self, "_event_market_counts", {}).get(
-                    t.market.get("eventId"), 1),
-                "outcome_id": oid,
-                "other_outcome_id": other,
-                "fair_probability": op["fair_probability"],
-                "fair_source": op["source"],
-                "anchor_book_count": op["anchor_book_count"],
-                "confidence": op["confidence"],
-                "fee_charged": (t.market.get("fee") or {}).get("charged"),
-                "bbo_live": live,
-                "own_best_bid": list(own) if own else None,
-                "other_best_bid": list(opp) if opp else None,
-            }
-        return list(out.values())
 
     # ───────────────────────── websocket stream ─────────────────────────
 

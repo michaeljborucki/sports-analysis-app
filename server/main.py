@@ -485,7 +485,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(kalshi_ctl_router(kalshi_fetcher))
     app.include_router(polymarket_ctl_router(polymarket_fetcher))
-    app.include_router(novig_ctl_router(novig_fetcher, snapshot_service))
+    app.include_router(novig_ctl_router(novig_fetcher))
     app.include_router(
         cache_mode_router(
             mode_store, cache, live_cache_path, snapshot_cache_path,
