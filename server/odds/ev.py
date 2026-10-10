@@ -46,6 +46,22 @@ SHARP_BOOKS: frozenset[str] = frozenset({
     "pinnacle", "betonlineag", "lowvig",
 })
 
+# Never part of a FAIR price (2026-10-10): Novig's own taker prices are
+# 1 - the best bid on the other side, which can be our own resting quote,
+# so they pulled the consensus toward the side we were bidding.
+FAIR_EXCLUDED_BOOKS: frozenset[str] = frozenset(OPT_IN_BOOKS | {"novig"})
+
+# Books run by one operator posting the same lines count as ONE opinion in
+# a consensus: book -> the book it duplicates (2026-10-10).
+SAME_OPERATOR: dict[str, str] = {"lowvig": "betonlineag"}
+
+
+def _dedupe_operators(books) -> set[str]:
+    """Drop a book whose operator twin is also present."""
+    books = set(books)
+    return {b for b in books if SAME_OPERATOR.get(b) not in books}
+
+
 # Confidence cap — EV above this is almost always stale or mispriced data.
 HIGH_EV_CONFIDENCE_CUTOFF = 0.15   # 15% ROI
 
@@ -324,6 +340,7 @@ def _consensus_fair(
     stale_seconds: float,
     sharp_books: frozenset[str],
     anchor_ages: dict | None = None,
+    anchor_books: set | None = None,
 ) -> tuple[dict[tuple[str, float | None], float], int] | None:
     """Per-book devig then take median across books. Returns
     ({outcome_key -> fair_prob}, anchor_book_count) or None if insufficient
@@ -346,10 +363,15 @@ def _consensus_fair(
                 for bk, pr in by_outcome[k].items():
                     if books_set is not None and bk not in books_set:
                         continue
+                    if bk in FAIR_EXCLUDED_BOOKS:
+                        continue
                     if _stale(pr, now, stale_seconds):
                         continue
                     book_sides[bk].append((k, int(pr["price_american"])))
+            full = _dedupe_operators(bk for bk, e in book_sides.items() if len(e) == expect_n)
             for bk, entries in book_sides.items():
+                if bk not in full:
+                    continue
                 if len(entries) != expect_n:
                     continue
                 # Preserve bucket's key order.
@@ -377,6 +399,8 @@ def _consensus_fair(
         return None
     if anchor_ages is not None:
         anchor_ages.update(ages)
+    if anchor_books is not None:
+        anchor_books.update(books)
     return probs, len(books)
 
 
@@ -418,6 +442,8 @@ def _two_way_pair_ev_rows(
     fair_a: float | None = None
     fair_b: float | None = None
     ref_s = stale_seconds if ref_limit is None else ref_limit
+    anchor_age = 0.0
+    anchor_books: list[str] = []
     pin_a = a_by_book.get("pinnacle")
     pin_b = b_by_book.get("pinnacle")
     if (
@@ -430,17 +456,28 @@ def _two_way_pair_ev_rows(
         )
         source = "pinnacle"
         anchor_count = 1
+        anchor_age = max(_age_seconds(pin_a, now), _age_seconds(pin_b, now))
+        anchor_books = ["pinnacle"]
     else:
         # Consensus: per-book devig (sharp first, then all)
         for candidate in (sharp_books, None):
             fa_vals: list[float] = []
             fb_vals: list[float] = []
             used: set[str] = set()
+            ages_used: list[float] = []
+            # One vote per operator (lowvig duplicates betonlineag).
+            def _fresh(bk: str) -> bool:
+                lim = stale_seconds if bk in {"coral33", "kalshi", "polymarket"} else ref_s
+                return (bk in b_by_book and not _stale(a_by_book[bk], now, lim)
+                        and not _stale(b_by_book[bk], now, lim))
+            present = _dedupe_operators(
+                bk for bk in a_by_book
+                if bk not in FAIR_EXCLUDED_BOOKS and (candidate is None or bk in candidate) and _fresh(bk))
             for bk, pa in a_by_book.items():
                 if candidate is not None and bk not in candidate:
                     continue
-                if bk in OPT_IN_BOOKS:
-                    continue  # a price you'd post, not a market price
+                if bk in FAIR_EXCLUDED_BOOKS or bk not in present:
+                    continue  # our own venue / a duplicate operator
                 lim = stale_seconds if bk in {"coral33", "kalshi", "polymarket"} else ref_s
                 if _stale(pa, now, lim):
                     continue
@@ -453,11 +490,14 @@ def _two_way_pair_ev_rows(
                 fa_vals.append(fa)
                 fb_vals.append(fb)
                 used.add(bk)
+                ages_used.append(max(_age_seconds(pa, now), _age_seconds(pb, now)))
             if len(used) >= 2:
                 fair_a = median(fa_vals)
                 fair_b = median(fb_vals)
                 source = "consensus"
                 anchor_count = len(used)
+                anchor_age = max(ages_used)
+                anchor_books = sorted(used)
                 break
         if fair_a is None or fair_b is None:
             return []
@@ -527,7 +567,10 @@ def _two_way_pair_ev_rows(
                 "kelly_quarter_pct": kelly_full_frac * 25.0,
                 "source": source,
                 "anchor_book_count": anchor_count,
+                "anchor_books": anchor_books,
                 "offered_age_s": int(_age_seconds(price, now)),
+                "anchor_age_s": int(anchor_age),
+                "reference_delayed": anchor_age > stale_seconds,
                 "also_in_arb": also_in_arb,
                 "confidence": confidence,
                 "wager_type": price.get("wager_type"),
@@ -620,15 +663,19 @@ def scan_game_ev(
         # Direct books keep the strict freshness target even when the slower
         # comparison feed is allowed its normal polling interval.
         reference_outcomes = {k: {bk: pr for bk, pr in prices.items()
-            if bk not in OPT_IN_BOOKS
+            if bk not in FAIR_EXCLUDED_BOOKS
             and (bk not in {"coral33", "kalshi", "polymarket"}
                  or not _stale(pr, now, stale_seconds))}
             for k, prices in by_outcome.items()}
         anchor_ages: dict = {}
+        used_books: set = set()
         fair = _pinnacle_fair(reference_outcomes, market_key, now, ref_limit, anchor_ages)
+        if fair is not None:
+            used_books = {"pinnacle"}
         if fair is None:
             res = _consensus_fair(
                 reference_outcomes, market_key, now, ref_limit, sharp_books, anchor_ages,
+                used_books,
             )
             if res is None:
                 continue
@@ -687,6 +734,7 @@ def scan_game_ev(
                     "kelly_quarter_pct": kelly_full_frac * 25.0,
                     "source": source,
                     "anchor_book_count": anchor_count,
+                    "anchor_books": sorted(used_books),
                     "offered_age_s": int(_age_seconds(price, now)),
                     "anchor_age_s": int(anchor_ages.get(out_key, 0)),
                     "reference_delayed": anchor_ages.get(out_key, 0) > stale_seconds,

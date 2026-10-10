@@ -29,11 +29,36 @@ def test_consensus_records_reference_age():
     # A second sharp book supplies the complete pair needed for consensus.
     from server.odds.ev import _consensus_fair
     def p(age):return dict(price_american=-110,fetched_at=NOW-timedelta(seconds=age))
-    pairs={('a Over',1.5):{'betonlineag':p(600),'lowvig':p(700)},
-           ('a Under',1.5):{'betonlineag':p(620),'lowvig':p(720)}}
+    # (lowvig duplicates betonlineag — one operator — so use a distinct book.)
+    pairs={('a Over',1.5):{'betonlineag':p(600),'fanduel':p(700)},
+           ('a Under',1.5):{'betonlineag':p(620),'fanduel':p(720)}}
     ages={}
-    assert _consensus_fair(pairs,'batter_total_bases',NOW,1020,frozenset({'betonlineag','lowvig'}),ages)
+    assert _consensus_fair(pairs,'batter_total_bases',NOW,1020,frozenset({'betonlineag','fanduel'}),ages)
     assert set(ages.values())=={720}
+
+
+def test_one_operator_is_not_a_consensus():
+    """2026-10-10: betonlineag and lowvig post the same lines; together they
+    are ONE opinion, so they can't form a 2-book consensus."""
+    from server.odds.ev import _consensus_fair
+    def p(age):return dict(price_american=-110,fetched_at=NOW-timedelta(seconds=age))
+    pairs={('a Over',1.5):{'betonlineag':p(60),'lowvig':p(60)},
+           ('a Under',1.5):{'betonlineag':p(60),'lowvig':p(60)}}
+    assert _consensus_fair(pairs,'batter_total_bases',NOW,1020,frozenset({'betonlineag','lowvig'}),{}) is None
+
+
+def test_novig_taker_prices_never_form_the_fair():
+    """Novig's taker price is 1 - the best bid on the other side, which can be
+    the maker's own quote: it must not pull the fair toward that side."""
+    from server.odds.ev import _consensus_fair
+    def p(price):return dict(price_american=price,fetched_at=NOW-timedelta(seconds=60))
+    pairs={('a Over',1.5):{'fanduel':p(-110),'novig':p(-200)},
+           ('a Under',1.5):{'fanduel':p(-110),'novig':p(150)}}
+    assert _consensus_fair(pairs,'batter_total_bases',NOW,1020,frozenset(),{}) is None   # only 1 real book
+    pairs[('a Over',1.5)]['draftkings']=p(-110); pairs[('a Under',1.5)]['draftkings']=p(-110)
+    used=set()
+    fair,n=_consensus_fair(pairs,'batter_total_bases',NOW,1020,frozenset(),{},used)
+    assert n==2 and used=={'fanduel','draftkings'} and abs(fair[('a Over',1.5)]-0.5)<1e-9
 
 
 def test_explicit_stricter_limit_preserved():

@@ -30,3 +30,16 @@ def test_american_to_implied_prob_is_cached():
     american_to_implied_prob(-110)
     info = american_to_implied_prob.cache_info()
     assert info.hits >= 1
+
+
+
+def test_power_devig_shrinks_longshots():
+    """Power devig (2026-10-10): even markets unchanged, longshots get less
+    than proportional scaling gives them."""
+    from server.odds.devig import devig_two_way, devig_n_way
+    a, b = devig_two_way(-110, -110)
+    assert abs(a - 0.5) < 1e-12 and abs(b - 0.5) < 1e-12
+    dog, fav = devig_two_way(600, -1000)
+    assert abs(dog - 0.1047) < 5e-4 and abs(dog + fav - 1.0) < 1e-12   # proportional: 0.136
+    probs = devig_n_way([150, 250, 200])
+    assert abs(sum(probs) - 1.0) < 1e-12 and probs[0] > probs[2] > probs[1]
