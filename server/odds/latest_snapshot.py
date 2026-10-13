@@ -263,7 +263,13 @@ class LatestOddsSnapshotService:
             # into the permanent generation so gen-2 GC passes stop
             # re-traversing ~200k row dicts (measured 120-990ms full passes,
             # every ~9s, freezing the event loop and collecting ~nothing).
-            # Frozen objects are still freed by refcount when released.
+            # Frozen objects are still freed by refcount when released — but
+            # never by the cycle collector, so unfreeze and collect first:
+            # a bare freeze pinned every pending cycle (httpx, asyncio,
+            # threadpool garbage) forever, leaking ~1.2GB/hour. One full
+            # pass a minute instead of every ~9s.
+            gc.unfreeze()
+            gc.collect()
             gc.freeze()
             logger.info(
                 "odds snapshot published generation=%d rows=%d games=%d "
@@ -359,7 +365,6 @@ class LatestOddsSnapshotService:
             base.direct_sig = new_sig
             self._current = new_snap
             self.overlays_published += 1
-            gc.freeze()  # same reason as the full build
 
     def _overlay_sync(
         self, snap: OddsSnapshot, base: _OverlayBase,
