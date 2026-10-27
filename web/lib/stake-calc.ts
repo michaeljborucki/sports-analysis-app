@@ -104,32 +104,91 @@ export function kellyStake(
 export interface FreeBetResult {
   /**
    * Face value of the promo free bet (the "stake" the user configures
-   * globally on the page). Not risked — returned if the free leg wins
-   * we collect winnings only; if it loses, we forfeit the bet.
+   * globally on the page). Not risked — if the free leg wins we collect
+   * winnings only; if it loses, we forfeit the bet.
    */
   free_face: number;
-  /** Cash stake on the hedge leg (risked). */
+  /** Rounded cash stake on the hedge leg (risked). */
   hedge_stake: number;
+  profit_if_free_wins: number;
+  profit_if_hedge_wins: number;
   /**
-   * Guaranteed profit — the conversion-rate-sized EV, which is what the
-   * backend's `conversion_pct` represents. Equal whether free or hedge
-   * wins, modulo rounding.
+   * Worst-case net across both outcomes, computed from the ROUNDED hedge.
+   * Equals the backend's `conversion_pct × face` only when the hedge
+   * needs no rounding.
    */
   profit: number;
 }
 
 export function freeBetConvert(
   faceValue: number,
+  freeAmerican: number,
+  hedgeAmerican: number,
   hedgeStakePer100: number,
-  conversionPct: number,
   inc: RoundIncrement,
 ): FreeBetResult {
   const hedge_stake = roundStake((faceValue / 100) * hedgeStakePer100, inc);
-  const profit = roundStake((faceValue / 100) * conversionPct, inc);
+  // Free bet returns winnings only; the hedge stake is lost when it wins.
+  const profit_if_free_wins =
+    faceValue * (americanToDecimal(freeAmerican) - 1) - hedge_stake;
+  const profit_if_hedge_wins =
+    hedge_stake * (americanToDecimal(hedgeAmerican) - 1);
   return {
     free_face: faceValue,
     hedge_stake,
-    profit,
+    profit_if_free_wins,
+    profit_if_hedge_wins,
+    profit: Math.min(profit_if_free_wins, profit_if_hedge_wins),
+  };
+}
+
+// ─────────────────────── Profit-boost conversion ─────────────────
+
+function fmtSigned(n: number): string {
+  return `${n < 0 ? "-" : "+"}$${Math.abs(n).toFixed(2)}`;
+}
+
+export interface ProfitBoostSplit {
+  boost_stake: number;
+  /** Rounded cash stake on the hedge leg. */
+  hedge_stake: number;
+  total: number;
+  profit_if_boost_wins: number;
+  profit_if_hedge_wins: number;
+  /** Worst-case net across both outcomes, computed from the ROUNDED stakes. */
+  profit: number;
+}
+
+/**
+ * Boosted leg + rounded hedge, with profit evaluated per outcome from the
+ * stakes actually placed. Rounding the hedge breaks the equal-profit
+ * balance, so the guaranteed figure is the minimum of the two outcomes —
+ * not `total × conversion_pct`, which assumes an unrounded hedge.
+ *
+ * The boosted payout is rebuilt from the ORIGINAL price × (1 + boost%),
+ * matching the server, rather than from the rounded boosted American.
+ */
+export function profitBoostSplit(
+  boostStake: number,
+  originalBoostAmerican: number,
+  boostPct: number,
+  hedgeAmerican: number,
+  hedgeStakePer100: number,
+  inc: RoundIncrement,
+): ProfitBoostSplit {
+  const boostedWin =
+    (americanToDecimal(originalBoostAmerican) - 1) * (1 + boostPct / 100);
+  const hedgeWin = americanToDecimal(hedgeAmerican) - 1;
+  const hedge_stake = roundStake((boostStake / 100) * hedgeStakePer100, inc);
+  const profit_if_boost_wins = boostStake * boostedWin - hedge_stake;
+  const profit_if_hedge_wins = hedge_stake * hedgeWin - boostStake;
+  return {
+    boost_stake: boostStake,
+    hedge_stake,
+    total: boostStake + hedge_stake,
+    profit_if_boost_wins,
+    profit_if_hedge_wins,
+    profit: Math.min(profit_if_boost_wins, profit_if_hedge_wins),
   };
 }
 
@@ -242,34 +301,46 @@ export function computeWorkbenchMath(
   }
   if (op.mode === "profit_boost") {
     // The user configures `cfg.stake` as the boost-leg cash stake. Hedge
-    // sizes to lock equal profit on either outcome.
-    const hedgeStake = roundStake(
-      (cfg.stake / 100) * op.raw.hedge_stake_per_100_boost,
+    // sizes to lock equal profit, then gets rounded — so report the
+    // worst-case outcome from the stakes actually placed.
+    const split = profitBoostSplit(
+      cfg.stake,
+      op.raw.boost_leg.original_price_american,
+      op.raw.boost_pct,
+      op.raw.hedge_leg.price_american,
+      op.raw.hedge_stake_per_100_boost,
       cfg.rounding,
     );
-    const total = cfg.stake + hedgeStake;
-    const profit = total * (op.raw.conversion_pct / 100);
+    const skew =
+      Math.abs(split.profit_if_boost_wins - split.profit_if_hedge_wins) >= 0.01
+        ? ` · boost wins ${fmtSigned(split.profit_if_boost_wins)} / hedge wins ${fmtSigned(split.profit_if_hedge_wins)}`
+        : "";
     return {
-      primary_stake_label: `$${total.toLocaleString()}`,
-      profit_label: `+$${profit.toFixed(2)} guaranteed (${op.raw.conversion_pct.toFixed(2)}% conversion @ ${op.raw.boost_pct}% boost)`,
+      primary_stake_label: `$${split.total.toLocaleString()}`,
+      profit_label: `${fmtSigned(split.profit)} guaranteed (${op.raw.conversion_pct.toFixed(2)}% conversion @ ${op.raw.boost_pct}% boost)${skew}`,
       legs: op.legs.map(leg => ({
         stake_label:
           leg.role === "offered"
             ? `$${cfg.stake.toLocaleString()} boost`
-            : `$${hedgeStake.toLocaleString()} hedge`,
+            : `$${split.hedge_stake.toLocaleString()} hedge`,
       })),
     };
   }
   // free_bet
   const fb = freeBetConvert(
     cfg.stake,
+    op.raw.free_leg.price_american,
+    op.raw.hedge_leg.price_american,
     op.raw.hedge_stake_per_100,
-    op.raw.conversion_pct,
     cfg.rounding,
   );
+  const fbSkew =
+    Math.abs(fb.profit_if_free_wins - fb.profit_if_hedge_wins) >= 0.01
+      ? ` · free wins ${fmtSigned(fb.profit_if_free_wins)} / hedge wins ${fmtSigned(fb.profit_if_hedge_wins)}`
+      : "";
   return {
     primary_stake_label: `$${fb.free_face.toLocaleString()} free`,
-    profit_label: `+$${fb.profit.toLocaleString()} guaranteed`,
+    profit_label: `${fmtSigned(fb.profit)} guaranteed (${op.raw.conversion_pct.toFixed(2)}% conversion)${fbSkew}`,
     legs: op.legs.map(leg => ({
       stake_label:
         leg.role === "offered"

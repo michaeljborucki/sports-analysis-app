@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from ..odds.books.coral33.fetcher import Coral33Fetcher
 from ..odds.books.kalshi.fetcher import KalshiFetcher
 from ..odds.books.polymarket.fetcher import PolymarketFetcher
+from ..odds.books.polymarket_us.fetcher import PolymarketUSFetcher
 from ..odds.books.novig.fetcher import NovigFetcher
 from ..odds.cache import OddsCache
 from ..odds.cache_mode import CacheMode, CacheModeStore
@@ -155,6 +156,7 @@ def build_router(
     wager_log_refresh_tick=None,
     kalshi_fetcher: KalshiFetcher | None = None,
     polymarket_fetcher: PolymarketFetcher | None = None,
+    polymarket_us_fetcher: PolymarketUSFetcher | None = None,
     novig_fetcher: NovigFetcher | None = None,
 ) -> APIRouter:
     router = APIRouter()
@@ -170,6 +172,8 @@ def build_router(
                 kalshi_fetcher.start_all()
             if polymarket_fetcher is not None:
                 polymarket_fetcher.start_all()
+            if polymarket_us_fetcher is not None:
+                polymarket_us_fetcher.start_all()
             if novig_fetcher is not None:
                 novig_fetcher.start_all()
             # CLV capture follows the same gate as the fetchers — it only
@@ -213,6 +217,8 @@ def build_router(
                 kalshi_fetcher.stop_all()
             if polymarket_fetcher is not None:
                 polymarket_fetcher.stop_all()
+            if polymarket_us_fetcher is not None:
+                polymarket_us_fetcher.stop_all()
             if novig_fetcher is not None:
                 novig_fetcher.stop_all()
             cache.path = snapshot_path if mode == CacheMode.SNAPSHOT else live_path
@@ -282,6 +288,8 @@ def build_router(
                 kalshi_fetcher.stop_all()
             if polymarket_fetcher is not None:
                 polymarket_fetcher.stop_all()
+            if polymarket_us_fetcher is not None:
+                polymarket_us_fetcher.stop_all()
             if novig_fetcher is not None:
                 novig_fetcher.stop_all()
         try:
@@ -296,6 +304,8 @@ def build_router(
                     kalshi_fetcher.start_all()
                 if polymarket_fetcher is not None:
                     polymarket_fetcher.start_all()
+                if polymarket_us_fetcher is not None:
+                    polymarket_us_fetcher.start_all()
                 if novig_fetcher is not None:
                     novig_fetcher.start_all()
         rows, _newest = await asyncio.to_thread(

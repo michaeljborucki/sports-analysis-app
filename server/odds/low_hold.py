@@ -74,6 +74,7 @@ def _emit_n_way(game: dict, market_kind: str, point: float | None,
             "point": best.get("point"),
             "wager_type": best.get("wager_type"),
             "counterpart_price_american": best.get("counterpart_price_american"),
+            "max_stake_dollars": best.get("max_stake_dollars"),
         }
         for side, best in zip(sides, bests)
     ]
@@ -107,6 +108,7 @@ def _emit(
                 "point": best_a.get("point"),
                 "wager_type": best_a.get("wager_type"),
                 "counterpart_price_american": best_a.get("counterpart_price_american"),
+                "max_stake_dollars": best_a.get("max_stake_dollars"),
             },
             {
                 "outcome_name": side_b["outcome_name"],
@@ -115,6 +117,7 @@ def _emit(
                 "point": best_b.get("point"),
                 "wager_type": best_b.get("wager_type"),
                 "counterpart_price_american": best_b.get("counterpart_price_american"),
+                "max_stake_dollars": best_b.get("max_stake_dollars"),
             },
         ],
     }

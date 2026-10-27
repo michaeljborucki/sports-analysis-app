@@ -39,6 +39,9 @@ class ProfitBoostBoostLeg(ProfitBoostLeg):
 
 class ProfitBoostHedgeLeg(ProfitBoostLeg):
     price_american: int
+    # Novig only: the other Novig price (maker on a take leg, take on a
+    # `novig_maker` leg). None everywhere else.
+    counterpart_price_american: int | None = None
 
 
 class ProfitBoostOpportunity(BaseModel):

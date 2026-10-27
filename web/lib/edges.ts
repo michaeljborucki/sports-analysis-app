@@ -170,6 +170,7 @@ export function fromLowHold(
     price_american: s.price_american,
     point: s.point,
     role: i === 0 ? "a" : "b",
+    max_stake_dollars: s.max_stake_dollars ?? null,
     counterpart_price_american: s.counterpart_price_american ?? null,
   }));
   return {
@@ -257,6 +258,7 @@ export function fromFreeBet(
       price_american: op.hedge_leg.price_american,
       point: op.hedge_leg.point,
       role: "hedge",
+      counterpart_price_american: op.hedge_leg.counterpart_price_american ?? null,
     },
   ];
   return {
@@ -305,6 +307,7 @@ export function fromProfitBoost(
       price_american: op.hedge_leg.price_american,
       point: op.hedge_leg.point,
       role: "hedge",
+      counterpart_price_american: op.hedge_leg.counterpart_price_american ?? null,
     },
   ];
   return {
@@ -414,8 +417,23 @@ function parseMarketKind(mk: string): {
   return { family, alt, period };
 }
 
+/** Market label without the line ("Total F5", "Batter Hits") — one entry
+ * per market_kind, for the market filter's option list. */
+export function marketKindLabel(marketKind: string): string {
+  return marketLabel({ market_kind: marketKind, point: null });
+}
+
+/** Which side of a two-way over/under market a row is on, or null when the
+ * outcome isn't an Over/Under (moneylines, spreads, Yes/No props). EV rows
+ * have one side; paired modes report their first leg's. */
+export function outcomeSide(op: EdgeOpportunity): "over" | "under" | null {
+  const name = op.mode === "ev" ? op.raw.outcome_name : op.legs[0]?.outcome_name;
+  const m = name?.trim().match(/(?:^|\s)(over|under)$/i);
+  return m ? (m[1].toLowerCase() as "over" | "under") : null;
+}
+
 /** Short market label with period annotations. */
-export function marketLabel(op: EdgeOpportunity): string {
+export function marketLabel(op: Pick<EdgeOpportunity, "market_kind" | "point">): string {
   const mk = op.market_kind;
   const { family, alt, period } = parseMarketKind(mk);
   if (family === "h2h") return `Moneyline${period}`;
@@ -498,7 +516,7 @@ const PLAYER_PROP_PREFIXES: readonly string[] = [
   "pitcher_",
 ];
 
-function isPlayerPropMarket(marketKind: string): boolean {
+export function isPlayerPropMarket(marketKind: string): boolean {
   return PLAYER_PROP_PREFIXES.some(p => marketKind.startsWith(p));
 }
 
@@ -578,6 +596,14 @@ export function commenceLabel(iso: string): string {
   return d.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
+/** Clock start time for a game header: "7:10 PM", or "Oct 9, 7:10 PM" if not today. */
+export function commenceClock(iso: string): string {
+  const d = new Date(iso);
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  if (d.toDateString() === new Date().toDateString()) return time;
+  return `${d.toLocaleDateString([], { month: "short", day: "numeric" })}, ${time}`;
+}
+
 /** Color utility for edge magnitude. */
 export function edgeColor(op: EdgeOpportunity): string {
   if (op.mode === "low_hold") {
@@ -648,14 +674,30 @@ export function sortEdges(
         av = `${a.away_team}@${a.home_team}`;
         bv = `${b.away_team}@${b.home_team}`;
         break;
-      case "market":
-        av = a.market_kind;
-        bv = b.market_kind;
-        break;
-      case "commence":
-        av = new Date(a.commence_time).getTime();
-        bv = new Date(b.commence_time).getTime();
-        break;
+      case "market": {
+        // Group by market, then overs before unders, then best edge first —
+        // so a market's overs can be worked top to bottom, then its unders.
+        // Only the market order follows the header direction.
+        const byMarket = marketKindLabel(a.market_kind).localeCompare(marketKindLabel(b.market_kind));
+        if (byMarket !== 0) return sign * byMarket;
+        const sideRank = (op: EdgeOpportunity) => {
+          const s = outcomeSide(op);
+          return s === "over" ? 0 : s === "under" ? 1 : 2;
+        };
+        const bySide = sideRank(a) - sideRank(b);
+        if (bySide !== 0) return bySide;
+        return b.edge_pct - a.edge_pct;
+      }
+      case "commence": {
+        // Start time, then keep each game's rows together (games sharing a
+        // start time would otherwise interleave), then best edge first.
+        // Only the time order follows the header direction.
+        const byTime = new Date(a.commence_time).getTime() - new Date(b.commence_time).getTime();
+        if (byTime !== 0) return sign * byTime;
+        const byGame = a.event_id.localeCompare(b.event_id);
+        if (byGame !== 0) return byGame;
+        return b.edge_pct - a.edge_pct;
+      }
     }
     if (typeof av === "number" && typeof bv === "number") {
       return sign * (av - bv);

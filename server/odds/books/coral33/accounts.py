@@ -28,10 +28,10 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any
-from zoneinfo import ZoneInfo
 
 from curl_cffi.requests.exceptions import RequestException
 
+from ....config import LOCAL_TZ
 from .client import Coral33APIError, Coral33AuthError, Coral33Client
 
 
@@ -495,9 +495,7 @@ async def fetch_account_history(
         logger.warning("no AgentID for %s — cannot fetch history", cred.customer_id)
         return []
 
-    today = datetime.now(timezone.utc).astimezone(
-        ZoneInfo("America/Denver")
-    ).date()
+    today = datetime.now(timezone.utc).astimezone(LOCAL_TZ).date()
     week_offsets = list(range(weeks_back - 1, -1, -1))
 
     # Fan out the 13 weekly figure calls in parallel. Each post_form
@@ -652,9 +650,7 @@ class AccountsScraper:
                 if self._cache is not None:
                     try:
                         now = datetime.now(timezone.utc)
-                        local_date = now.astimezone(
-                            ZoneInfo("America/Denver")
-                        ).date().isoformat()
+                        local_date = now.astimezone(LOCAL_TZ).date().isoformat()
                         rows = [
                             {
                                 "customer_id": s.customer_id,

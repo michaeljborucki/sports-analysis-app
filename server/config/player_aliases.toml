@@ -48,6 +48,10 @@
 "ronald acuna" = "ronald acuna jr"
 "fernando tatis" = "fernando tatis jr"
 "francis lindor" = "francisco lindor"
+# 2026-10-20 mapping orphans — coral33 spellings.
+"stevan kwan"   = "steven kwan"
+"johnny deluca" = "jonny deluca"
+"joe adell"     = "jo adell"
 
 [mlb_batter]
 # Batter-only: do not rename the distinct pitcher Luis Garcia.
@@ -97,3 +101,4 @@
 "michael pittman" = "michael pittman jr"
 "luther burden"   = "luther burden iii"
 "harold fannin"   = "harold fannin jr"   # 2026-10-02 orphan, Browns TE
+"ka imi fairbairn" = "kaimi fairbairn"   # 2026-10-18 orphan, coral drops the okina as a space

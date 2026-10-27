@@ -23,20 +23,97 @@ BOOK_KEY = "coral33"
 _ORPHAN_DEBUG = os.environ.get("CORAL33_DEBUG_ORPHANS") == "1"
 
 
-try:
-    from zoneinfo import ZoneInfo
-    _CORAL_TZ = ZoneInfo("America/Denver")
-except Exception:
-    _CORAL_TZ = timezone(-__import__("datetime").timedelta(hours=6))  # MDT fallback
+from zoneinfo import ZoneInfo
+
+from ....config import LOCAL_TZ_NAME
+
+# coral33's server zone for its naive GameDateTime strings. It has moved:
+# America/Denver from 2026-05 until ~2026-10-24 02:00Z, when every line
+# started arriving in Eastern (1:00 PM ET kickoffs as "13:00:01"), which put
+# every NBA/NFL/NHL/MLB game 2h off and orphaned them all (soccer, UFC and
+# tennis survived only on their wide match windows). It renders in the
+# account holder's zone, and the user had moved to Eastern. Start-up default
+# is the user's LOCAL_TZ; the fetcher still votes the zone each cycle from
+# line times vs cache start times (`observe_coral_timezone`) as a safety net.
+_CANDIDATE_TZS = (
+    "America/Denver", "America/New_York", "America/Chicago", "America/Los_Angeles",
+)
+_CORAL_TZ_NAME = LOCAL_TZ_NAME
+_CORAL_TZ = ZoneInfo(_CORAL_TZ_NAME)
+# A switch needs this many exact start-minute hits for the new zone, and
+# more than twice the current zone's hits.
+_TZ_SWITCH_MIN_HITS = 3
+_TZ_VOTE_MAX_WINDOW_MIN = 30
+
+
+def _floor_minute_utc(dt: datetime) -> datetime:
+    return dt.astimezone(timezone.utc).replace(second=0, microsecond=0)
+
+
+def observe_coral_timezone(
+    lines: list[dict], cache_events: list[dict], *, window_minutes: int = 15,
+) -> str:
+    """Pick the zone in which coral33's naive line times land exactly on the
+    cache's start times, and adopt it when it clearly beats the current one.
+
+    Votes are distinct naive times whose UTC minute equals some cache event's
+    start minute. Time-only (no team check) is enough here: a wrong zone
+    shifts every game by whole hours, so it scores near zero while the right
+    one scores most of the slate. Returns the zone in use afterwards.
+
+    Only strict-window sports vote (`window_minutes` <= 30): soccer kickoffs
+    disagree by up to 2h between sources, tennis sits on a 12:00:01
+    placeholder and fight cards share one stamp, so their times flipped the
+    zone back and forth on the first live run."""
+    global _CORAL_TZ, _CORAL_TZ_NAME
+    if window_minutes > _TZ_VOTE_MAX_WINDOW_MIN:
+        return _CORAL_TZ_NAME
+    starts: set[datetime] = set()
+    for ev in cache_events:
+        ct = ev.get("commence_time")
+        if isinstance(ct, str):
+            try:
+                ct = datetime.fromisoformat(ct.replace("Z", "+00:00"))
+            except ValueError:
+                continue
+        if isinstance(ct, datetime):
+            starts.add(_floor_minute_utc(ct if ct.tzinfo else ct.replace(tzinfo=timezone.utc)))
+    naive: set[datetime] = set()
+    for line in lines:
+        raw = (line.get("GameDateTime") or "").strip().split(".")[0].replace(" ", "T")
+        try:
+            dt = datetime.fromisoformat(raw)
+        except ValueError:
+            continue
+        if dt.tzinfo is None:
+            naive.add(dt)
+    if not starts or not naive:
+        return _CORAL_TZ_NAME
+    hits = {
+        name: sum(
+            1 for n in naive
+            if _floor_minute_utc(n.replace(tzinfo=ZoneInfo(name))) in starts
+        )
+        for name in _CANDIDATE_TZS
+    }
+    best = max(_CANDIDATE_TZS, key=lambda name: hits[name])
+    if (best != _CORAL_TZ_NAME and hits[best] >= _TZ_SWITCH_MIN_HITS
+            and hits[best] > 2 * hits[_CORAL_TZ_NAME]):
+        logger.warning(
+            "coral33: line times now read as %s (was %s) — start-time hits %s",
+            best, _CORAL_TZ_NAME, hits,
+        )
+        _CORAL_TZ_NAME = best
+        _CORAL_TZ = ZoneInfo(best)
+    return _CORAL_TZ_NAME
 
 
 def _parse_coral_datetime(s: str) -> datetime:
     """coral33 datetimes are naive strings like '2026-05-03 12:20:01.000' in
-    the server's local timezone (America/Denver — MDT/MST). Confirmed
-    2026-05-03 by paired-game probe across MLB/NBA/NHL/soccer: every sport
-    showed a consistent +6h delta between the naive emission and Odds API
-    UTC, ruling out the brief 2026-05-03 ET-experiment hypothesis. Parse
-    as Denver-local, convert to UTC for matching."""
+    the server's local timezone — America/Denver from 2026-05 (paired-game
+    probe: a consistent +6h vs Odds API UTC), Eastern since ~2026-10-24.
+    Parsed in the zone `observe_coral_timezone` last settled on, converted
+    to UTC for matching."""
     if not s:
         raise ValueError("empty datetime")
     s = s.strip()
@@ -270,12 +347,35 @@ def normalize_league_lines(
     return rows
 
 
+# Generational suffixes coral33 leaves off its prop names ("Brian Thomas",
+# "Michael Penix", "Ted Hurst") while the sharp books keep them. They were
+# being bridged one hand-written alias at a time — 8 of the first 12
+# player aliases were this one pattern.
+_NAME_SUFFIXES = ("jr", "sr", "ii", "iii", "iv", "v")
+
+
+def _adopt_suffixed_name(player: str, known: set[str] | frozenset[str]) -> str:
+    """Return the event's suffixed spelling of `player` when coral33 dropped it.
+
+    Only fires when the bare name is NOT already on the event and exactly
+    one "<name> <suffix>" is — two candidates (a Sr and a Jr) stay unmatched
+    rather than guessing. The shared canonical form is left alone: novig-
+    maker keeps its own copy of the fold, so the fix has to live on the
+    coral33 side of the join.
+    """
+    if not known or player in known:
+        return player
+    hits = [f"{player} {sfx}" for sfx in _NAME_SUFFIXES if f"{player} {sfx}" in known]
+    return hits[0] if len(hits) == 1 else player
+
+
 def normalize_player_props(
     response: dict,
     sport_key: str,
     fetched_at: datetime,
     game_num_lookup: Callable[[object], dict | None],
     report_issue: Callable[..., None] | None = None,
+    known_players: Callable[[str], set[str]] | None = None,
 ) -> list[dict]:
     """Decode a Get_LeagueLines2 response from a PLAYERPRO subtype (one row per
     player-stat Over/Under) into cache rows.
@@ -293,6 +393,10 @@ def normalize_player_props(
     "<Player Name> Under", matching what `_encode_outcome_name` produces for
     the Odds API pipeline. That way the EV scanner's per-player bucket
     logic pairs coral33 prices with sharp anchors cleanly.
+
+    `known_players(event_id)` returns the canonical player names other books
+    carry on that event; it lets a suffix-less coral33 name adopt the
+    event's "Jr"/"III" spelling (see `_adopt_suffixed_name`).
     """
     stat_map = PROP_STAT_TO_MARKET_KEY.get(sport_key)
     if not stat_map:
@@ -385,6 +489,8 @@ def normalize_player_props(
         if commence is not None and commence <= now:
             live += 1
             continue
+        if known_players is not None:
+            player = _adopt_suffixed_name(player, known_players(ref["event_id"]))
 
         base = {
             "event_id": ref["event_id"],

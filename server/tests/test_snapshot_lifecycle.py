@@ -13,7 +13,7 @@ def test_app_starts_and_stops_one_snapshot_service(monkeypatch, tmp_path: Path):
     calls: list[str] = []
 
     class FakeSnapshotService:
-        def __init__(self, cache):
+        def __init__(self, cache, **kwargs):
             self.cache = cache
 
         async def start(self):

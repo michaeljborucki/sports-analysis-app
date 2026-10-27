@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import asyncio
 import gc
+import multiprocessing
 import os
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import logging
@@ -24,6 +26,9 @@ logger = logging.getLogger(__name__)
 # polymarket, coral33 — a few thousand rows, some streamed in real time)
 # are re-merged this often, regrouping only the games whose rows moved.
 OVERLAY_INTERVAL_S = float(os.environ.get("SNAPSHOT_OVERLAY_SECONDS", "5"))
+# A subprocess build slower than this is killed and that round falls back
+# to the in-process build.
+SUBPROCESS_TIMEOUT_S = float(os.environ.get("SNAPSHOT_SUBPROCESS_TIMEOUT_S", "240"))
 _SYSTEM_SPORTS = frozenset({"mlb", "ncaaf", "nfl"})
 _SYSTEM_MARKETS = frozenset({"h2h", "spreads", "totals"})
 
@@ -102,6 +107,66 @@ def snapshot_memo(snapshot: Any, name: str, compute: Callable[[], _T]) -> _T:
         return derived[name]
 
 
+_BuildResult = tuple[
+    tuple[dict, ...],                    # rows
+    tuple[dict, ...],                    # games
+    tuple[dict, ...],                    # non_prop_games
+    Mapping[str, tuple[dict, ...]],      # non_prop_games_by_sport
+    tuple[dict, ...],                    # system_rows
+    datetime,                            # built_at
+    "_OverlayBase | None",
+]
+
+
+def merge_betting_db(cache: Any) -> tuple[list[dict], list[dict], list[dict]]:
+    """`(merged, base, direct)` — the same merge as bettingdb_source.all_current,
+    with the two halves kept apart so the overlay can re-merge just the direct
+    books. `merged` is base (minus rows a direct book owns) then direct, in
+    that order. Shared by the in-process build and the build subprocess."""
+    from . import bettingdb_source as bdb
+    base = bdb._mapped_rows(None)
+    direct = bdb._direct_book_rows(cache)
+    direct_pks = {bdb._pk(r) for r in direct}
+    merged = [
+        r for r in base
+        if r["bookmaker_key"] not in bdb.DIRECT_BOOK_KEYS
+        or bdb._pk(r) not in direct_pks
+    ]
+    merged.extend(direct)
+    return merged, base, direct
+
+
+def direct_signatures(direct: list[dict]) -> dict[str, tuple]:
+    return {e: _direct_signature(rs) for e, rs in _group_by_event(direct).items()}
+
+
+def finish_build(
+    rows: tuple[dict, ...],
+    all_games: list[dict],
+    non_prop_list: list[dict],
+    built_at: datetime,
+    overlay_base: "_OverlayBase | None",
+) -> _BuildResult:
+    games = tuple(all_games)
+    non_prop_games = tuple(non_prop_list)
+    by_sport: dict[str, list[dict]] = {}
+    for game in non_prop_games:
+        by_sport.setdefault(game["sport_key"], []).append(game)
+    non_prop_games_by_sport = MappingProxyType({
+        sport: tuple(sport_games) for sport, sport_games in by_sport.items()
+    })
+    system_rows = tuple(row for row in rows if _is_system_row(row))
+    return (
+        rows,
+        games,
+        non_prop_games,
+        non_prop_games_by_sport,
+        system_rows,
+        built_at,
+        overlay_base,
+    )
+
+
 class LatestOddsSnapshotService:
     """Build one odds view and coalesce concurrent readers onto it."""
 
@@ -111,6 +176,7 @@ class LatestOddsSnapshotService:
         *,
         refresh_interval_seconds: float = 60.0,
         hard_stale_seconds: float = 90.0,
+        build_in_subprocess: bool = False,
     ) -> None:
         self._cache = cache
         self._refresh_interval_seconds = refresh_interval_seconds
@@ -124,6 +190,11 @@ class LatestOddsSnapshotService:
         self._overlay_base: _OverlayBase | None = None
         self._overlay_task: asyncio.Task[None] | None = None
         self.overlays_published = 0
+        # betting_db mode only: build in a fresh spawned process per round
+        # (see snapshot_worker.py). Off for tests / native mode.
+        self._build_in_subprocess = build_in_subprocess
+        self._pool: ProcessPoolExecutor | None = None
+        self.last_build: dict[str, Any] = {}
 
     @property
     def current(self) -> OddsSnapshot | None:
@@ -196,6 +267,7 @@ class LatestOddsSnapshotService:
         if self._overlay_task is not None:
             self._overlay_task.cancel()
             self._overlay_task = None
+        self._shutdown_pool(kill=True)
         task = self._loop_task
         self._loop_task = None
         if task is None:
@@ -238,7 +310,7 @@ class LatestOddsSnapshotService:
                 system_rows,
                 built_at,
                 overlay_base,
-            ) = await run_in_threadpool(self._build_sync)
+            ) = await self._build_result()
             generation = (
                 1 if self._current is None else self._current.generation + 1
             )
@@ -287,38 +359,89 @@ class LatestOddsSnapshotService:
                 return self._current
             raise
 
-    def _build_sync(
-        self,
-    ) -> tuple[
-        tuple[dict, ...],
-        tuple[dict, ...],
-        tuple[dict, ...],
-        Mapping[str, tuple[dict, ...]],
-        tuple[dict, ...],
-        datetime,
-        _OverlayBase | None,
-    ]:
+    async def _build_result(self) -> _BuildResult:
+        from .cache import _odds_source
+        if self._build_in_subprocess and _odds_source() == "betting_db":
+            try:
+                return await self._build_via_subprocess()
+            except Exception:
+                logger.exception(
+                    "odds snapshot subprocess build failed; building in-process"
+                )
+                self._shutdown_pool(kill=True)
+        started = time.perf_counter()
+        result = await run_in_threadpool(self._build_sync)
+        self.last_build = {
+            "mode": "in_process",
+            "total_ms": round((time.perf_counter() - started) * 1000, 1),
+        }
+        return result
+
+    async def _build_via_subprocess(self) -> _BuildResult:
+        from . import snapshot_worker
+        if self._pool is None:
+            # spawn, not fork: a forked copy of this process (threads, open
+            # sockets, the event loop) is unsafe. One task per child, so each
+            # build's memory goes back to the OS when the child exits.
+            self._pool = ProcessPoolExecutor(
+                max_workers=1,
+                mp_context=multiprocessing.get_context("spawn"),
+                max_tasks_per_child=1,
+            )
+        started = time.perf_counter()
+        payload = await asyncio.wait_for(
+            asyncio.get_running_loop().run_in_executor(
+                self._pool, snapshot_worker.build_payload, str(self._cache.path),
+            ),
+            timeout=SUBPROCESS_TIMEOUT_S,
+        )
+        received = time.perf_counter()
+        # Read before assembling: _assemble_payload clears the payload.
+        child_ms = {k: round(v, 1) for k, v in payload["child_timings_ms"].items()}
+        chunks = len(payload["row_chunks"]) + len(payload["game_chunks"])
+        result = await run_in_threadpool(self._assemble_payload, payload)
+        self.last_build = {
+            "mode": "subprocess",
+            "child_ms": child_ms,
+            "subprocess_total_ms": round((received - started) * 1000, 1),
+            "assemble_ms": round((time.perf_counter() - received) * 1000, 1),
+            "chunks": chunks,
+        }
+        return result
+
+    @staticmethod
+    def _assemble_payload(payload: dict) -> _BuildResult:
+        from .snapshot_worker import unpack_payload
+        rows, all_games, non_prop_list, base, direct_sig, built_at = unpack_payload(payload)
+        payload.clear()   # drop ~150 MB of pickles before building the rest
+        overlay_base = _OverlayBase(
+            base_by_event=_group_by_event(base), direct_sig=direct_sig,
+        )
+        return finish_build(rows, all_games, non_prop_list, built_at, overlay_base)
+
+    def _shutdown_pool(self, kill: bool = False) -> None:
+        pool, self._pool = self._pool, None
+        if pool is None:
+            return
+        if kill:
+            # A timed-out / wedged build: don't wait for it.
+            for proc in list(getattr(pool, "_processes", {}).values()):
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+        pool.shutdown(wait=False, cancel_futures=True)
+
+    def _build_sync(self) -> _BuildResult:
         built_at = datetime.now(timezone.utc)
         overlay_base = None
         from .cache import _odds_source
         if _odds_source() == "betting_db":
-            # Same merge as bettingdb_source.all_current, with the two halves
-            # kept apart so the overlay can re-merge just the direct books.
-            from . import bettingdb_source as bdb
-            base = bdb._mapped_rows(None)
-            direct = bdb._direct_book_rows(self._cache)
-            direct_pks = {bdb._pk(r) for r in direct}
-            merged = [
-                r for r in base
-                if r["bookmaker_key"] not in bdb.DIRECT_BOOK_KEYS
-                or bdb._pk(r) not in direct_pks
-            ]
-            merged.extend(direct)
+            merged, base, direct = merge_betting_db(self._cache)
             rows = tuple(merged)
-            direct_by_event = _group_by_event(direct)
             overlay_base = _OverlayBase(
                 base_by_event=_group_by_event(base),
-                direct_sig={e: _direct_signature(rs) for e, rs in direct_by_event.items()},
+                direct_sig=direct_signatures(direct),
             )
         else:
             rows = tuple(self._cache.all_current())
@@ -326,24 +449,7 @@ class LatestOddsSnapshotService:
         # passes, ~half the 7-12s rebuild, contending with the event loop
         # for the GIL). Output is identical — see rows_to_games_with_non_prop.
         all_games, non_prop_list = rows_to_games_with_non_prop(rows, now=built_at)
-        games = tuple(all_games)
-        non_prop_games = tuple(non_prop_list)
-        by_sport: dict[str, list[dict]] = {}
-        for game in non_prop_games:
-            by_sport.setdefault(game["sport_key"], []).append(game)
-        non_prop_games_by_sport = MappingProxyType({
-            sport: tuple(sport_games) for sport, sport_games in by_sport.items()
-        })
-        system_rows = tuple(row for row in rows if _is_system_row(row))
-        return (
-            rows,
-            games,
-            non_prop_games,
-            non_prop_games_by_sport,
-            system_rows,
-            built_at,
-            overlay_base,
-        )
+        return finish_build(rows, all_games, non_prop_list, built_at, overlay_base)
 
     # ───────────────────────── direct-book overlay ─────────────────────────
 

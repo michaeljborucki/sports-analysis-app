@@ -8,6 +8,7 @@ from typing import Callable
 
 from ...player_names import normalize_player_name
 from .mapping import SERIES_TO_SPORT_MARKET, TEAM_CODE_TO_CANONICAL
+from .quote_depth import max_stake_from_quote
 
 
 # Kalshi's market-order (taker) fee, applied per contract as
@@ -258,6 +259,29 @@ def _team_code_from_ticker(ticker: str) -> str | None:
 
 
 def normalize_markets(
+    markets: list[dict],
+    series_ticker: str,
+    fetched_at: datetime,
+    match_event: Callable[..., dict | None],
+) -> list[dict]:
+    """`_normalize_by_market_key`, plus each row's `max_stake_dollars` from
+    its market's top-of-book quote (yes_ask / yes_bid sizes)."""
+    rows = _normalize_by_market_key(
+        markets, series_ticker=series_ticker, fetched_at=fetched_at,
+        match_event=match_event,
+    )
+    by_ticker = {m.get("ticker"): m for m in markets}
+    for row in rows:
+        market = by_ticker.get(row.get("_market_ticker"))
+        if market is None:
+            continue
+        stake = max_stake_from_quote(market, side=row.get("_ws_side", "yes"))
+        if stake is not None:
+            row["max_stake_dollars"] = stake
+    return rows
+
+
+def _normalize_by_market_key(
     markets: list[dict],
     series_ticker: str,
     fetched_at: datetime,

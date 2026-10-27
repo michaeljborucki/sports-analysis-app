@@ -4,7 +4,7 @@ import asyncio
 import logging
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ..odds.fetcher import FetcherRegistry
 from ..odds.market_config import MarketConfig
@@ -40,6 +40,8 @@ class SettingsPayload(BaseModel):
     # Omit / None = don't change visible_books on save. [] = user wants
     # nothing visible. [a, b, ...] = explicit set.
     visible_books: list[str] | None = None
+    # Omit / None = don't change. 0 = off.
+    min_liquidity_dollars: float | None = Field(default=None, ge=0)
 
 
 class SettingsResponse(BaseModel):
@@ -47,6 +49,7 @@ class SettingsResponse(BaseModel):
     disabled_markets: dict[str, list[str]]
     sports: list[SportOption]
     visible_books: list[str] | None = None
+    min_liquidity_dollars: float = 0.0
 
 
 class SettingsUpdateResponse(BaseModel):
@@ -96,6 +99,7 @@ def _build_response(
             if settings.visible_books is not None
             else None
         ),
+        min_liquidity_dollars=settings.min_liquidity_dollars,
     )
 
 
@@ -133,6 +137,11 @@ def build_router(
                 list(payload.visible_books)
                 if payload.visible_books is not None
                 else current.visible_books
+            ),
+            min_liquidity_dollars=(
+                payload.min_liquidity_dollars
+                if payload.min_liquidity_dollars is not None
+                else current.min_liquidity_dollars
             ),
         )
         store.set(new)

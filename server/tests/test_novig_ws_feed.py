@@ -94,10 +94,54 @@ def test_market_opened_after_event_subscribe_goes_live_from_seq_zero():
 def test_failed_subscribe_is_retried_and_rate_limit_pauses():
     s, _, _ = _stream()
     s._subscribed.add("e9")
-    s._pending[7] = ["e9"]
+    s._pending[7] = (["e9"], 0.0)
     s._handle({"code": "RATE_LIMIT_EXCEEDED", "message": "slow down", "nonce": 7})
     assert "e9" not in s._subscribed
     assert s._pause_until > 0
+    assert s.rate_limited == 1
+
+
+def test_unanswered_subscribe_is_retried_after_timeout():
+    """An error reply that can't be matched to its request (or no reply at
+    all) must not leave events marked subscribed with no data forever."""
+    import server.odds.books.novig.ws_feed as wf
+    s, _, _ = _stream()                       # e1 subscribed
+    s._subscribed.update({"e8", "e9"})
+    s._pending[3] = (["e1", "e8"], 100.0)
+    s._pending[4] = (["e9"], 100.0 + wf.PENDING_TIMEOUT_S)
+    s._handle({"code": "RATE_LIMIT_EXCEEDED", "message": "slow down"})   # no nonce
+    s._handle(_snapshot())                    # e1 did deliver
+    s._expire_pending(100.0 + wf.PENDING_TIMEOUT_S + 1)
+    assert "e8" not in s._subscribed          # retried
+    assert "e1" in s._subscribed              # had its snapshot
+    assert "e9" in s._subscribed and 4 in s._pending   # not timed out yet
+    assert s.retried == 1
+
+
+def test_subscribes_are_batched_by_market_count_and_paced(monkeypatch):
+    import server.odds.books.novig.ws_feed as wf
+    monkeypatch.setattr(wf, "SUB_BATCH_MARKETS", 100)
+    monkeypatch.setattr(wf, "STREAM_REFILL_PER_S", 1e6)   # no real waiting
+    sent, sleeps = [], []
+    s = NovigBboStream(signer=None, desired=lambda: [("a", 60), ("b", 70), ("c", 500), ("d", 5)],
+                       on_change=lambda m: None, on_lost=lambda m: None)
+
+    async def fake_send(method, payload):
+        sent.append((method, sorted(payload["events"])))
+        return len(sent)
+
+    real_sleep = asyncio.sleep
+
+    async def fake_sleep(t):
+        sleeps.append(t)
+        await real_sleep(0)
+
+    monkeypatch.setattr(s, "_send", fake_send)
+    monkeypatch.setattr(wf.asyncio, "sleep", fake_sleep)
+    asyncio.run(s._subscribe_paced(s._want_events()))
+    assert sent == [("subscribe", ["a", "b"]), ("subscribe", ["c"]), ("subscribe", ["d"])]
+    assert sleeps == [130 / 1e6, 500 / 1e6, 5 / 1e6]
+    assert s._subscribed == {"a", "b", "c", "d"} and set(s._pending) == {1, 2, 3}
 
 
 def test_watch_cap_takes_soonest_events_that_fit(monkeypatch):

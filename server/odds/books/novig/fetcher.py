@@ -23,9 +23,11 @@ that row shows again. Nothing is ever lost — only fresher where we reach.
 from __future__ import annotations
 
 import asyncio
+import collections
 import logging
 import os
 import random
+import time
 import zlib
 from pathlib import Path
 from dataclasses import dataclass, field
@@ -47,11 +49,18 @@ from .normalizer import (
 logger = logging.getLogger(__name__)
 
 CATALOG_INTERVAL = int(os.environ.get("NOVIG_CATALOG_SECONDS", "300"))
-HORIZON_HOURS = float(os.environ.get("NOVIG_HORIZON_HOURS", "12"))
+# 48h, not 12: maker quotes exist ONLY for games inside this window
+# (betting-db carries take prices alone), so a 12h horizon left next-day
+# games with no maker price in any scanner.
+HORIZON_HOURS = float(os.environ.get("NOVIG_HORIZON_HOURS", "48"))
 # Concurrent book requests. An uncached book GET takes ~2.7s round trip, so one
 # sequential worker can't use the rate budget; the shared token bucket in
 # NovigClient is what actually bounds req/s.
 POLL_WORKERS = int(os.environ.get("NOVIG_POLL_WORKERS", "8"))
+# The due queue (soonest game first) is rebuilt at most this often and shared
+# by every worker. Scanning all ~14k targets per poll — 3 passes x 8 workers
+# x ~8 polls/s — was the top source of event-loop stalls (2026-10-24).
+_QUEUE_REFRESH_S = 1.0
 # Streamed markets whose bbo hasn't moved are re-written this often so their
 # rows stay inside purge_stale_rows' 600s TTL.
 STREAM_REFRESH_S = 240
@@ -113,6 +122,9 @@ class NovigFetcher:
         self.scheduler = AsyncIOScheduler()
         self._running = False
         self._targets: dict[str, _Target] = {}
+        self._due_queue: collections.deque[str] = collections.deque()
+        self._due_queue_built = 0.0
+        self._next_due_min: datetime | None = None
         self._poll_tasks: list[asyncio.Task] = []
         self._catalog_lock = asyncio.Lock()
         self._last_catalog_at: datetime | None = None
@@ -386,6 +398,42 @@ class NovigFetcher:
 
     # ───────────────────────── book poller ─────────────────────────
 
+    def _rebuild_due_queue(self, now: datetime) -> None:
+        """One pass over the targets: due + idle + not streamed, soonest game
+        first (when more is due than the rate allows, far-out games fall back
+        to their betting-db copy). Also records when the next idle target
+        comes due, so idle workers know how long to sleep."""
+        stream = self._stream
+        due: list[tuple[datetime, str]] = []
+        next_due: datetime | None = None
+        for mid, t in self._targets.items():
+            if t.in_flight or (stream is not None and stream.covers(mid)):
+                continue
+            if t.next_due <= now:
+                due.append((t.starts, mid))
+            elif next_due is None or t.next_due < next_due:
+                next_due = t.next_due
+        due.sort()
+        self._due_queue = collections.deque(mid for _, mid in due)
+        self._next_due_min = next_due
+        self._due_queue_built = time.monotonic()
+
+    def _next_due_target(self, now: datetime) -> tuple[str, _Target] | None:
+        if time.monotonic() - self._due_queue_built >= _QUEUE_REFRESH_S:
+            self._rebuild_due_queue(now)
+        stream = self._stream
+        queue = self._due_queue
+        while queue:
+            mid = queue.popleft()
+            t = self._targets.get(mid)
+            # Re-check: claimed by a sibling, re-scheduled, streamed, or
+            # dropped by a catalog refresh since the queue was built.
+            if (t is None or t.in_flight or t.next_due > now
+                    or (stream is not None and stream.covers(mid))):
+                continue
+            return mid, t
+        return None
+
     async def _poll_loop(self) -> None:
         try:
             while self._running:
@@ -393,23 +441,13 @@ class NovigFetcher:
                     await asyncio.sleep(2)
                     continue
                 now = datetime.now(timezone.utc)
-                stream = self._stream
-                idle = [
-                    kv for kv in self._targets.items()
-                    if not kv[1].in_flight
-                    and not (stream is not None and stream.covers(kv[0]))
-                ]
-                if not idle:
-                    await asyncio.sleep(0.5)
+                picked = self._next_due_target(now)
+                if picked is None:
+                    nxt = self._next_due_min
+                    wait = 0.5 if nxt is None else (nxt - now).total_seconds()
+                    await asyncio.sleep(min(1.0, max(0.05, wait)))
                     continue
-                due = [kv for kv in idle if kv[1].next_due <= now]
-                if not due:
-                    nxt = min(t.next_due for _, t in idle)
-                    await asyncio.sleep(min(1.0, (nxt - now).total_seconds()))
-                    continue
-                # When more is due than the rate allows, the soonest game
-                # wins; far-out games fall back to their betting-db copy.
-                mid, t = min(due, key=lambda kv: kv[1].starts)
+                mid, t = picked
                 if t.starts <= now:
                     self._targets.pop(mid, None)
                     continue

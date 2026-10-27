@@ -19,6 +19,14 @@ per-market subscribes would take tens of minutes after every reconnect.
 The watch cap still counts an event as all its markets, so events are taken
 soonest-first until MAX_MARKETS; the rest stay on REST polling.
 
+Pacing (2026-10-24): subscribes went out 5 events at a time; with events of
+300-600 markets almost every request came back RATE_LIMIT_EXCEEDED (38 in
+30 min), and an event whose request got no usable reply stayed marked
+subscribed with no snapshot forever (36 events "subscribed", 104 markets
+live). Now each request carries about SUB_BATCH_MARKETS markets, requests
+are spaced by their market count over the stream refill rate, and an event
+whose request is unanswered after PENDING_TIMEOUT_S is retried.
+
 Freshness: a market counts as covered only while the socket is up and it
 has a snapshot on this connection. A sequence gap drops it back to the
 poller until a re-snapshot lands; a disconnect drops everything.
@@ -40,11 +48,14 @@ from .client import BASE_URL, _Signer
 logger = logging.getLogger(__name__)
 
 WS_URL = BASE_URL.replace("https://", "wss://", 1) + "/v3/ws"
-# Live account limit (GET /v3/limits, 2026-10-09): 2048 watched markets per
-# connection. Stay under it; the rest stay on REST polling.
-MAX_MARKETS = int(os.environ.get("NOVIG_WS_MAX_MARKETS", "2000"))
+# Live account limits (GET /v3/limits, 2026-10-24): 8192 watched markets,
+# stream bucket 512 capacity / 32 per second. Stay under the watch cap; the
+# rest stay on REST polling.
+MAX_MARKETS = int(os.environ.get("NOVIG_WS_MAX_MARKETS", "8000"))
+STREAM_REFILL_PER_S = float(os.environ.get("NOVIG_WS_STREAM_RPS", "32"))
+SUB_BATCH_MARKETS = 256         # markets per subscribe request (at least one event)
+PENDING_TIMEOUT_S = 30.0        # unanswered subscribe -> retry its events
 SYNC_INTERVAL_S = 5.0
-CHUNK = 5                       # events per subscribe request
 RATE_LIMIT_PAUSE_S = 15.0
 _ALLOWED_METHODS = frozenset({"subscribe", "unsubscribe", "snapshot"})
 
@@ -81,7 +92,9 @@ class NovigBboStream:
         self._live: set[str] = set()        # markets with a snapshot on this connection
         self._event_of: dict[str, str] = {} # market -> event (subscribed events only)
         self._subscribed: set[str] = set()  # events requested on this connection
-        self._pending: dict[int, list[str]] = {}  # nonce -> events awaiting reply
+        self._pending: dict[int, tuple[list[str], float]] = {}  # nonce -> (events, sent at)
+        self._snapshotted: set[str] = set()  # events that delivered a snapshot
+        self._counts: dict[str, int] = {}   # event -> market count (from desired())
         self._pause_until = 0.0
         self._ws = None
         self._nonce = 0
@@ -89,6 +102,8 @@ class NovigBboStream:
         self.updates = 0
         self.reconnects = 0
         self.gaps = 0
+        self.rate_limited = 0
+        self.retried = 0
         self.last_message_at: float | None = None
 
     # ───────────────────────── public ─────────────────────────
@@ -104,6 +119,10 @@ class NovigBboStream:
             "connected": self.connected,
             "markets_live": len(self._live) if self.connected else 0,
             "events_subscribed": len(self._subscribed),
+            "events_snapshotted": len(self._snapshotted),
+            "pending_requests": len(self._pending),
+            "rate_limited": self.rate_limited,
+            "retried": self.retried,
             "updates": self.updates,
             "reconnects": self.reconnects,
             "seq_gaps": self.gaps,
@@ -136,6 +155,9 @@ class NovigBboStream:
         async with websockets.connect(
             WS_URL, additional_headers=headers,
             ping_interval=20, ping_timeout=20, max_size=2**24,
+            # No permessage-deflate: inflating on the event loop costs more
+            # than the bytes saved (same call as Kalshi / Polymarket US).
+            compression=None,
         ) as ws:
             self._ws = ws
             self.connected = True
@@ -157,6 +179,7 @@ class NovigBboStream:
         self._live.clear()
         self._event_of.clear()
         self._subscribed.clear()
+        self._snapshotted.clear()
         self._pending.clear()
         self._seq.clear()
         if lost:
@@ -176,12 +199,26 @@ class NovigBboStream:
             if total + n > MAX_MARKETS:
                 continue
             out.append(eid)
+            self._counts[eid] = n
             total += n
         return out
+
+    def _expire_pending(self, now: float) -> None:
+        """Requests with no reply after PENDING_TIMEOUT_S: un-mark their
+        events that never delivered a snapshot, so the next pass retries."""
+        for nonce, (events, sent_at) in list(self._pending.items()):
+            if now - sent_at < PENDING_TIMEOUT_S:
+                continue
+            del self._pending[nonce]
+            stuck = [e for e in events if e not in self._snapshotted]
+            if stuck:
+                self.retried += len(stuck)
+                self._subscribed.difference_update(stuck)
 
     async def _sync_loop(self) -> None:
         """Keep the event subscriptions equal to the fetcher's target events."""
         while True:
+            self._expire_pending(time.monotonic())
             if time.monotonic() >= self._pause_until:
                 want = self._want_events()
                 want_set = set(want)
@@ -190,18 +227,32 @@ class NovigBboStream:
                     await self._send("unsubscribe", [f"event:{e}" for e in drop])
                     self._forget_events(drop)
                 add = [e for e in want if e not in self._subscribed]
-                for i in range(0, len(add), CHUNK):
-                    if time.monotonic() < self._pause_until:
-                        break
-                    part = add[i:i + CHUNK]
-                    self._subscribed.update(part)
-                    nonce = await self._send("subscribe", {"events": {e: "bbo" for e in part}})
-                    self._pending[nonce] = part
+                await self._subscribe_paced(add)
             await asyncio.sleep(SYNC_INTERVAL_S)
+
+    async def _subscribe_paced(self, events: list[str]) -> None:
+        """Subscribe `events` (soonest first) in requests of about
+        SUB_BATCH_MARKETS markets, each followed by a pause long enough for
+        the stream bucket to refill that many. Stops on a rate-limit pause."""
+        batch: list[str] = []
+        cost = 0
+        for i, e in enumerate(events):
+            batch.append(e)
+            cost += self._counts.get(e, 1)
+            if cost < SUB_BATCH_MARKETS and i < len(events) - 1:
+                continue
+            if time.monotonic() < self._pause_until:
+                return
+            self._subscribed.update(batch)
+            nonce = await self._send("subscribe", {"events": {ev: "bbo" for ev in batch}})
+            self._pending[nonce] = (batch, time.monotonic())
+            await asyncio.sleep(cost / STREAM_REFILL_PER_S)
+            batch, cost = [], 0
 
     def _forget_events(self, events) -> None:
         events = set(events)
         self._subscribed -= events
+        self._snapshotted -= events
         mids = [m for m, e in self._event_of.items() if e in events]
         lost = {m for m in mids if m in self._live}
         for m in mids:
@@ -222,10 +273,14 @@ class NovigBboStream:
             failed = self._pending.pop(nonce, None)
             if failed:
                 # Un-mark so the next sync retries them.
-                self._subscribed.difference_update(failed)
+                self._subscribed.difference_update(failed[0])
             if msg.get("code") == "RATE_LIMIT_EXCEEDED":
+                self.rate_limited += 1
                 self._pause_until = time.monotonic() + RATE_LIMIT_PAUSE_S
-            logger.warning("novig ws error %s: %s", msg.get("code"), msg.get("message"))
+            logger.warning(
+                "novig ws error %s: %s (nonce=%s, %s)", msg.get("code"), msg.get("message"),
+                nonce, f"{len(failed[0])} events retried" if failed else "no matching request",
+            )
             return
         self._pending.pop(nonce, None)
         for mid, snap in (msg.get("snapshot") or {}).items():
@@ -234,6 +289,7 @@ class NovigBboStream:
             if bbo is None or eid not in self._subscribed:
                 continue
             self._event_of[mid] = eid
+            self._snapshotted.add(eid)
             self._seq[mid] = int(bbo.get("seq") or 0)
             self.state[mid] = _parse_levels(bbo.get("bbo") or {})
             if _closed((snap.get("lifecycle") or {}).get("status")):

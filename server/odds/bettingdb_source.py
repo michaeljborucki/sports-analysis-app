@@ -133,6 +133,7 @@ import functools
 import logging
 import os
 import sqlite3
+import sys
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -148,7 +149,7 @@ logger = logging.getLogger(__name__)
 # the direct poller only reaches a rate-limited subset of Novig's markets,
 # so its rows win per-PK and betting-db fills every slot it doesn't reach.
 DIRECT_BOOK_KEYS: frozenset[str] = frozenset({
-    "coral33", "kalshi", "novig", "novig_maker", "polymarket",
+    "coral33", "kalshi", "novig", "novig_maker", "polymarket", "polymarket_us",
 })
 
 # Mirror of betting-db's `[[cadence.main]]` bands — the SOURCE OF TRUTH
@@ -490,6 +491,93 @@ def _encode_outcome_name_cached(
     return _encode_outcome_name(market_key, name, description, sport_key)
 
 
+def _map_raw_rows(raw) -> tuple[dict[tuple, dict], int]:
+    """Map betting-db `latest_odds` rows to `odds_snapshot`-shaped dicts.
+
+    Keyed by odds_snapshot's PK so post-fold collisions resolve
+    last-write-wins, exactly as OddsCache.upsert's ON CONFLICT does.
+
+    The strings every row repeats (event id, teams, book, market) are
+    interned: sqlite hands back a fresh copy per row, ~250 bytes a row
+    across a 500k-row snapshot, held for as long as the snapshot lives.
+    """
+    intern = sys.intern
+    # Prices and points repeat heavily too (-110, 0.5, ...); share one
+    # number object per value instead of one per row. Separate memos so an
+    # int price never stands in for a float point; zero points are left
+    # alone because -0.0 == 0.0 would otherwise swap the sign str() shows.
+    share_price = {}.setdefault
+    share_point = {}.setdefault
+    out: dict[tuple, dict] = {}
+    dropped_teamless = 0
+    for r in raw:
+        book = intern(r["bookmaker_key"])
+        if book in _EXCLUDE_BOOKMAKERS:
+            continue
+        odds_api_sport = r["sport_key"]
+        app_sport = app_sport_for(odds_api_sport)
+        if app_sport is None:
+            continue
+        # odds_snapshot declares home_team / away_team NOT NULL and every
+        # consumer dereferences them unguarded; betting-db allows NULL
+        # (an odds row that arrived before its event was discovered).
+        if r["home_team"] is None or r["away_team"] is None:
+            dropped_teamless += 1
+            continue
+        market_key = intern(r["market_key"])
+        point = r["outcome_point"]
+        point = 0.0 if point is None else float(point)
+        if point:
+            point = share_point(point, point)
+        price = int(r["price_american"])
+        name = _encode_outcome_name_cached(
+            market_key, r["outcome_name"], r["outcome_description"],
+            app_sport,
+        )
+        row = {
+            "event_id": intern(r["event_id"]),
+            "sport_key": app_sport,
+            # normalize_odds_response only sets league_key/title for soccer.
+            "league_key": odds_api_sport if app_sport == "soccer" else None,
+            # betting-db does not persist the Odds API's sport_title.
+            "league_title": None,
+            "home_team": intern(r["home_team"]),
+            "away_team": intern(r["away_team"]),
+            "commence_time": _norm_ts(r["commence_time"]),
+            "bookmaker_key": book,
+            "market_key": market_key,
+            "outcome_name": name,
+            # h2h's point is meaningless — the native all_current()
+            # reverses the 0.0 sentinel to None. Done here rather than by
+            # mutating rows afterwards, because the memo below hands the
+            # SAME dicts to every caller.
+            "outcome_point": None if market_key == "h2h" else point,
+            "price_american": share_price(price, price),
+            "fetched_at": _norm_ts(r["fetched_at"]),
+            "wager_type": None,
+            "max_stake_dollars": None,
+        }
+        out[(row["event_id"], book, market_key, name, point)] = row
+
+        # NRFI bridge — same synthesis normalize_odds_response performs,
+        # so coral33's `nrfi` market still has Odds API prices to pair
+        # against in this mode.
+        if market_key in (
+            "totals_1st_1_innings", "alternate_totals_1st_1_innings",
+        ) and point == 0.5:
+            nrfi_outcome = {"Over": "Yes", "Under": "No"}.get(r["outcome_name"])
+            if nrfi_outcome is not None:
+                nrfi_row = {
+                    **row,
+                    "market_key": "nrfi",
+                    "outcome_name": nrfi_outcome,
+                    "outcome_point": 0.0,
+                }
+                out[(row["event_id"], book, "nrfi", nrfi_outcome, 0.0)] = nrfi_row
+
+    return out, dropped_teamless
+
+
 def _mapped_rows_uncached(
     sport_key: str | None = None,
     market_keys: tuple[str, ...] | None = None,
@@ -534,80 +622,18 @@ def _mapped_rows_uncached(
 
     fetch_started = time.perf_counter()
     conn = _connect()
+    # Rows are mapped while the cursor streams rather than after a
+    # fetchall(): materializing ~500k sqlite3.Row objects first nearly
+    # doubled the scan's peak memory, and pymalloc keeps arenas sized to
+    # that peak. fetch_ms is now the query start; map_ms includes stepping.
     try:
-        raw = conn.execute(
+        cursor = conn.execute(
             q, [*fresh_params, *sport_params, *market_params]
-        ).fetchall()
+        )
+        fetched = time.perf_counter()
+        out, dropped_teamless = _map_raw_rows(cursor)
     finally:
         conn.close()
-    fetched = time.perf_counter()
-
-    # Keyed by odds_snapshot's PK so post-fold collisions resolve
-    # last-write-wins, exactly as OddsCache.upsert's ON CONFLICT does.
-    out: dict[tuple, dict] = {}
-    dropped_teamless = 0
-    for r in raw:
-        book = r["bookmaker_key"]
-        if book in _EXCLUDE_BOOKMAKERS:
-            continue
-        odds_api_sport = r["sport_key"]
-        app_sport = app_sport_for(odds_api_sport)
-        if app_sport is None:
-            continue
-        # odds_snapshot declares home_team / away_team NOT NULL and every
-        # consumer dereferences them unguarded; betting-db allows NULL
-        # (an odds row that arrived before its event was discovered).
-        if r["home_team"] is None or r["away_team"] is None:
-            dropped_teamless += 1
-            continue
-        market_key = r["market_key"]
-        point = r["outcome_point"]
-        point = 0.0 if point is None else float(point)
-        name = _encode_outcome_name_cached(
-            market_key, r["outcome_name"], r["outcome_description"],
-            app_sport,
-        )
-        row = {
-            "event_id": r["event_id"],
-            "sport_key": app_sport,
-            # normalize_odds_response only sets league_key/title for soccer.
-            "league_key": odds_api_sport if app_sport == "soccer" else None,
-            # betting-db does not persist the Odds API's sport_title.
-            "league_title": None,
-            "home_team": r["home_team"],
-            "away_team": r["away_team"],
-            "commence_time": _norm_ts(r["commence_time"]),
-            "bookmaker_key": book,
-            "market_key": market_key,
-            "outcome_name": name,
-            # h2h's point is meaningless — the native all_current()
-            # reverses the 0.0 sentinel to None. Done here rather than by
-            # mutating rows afterwards, because the memo below hands the
-            # SAME dicts to every caller.
-            "outcome_point": None if market_key == "h2h" else point,
-            "price_american": int(r["price_american"]),
-            "fetched_at": _norm_ts(r["fetched_at"]),
-            "wager_type": None,
-            "max_stake_dollars": None,
-        }
-        out[(row["event_id"], book, market_key, name, point)] = row
-
-        # NRFI bridge — same synthesis normalize_odds_response performs,
-        # so coral33's `nrfi` market still has Odds API prices to pair
-        # against in this mode.
-        if market_key in (
-            "totals_1st_1_innings", "alternate_totals_1st_1_innings",
-        ) and point == 0.5:
-            nrfi_outcome = {"Over": "Yes", "Under": "No"}.get(r["outcome_name"])
-            if nrfi_outcome is not None:
-                nrfi_row = {
-                    **row,
-                    "market_key": "nrfi",
-                    "outcome_name": nrfi_outcome,
-                    "outcome_point": 0.0,
-                }
-                out[(row["event_id"], book, "nrfi", nrfi_outcome, 0.0)] = nrfi_row
-
     if dropped_teamless:
         logger.warning(
             "betting-db: dropped %d row(s) with NULL home/away team "

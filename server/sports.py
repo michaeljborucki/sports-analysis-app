@@ -80,7 +80,9 @@ SPORTS: dict[str, Sport] = {
         # Summer League only posts game lines in practice; the halves/quarters/
         # props tiers below are requested against this key too and come back
         # empty (silent 422), which is a modest live-quota cost.
-        odds_api_sport_keys=("basketball_nba", "basketball_nba_summer_league"),
+        # basketball_nba_preseason folds in the same way for the October
+        # preseason slate — the games coral33's preseason subtype carries then.
+        odds_api_sport_keys=("basketball_nba", "basketball_nba_summer_league", "basketball_nba_preseason"),
         markets_config="markets.nba.toml",
         market_groups=(
             MarketGroup("Moneyline", main_key="h2h", display="moneyline"),

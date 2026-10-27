@@ -67,3 +67,8 @@ agents/**/.env.local
 
 # Local mapping diagnostics
 *.mapping.sqlite*
+
+# SQLite WAL side files + stray local DB
+server/cache.db-shm
+server/cache.db-wal
+server/cache.sqlite

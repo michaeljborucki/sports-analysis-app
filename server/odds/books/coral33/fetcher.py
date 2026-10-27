@@ -11,11 +11,13 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from ...cache import OddsCache
 from .client import Coral33APIError, Coral33Client
-from .event_matcher import Coral33EventMatcher
+from .event_matcher import MATCH_WINDOW_MIN, SPORT_WINDOW_MINUTES, Coral33EventMatcher
 from .mapping import Coral33Config, load_coral33_config
 from .normalizer import (
+    BOOK_KEY,
     _clean_team,
     _parse_coral_datetime,
+    observe_coral_timezone,
     normalize_extras,
     normalize_league_lines,
     normalize_player_props,
@@ -403,6 +405,19 @@ class Coral33Fetcher:
                 return_exceptions=True,
             )
 
+            # Settle coral33's line-time zone from this tier's Game lines
+            # before any are matched (see observe_coral_timezone).
+            observe_coral_timezone(
+                [
+                    line
+                    for r in pair_results
+                    if not isinstance(r, Exception) and r[2] == "Game" and r[3]
+                    for line in (r[3].get("Lines") or [])
+                ],
+                cache_events,
+                window_minutes=SPORT_WINDOW_MINUTES.get(sport_key, MATCH_WINDOW_MIN),
+            )
+
             tier_rows = 0
             for r in pair_results:
                 if isinstance(r, Exception):
@@ -567,6 +582,11 @@ class Coral33Fetcher:
                 correlation_key(sport_key, correlation_id)
             )
 
+        known_by_event = await asyncio.to_thread(self._other_book_players, sport_key)
+
+        def known_players(event_id: str) -> set[str]:
+            return known_by_event.get(event_id, set())
+
         async def fetch_pair(
             sport_type: str, subtype: str, period: str,
         ) -> tuple[str, str, str, dict | None, dict | None]:
@@ -615,6 +635,7 @@ class Coral33Fetcher:
                         straight_data, sport_key=sport_key, fetched_at=now,
                         game_num_lookup=lookup,
                         report_issue=self._report_mapping_issue,
+                        known_players=known_players,
                     )
                     if straight_data is not None
                     else []
@@ -624,6 +645,7 @@ class Coral33Fetcher:
                         parlay_data, sport_key=sport_key, fetched_at=now,
                         game_num_lookup=lookup,
                         report_issue=self._report_mapping_issue,
+                        known_players=known_players,
                     )
                     if parlay_data is not None
                     else []
@@ -635,6 +657,31 @@ class Coral33Fetcher:
                 await self.cache.upsert_async(merged)
                 tier_rows += len(merged)
         return tier_rows
+
+    def _other_book_players(self, sport_key: str) -> dict[str, set[str]]:
+        """event_id -> canonical player names every non-coral33 book posts.
+
+        Feeds the suffix bridge in `normalize_player_props`. Reads the same
+        memoized prop-family scan the scanners use, so it adds no betting-db
+        pass of its own inside a memo window. Failure degrades to no bridge.
+        """
+        try:
+            rows = self.cache.all_current_family(sport_key, prop_family=True)
+        except Exception:
+            logger.exception("coral33 %s: other-book player scan failed", sport_key)
+            return {}
+        out: dict[str, set[str]] = {}
+        for r in rows:
+            if r.get("bookmaker_key") == BOOK_KEY:
+                continue
+            name = r.get("outcome_name") or ""
+            for side in (" Over", " Under", " Yes", " No"):
+                if name.endswith(side):
+                    name = name[: -len(side)]
+                    break
+            if name:
+                out.setdefault(r["event_id"], set()).add(name)
+        return out
 
     async def _pull_extras(
         self, sport_cfg, sport_key: str, now: datetime,

@@ -60,6 +60,16 @@ class PolymarketIngestor:
         self.unknown_asset_msgs: int = 0
         self.last_update_at: float | None = None
         self.registered_assets: int = 0
+        # Registration scopes (the fetcher uses sport_key). Each REST cycle
+        # registers a sport's COMPLETE current asset set via
+        # `replace_scope`; assets that drop out are released and removed
+        # once no scope owns them. Without this the map only grew, and
+        # the WS client's 5000-asset subscribe cap (insertion order) ended
+        # up full of finished games, so NEW games stopped being subscribed.
+        self._scope_assets: dict[object, set[str]] = {}
+        self._asset_scopes: dict[str, set[object]] = {}
+        self.pruned_total: int = 0
+        self.last_prune_at: float | None = None
 
     # ────────────────────── Registration ──────────────────────────────
 
@@ -88,6 +98,55 @@ class PolymarketIngestor:
             registered += 1
         self.registered_assets = len(self._templates)
         return registered
+
+    def replace_scope(self, scope, rows: Iterable[dict]) -> int:
+        """Register `rows` as the COMPLETE current asset set for `scope`.
+        Assets this scope registered previously but not now are released;
+        an asset is removed from the template map only once no scope owns
+        it. Assets registered via plain `register_rows` are never pruned
+        here. Returns count of rows registered."""
+        rows = list(rows)
+        new_assets = {str(r["_asset_id"]) for r in rows if r.get("_asset_id")}
+        old_assets = self._scope_assets.get(scope, set())
+        for aid in old_assets - new_assets:
+            owners = self._asset_scopes.get(aid)
+            if owners is not None:
+                owners.discard(scope)
+                if not owners:
+                    self._asset_scopes.pop(aid, None)
+                    self._drop_asset(aid)
+        for aid in new_assets:
+            self._asset_scopes.setdefault(aid, set()).add(scope)
+        if new_assets:
+            self._scope_assets[scope] = new_assets
+        else:
+            self._scope_assets.pop(scope, None)
+        return self.register_rows(rows)
+
+    def prune_started(self, now: datetime | None = None) -> int:
+        """Drop assets whose game has started (commence_time <= now) —
+        same cut as the fetcher's `purge_live_rows_for_book("polymarket",
+        now)`, so WS deltas stop re-upserting rows that purge deletes.
+        Unparseable commence_time → kept. Returns count dropped."""
+        now = now or datetime.now(timezone.utc)
+        dropped = 0
+        for aid, template in list(self._templates.items()):
+            if _has_started(template.get("commence_time"), now):
+                self._drop_asset(aid)
+                for scope in self._asset_scopes.pop(aid, set()):
+                    owned = self._scope_assets.get(scope)
+                    if owned is not None:
+                        owned.discard(aid)
+                        if not owned:
+                            self._scope_assets.pop(scope, None)
+                dropped += 1
+        return dropped
+
+    def _drop_asset(self, aid: str) -> None:
+        if self._templates.pop(aid, None) is not None:
+            self.pruned_total += 1
+            self.last_prune_at = time.time()
+        self.registered_assets = len(self._templates)
 
     # ────────────────────── WS message processing ─────────────────────
 
@@ -238,6 +297,15 @@ class PolymarketIngestor:
 
     # ────────────────────── Status / observability ────────────────────
 
+    def stats(self) -> dict:
+        """Read-only size counters for debug endpoints."""
+        return {
+            "templates_assets": len(self._templates),
+            "scopes": len(self._scope_assets),
+            "pruned_total": self.pruned_total,
+            "last_prune_at": self.last_prune_at,
+        }
+
     def status(self) -> dict:
         now = time.time()
         return {
@@ -259,6 +327,23 @@ def _clean_row(row: dict) -> dict:
     """Return a copy of `row` without WS-internal metadata and without the
     per-tick price/fetched_at (those get re-injected per WS message)."""
     return {k: v for k, v in row.items() if k not in _INTERNAL_ROW_FIELDS}
+
+
+def _has_started(commence, now: datetime) -> bool:
+    """True when `commence` (datetime or ISO string) is <= now. Unknown /
+    unparseable values count as NOT started so we never over-prune."""
+    if commence is None:
+        return False
+    if isinstance(commence, str):
+        try:
+            commence = datetime.fromisoformat(commence.replace("Z", "+00:00"))
+        except ValueError:
+            return False
+    if not isinstance(commence, datetime):
+        return False
+    if commence.tzinfo is None:
+        commence = commence.replace(tzinfo=timezone.utc)
+    return commence <= now
 
 
 def _parse_ws_timestamp(ts) -> datetime | None:

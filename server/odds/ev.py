@@ -27,6 +27,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from statistics import median
 
+from .liquidity import is_liquid
 from .devig import (
     american_to_decimal,
     american_to_implied_prob,
@@ -50,6 +51,12 @@ SHARP_BOOKS: frozenset[str] = frozenset({
 # 1 - the best bid on the other side, which can be our own resting quote,
 # so they pulled the consensus toward the side we were bidding.
 FAIR_EXCLUDED_BOOKS: frozenset[str] = frozenset(OPT_IN_BOOKS | {"novig"})
+
+# Directly-fed books held to the strict freshness target (their quotes
+# stream / poll in seconds), whatever the slower comparison feed allows.
+DIRECT_FRESHNESS_BOOKS: frozenset[str] = frozenset({
+    "coral33", "kalshi", "polymarket", "polymarket_us",
+})
 
 # Books run by one operator posting the same lines count as ONE opinion in
 # a consensus: book -> the book it duplicates (2026-10-10).
@@ -467,7 +474,7 @@ def _two_way_pair_ev_rows(
             ages_used: list[float] = []
             # One vote per operator (lowvig duplicates betonlineag).
             def _fresh(bk: str) -> bool:
-                lim = stale_seconds if bk in {"coral33", "kalshi", "polymarket"} else ref_s
+                lim = stale_seconds if bk in DIRECT_FRESHNESS_BOOKS else ref_s
                 return (bk in b_by_book and not _stale(a_by_book[bk], now, lim)
                         and not _stale(b_by_book[bk], now, lim))
             present = _dedupe_operators(
@@ -478,7 +485,7 @@ def _two_way_pair_ev_rows(
                     continue
                 if bk in FAIR_EXCLUDED_BOOKS or bk not in present:
                     continue  # our own venue / a duplicate operator
-                lim = stale_seconds if bk in {"coral33", "kalshi", "polymarket"} else ref_s
+                lim = stale_seconds if bk in DIRECT_FRESHNESS_BOOKS else ref_s
                 if _stale(pa, now, lim):
                     continue
                 pb = b_by_book.get(bk)
@@ -575,6 +582,7 @@ def _two_way_pair_ev_rows(
                 "confidence": confidence,
                 "wager_type": price.get("wager_type"),
                 "counterpart_price_american": price.get("counterpart_price_american"),
+                "max_stake_dollars": price.get("max_stake_dollars"),
             })
     return ops
 
@@ -664,7 +672,7 @@ def scan_game_ev(
         # comparison feed is allowed its normal polling interval.
         reference_outcomes = {k: {bk: pr for bk, pr in prices.items()
             if bk not in FAIR_EXCLUDED_BOOKS
-            and (bk not in {"coral33", "kalshi", "polymarket"}
+            and (bk not in DIRECT_FRESHNESS_BOOKS
                  or not _stale(pr, now, stale_seconds))}
             for k, prices in by_outcome.items()}
         anchor_ages: dict = {}
@@ -742,6 +750,7 @@ def scan_game_ev(
                     "confidence": confidence,
                     "wager_type": price.get("wager_type"),
                 "counterpart_price_american": price.get("counterpart_price_american"),
+                    "max_stake_dollars": price.get("max_stake_dollars"),
                 })
     return ops
 
@@ -769,6 +778,7 @@ def scan_all_ev(
     arb_keys: set[tuple] | None = None,
     max_results: int | None = None,
     sort: str = "desc",
+    min_liquidity_dollars: float = 0.0,
 ) -> list[dict]:
     """Entry point used by the API layer. Expects `games` to be the output
     of `rows_to_games` (so prices are already commission-adjusted).
@@ -777,7 +787,11 @@ def scan_all_ev(
     sort='asc': worst first — use with min_ev_pct < 0 to surface fade
                 candidates (the cap would otherwise always prefer positives).
     sort='bidir': half most-positive, half most-negative — use when the
-                user wants both tails in one response."""
+                user wants both tails in one response.
+
+    min_liquidity_dollars drops opportunities whose OFFERED price has less
+    top-of-book depth (applied before the cap). The fair price is untouched:
+    thin quotes still inform the devig exactly as before."""
     sharp = SHARP_BOOKS if sharp_books is None else frozenset(sharp_books)
     ops: list[dict] = []
     for g in games:
@@ -790,6 +804,8 @@ def scan_all_ev(
             stale_seconds=stale_seconds,
             arb_keys=arb_keys,
         ))
+    if min_liquidity_dollars > 0:
+        ops = [o for o in ops if is_liquid(o, min_liquidity_dollars)]
     if sort == "asc":
         ops.sort(key=lambda o: (o["ev_pct"], o["commence_time"]))
     elif sort == "bidir" and max_results is not None:

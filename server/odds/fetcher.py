@@ -48,7 +48,7 @@ _RESOLVED_KEYS_TTL = timedelta(hours=24)
 # MAIN tier only — the per-event tiers skip them. This is how a game-lines-only
 # slate can fold into a full-market sport (e.g. NBA Summer League folded into
 # the `nba` sport, which otherwise pulls halves/quarters/props).
-GAME_LINES_ONLY_KEYS = frozenset({"basketball_nba_summer_league"})
+GAME_LINES_ONLY_KEYS = frozenset({"basketball_nba_summer_league", "basketball_nba_preseason"})
 
 
 class FetcherRegistry:

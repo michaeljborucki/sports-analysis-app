@@ -14,10 +14,11 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime
-from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
+
+from ..config import LOCAL_TZ
 
 from ..odds.books.coral33.accounts import (
     AccountsRollup,
@@ -272,7 +273,7 @@ def build_router(
                     s.fetched_at.replace("Z", "+00:00")
                 )
                 live_date_by_cid[s.customer_id] = captured.astimezone(
-                    ZoneInfo("America/Denver")
+                    LOCAL_TZ
                 ).date().isoformat()
             except (TypeError, ValueError):
                 pass

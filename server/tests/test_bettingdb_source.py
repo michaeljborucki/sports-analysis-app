@@ -620,6 +620,30 @@ def test_kalshi_rows_from_betting_db_are_excluded(
     assert {r["bookmaker_key"] for r in cache.all_current()} == {"draftkings"}
 
 
+def test_polymarket_rows_from_betting_db_are_excluded(
+    cache: OddsCache, tmp_path: Path, monkeypatch,
+):
+    """The Odds API's polymarket and polymarket_us copies never fill slots:
+    polymarket's was inaccurate (swapped teams, non-ask prices) and
+    polymarket_us is owned by the direct Polymarket US feed."""
+    db_path = tmp_path / "odds.db"
+    commence = NOW + timedelta(hours=3)
+    _seed(
+        db_path,
+        [_event("evt_p", commence)],
+        [
+            _odds("evt_p", "h2h", "New York Yankees", book="polymarket"),
+            _odds("evt_p", "h2h", "New York Yankees", book="polymarket_us"),
+            _odds("evt_p", "h2h", "New York Yankees", book="draftkings"),
+        ],
+        fetched_at=NOW,
+    )
+    monkeypatch.setenv("BETTING_DB_PATH", str(db_path))
+    monkeypatch.setenv("ODDS_SOURCE", "betting_db")
+
+    assert {r["bookmaker_key"] for r in cache.all_current()} == {"draftkings"}
+
+
 def test_direct_book_row_wins_pk_collision_over_betting_db_copy(
     cache: OddsCache, tmp_path: Path, monkeypatch,
 ):
@@ -701,8 +725,8 @@ def test_sport_filter_is_pushed_into_sql():
 
     clause, params = _sport_filter_sql("nba")
     assert "sport_key IN" in clause
-    # Summer League folds into the NBA tab, so both keys must be pushed.
-    assert set(params) == {"basketball_nba", "basketball_nba_summer_league"}
+    # Summer League and preseason fold into the NBA tab, so every key is pushed.
+    assert set(params) == {"basketball_nba", "basketball_nba_summer_league", "basketball_nba_preseason"}
 
     assert _sport_filter_sql(None) == ("", [])
     assert _sport_filter_sql("not_a_sport") == (" AND 0", [])

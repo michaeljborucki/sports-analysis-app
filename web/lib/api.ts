@@ -23,13 +23,21 @@ export const apiPaths = {
   props: (sport: string) => `/api/props/${sport}`,
   systems: (timeframe: "today" | "tomorrow" | "upcoming" = "today") =>
     `/api/systems?timeframe=${timeframe}`,
+  cfbPredictions: (week?: number) =>
+    `/api/cfb/predictions${week ? `?week=${week}` : ""}`,
+  nbaPredictions: (date?: string) =>
+    `/api/nba/predictions${date ? `?date=${date}` : ""}`,
+  nbaSgp: (date?: string) => `/api/nba/sgp${date ? `?date=${date}` : ""}`,
   arbitrage: (
     books: string[],
     wagerFilter: "any" | "straight" | "parlay" = "any",
+    minLiquidity: number | null = null,
   ) => {
     const qs = new URLSearchParams();
     if (books.length) qs.set("books", books.join(","));
     if (wagerFilter !== "any") qs.set("wager_filter", wagerFilter);
+    // null = server uses the saved Settings minimum.
+    if (minLiquidity != null) qs.set("min_liquidity", String(minLiquidity));
     const q = qs.toString();
     return `/api/arbitrage${q ? `?${q}` : ""}`;
   },
@@ -37,11 +45,13 @@ export const apiPaths = {
     books: string[],
     maxHoldPct = 1,
     wagerFilter: "any" | "straight" | "parlay" = "any",
+    minLiquidity: number | null = null,
   ) => {
     const qs = new URLSearchParams();
     if (books.length) qs.set("books", books.join(","));
     qs.set("max_hold_pct", String(maxHoldPct));
     if (wagerFilter !== "any") qs.set("wager_filter", wagerFilter);
+    if (minLiquidity != null) qs.set("min_liquidity", String(minLiquidity));
     return `/api/low-hold?${qs.toString()}`;
   },
   freeBets: (
@@ -69,6 +79,7 @@ export const apiPaths = {
       maxResults?: number;
       sort?: "desc" | "asc" | "bidir";
       wagerFilter?: "any" | "straight" | "parlay";
+      minLiquidity?: number | null;
     } = {},
   ) => {
     const qs = new URLSearchParams();
@@ -81,6 +92,7 @@ export const apiPaths = {
     if (opts.wagerFilter && opts.wagerFilter !== "any") {
       qs.set("wager_filter", opts.wagerFilter);
     }
+    if (opts.minLiquidity != null) qs.set("min_liquidity", String(opts.minLiquidity));
     return `/api/ev?${qs.toString()}`;
   },
   profitBoost: (
@@ -143,6 +155,8 @@ export interface ProfitBoostHedgeLeg {
   book: string;
   point: number | null;
   price_american: number;
+  /** Novig only: the other Novig price (maker on take, take on maker). */
+  counterpart_price_american?: number | null;
 }
 
 export interface ProfitBoostOpportunity {

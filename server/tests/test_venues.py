@@ -40,3 +40,62 @@ def test_counterparts_link_take_and_maker():
     assert prices[0]["counterpart_price_american"] == -128
     assert prices[1]["counterpart_price_american"] == -135
     assert "counterpart_price_american" not in prices[2]
+
+
+def _h2h_game(a_prices, b_prices):
+    return {
+        "event_id": "e", "home_team": "H", "away_team": "A",
+        "commence_time": "2026-10-14T00:00:00Z",
+        "markets": [{"market_key": "h2h", "outcomes": [
+            {"outcome_name": "H", "prices": a_prices},
+            {"outcome_name": "A", "prices": b_prices},
+        ]}],
+    }
+
+
+def test_promo_scanners_hedge_at_maker_price_when_named():
+    from server.odds.free_bet import scan_all_free_bets
+    from server.odds.profit_boost import scan_all_profit_boost
+
+    a = [_p("coral33", 200), _p("novig", 190)]
+    b = [_p("novig", -240), _p("novig_maker", -215), _p("fanduel", -250)]
+    _link_maker_counterparts(b)
+    g = _h2h_game(a, b)
+    books = {"coral33", "fanduel", "novig", "novig_maker"}
+
+    fb = scan_all_free_bets([g], hedge_books_filter=books,
+                            free_bet_books_filter={"coral33"})
+    pb = scan_all_profit_boost([g], hedge_books_filter=books,
+                               boost_books_filter={"coral33"}, boost_pct=30)
+    for op in (fb[0], pb[0]):
+        assert op["hedge_leg"]["book"] == "novig_maker"
+        assert op["hedge_leg"]["counterpart_price_american"] == -240
+
+    # Without novig_maker in the filter, the maker quote stays invisible.
+    take_books = books - {"novig_maker"}
+    fb_take = scan_all_free_bets([g], hedge_books_filter=take_books,
+                                 free_bet_books_filter={"coral33"})
+    assert fb_take[0]["hedge_leg"]["book"] == "novig"
+
+
+def test_promo_scanners_never_pair_novig_take_with_novig_maker():
+    from server.odds.free_bet import scan_all_free_bets
+    from server.odds.profit_boost import scan_all_profit_boost
+
+    # Only legal pairings are same-venue Novig take vs Novig maker → none.
+    g = _h2h_game([_p("novig", 200)], [_p("novig_maker", -150)])
+    books = {"novig", "novig_maker"}
+    assert scan_all_free_bets([g], hedge_books_filter=books) == []
+    assert scan_all_profit_boost([g], hedge_books_filter=books, boost_pct=50) == []
+
+
+def test_promo_leg_never_lands_on_maker_quote():
+    from server.odds.free_bet import scan_all_free_bets
+    from server.odds.profit_boost import scan_all_profit_boost
+
+    g = _h2h_game([_p("novig_maker", 300)], [_p("fanduel", -150)])
+    books = {"novig_maker", "fanduel"}
+    for op in scan_all_free_bets([g], hedge_books_filter=books):
+        assert op["free_leg"]["book"] != "novig_maker"
+    for op in scan_all_profit_boost([g], hedge_books_filter=books, boost_pct=50):
+        assert op["boost_leg"]["book"] != "novig_maker"

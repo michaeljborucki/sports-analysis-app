@@ -14,6 +14,7 @@ from .odds.books.coral33 import Coral33Fetcher
 from .odds.books.coral33.accounts import AccountsScraper
 from .odds.books.kalshi import KalshiFetcher
 from .odds.books.polymarket import PolymarketFetcher
+from .odds.books.polymarket_us.fetcher import PolymarketUSFetcher
 from .odds.books.novig import NovigFetcher
 from .odds.cache import OddsCache
 from .odds.cache_mode import CacheMode, CacheModeStore
@@ -59,7 +60,14 @@ def create_app() -> FastAPI:
     from .odds.mapping_health import MappingHealth
     mapping_health = MappingHealth(initial_path.with_suffix(".mapping.sqlite"))
     cache.init()
-    snapshot_service = LatestOddsSnapshotService(cache)
+    snapshot_service = LatestOddsSnapshotService(
+        cache,
+        # Full rebuilds run in a spawned process (betting_db mode) so they
+        # don't hold this process's GIL — see server/odds/snapshot_worker.py.
+        build_in_subprocess=os.environ.get(
+            "SNAPSHOT_BUILD_SUBPROCESS", "true",
+        ).lower() not in ("0", "false", "no"),
+    )
     # Run schema migrations against the *other* path too, so a later mode
     # flip (live ↔ snapshot in cache_mode.py:_apply_mode) doesn't land us
     # on a DB that's missing a recent column. cheap — init is idempotent.
@@ -99,6 +107,23 @@ def create_app() -> FastAPI:
         cache=cache,
         config_path=_Path(__file__).parent / "config" / "polymarket.toml",
     )
+    # International Polymarket is OFF by default (2026-10-23): the user trades
+    # Polymarket US, so polymarket.com prices are not buyable for him and
+    # would create edges he can't take. POLYMARKET_FETCHER_ENABLED=true
+    # brings it back.
+    polymarket_enabled = os.environ.get("POLYMARKET_FETCHER_ENABLED", "false").strip().lower() in ("1", "true", "yes")
+    # Polymarket US (polymarket.us) — the venue the user trades. Public REST
+    # for discovery + full market lists; prices stream over the signed
+    # market-data WebSocket when POLYMARKET_US_KEY_ID / _SECRET_KEY are set
+    # (REST-only every 60s otherwise). The key could trade; this feed only
+    # signs the market-data WS handshake.
+    polymarket_us_fetcher = PolymarketUSFetcher(
+        cache=cache,
+        config_path=_Path(__file__).parent / "config" / "polymarket_us.toml",
+        key_id=os.environ.get("POLYMARKET_US_KEY_ID", "").strip() or None,
+        secret_key=os.environ.get("POLYMARKET_US_SECRET_KEY", "").strip() or None,
+    )
+    polymarket_us_enabled = os.environ.get("POLYMARKET_US_FETCHER_ENABLED", "true").strip().lower() not in ("0", "false", "no")
     # Novig direct order-book reader — public REST, no key, read-only.
     # Overrides the Odds API's Novig rows (same PK) with fresher take
     # prices + size. NOVIG_FETCHER_ENABLED=false turns it off.
@@ -196,6 +221,14 @@ def create_app() -> FastAPI:
                 if snapshot_service.current is not None else None
             ),
         ))
+        # GC cadence (2026-10-24): default thresholds (700, 10, 10) ran a
+        # full pass ~1/s (avg 285ms, max 2.9s, 0 collected) — per-request
+        # pydantic trees and WS row dicts are 100k+ allocations each. Young
+        # generations still collect short-lived cycles; full passes become
+        # rare, and the snapshot rebuild's unfreeze+collect (every 60s, see
+        # latest_snapshot.py) still bounds how long any cycle can live.
+        import gc as _gc
+        _gc.set_threshold(10_000, 20, 100)
         from . import loop_watchdog
         loop_watchdog_task = _asyncio.create_task(loop_watchdog.run())
 
@@ -237,8 +270,14 @@ def create_app() -> FastAPI:
             # 5-min-stale kalshi rows are suppressed in normalize.py.
             kalshi_fetcher.start_all()
 
-            # Polymarket is also public/no-auth. Always start in LIVE.
-            polymarket_fetcher.start_all()
+            if polymarket_enabled:
+                polymarket_fetcher.start_all()
+            else:
+                logging.info("polymarket (international) fetcher disabled (POLYMARKET_FETCHER_ENABLED=false)")
+            if polymarket_us_enabled:
+                polymarket_us_fetcher.start_all()
+            else:
+                logging.info("polymarket_us fetcher disabled (POLYMARKET_US_FETCHER_ENABLED=false)")
 
             # Novig is public/no-auth and free (no Odds API spend).
             if novig_enabled:
@@ -310,31 +349,8 @@ def create_app() -> FastAPI:
                 replace_existing=True, max_instances=1,
             )
 
-            # Kalshi orderbook depth poll — pulls top-of-book size for
-            # registered sports markets so the arb scanner can clamp
-            # stake recommendations to fillable depth. 60s cadence.
-            async def _kalshi_orderbook_tick():
-                try:
-                    if not kalshi_fetcher.client.is_authenticated:
-                        return
-                    from .odds.books.kalshi.orderbook_poller import poll_kalshi_orderbooks
-                    if kalshi_fetcher._ingestor is None:
-                        return
-                    await poll_kalshi_orderbooks(
-                        client=kalshi_fetcher.client,
-                        ingestor=kalshi_fetcher._ingestor,
-                        cache=cache,
-                    )
-                except Exception:
-                    logging.exception("kalshi orderbook poll tick failed")
-
-            clv_scheduler.add_job(
-                _kalshi_orderbook_tick,
-                trigger="interval", seconds=60,
-                next_run_time=now_utc + _td(seconds=20),  # T+20s stagger
-                id="kalshi_orderbook_poll",
-                replace_existing=True, max_instances=1,
-            )
+            # (Kalshi depth: no poller — every REST market and WS ticker
+            # carries top-of-book size; see kalshi/quote_depth.py.)
 
             # Polymarket trade sync — wallet-keyed, no auth needed.
             # Wallet address is read directly from user_settings.json under
@@ -361,12 +377,13 @@ def create_app() -> FastAPI:
                 except Exception:
                     logging.exception("polymarket portfolio sync tick failed")
 
-            clv_scheduler.add_job(
-                _polymarket_portfolio_tick,
-                trigger="interval", minutes=5,
-                id="polymarket_portfolio_sync",
-                replace_existing=True, max_instances=1,
-            )
+            if polymarket_enabled:
+                clv_scheduler.add_job(
+                    _polymarket_portfolio_tick,
+                    trigger="interval", minutes=5,
+                    id="polymarket_portfolio_sync",
+                    replace_existing=True, max_instances=1,
+                )
 
             # closing_lines TTL purge — the closing_lines table was 62%
             # of cache.db with no expiry mechanism. Daily, 90-day cutoff
@@ -421,6 +438,7 @@ def create_app() -> FastAPI:
         coral33_fetcher.shutdown()
         kalshi_fetcher.shutdown()
         polymarket_fetcher.shutdown()
+        polymarket_us_fetcher.shutdown()
         novig_fetcher.shutdown()
         fetcher.shutdown()
         # Release the persistent Odds API HTTP/2 connection pool so the
@@ -454,30 +472,35 @@ def create_app() -> FastAPI:
     from .api.coral33_accounts import build_router as coral33_accounts_router
     from .api.kalshi_ctl import build_router as kalshi_ctl_router
     from .api.polymarket_ctl import build_router as polymarket_ctl_router
+    from .api.polymarket_us_ctl import build_router as polymarket_us_ctl_router
     from .api.novig_ctl import build_router as novig_ctl_router
     from .api.cache_mode import build_router as cache_mode_router
     from .api.settings import build_router as settings_router
     from .api.stream import build_router as stream_router
     from .api.bets import build_router as bets_router
     from .api.systems import build_router as systems_router
+    from .api.cfb import build_router as cfb_router
+    from .api.nba import build_router as nba_router
 
     app.include_router(stream_router())
     app.include_router(bets_router(cache))
     app.include_router(systems_router(cache, snapshot_service=snapshot_service))
+    app.include_router(cfb_router(snapshot_service))
+    app.include_router(nba_router(snapshot_service))
     app.include_router(health_router(cache, fetcher))
 
     @app.get("/api/mapping-health")
     def get_mapping_health():
         return mapping_health.listing()
     app.include_router(odds_router(cache, snapshot_service))
-    app.include_router(props_router(cache))
+    app.include_router(props_router(cache, snapshot_service))
     app.include_router(fetcher_ctl_router(fetcher, mode_store))
     app.include_router(refresh_router(fetcher))
     app.include_router(sports_router(settings_store))
-    app.include_router(arbitrage_router(cache, snapshot_service))
-    app.include_router(low_hold_router(cache, snapshot_service))
+    app.include_router(arbitrage_router(cache, snapshot_service, settings_store))
+    app.include_router(low_hold_router(cache, snapshot_service, settings_store))
     app.include_router(free_bets_router(cache, snapshot_service))
-    app.include_router(ev_router(cache, snapshot_service))
+    app.include_router(ev_router(cache, snapshot_service, settings_store))
     app.include_router(profit_boost_router(cache, snapshot_service))
     app.include_router(coral33_ctl_router(coral33_fetcher))
     app.include_router(
@@ -485,7 +508,13 @@ def create_app() -> FastAPI:
     )
     app.include_router(kalshi_ctl_router(kalshi_fetcher))
     app.include_router(polymarket_ctl_router(polymarket_fetcher))
+    app.include_router(polymarket_us_ctl_router(polymarket_us_fetcher))
     app.include_router(novig_ctl_router(novig_fetcher))
+    from .api.debug_memory import build_router as debug_memory_router
+    app.include_router(debug_memory_router(
+        cache, snapshot_service, kalshi_fetcher, polymarket_fetcher, novig_fetcher,
+        polymarket_us_fetcher=polymarket_us_fetcher,
+    ))
     app.include_router(
         cache_mode_router(
             mode_store, cache, live_cache_path, snapshot_cache_path,
@@ -494,7 +523,8 @@ def create_app() -> FastAPI:
             clv_capture_tick=_capture_tick,
             wager_log_refresh_tick=_wager_log_refresh_tick,
             kalshi_fetcher=kalshi_fetcher,
-            polymarket_fetcher=polymarket_fetcher,
+            polymarket_fetcher=polymarket_fetcher if polymarket_enabled else None,
+            polymarket_us_fetcher=polymarket_us_fetcher if polymarket_us_enabled else None,
             novig_fetcher=novig_fetcher if novig_enabled else None,
         )
     )

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useSWRConfig } from "swr";
-import type { ScopedMutator } from "swr";
+import type { Cache, ScopedMutator } from "swr";
 import {
   LIVE_UPDATE_EVENT_TYPES,
   prefixesForLiveEvent,
@@ -46,19 +46,58 @@ import {
  * Keep this in sync with `server/odds/events.py` (mark_dirty / publish
  * call sites).
  */
+// Per-key tick throttle. `mutate(key)` forces a NEW request even while
+// the previous one is in flight, and ticks arrive every ~1s whenever a
+// WebSocket book is streaming. A slow key (CFB odds: ~18 MB, 4-8s) would
+// stack overlapping requests and never finish loading. So per key: one
+// request in flight at a time, at least MIN_GAP_MS between starts, and
+// ticks that land meanwhile collapse into a single trailing refresh.
+const MIN_GAP_MS = 3_000;
+const inFlight = new Set<string>();
+const pending = new Set<string>();
+const lastStart = new Map<string, number>();
+const timers = new Map<string, ReturnType<typeof setTimeout>>();
+
+function revalidateKey(mutate: ScopedMutator, key: string): void {
+  if (inFlight.has(key) || timers.has(key)) {
+    pending.add(key);
+    return;
+  }
+  const wait = (lastStart.get(key) ?? 0) + MIN_GAP_MS - Date.now();
+  if (wait > 0) {
+    timers.set(
+      key,
+      setTimeout(() => {
+        timers.delete(key);
+        revalidateKey(mutate, key);
+      }, wait),
+    );
+    return;
+  }
+  pending.delete(key);
+  inFlight.add(key);
+  lastStart.set(key, Date.now());
+  mutate(key)
+    .catch(() => {})
+    .finally(() => {
+      inFlight.delete(key);
+      if (pending.delete(key)) revalidateKey(mutate, key);
+    });
+}
+
 /**
- * Invalidate SWR keys matching any of the given prefixes. We only ever
- * use string keys in this app, so non-string keys (arrays, objects) are
- * left alone.
+ * Throttled revalidation of the SWR keys matching any of the given
+ * prefixes. We only ever use string keys in this app, so non-string keys
+ * (arrays, objects) are left alone.
  */
 function revalidateByPrefixes(
   mutate: ScopedMutator,
+  cache: Cache,
   prefixes: readonly string[],
 ): void {
-  mutate(
-    (key) =>
-      typeof key === "string" && prefixes.some((p) => key.startsWith(p)),
-  );
+  for (const key of cache.keys()) {
+    if (prefixes.some((p) => key.startsWith(p))) revalidateKey(mutate, key);
+  }
 }
 
 /**
@@ -71,11 +110,13 @@ function revalidateAll(mutate: ScopedMutator): void {
 }
 
 export function useLiveUpdates(): void {
-  const { mutate } = useSWRConfig();
+  const { mutate, cache } = useSWRConfig();
   // Stash mutate in a ref so the effect doesn't re-subscribe just
   // because SWR's mutate identity changed across renders.
   const mutateRef = useRef(mutate);
   mutateRef.current = mutate;
+  const cacheRef = useRef(cache);
+  cacheRef.current = cache;
 
   useEffect(() => {
     // Same env var the rest of the app uses (see web/lib/api.ts). In dev
@@ -96,7 +137,7 @@ export function useLiveUpdates(): void {
         // backend events surface without a frontend deploy.
         revalidateAll(mutateRef.current);
       } else if (prefixes.length > 0) {
-        revalidateByPrefixes(mutateRef.current, prefixes);
+        revalidateByPrefixes(mutateRef.current, cacheRef.current, prefixes);
       }
     };
 

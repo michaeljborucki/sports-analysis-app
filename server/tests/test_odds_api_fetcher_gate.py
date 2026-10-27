@@ -166,6 +166,7 @@ def _spy_startups(monkeypatch):
         ("odds_api", main_mod.FetcherRegistry),
         ("kalshi", main_mod.KalshiFetcher),
         ("polymarket", main_mod.PolymarketFetcher),
+        ("polymarket_us", main_mod.PolymarketUSFetcher),
         ("coral33", main_mod.Coral33Fetcher),
     ):
         def spy(self, _label=label):
@@ -190,7 +191,22 @@ def test_disabled_flag_stops_only_the_odds_api_fetcher(app_env):
 
     assert "odds_api" not in started
     assert "kalshi" in started
-    assert "polymarket" in started
+    assert "polymarket_us" in started
+    # International Polymarket is off by default (user trades Polymarket US).
+    assert "polymarket" not in started
+
+
+def test_international_polymarket_flag_restores_it(app_env):
+    app_env.setenv("POLYMARKET_FETCHER_ENABLED", "true")
+
+    import server.main as main_mod
+    from fastapi.testclient import TestClient
+
+    started = _spy_startups(app_env)
+    with TestClient(main_mod.create_app()):
+        pass
+
+    assert "polymarket" in started and "polymarket_us" in started
 
 
 def test_enabled_flag_starts_the_odds_api_fetcher(app_env):

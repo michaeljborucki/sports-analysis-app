@@ -30,6 +30,12 @@ def _check_outcome_name_collisions(rows: Iterable[dict]) -> None:
     WARNING (deduplicated via _COLLISION_WARNED). Pure observability —
     never mutates rows or raises.
     """
+    _warn_outcome_name_collisions(_collect_outcome_name_collisions(rows))
+
+
+def _collect_outcome_name_collisions(
+    rows: Iterable[dict],
+) -> list[tuple[tuple[str, str, float], set[str]]]:
     seen: dict[tuple[str, str, float], set[str]] = {}
     for r in rows:
         try:
@@ -45,9 +51,14 @@ def _check_outcome_name_collisions(rows: Iterable[dict]) -> None:
         if not addr[0] or not addr[1] or not name:
             continue
         seen.setdefault(addr, set()).add(name)
-    for addr, names in seen.items():
-        if len(names) <= 1:
-            continue
+    return [(addr, names) for addr, names in seen.items() if len(names) > 1]
+
+
+def _warn_outcome_name_collisions(collisions) -> None:
+    """Log each (address, names) collision once per process. Split out so
+    the snapshot build subprocess can hand its findings to this process's
+    dedup set (see snapshot_worker.py) — log output stays the same."""
+    for addr, names in collisions:
         if addr in _COLLISION_WARNED:
             continue
         _COLLISION_WARNED.add(addr)
@@ -62,7 +73,15 @@ def _check_outcome_name_collisions(rows: Iterable[dict]) -> None:
 # Currently:
 #   - "kalshi": Odds API quotes are 2-5 minutes stale; the direct
 #     kalshi_fetcher polls every 15s.
-_EXCLUDE_BOOKMAKERS: frozenset[str] = frozenset({"kalshi"})
+#   - "polymarket": the Odds API copy is wrong, not just stale (2026-10-23
+#     audit vs the direct feed): team-swapped soccer spreads, prices ~1pp
+#     better than the buyable ask, ladders that contradict themselves
+#     (O3.5 reb +113 next to O4.5 -1567), -9900 on both sides. Only the
+#     direct polymarket_fetcher's ask quotes are shown (that fetcher is now
+#     off by default — the user trades Polymarket US).
+#   - "polymarket_us": owned by the direct Polymarket US feed (buy-side
+#     quotes after fee, streamed); the Odds API copy covered ~150 rows.
+_EXCLUDE_BOOKMAKERS: frozenset[str] = frozenset({"kalshi", "polymarket", "polymarket_us"})
 
 
 @lru_cache(maxsize=65536)
@@ -390,5 +409,14 @@ def _coerce_dt(v) -> datetime:
     if isinstance(v, datetime):
         return v if v.tzinfo else v.replace(tzinfo=timezone.utc)
     if isinstance(v, str):
-        return datetime.fromisoformat(v.replace("Z", "+00:00"))
+        return _parse_iso_cached(v)
     return datetime.fromisoformat(str(v))
+
+
+@lru_cache(maxsize=65536)
+def _parse_iso_cached(v: str) -> datetime:
+    # A snapshot's rows share a few thousand distinct timestamps, but each
+    # row's price dict used to get its own parsed datetime (~48 bytes x
+    # 500k rows, rebuilt every minute). datetimes are immutable, so sharing
+    # one per string is safe.
+    return datetime.fromisoformat(v.replace("Z", "+00:00"))

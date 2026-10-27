@@ -18,6 +18,7 @@ import {
   type EdgeOpportunity,
   type SortDir,
   type SortKey,
+  commenceClock,
   commenceLabel,
   formatEdgePct,
   formatOutcomeLabel,
@@ -153,6 +154,16 @@ export function EdgesTable({
     modes.size === 1 ? LEG_HEADERS[[...modes][0]] : ["Leg one", "Leg two"];
   const colCount = showMode ? 10 : 9;
 
+  // Sorted by Starts, rows arrive grouped by game (see sortEdges), so a
+  // header goes above each game's first row.
+  const grouped = sortKey === "commence";
+  const gameCounts = useMemo(() => {
+    if (!grouped) return null;
+    const counts = new Map<string, number>();
+    for (const op of rows) counts.set(op.event_id, (counts.get(op.event_id) ?? 0) + 1);
+    return counts;
+  }, [rows, grouped]);
+
   return (
     <div className="overflow-x-auto rounded-lg border border-border-subtle bg-bg-0">
       <table className="w-full border-collapse">
@@ -187,22 +198,64 @@ export function EdgesTable({
         <tbody>
           {/* Memo'd rows + flat map. If row counts regularly exceed a few
               thousand, consider virtualization (not added: new dep). */}
-          {rows.map(op => (
-            <EdgeRow
-              key={op.row_key}
-              op={op}
-              open={expanded.has(op.row_key)}
-              stake={stake}
-              maxBar={maxBar}
-              showMode={showMode}
-              colCount={colCount}
-              onToggleExpand={onToggleExpand}
-              showMaker={showMaker}
-            />
+          {rows.map((op, i) => (
+            <Fragment key={op.row_key}>
+              {gameCounts && (i === 0 || rows[i - 1].event_id !== op.event_id) && (
+                <GameHeader op={op} count={gameCounts.get(op.event_id) ?? 0} colCount={colCount} />
+              )}
+              <EdgeRow
+                op={op}
+                open={expanded.has(op.row_key)}
+                stake={stake}
+                maxBar={maxBar}
+                showMode={showMode}
+                colCount={colCount}
+                onToggleExpand={onToggleExpand}
+                showMaker={showMaker}
+              />
+            </Fragment>
           ))}
         </tbody>
       </table>
     </div>
+  );
+}
+
+/** Divider row above a game's edges when the table is sorted by Starts. */
+function GameHeader({
+  op,
+  count,
+  colCount,
+}: {
+  op: EdgeOpportunity;
+  count: number;
+  colCount: number;
+}) {
+  const live = commenceLabel(op.commence_time) === "LIVE";
+  return (
+    <tr className="border-b border-border-subtle bg-bg-1">
+      <td colSpan={colCount} className="dt-td py-1.5">
+        <span className="flex items-center gap-2 whitespace-nowrap text-[length:var(--fs-12)]">
+          <span className="font-medium text-text-1">
+            {op.away_team} @ {op.home_team}
+          </span>
+          <span className="text-text-3">{sportLabel(op.sport_key)}</span>
+          <span className="text-text-3">·</span>
+          {live ? (
+            <span className="inline-flex items-center gap-1.5 font-medium text-live">
+              <span className="live-dot" aria-hidden />
+              Live
+            </span>
+          ) : (
+            <span className="tabular text-text-2">{commenceClock(op.commence_time)}</span>
+          )}
+          <span className="text-text-3">·</span>
+          <span className="tabular text-text-3">
+            {count} {count === 1 ? "edge" : "edges"}
+          </span>
+        </span>
+      </td>
+    </tr>
   );
 }
 
@@ -302,14 +355,14 @@ const EdgeRow = memo(function EdgeRow({
 
   let legOne: React.ReactNode = null;
   let legTwo: React.ReactNode = null;
+  const depth = (d: number | null | undefined) =>
+    d != null ? (
+      <span className="text-[length:var(--fs-12)] text-text-3" title="Top-of-book depth at this price">
+        max <span className="tabular">${d.toFixed(0)}</span>
+      </span>
+    ) : null;
   if (op.mode === "arb" || op.mode === "low_hold") {
     const [a, b] = op.legs;
-    const depth = (d: number | null | undefined) =>
-      d != null ? (
-        <span className="text-[length:var(--fs-12)] text-text-3" title="Top-of-book depth at this price">
-          max <span className="tabular">${d.toFixed(0)}</span>
-        </span>
-      ) : null;
     if (a)
       legOne = (
         <Leg
@@ -336,6 +389,7 @@ const EdgeRow = memo(function EdgeRow({
         side={sideLabel(op)}
         price={op.raw.offered_price_american}
         book={op.raw.book}
+        note={depth(op.raw.max_stake_dollars)}
         counterpart={counterpartOf(op.legs[0])}
       />
     );
@@ -373,6 +427,7 @@ const EdgeRow = memo(function EdgeRow({
         side={formatOutcomeLabel(op.raw.hedge_leg.outcome_name, op.market_kind, op.raw.hedge_leg.point)}
         price={op.raw.hedge_leg.price_american}
         book={op.raw.hedge_leg.book}
+        counterpart={counterpartOf(op.raw.hedge_leg)}
         note={
           <span
             className="text-[length:var(--fs-12)] text-text-3"
@@ -396,6 +451,7 @@ const EdgeRow = memo(function EdgeRow({
         side={formatOutcomeLabel(op.raw.hedge_leg.outcome_name, op.market_kind, op.raw.hedge_leg.point)}
         price={op.raw.hedge_leg.price_american}
         book={op.raw.hedge_leg.book}
+        counterpart={counterpartOf(op.raw.hedge_leg)}
       />
     );
   }

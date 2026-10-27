@@ -19,6 +19,8 @@ export const SECTIONS: Section[] = [
   { key: "odds",      label: "Odds",      scope: "per-sport" },
   { key: "props",     label: "Props",     scope: "per-sport" },
   { key: "systems",   label: "Systems",   scope: "global"    },
+  { key: "cfb",       label: "CFB",       scope: "global"    },
+  { key: "nba",       label: "NBA",       scope: "global"    },
   { key: "edges",     label: "Edges",     scope: "global"    },
   { key: "accounts",  label: "Accounts",  scope: "global"    },
   { key: "bets",      label: "Bets",      scope: "global"    },

@@ -1,20 +1,25 @@
 """Kalshi WebSocket client — authenticated ticker stream.
 
 Replaces REST polling for live price updates. One persistent connection
-receives every market's price changes in real-time. Drops staleness from
+receives our markets' price changes in real-time. Drops staleness from
 15-50s (REST cycle) to <1s (push latency).
 
 Connection lifecycle:
   1. RSA-PSS sign the handshake (same scheme as REST authenticated reads)
-  2. Send subscribe message to "ticker" channel — single subscription
-     covers ALL markets (no per-ticker enumeration needed)
+  2. Subscribe the "ticker" channel to the tickers we track (`tickers()`,
+     the ingestor's registered set), then add/delete markets on that
+     subscription every few seconds as REST cycles register and prune.
+     (A bare `{"channels": ["ticker"]}` streams the whole platform:
+     ~1,900 msg/s measured 2026-10-24, decompressed and parsed on the event
+     loop only to be dropped — the top event-loop stall source.)
   3. Yield parsed messages from the stream
   4. On disconnect, reconnect with exponential backoff (1s, 2s, 4s, 8s,
      capped at 30s, with full jitter)
 
 Message types observed:
   - "subscribed" / "error"     — handshake lifecycle
-  - "ticker"                   — price update per market (~30 msg/s observed)
+  - "ok"                       — update_subscription ack
+  - "ticker"                   — price update per market
 
 Ticker message shape:
   {
@@ -23,17 +28,17 @@ Ticker message shape:
     "msg": {
       "market_ticker": "KXMLBGAME-...-CHC",
       "yes_bid_dollars": "0.6100",
+      "yes_bid_size_fp": "261.00",
       "yes_ask_dollars": "0.6200",
+      "yes_ask_size_fp": "254.62",
       "price_dollars": "0.6150",        # last traded
       "ts_ms": 1779294595165,
       ...
     }
   }
 
-Critical: ticker messages do NOT include no_ask_dollars. NO-side pricing
-for spread/total/team_total markets still requires REST polling. WS
-covers the YES side only — which is fully sufficient for h2h moneylines
-(the main staleness pain point).
+No no_ask field: NO is bought at 1 - yes_bid (see quote_depth), so the
+message prices both sides.
 """
 from __future__ import annotations
 
@@ -44,7 +49,7 @@ import logging
 import random
 import time
 from pathlib import Path
-from typing import AsyncIterator
+from typing import AsyncIterator, Callable, Iterable
 
 import websockets
 from websockets.exceptions import ConnectionClosed, WebSocketException
@@ -76,6 +81,12 @@ _SUBSCRIBE_ACK_TIMEOUT_S = 10.0
 _PING_INTERVAL_S = 30.0
 _PING_TIMEOUT_S = 10.0
 
+# Subscription sync: how often the tracked-ticker set is diffed against the
+# live subscription, and how many tickers go in one subscribe /
+# update_subscription command (an 833-ticker add was accepted live).
+_SYNC_INTERVAL_S = 5.0
+_SUB_CHUNK = 500
+
 
 class KalshiWSError(Exception):
     pass
@@ -99,6 +110,7 @@ class KalshiWSClient:
         self,
         api_key: str,
         private_key_path: Path,
+        tickers: Callable[[], Iterable[str]],
         url: str = WS_URL,
     ):
         if not api_key:
@@ -108,6 +120,9 @@ class KalshiWSClient:
         self.api_key = api_key
         self.private_key_path = private_key_path
         self.url = url
+        self._tickers = tickers
+        self._subscribed: set[str] = set()
+        self._next_cmd_id = 1
         self._private_key = None
         self._stop = False
         # Telemetry — useful for /api/kalshi/status reporting and debugging
@@ -115,6 +130,7 @@ class KalshiWSClient:
         self.last_message_at: float | None = None
         self.total_messages: int = 0
         self.total_reconnects: int = 0
+        self.sub_errors: int = 0
 
     @property
     def is_connected(self) -> bool:
@@ -206,10 +222,49 @@ class KalshiWSClient:
                 break
             backoff_idx += 1
 
+    def _cmd_id(self) -> int:
+        self._next_cmd_id += 1
+        return self._next_cmd_id
+
+    async def _wanted(self) -> set[str]:
+        """The tracked tickers; waits (without subscribing to anything)
+        until the first REST cycle has registered some."""
+        while not self._stop:
+            want = set(self._tickers())
+            if want:
+                return want
+            await asyncio.sleep(1.0)
+        return set()
+
+    async def _sync_subscription(self, ws, sid: int) -> None:
+        """Add newly registered tickers to the subscription and delete
+        pruned ones — once right away (the subscribe carried only the
+        first chunk), then every _SYNC_INTERVAL_S. Acks ("ok") and errors
+        come back on the main stream (errors are logged there)."""
+        while True:
+            want = set(self._tickers())
+            if not want:          # never shrink the subscription to nothing
+                await asyncio.sleep(_SYNC_INTERVAL_S)
+                continue
+            for action, delta in (("add_markets", want - self._subscribed),
+                                  ("delete_markets", self._subscribed - want)):
+                items = sorted(delta)
+                for i in range(0, len(items), _SUB_CHUNK):
+                    await ws.send(json.dumps({
+                        "id": self._cmd_id(), "cmd": "update_subscription",
+                        "params": {"sids": [sid], "action": action,
+                                   "market_tickers": items[i:i + _SUB_CHUNK]},
+                    }))
+            self._subscribed = want
+            await asyncio.sleep(_SYNC_INTERVAL_S)
+
     async def _connect_and_stream(self) -> AsyncIterator[dict]:
         """Single-attempt connect + subscribe + yield. Caller wraps in
         a reconnect loop. Raises on auth or subscribe failure; returns
         normally on connection close."""
+        want = await self._wanted()
+        if not want:
+            return
         headers = self._build_handshake_headers()
         async with websockets.connect(
             self.url,
@@ -217,29 +272,37 @@ class KalshiWSClient:
             ping_interval=_PING_INTERVAL_S,
             ping_timeout=_PING_TIMEOUT_S,
             max_size=2**20,  # 1 MiB — generous for batched ticker messages
+            # No permessage-deflate: inflating on the event loop cost more
+            # than the bytes it saves on a local connection.
+            compression=None,
         ) as ws:
             self.connected_at = time.time()
             logger.info("kalshi WS: connected")
 
-            # Subscribe to the ticker channel. One subscription covers
-            # every market on the platform; we filter in the ingestor.
+            # Subscribe the ticker channel to the first chunk of our
+            # tickers; the sync task adds the rest right after the ack.
+            items = sorted(want)
             sub_msg = {
                 "id": 1,
                 "cmd": "subscribe",
-                "params": {"channels": ["ticker"]},
+                "params": {"channels": ["ticker"],
+                           "market_tickers": items[:_SUB_CHUNK]},
             }
             await ws.send(json.dumps(sub_msg))
+            self._subscribed = set(items[:_SUB_CHUNK])
 
             # Wait for the subscribe ack to confirm we're live
+            sid = None
             try:
                 async with asyncio.timeout(_SUBSCRIBE_ACK_TIMEOUT_S):
                     while True:
                         raw = await ws.recv()
                         msg = json.loads(raw)
                         if msg.get("type") == "subscribed":
+                            sid = msg.get("msg", {}).get("sid")
                             logger.info(
-                                "kalshi WS: subscribed sid=%s",
-                                msg.get("msg", {}).get("sid"),
+                                "kalshi WS: subscribed sid=%s (%d tickers tracked)",
+                                sid, len(want),
                             )
                             break
                         if msg.get("type") == "error":
@@ -255,19 +318,24 @@ class KalshiWSClient:
                     "kalshi WS: subscribe ack timeout"
                 ) from e
 
-            # Main stream loop — yield ticker messages, drop everything else
-            async for raw in ws:
-                try:
-                    msg = json.loads(raw)
-                except json.JSONDecodeError:
-                    logger.warning("kalshi WS: non-JSON message dropped")
-                    continue
-                t = msg.get("type")
-                if t == "ticker":
-                    yield msg
-                elif t == "error":
-                    logger.warning("kalshi WS error msg: %s", msg.get("msg"))
-                # Drop "subscribed" duplicates and any other lifecycle msgs
+            sync = asyncio.create_task(self._sync_subscription(ws, sid))
+            try:
+                # Main stream loop — yield ticker messages, drop everything else
+                async for raw in ws:
+                    try:
+                        msg = json.loads(raw)
+                    except json.JSONDecodeError:
+                        logger.warning("kalshi WS: non-JSON message dropped")
+                        continue
+                    t = msg.get("type")
+                    if t == "ticker":
+                        yield msg
+                    elif t == "error":
+                        self.sub_errors += 1
+                        logger.warning("kalshi WS error msg: %s", msg.get("msg"))
+                    # Drop "ok" acks, "subscribed" duplicates and other lifecycle msgs
+            finally:
+                sync.cancel()
 
     def status(self) -> dict:
         """Snapshot for /api/kalshi/status. Mirrors the existing fetcher
@@ -277,6 +345,8 @@ class KalshiWSClient:
             "ws_connected": self.is_connected,
             "ws_total_messages": self.total_messages,
             "ws_total_reconnects": self.total_reconnects,
+            "ws_subscribed_markets": len(self._subscribed),
+            "ws_sub_errors": self.sub_errors,
             "ws_last_message_age_s": (
                 round(now - self.last_message_at, 1)
                 if self.last_message_at is not None

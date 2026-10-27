@@ -10,7 +10,9 @@ from ..odds.low_hold import scan_all_low_hold
 from ..odds.normalize import rows_to_games
 from ..odds.scanner_runtime import run_scanner
 from ..odds.wager_filter import legs_pass_wager_filter, normalize_wager_filter
-from ..odds.latest_snapshot import LatestOddsSnapshotService
+from ..odds.latest_snapshot import LatestOddsSnapshotService, snapshot_memo
+from ..odds.liquidity import filter_games_min_liquidity, resolve_min_liquidity
+from ..user_settings import UserSettingsStore
 from ..util import TTLCache
 from .serialization import json_bytes_response, model_json_bytes
 
@@ -25,6 +27,7 @@ class LowHoldSide(BaseModel):
     # Venue pairing: on a Novig take leg this is the maker price you could
     # post instead; on a `novig_maker` leg it's the take price. None else.
     counterpart_price_american: int | None = None
+    max_stake_dollars: float | None = None
 
 
 class LowHoldOpportunity(BaseModel):
@@ -48,6 +51,7 @@ class LowHoldResponse(BaseModel):
 def build_router(
     cache: OddsCache,
     snapshot_service: LatestOddsSnapshotService | None = None,
+    settings_store: UserSettingsStore | None = None,
 ) -> APIRouter:
     router = APIRouter()
     memo = TTLCache(ttl_seconds=20.0)
@@ -57,6 +61,7 @@ def build_router(
         books: str = "",
         max_hold_pct: float = 1.0,
         wager_filter: str = "any",
+        min_liquidity: float | None = None,
     ) -> Response:
         # `cache.version` folds in the OddsCache's monotonic state version
         # so this memo can survive past its 20s TTL during quiet stretches.
@@ -66,6 +71,8 @@ def build_router(
         # `wager_filter` ("any"|"straight"|"parlay") — Coral33 betslip filter,
         # see server/odds/wager_filter.py.
         wf = normalize_wager_filter(wager_filter)
+        # `min_liquidity` ($): see server/api/arbitrage.py.
+        min_liq = resolve_min_liquidity(min_liquidity, settings_store)
         snapshot = await snapshot_service.get() if snapshot_service else None
         source_version = (
             ("snapshot", snapshot.generation)
@@ -73,6 +80,7 @@ def build_router(
         )
         cache_key = (
             "low_hold", str(cache.path), source_version, books, max_hold_pct, wf,
+            min_liq,
         )
 
         async def _compute() -> bytes:
@@ -84,9 +92,16 @@ def build_router(
                 now = datetime.now(timezone.utc)
                 if snapshot is not None:
                     games = snapshot.games
+                    if min_liq > 0:
+                        games = snapshot_memo(
+                            snapshot, ("min_liquidity", min_liq),
+                            lambda: filter_games_min_liquidity(snapshot.games, min_liq),
+                        )
                 else:
                     rows = cache.all_current()
-                    games = rows_to_games(rows, now=now)
+                    games = filter_games_min_liquidity(
+                        rows_to_games(rows, now=now), min_liq,
+                    )
                 ops = scan_all_low_hold(
                     games, books_filter=books_set, max_hold_pct=max_hold_pct,
                 )

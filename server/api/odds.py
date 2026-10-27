@@ -2,14 +2,17 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 
 from ..models import OddsResponse, Game
 from ..odds.cache import OddsCache
+from ..odds.coalesce import memoized_coalesced
 from ..odds.normalize import rows_to_games
 from ..odds.scanner_runtime import run_scanner
 from ..odds.latest_snapshot import LatestOddsSnapshotService
 from ..sports import SPORTS
+from ..util import TTLCache
+from .serialization import json_bytes_response, model_json_bytes
 
 
 PAST_WINDOW = timedelta(hours=6)
@@ -24,14 +27,23 @@ def build_router(
     snapshot_service: LatestOddsSnapshotService | None = None,
 ) -> APIRouter:
     router = APIRouter()
+    # Rendered once per (sport, data version): the snapshot's generation
+    # changes every overlay (~5s), so every SSE-driven refetch in between is
+    # a dict lookup instead of re-validating + re-serializing ~18 MB (CFB).
+    memo = TTLCache(ttl_seconds=60.0)
 
     @router.get("/api/odds/{sport}", response_model=OddsResponse)
-    async def get_odds(sport: str) -> OddsResponse:
+    async def get_odds(sport: str) -> Response:
         if sport not in SPORTS:
             raise HTTPException(404, f"unknown sport '{sport}'")
         snapshot = await snapshot_service.get() if snapshot_service else None
+        source_version = (
+            ("snapshot", snapshot.generation)
+            if snapshot is not None else cache.read_version
+        )
+        cache_key = ("odds", str(cache.path), sport, source_version)
 
-        def compute() -> OddsResponse:
+        def compute() -> bytes:
             now = datetime.now(timezone.utc)
             future_window = SPORT_FUTURE_WINDOWS.get(sport, FUTURE_WINDOW)
             if snapshot is not None:
@@ -77,10 +89,15 @@ def build_router(
             else:
                 stale = max((g.stale_seconds for g in games), default=0)
 
-            return OddsResponse(
+            return model_json_bytes(OddsResponse(
                 games=games, stale_seconds=stale, fetched_at=now,
-            )
+            ))
 
-        return await run_scanner(f"odds:{sport}", compute)
+        async def _compute() -> bytes:
+            return await run_scanner(f"odds:{sport}", compute)
+
+        return json_bytes_response(
+            await memoized_coalesced(memo, cache_key, _compute)
+        )
 
     return router

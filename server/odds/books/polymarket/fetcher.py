@@ -13,8 +13,8 @@ Differences from Kalshi:
   - However the dispatch shape stays per-sport so refresh_now /
     per-sport stats stay symmetric with Kalshi's UI surface.
   - WS subscribes to specific asset_ids (vs Kalshi's "all-markets
-    ticker channel"). The set updates on each REST cycle; new games
-    are picked up at the next WS reconnect boundary.
+    ticker channel"). The set is replaced per sport on each REST cycle;
+    the WS client recycles its connection when new assets appear.
 """
 from __future__ import annotations
 
@@ -171,6 +171,13 @@ class PolymarketFetcher:
         out.update(self._ingestor.status())
         return out
 
+    def debug_stats(self) -> dict:
+        """Read-only registration / subscription counters for debug endpoints."""
+        return {
+            "ingestor": self._ingestor.stats(),
+            "ws_client": self._ws_client.stats(),
+        }
+
     def stop_all(self) -> dict:
         if not self._running:
             return {"status": "already_stopped"}
@@ -259,6 +266,14 @@ class PolymarketFetcher:
         purged = await self.cache.purge_live_rows_for_book_async("polymarket", now)
         if purged:
             logger.info("polymarket %s: purged %d live rows", sport_key, purged)
+        # Same cut for the WS registrations: started games are not shown,
+        # so stop subscribing / re-upserting them.
+        dropped = self._ingestor.prune_started(now)
+        if dropped:
+            logger.info(
+                "polymarket %s: unregistered %d started-game assets",
+                sport_key, dropped,
+            )
 
         try:
             events = await self._fetch_gamma_events()
@@ -310,10 +325,14 @@ class PolymarketFetcher:
 
         if rows:
             await self.cache.upsert_async(rows)
-            # Register so the WS consumer picks up new asset_ids on its
-            # next reconnect. Idempotent — known assets just refresh
-            # their template (no duplicate subscribe attempts).
-            self._ingestor.register_rows(rows)
+        # Register so the WS consumer picks up new asset_ids (the WS client
+        # resubscribes when unsubscribed assets appear). `rows` is this
+        # sport's COMPLETE current set, so replace the sport's scope rather
+        # than accumulate — assets for finished / delisted games drop out.
+        # An empty Gamma response is treated as a glitch, not "no games":
+        # keep the previous registrations rather than wiping the sport.
+        if events:
+            self._ingestor.replace_scope(sport_key, rows)
 
         self._last_cycle_at = now
         self._last_cycle_rows[sport_key] = len(rows)

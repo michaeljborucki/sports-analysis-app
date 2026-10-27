@@ -112,8 +112,11 @@ class KalshiFetcher:
             KalshiTickerIngestor(cache) if self._ws_enabled else None
         )
         self._ws_client: KalshiWSClient | None = (
-            KalshiWSClient(api_key=api_key, private_key_path=private_key_path)
-            if self._ws_enabled and api_key and private_key_path
+            KalshiWSClient(
+                api_key=api_key, private_key_path=private_key_path,
+                tickers=self._ingestor.registered_tickers,
+            )
+            if self._ingestor is not None and api_key and private_key_path
             else None
         )
         self._ws_task: asyncio.Task | None = None
@@ -210,10 +213,17 @@ class KalshiFetcher:
     def registered_tickers(self) -> list[str]:
         """Market_tickers currently in the ingestor's template map.
         Empty list if the ingestor hasn't been initialized yet (e.g.
-        before start_all()). Used by the orderbook poller."""
+        before start_all())."""
         if self._ingestor is None:
             return []
         return self._ingestor.registered_tickers()
+
+    def debug_stats(self) -> dict:
+        """Read-only registration / stream counters for debug endpoints."""
+        return {
+            "ingestor": self._ingestor.stats() if self._ingestor is not None else None,
+            "ws": self._ws_client.status() if self._ws_client is not None else None,
+        }
 
     def _smart_match_event(self, matcher):
         """M3: build a match_event callable that prefers multi-anchor
@@ -338,6 +348,15 @@ class KalshiFetcher:
         purged = await self.cache.purge_live_rows_for_book_async("kalshi", now)
         if purged:
             logger.info("kalshi %s: purged %d live rows", sport_key, purged)
+        if self._ingestor is not None:
+            # Same semantics as the purge above: started games are not
+            # shown, so stop WS-updating them.
+            dropped = self._ingestor.prune_started(now)
+            if dropped:
+                logger.info(
+                    "kalshi %s: unregistered %d started-game tickers",
+                    sport_key, dropped,
+                )
 
         cache_events = await self.cache.distinct_events_async(
             sport_key=sport_key,
@@ -372,13 +391,19 @@ class KalshiFetcher:
             if rows:
                 await self.cache.upsert_async(rows)
                 total_rows += len(rows)
-                # Hand the normalized rows to the WS ingestor so it knows
-                # which market_tickers map to which cache-row templates.
-                # On the next ticker message for these markets, the
-                # ingestor will mutate price + fetched_at and upsert
-                # without waiting for the next REST cycle.
-                if self._ingestor is not None:
-                    self._ingestor.register_rows(rows)
+            # Hand the normalized rows to the WS ingestor so it knows
+            # which market_tickers map to which cache-row templates.
+            # On the next ticker message for these markets, the
+            # ingestor will mutate price + fetched_at and upsert
+            # without waiting for the next REST cycle.
+            #
+            # The rows are this series' COMPLETE current market set, so
+            # replace (not accumulate) the (sport, series) scope — tickers
+            # that dropped off the listing stop being WS-tracked and
+            # re-upserted. A failed fetch (markets is None) skipped
+            # above, so it never prunes.
+            if self._ingestor is not None:
+                self._ingestor.replace_scope((sport_key, series_ticker), rows or [])
 
         self._last_cycle_at = now
         self._last_cycle_rows[sport_key] = total_rows

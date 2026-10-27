@@ -64,6 +64,10 @@ const BOOK_LIST: BookInfo[] = [
   { key: "novig_maker",    name: "Novig maker",      label: "NVM", bg: "#0F172A", fg: "#C4B5FD", region: "US", priority: 43.5, domain: "novig.us",     commission: 0 },
   { key: "kalshi",         name: "Kalshi",           label: "KAL", bg: "#0F172A", fg: "#00D6A9", region: "US", priority: 44, domain: "kalshi.com",     commission: 0 },
   { key: "polymarket",     name: "Polymarket",       label: "POLY",bg: "#1652F0", fg: "#FFFFFF", region: "US", priority: 45, domain: "polymarket.com", commission: 0 },
+  // Polymarket US (polymarket.us) — the venue the user trades. Direct feed;
+  // prices are already the buy side after Polymarket US's taker fee, so no
+  // extra commission here.
+  { key: "polymarket_us",  name: "Polymarket US",    label: "PMUS",bg: "#1652F0", fg: "#FFFFFF", region: "US", priority: 44.5, domain: "polymarket.us", commission: 0 },
 
   // Pinnacle (sharp)
   { key: "pinnacle",     name: "Pinnacle",     label: "PIN",  bg: "#0A1F44", fg: "#FBBF24", region: "EU", priority: 20, domain: "pinnacle.com" },

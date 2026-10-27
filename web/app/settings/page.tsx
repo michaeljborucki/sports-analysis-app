@@ -93,6 +93,8 @@ export default function SettingsPage() {
   const [visibleBooks, setVisibleBooks] = useState<Set<string>>(
     new Set(DEFAULT_VISIBLE_BOOKS)
   );
+  // Exchange liquidity floor ($) for the edge scanners. 0 = off.
+  const [minLiquidity, setMinLiquidity] = useState<number>(0);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
@@ -113,6 +115,7 @@ export default function SettingsPage() {
       dm[sport] = new Set(keys);
     }
     setDisabledMarkets(dm);
+    setMinLiquidity(data.min_liquidity_dollars ?? 0);
     // visible_books: backend source of truth if present, else fall back to the
     // running client's localStorage-backed set (which on first-ever install
     // equals DEFAULT_VISIBLE_BOOKS).
@@ -152,8 +155,10 @@ export default function SettingsPage() {
     if (serverBooks.size !== visibleBooks.size) return true;
     for (const k of serverBooks) if (!visibleBooks.has(k)) return true;
 
+    if ((data.min_liquidity_dollars ?? 0) !== minLiquidity) return true;
+
     return false;
-  }, [data, disabledSports, disabledMarkets, visibleBooks, currentVisible]);
+  }, [data, disabledSports, disabledMarkets, visibleBooks, currentVisible, minLiquidity]);
 
   function toggleSport(key: string) {
     const next = new Set(disabledSports);
@@ -212,6 +217,7 @@ export default function SettingsPage() {
           Object.entries(disabledMarkets).map(([k, v]) => [k, [...v]])
         ),
         visible_books: [...visibleBooks],
+        min_liquidity_dollars: minLiquidity,
       };
       const res = await fetch(`${API_BASE}${apiPaths.settings}`, {
         method: "POST",
@@ -251,6 +257,7 @@ export default function SettingsPage() {
       dm[sport] = new Set(keys);
     }
     setDisabledMarkets(dm);
+    setMinLiquidity(data.min_liquidity_dollars ?? 0);
     const serverBooks = data.visible_books;
     setVisibleBooks(
       new Set(serverBooks ?? [...currentVisible])
@@ -301,7 +308,7 @@ export default function SettingsPage() {
               title={
                 dirty
                   ? "Persist your changes to the backend"
-                  : "Nothing to save. Toggle a sport, market, tier or visible book to enable."
+                  : "Nothing to save. Toggle a sport, market, tier, visible book or the liquidity minimum to enable."
               }
             >
               {dirty && !saving && <Save size={13} aria-hidden />}
@@ -345,6 +352,39 @@ export default function SettingsPage() {
         <Panel title="Display">
           <div className="px-4 py-3">
             <DensityToggle />
+          </div>
+        </Panel>
+
+        <Panel title="Edges">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+            <div className="min-w-0 flex-1">
+              <label
+                htmlFor="min-liquidity"
+                className="text-[length:var(--fs-14)] font-medium text-text-1"
+              >
+                Minimum liquidity
+              </label>
+              <div className="text-[length:var(--fs-12)] text-text-3">
+                Hide Kalshi and Polymarket US prices with less than this much available at the shown price.
+                Arbs fall back to the next book with enough depth. Sportsbooks are never filtered. 0 turns it off.
+              </div>
+            </div>
+            <div className="flex h-8 items-center rounded-md border border-border-subtle bg-bg-1 px-2 focus-within:border-text-3">
+              <span className="text-[length:var(--fs-13)] text-text-3">$</span>
+              <input
+                id="min-liquidity"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={25}
+                value={minLiquidity}
+                onChange={e => {
+                  const n = Math.round(Number(e.target.value));
+                  setMinLiquidity(Number.isFinite(n) && n > 0 ? Math.min(n, 1_000_000) : 0);
+                }}
+                className="tabular w-24 bg-transparent px-1 text-right text-[length:var(--fs-13)] text-text-1 outline-none"
+              />
+            </div>
           </div>
         </Panel>
 

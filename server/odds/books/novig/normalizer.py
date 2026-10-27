@@ -7,7 +7,7 @@ A as a taker fills against the best resting bid on B, so
 
     take_price(A) = 1 - best_bid(B)        size = qty resting at that bid
 
-which is exactly how Kalshi's book works (see kalshi/orderbook_depth.py).
+which is exactly how Kalshi's book works (see kalshi/quote_depth.py).
 A side with no opposing bid has no take price and produces no row.
 
 PK alignment: every row is written into the slot of a Novig row betting-db

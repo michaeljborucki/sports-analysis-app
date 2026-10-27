@@ -35,7 +35,7 @@ from __future__ import annotations
 from .arbitrage import _find_market
 from .devig import american_to_decimal, american_to_implied_prob
 from .pairing import collect_spread_pairs, collect_total_pairs
-from .venues import book_allowed
+from .venues import OPT_IN_BOOKS, book_allowed, venue
 
 
 def decimal_to_american(decimal: float) -> int:
@@ -102,6 +102,8 @@ def _best_conversion_for_direction(
     boost_prices = [
         p for p in _filter_prices(boost_side, boost_candidate_books)
         if p["price_american"] >= min_boost_odds
+        # A boost can't ride a resting order — maker prices are hedge-only.
+        and p["bookmaker_key"] not in OPT_IN_BOOKS
     ]
     hedge_prices = _filter_prices(hedge_side, hedge_books_filter)
     if not boost_prices or not hedge_prices:
@@ -113,8 +115,8 @@ def _best_conversion_for_direction(
         # Implied prob of the boosted leg = 1 / (1 + r_boost).
         imp_boost = 1.0 / (1.0 + r_boost)
         for hp in hedge_prices:
-            if hp["bookmaker_key"] == bp["bookmaker_key"]:
-                continue  # legs must land at different books
+            if venue(hp["bookmaker_key"]) == venue(bp["bookmaker_key"]):
+                continue  # two different venues (novig take ≠ novig_maker)
             r_hedge = _payout_ratio(hp["price_american"])
             imp_hedge = american_to_implied_prob(hp["price_american"])
             sum_imp = imp_boost + imp_hedge
@@ -211,6 +213,7 @@ def _emit(
             "book": hedge_price["bookmaker_key"],
             "price_american": hedge_price["price_american"],
             "point": hedge_price.get("point"),
+            "counterpart_price_american": hedge_price.get("counterpart_price_american"),
         },
     }
 

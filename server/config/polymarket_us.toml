@@ -1,0 +1,31 @@
+# Polymarket US (polymarket.us — the CFTC venue the user actually trades on;
+# NOT international polymarket.com) direct feed.
+#
+# Discovery + full market lists: public REST, https://gateway.polymarket.us
+# (no key). Real-time prices: wss://api.polymarket.us/v1/ws/markets, signed
+# with POLYMARKET_US_KEY_ID / POLYMARKET_US_SECRET_KEY from .env. That key can
+# trade — this feed only ever signs the WebSocket handshake for market data.
+
+# Only games starting within this many hours are fetched / streamed.
+horizon_hours = 72
+
+# Polymarket US league slug -> app sport_key.
+[leagues]
+nba = "nba"
+wnba = "wnba"
+nfl = "nfl"
+cfb = "ncaaf"
+nhl = "nhl"
+mlb = "mlb"
+# Soccer is in the app's disabled_sports; uncomment to ingest.
+# epl = "soccer"
+# mls = "soccer"
+
+# Lowercase + punctuation-stripped Polymarket US team name -> canonical
+# (Odds API) name. Reactive: add entries when unmatched-event logs show one.
+[team_aliases.nba]
+[team_aliases.wnba]
+[team_aliases.nfl]
+[team_aliases.ncaaf]
+[team_aliases.nhl]
+[team_aliases.mlb]

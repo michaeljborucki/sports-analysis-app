@@ -16,7 +16,17 @@ export function useVisibleBooks() {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as string[];
-        if (Array.isArray(parsed)) setSet(new Set(parsed));
+        if (Array.isArray(parsed)) {
+          const next = new Set(parsed);
+          // 2026-10-23: Polymarket US replaced international Polymarket as
+          // the Polymarket book. A saved set that showed Polymarket shows
+          // Polymarket US too (one-time; untick it in Settings to hide).
+          if (next.has("polymarket") && !next.has("polymarket_us")) {
+            next.add("polymarket_us");
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...next]));
+          }
+          setSet(next);
+        }
       }
     } catch {}
   }, []);

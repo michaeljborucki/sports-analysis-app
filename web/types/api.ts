@@ -134,6 +134,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/cfb/predictions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Cfb Predictions
+         * @description Projected scores for one regular-season week (default: current).
+         *
+         *     Per team: avg(plays × own off PPP, plays × opponent def PPP), with
+         *     season-to-date stats from games completed before that week.
+         */
+        get: operations["get_cfb_predictions_api_cfb_predictions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/nba/predictions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Nba Predictions
+         * @description Projected scores for one slate day (default: ESPN's current day).
+         *
+         *     Per team: avg(pace × own offensive efficiency, pace × opponent
+         *     defensive efficiency), from regular-season games before that day —
+         *     last season's numbers until a team has 10 games this season.
+         */
+        get: operations["get_nba_predictions_api_nba_predictions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/nba/sgp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Nba Sgp
+         * @description Same-game-parlay screen for one slate day: usage ≥ 24%, opponent
+         *     bottom-10 vs the position (fantasy points allowed), and the highest
+         *     points / rebounds / assists alt rungs that hit ≥ 93% — with the
+         *     empirical joint hit rate and its break-even price.
+         */
+        get: operations["get_nba_sgp_api_nba_sgp_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -314,6 +384,10 @@ export interface paths {
          *     "straight" drops pairs whose coral33 leg is parlay-only; "parlay"
          *     keeps only pairs with a parlay-eligible coral33 leg.
          *
+         *     `min_liquidity` ($) drops exchange prices with less top-of-book
+         *     depth before pairing, so a thin best price falls back to the next
+         *     book. Omitted = the saved Settings value; 0 = off.
+         *
          *     Memoized for 20s so the Edges page's burst-of-four simultaneous
          *     SWR pulls collapses to one actual scan.
          */
@@ -395,6 +469,8 @@ export interface paths {
          *           "parlay"   → keep ONLY coral33 rows whose offered line is
          *             parlay-eligible (wager_type ∈ {parlay, both}).
          *           "any"      → no filter.
+         *       - min_liquidity: drop rows whose offered price has less top-of-book
+         *           depth ($). Omitted = saved Settings value; 0 = off.
          *
          *     Memoized for 20s — the Edges page fires arb + lh + ev + fb in the
          *     same SWR tick, so the second-third-fourth EV scan within a 20s
@@ -663,6 +739,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/polymarket-us/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh
+         * @description Force a full re-fetch of every configured league's upcoming games.
+         */
+        post: operations["refresh_api_polymarket_us_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/polymarket-us/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_polymarket_us_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/novig/refresh": {
         parameters: {
             query?: never;
@@ -695,6 +808,23 @@ export interface paths {
          * @description Fetcher health: targets, overdue count, books polled, 429s.
          */
         get: operations["status_api_novig_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/debug/memory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Debug Memory */
+        get: operations["debug_memory_api_debug_memory_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1198,6 +1328,8 @@ export interface components {
             wager_type?: ("straight" | "parlay" | "both") | null;
             /** Counterpart Price American */
             counterpart_price_american?: number | null;
+            /** Max Stake Dollars */
+            max_stake_dollars?: number | null;
         };
         /** EVResponse */
         EVResponse: {
@@ -1256,6 +1388,8 @@ export interface components {
             point?: number | null;
             /** Wager Type */
             wager_type?: string | null;
+            /** Counterpart Price American */
+            counterpart_price_american?: number | null;
         };
         /** FreeBetOpportunity */
         FreeBetOpportunity: {
@@ -1472,6 +1606,8 @@ export interface components {
             wager_type?: string | null;
             /** Counterpart Price American */
             counterpart_price_american?: number | null;
+            /** Max Stake Dollars */
+            max_stake_dollars?: number | null;
         };
         /** Market */
         Market: {
@@ -1607,6 +1743,58 @@ export interface components {
             /** Jwt Authenticated */
             jwt_authenticated: boolean;
         };
+        /** PolymarketUSRefreshResponse */
+        PolymarketUSRefreshResponse: {
+            /** Status */
+            status: string;
+            /** Sports Refreshed */
+            sports_refreshed: string[];
+            /** Duration S */
+            duration_s: number;
+            /** Errors */
+            errors: string[];
+            /** Last Cycle Rows */
+            last_cycle_rows: {
+                [key: string]: number;
+            };
+        };
+        /**
+         * PolymarketUSStatusResponse
+         * @description Polymarket US direct feed health. `jwt_authenticated` = the signed
+         *     market-data WebSocket is connected and streaming. `unmapped_market_types`
+         *     lists every Polymarket US market type skipped in the last full fetch per
+         *     league (no matching app market key) — nothing is dropped silently.
+         */
+        PolymarketUSStatusResponse: {
+            /** Running */
+            running: boolean;
+            /** Last Cycle At */
+            last_cycle_at?: string | null;
+            /** Last Cycle Rows */
+            last_cycle_rows: {
+                [key: string]: number;
+            };
+            /** Jwt Authenticated */
+            jwt_authenticated: boolean;
+            /** Ws Enabled */
+            ws_enabled: boolean;
+            /** Ws Disabled Reason */
+            ws_disabled_reason?: string | null;
+            /** Events Tracked */
+            events_tracked: number;
+            /** Markets Registered */
+            markets_registered: number;
+            /** Unmatched Events */
+            unmatched_events: {
+                [key: string]: number;
+            };
+            /** Unmapped Market Types */
+            unmapped_market_types: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            };
+        };
         /**
          * ProfitBoostBoostLeg
          * @description Boosted leg carries both the original and post-boost prices so the
@@ -1634,6 +1822,8 @@ export interface components {
             point?: number | null;
             /** Price American */
             price_american: number;
+            /** Counterpart Price American */
+            counterpart_price_american?: number | null;
         };
         /** ProfitBoostOpportunity */
         ProfitBoostOpportunity: {
@@ -1711,6 +1901,8 @@ export interface components {
             };
             /** Visible Books */
             visible_books?: string[] | null;
+            /** Min Liquidity Dollars */
+            min_liquidity_dollars?: number | null;
         };
         /** SettingsResponse */
         SettingsResponse: {
@@ -1724,6 +1916,11 @@ export interface components {
             sports: components["schemas"]["SportOption"][];
             /** Visible Books */
             visible_books?: string[] | null;
+            /**
+             * Min Liquidity Dollars
+             * @default 0
+             */
+            min_liquidity_dollars: number;
         };
         /** SettingsUpdateResponse */
         SettingsUpdateResponse: {
@@ -2260,6 +2457,105 @@ export interface operations {
             };
         };
     };
+    get_cfb_predictions_api_cfb_predictions_get: {
+        parameters: {
+            query?: {
+                week?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_nba_predictions_api_nba_predictions_get: {
+        parameters: {
+            query?: {
+                date?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_nba_sgp_api_nba_sgp_get: {
+        parameters: {
+            query?: {
+                date?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_api_health_get: {
         parameters: {
             query?: never;
@@ -2478,6 +2774,7 @@ export interface operations {
             query?: {
                 books?: string;
                 wager_filter?: string;
+                min_liquidity?: number | null;
             };
             header?: never;
             path?: never;
@@ -2511,6 +2808,7 @@ export interface operations {
                 books?: string;
                 max_hold_pct?: number;
                 wager_filter?: string;
+                min_liquidity?: number | null;
             };
             header?: never;
             path?: never;
@@ -2585,6 +2883,7 @@ export interface operations {
                 tag_arb?: boolean;
                 sort?: string;
                 wager_filter?: string;
+                min_liquidity?: number | null;
             };
             header?: never;
             path?: never;
@@ -2912,6 +3211,46 @@ export interface operations {
             };
         };
     };
+    refresh_api_polymarket_us_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolymarketUSRefreshResponse"];
+                };
+            };
+        };
+    };
+    status_api_polymarket_us_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolymarketUSStatusResponse"];
+                };
+            };
+        };
+    };
     refresh_api_novig_refresh_post: {
         parameters: {
             query?: never;
@@ -2933,6 +3272,28 @@ export interface operations {
         };
     };
     status_api_novig_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    debug_memory_api_debug_memory_get: {
         parameters: {
             query?: never;
             header?: never;

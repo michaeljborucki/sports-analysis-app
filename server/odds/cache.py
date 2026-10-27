@@ -12,7 +12,8 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Iterable
-from zoneinfo import ZoneInfo
+
+from ..config import LOCAL_TZ
 
 
 logger = logging.getLogger(__name__)
@@ -1241,7 +1242,7 @@ class OddsCache:
         for r in rows:
             d = dict(r)
             # Early scraper-refresh rows stored UTC's calendar date, which
-            # moves evening Mountain-time captures onto tomorrow's bar.
+            # moves evening local-time captures onto tomorrow's bar.
             # Re-bucket those rows from their timestamp at read time so the
             # correction also repairs existing data. Explicit dates from
             # manual/import sources remain authoritative.
@@ -1249,9 +1250,7 @@ class OddsCache:
                 captured = datetime.fromisoformat(
                     d["captured_at"].replace("Z", "+00:00")
                 )
-                d["local_date"] = captured.astimezone(
-                    ZoneInfo("America/Denver")
-                ).date().isoformat()
+                d["local_date"] = captured.astimezone(LOCAL_TZ).date().isoformat()
             # Ascending order means the LAST row per date overwrites,
             # leaving the latest captured_at as the final value.
             out[d["local_date"]] = d

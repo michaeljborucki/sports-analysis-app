@@ -10,10 +10,12 @@ from ..odds.arbitrage import arb_key_set
 from ..odds.cache import OddsCache
 from ..odds.coalesce import memoized_coalesced
 from ..odds.ev import SHARP_BOOKS, scan_all_ev
+from ..odds.liquidity import resolve_min_liquidity
 from ..odds.normalize import rows_to_games
 from ..odds.scanner_runtime import run_scanner
 from ..odds.latest_snapshot import LatestOddsSnapshotService, snapshot_memo
 from ..util import TTLCache
+from ..user_settings import UserSettingsStore
 from .serialization import json_bytes_response, model_json_bytes
 
 
@@ -48,6 +50,8 @@ class EVOpportunity(BaseModel):
     # Venue pairing: on a Novig take leg this is the maker price you could
     # post instead; on a `novig_maker` leg it's the take price. None else.
     counterpart_price_american: int | None = None
+    # Top-of-book depth ($) at the offered price — exchanges only.
+    max_stake_dollars: float | None = None
 
 
 class EVResponse(BaseModel):
@@ -60,6 +64,7 @@ class EVResponse(BaseModel):
 def build_router(
     cache: OddsCache,
     snapshot_service: LatestOddsSnapshotService | None = None,
+    settings_store: UserSettingsStore | None = None,
 ) -> APIRouter:
     router = APIRouter()
     memo = TTLCache(ttl_seconds=20.0)
@@ -75,6 +80,7 @@ def build_router(
         tag_arb: bool = True,
         sort: str = "desc",
         wager_filter: str = "any",
+        min_liquidity: float | None = None,
     ) -> Response:
         """Scan the cache for +EV opportunities.
 
@@ -94,6 +100,8 @@ def build_router(
               "parlay"   → keep ONLY coral33 rows whose offered line is
                 parlay-eligible (wager_type ∈ {parlay, both}).
               "any"      → no filter.
+          - min_liquidity: drop rows whose offered price has less top-of-book
+              depth ($). Omitted = saved Settings value; 0 = off.
 
         Memoized for 20s — the Edges page fires arb + lh + ev + fb in the
         same SWR tick, so the second-third-fourth EV scan within a 20s
@@ -109,6 +117,7 @@ def build_router(
         # clean miss + fresh scan. Scanners read the full universe (no
         # sport filter), so a global counter is exactly the right
         # granularity.
+        min_liq = resolve_min_liquidity(min_liquidity, settings_store)
         snapshot = await snapshot_service.get() if snapshot_service else None
         source_version = (
             ("snapshot", snapshot.generation)
@@ -117,7 +126,7 @@ def build_router(
         cache_key = (
             "ev", str(cache.path), source_version, books, sharp_books, min_ev,
             max_longshot_odds, stale_seconds, max_results, tag_arb, sort,
-            wager_filter,
+            wager_filter, min_liq,
         )
 
         async def _compute() -> bytes:
@@ -167,6 +176,7 @@ def build_router(
                 arb_keys=arb_keys,
                 max_results=max_results,
                 sort=sort if sort in ("desc", "asc", "bidir") else "desc",
+                min_liquidity_dollars=min_liq,
             )
 
             wf = wager_filter if wager_filter in ("any", "straight", "parlay") else "any"

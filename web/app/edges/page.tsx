@@ -10,6 +10,7 @@ import {
   type FreeBetResponse,
   type ProfitBoostResponse,
   type LowHoldResponse,
+  type SettingsResponse,
 } from "@/lib/api";
 import { useVisibleBooks } from "@/lib/use-visible-books";
 import { useLiveFilter } from "@/lib/use-live-filter";
@@ -31,8 +32,11 @@ import { BOOK_ORDER } from "@/lib/books";
 import { SPORTS } from "@/lib/sports";
 import {
   EDGE_MODES,
+  isPlayerPropMarket,
+  marketKindLabel,
   mergeEdges,
   NOVIG_MAKER,
+  outcomeSide,
   sortEdges,
   type EdgeMode,
   type EdgeOpportunity,
@@ -48,6 +52,11 @@ import {
   PopoverOptionList,
   type SentenceClause,
 } from "@/components/edges/filter-sentence";
+import {
+  MarketIncludeList,
+  marketSelectionSummary,
+  type MarketOption,
+} from "@/components/edges/market-include-list";
 import { useEdgesPrefs } from "@/lib/use-edges-prefs";
 import { computeRowStakeDollars } from "@/lib/stake-calc";
 
@@ -117,9 +126,9 @@ const MODE_NOUN: Record<EdgeMode, string> = {
 
 // Novig pricing: "take" scans Novig at what you can fill right now; "maker"
 // also scans the price you'd post (one tick above the best bid), so edges
-// that only exist if your resting order fills show up too. Applies to the
-// modes where a leg can be a resting order — never to free-bet / boost
-// hedges, which must fill.
+// that only exist if your resting order fills show up too. In free-bet /
+// profit-boost modes the maker price is hedge-only (the promo leg can't be
+// a resting order) — and the hedge has to fill before the promo is locked.
 type NovigPricing = "take" | "maker";
 
 const NOVIG_PRICING_OPTIONS: { label: string; value: NovigPricing }[] = [
@@ -135,6 +144,47 @@ const NOVIG_PRICING_SENTENCE: Record<NovigPricing, string> = {
 function parseWagerFilter(raw: string | null): WagerFilter {
   if (raw === "straight" || raw === "parlay") return raw;
   return "any";
+}
+
+// Player-prop filter, every mode. Props are player_* / batter_* /
+// pitcher_* markets (lib/edges isPlayerPropMarket).
+type PropFilter = "include" | "exclude" | "only";
+
+const PROP_FILTER_OPTIONS: { label: string; value: PropFilter }[] = [
+  { label: "With props", value: "include" },
+  { label: "No props", value: "exclude" },
+  { label: "Props only", value: "only" },
+];
+
+const PROP_SENTENCE: Record<PropFilter, string> = {
+  include: "including player props",
+  exclude: "excluding player props",
+  only: "player props only",
+};
+
+function parsePropFilter(raw: string | null): PropFilter {
+  return raw === "exclude" || raw === "only" ? raw : "include";
+}
+
+// Over/under side filter (EV only — paired modes always hold both sides).
+// "over"/"under" keep only rows on that side of an over/under market, so
+// moneylines and spreads drop out.
+type SideFilter = "any" | "over" | "under";
+
+const SIDE_FILTER_OPTIONS: { label: string; value: SideFilter }[] = [
+  { label: "Any", value: "any" },
+  { label: "Overs", value: "over" },
+  { label: "Unders", value: "under" },
+];
+
+const SIDE_SENTENCE: Record<SideFilter, string> = {
+  any: "any side",
+  over: "overs only",
+  under: "unders only",
+};
+
+function parseSideFilter(raw: string | null): SideFilter {
+  return raw === "over" || raw === "under" ? raw : "any";
 }
 
 // Time-to-commence window. "today" is local-calendar-day (00:00 → 24:00),
@@ -246,6 +296,17 @@ function EdgesPageInner() {
     if (!raw) return new Set();
     return new Set(raw.split(",").filter(Boolean));
   });
+  const [marketFilter, setMarketFilter] = useState<Set<string>>(() => {
+    const raw = searchParams.get("markets");
+    if (!raw) return new Set();
+    return new Set(raw.split(",").filter(Boolean));
+  });
+  const [propFilter, setPropFilter] = useState<PropFilter>(() =>
+    parsePropFilter(searchParams.get("props")),
+  );
+  const [sideFilter, setSideFilter] = useState<SideFilter>(() =>
+    parseSideFilter(searchParams.get("side")),
+  );
   const [stake, setStake] = useState<number>(() => {
     const raw = searchParams.get("stake");
     return clampStake(Number(raw));
@@ -253,6 +314,12 @@ function EdgesPageInner() {
   const [minStake, setMinStake] = useState<number>(() =>
     clampMinStake(Number(searchParams.get("minStake"))),
   );
+  // Exchange liquidity floor ($ of top-of-book depth). null = the saved
+  // Settings value (applied server-side); a number overrides it for this view.
+  const [minLiq, setMinLiq] = useState<number | null>(() => {
+    const raw = searchParams.get("liq");
+    return raw == null ? null : clampMinStake(Number(raw));
+  });
   // Profit-boost percentage. Clamped [0,100]; default 30 matches the
   // typical DraftKings/FanDuel "30% Profit Boost" promo.
   const [boostPct, setBoostPct] = useState<number>(() => {
@@ -302,8 +369,12 @@ function EdgesPageInner() {
     if (minEdge !== 0) qs.set("minEdge", String(minEdge));
     if (maxOdds !== MAX_ODDS_DEFAULT) qs.set("maxOdds", String(maxOdds));
     if (bookFilter.size > 0) qs.set("books", [...bookFilter].sort().join(","));
+    if (marketFilter.size > 0) qs.set("markets", [...marketFilter].sort().join(","));
+    if (propFilter !== "include") qs.set("props", propFilter);
+    if (modes.has("ev") && sideFilter !== "any") qs.set("side", sideFilter);
     if (stake !== 1000) qs.set("stake", String(stake));
     if (minStake > 0) qs.set("minStake", String(minStake));
+    if (minLiq != null) qs.set("liq", String(minLiq));
     if (timeWindow !== "all") qs.set("when", timeWindow);
     if (wagerFilter !== "any") qs.set("wager", wagerFilter);
     if (novigPricing === "maker") qs.set("novig", "maker");
@@ -311,7 +382,7 @@ function EdgesPageInner() {
     const qstring = qs.toString();
     const url = qstring ? `/edges?${qstring}` : "/edges";
     router.replace(url, { scroll: false });
-  }, [modes, sport, minEdge, maxOdds, bookFilter, stake, minStake, timeWindow, wagerFilter, novigPricing, boostPct, router]);
+  }, [modes, sport, minEdge, maxOdds, bookFilter, marketFilter, propFilter, sideFilter, stake, minStake, minLiq, timeWindow, wagerFilter, novigPricing, boostPct, router]);
 
   // Bankroll / Kelly / rounding for the per-row Kelly stake. Same store
   // the table's StakeCell reads — so the minStake filter compares to the
@@ -320,24 +391,26 @@ function EdgesPageInner() {
 
   // ─── Data fetching — 4 parallel SWR keys ───────────────────────
   const { visible } = useVisibleBooks();
+  // Saved liquidity floor — the server applies it when `minLiq` is null;
+  // read here only so the filter sentence can show it.
+  const { data: settingsData } = useSWR<SettingsResponse>(apiPaths.settings, { refreshInterval: 0 });
+  const savedMinLiq = settingsData?.min_liquidity_dollars ?? 0;
   const booksSorted = useMemo(() => [...visible].sort(), [visible]);
-  // Arb / low-hold / EV scan the virtual maker book only when asked to —
-  // the backend never considers it otherwise (server/odds/venues.py).
-  const makerModeActive =
-    novigPricing === "maker" &&
-    (modes.has("arb") || modes.has("low_hold") || modes.has("ev"));
+  // Every mode scans the virtual maker book only when asked to — the
+  // backend never considers it otherwise (server/odds/venues.py).
+  const makerModeActive = novigPricing === "maker" && modes.size > 0;
   const scanBooks = useMemo(
     () => (makerModeActive ? [...booksSorted, NOVIG_MAKER].sort() : booksSorted),
     [booksSorted, makerModeActive],
   );
 
   const arbSwr = useSWR<ArbResponse>(
-    modes.has("arb") ? apiPaths.arbitrage(scanBooks, wagerFilter) : null,
+    modes.has("arb") ? apiPaths.arbitrage(scanBooks, wagerFilter, minLiq) : null,
     { refreshInterval: 60_000 },
   );
   const lhSwr = useSWR<LowHoldResponse>(
     modes.has("low_hold")
-      ? apiPaths.lowHold(scanBooks, 2.5, wagerFilter)
+      ? apiPaths.lowHold(scanBooks, 2.5, wagerFilter, minLiq)
       : null,
     { refreshInterval: 60_000 },
   );
@@ -354,6 +427,7 @@ function EdgesPageInner() {
           sort: "desc",
           maxResults: 5000,
           wagerFilter,
+          minLiquidity: minLiq,
         })
       : null,
     { refreshInterval: 60_000 },
@@ -367,7 +441,7 @@ function EdgesPageInner() {
   );
   const fbSwr = useSWR<FreeBetResponse>(
     modes.has("free_bet")
-      ? apiPaths.freeBets(booksSorted, 100, freeBetBooksSorted, wagerFilter)
+      ? apiPaths.freeBets(scanBooks, 100, freeBetBooksSorted, wagerFilter)
       : null,
     { refreshInterval: 60_000 },
   );
@@ -377,7 +451,7 @@ function EdgesPageInner() {
   // % goes into the SWR key so changing the input refetches.
   const pbSwr = useSWR<ProfitBoostResponse>(
     modes.has("profit_boost")
-      ? apiPaths.profitBoost(booksSorted, {
+      ? apiPaths.profitBoost(scanBooks, {
           boostPct,
           boostBooks: freeBetBooksSorted,
           minConversion: Math.max(0, minEdge),
@@ -449,7 +523,7 @@ function EdgesPageInner() {
     return [...known, ...unknown];
   }, [merged]);
 
-  const filtered = useMemo(() => {
+  const baseFiltered = useMemo(() => {
     let rows = merged;
     if (liveFilter !== "all") {
       rows = rows.filter(op =>
@@ -506,8 +580,38 @@ function EdgesPageInner() {
           }) >= minStake,
       );
     }
+    if (propFilter !== "include") {
+      const wantProps = propFilter === "only";
+      rows = rows.filter(op => isPlayerPropMarket(op.market_kind) === wantProps);
+    }
+    // Side filter is EV-only; the clause is hidden in other modes, so a
+    // bookmarked side=over can't silently empty an arb scan.
+    if (modes.has("ev") && sideFilter !== "any") {
+      rows = rows.filter(op => outcomeSide(op) === sideFilter);
+    }
     return rows;
-  }, [merged, modes, liveFilter, sport, minEdge, maxOdds, bookFilter, timeWindow, minStake, stake, prefs.bankroll, prefs.kellyFrac, prefs.rounding]);
+  }, [merged, modes, liveFilter, sport, minEdge, maxOdds, bookFilter, timeWindow, propFilter, sideFilter, minStake, stake, prefs.bankroll, prefs.kellyFrac, prefs.rounding]);
+
+  // Market options come from rows passing every other filter, so picking
+  // MLB (or overs) narrows the list to markets that actually have rows.
+  const marketOptions = useMemo<MarketOption[]>(() => {
+    const counts = new Map<string, number>();
+    for (const op of baseFiltered) {
+      counts.set(op.market_kind, (counts.get(op.market_kind) ?? 0) + 1);
+    }
+    for (const mk of marketFilter) if (!counts.has(mk)) counts.set(mk, 0);
+    return [...counts]
+      .map(([key, count]) => ({ key, label: marketKindLabel(key), count }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [baseFiltered, marketFilter]);
+
+  const filtered = useMemo(
+    () =>
+      marketFilter.size > 0
+        ? baseFiltered.filter(op => marketFilter.has(op.market_kind))
+        : baseFiltered,
+    [baseFiltered, marketFilter],
+  );
 
   // ─── Sort ──────────────────────────────────────────────────────
   const [sortKey, setSortKey] = useState<SortKey>("edge");
@@ -518,7 +622,8 @@ function EdgesPageInner() {
         setSortDir(d => (d === "asc" ? "desc" : "asc"));
       } else {
         setSortKey(key);
-        setSortDir("desc");
+        // Market reads top-down A→Z on first click; numbers start best-first.
+        setSortDir(key === "market" || key === "commence" ? "asc" : "desc");
       }
     },
     [sortKey],
@@ -611,12 +716,16 @@ function EdgesPageInner() {
             label: "Clear filters",
             onClick: () => {
               setBookFilter(new Set());
+              setMarketFilter(new Set());
+              setSideFilter("any");
+              setPropFilter("include");
               setMinEdge(0);
               setMaxOdds(MAX_ODDS_INPUT_MAX);
               setSport("all");
               setTimeWindow("all");
               setWagerFilter("any");
               setMinStake(0);
+              setMinLiq(null);
             },
           }}
         />
@@ -796,6 +905,53 @@ function EdgesPageInner() {
     ),
   });
   clauses.push({
+    id: "props",
+    value: PROP_SENTENCE[propFilter],
+    heading: "Player props",
+    title: "Include, exclude, or show only player props (player, batter, and pitcher markets).",
+    control: () => (
+      <Segmented
+        size="sm"
+        ariaLabel="Player props"
+        options={PROP_FILTER_OPTIONS}
+        value={propFilter}
+        onChange={setPropFilter}
+      />
+    ),
+  });
+  clauses.push({
+    id: "market",
+    before: "on",
+    value: marketSelectionSummary(marketFilter),
+    heading: "Markets",
+    title: "Show only the selected markets. Counts reflect your other filters.",
+    flush: true,
+    control: () => (
+      <MarketIncludeList
+        options={marketOptions}
+        selected={marketFilter}
+        onChange={setMarketFilter}
+      />
+    ),
+  });
+  if (modes.has("ev")) {
+    clauses.push({
+      id: "side",
+      value: SIDE_SENTENCE[sideFilter],
+      heading: "Over / under",
+      title: "Overs or unders only. Rows that aren't an over/under (moneylines, spreads) are hidden while one is picked.",
+      control: () => (
+        <Segmented
+          size="sm"
+          ariaLabel="Over or under"
+          options={SIDE_FILTER_OPTIONS}
+          value={sideFilter}
+          onChange={setSideFilter}
+        />
+      ),
+    });
+  }
+  clauses.push({
     id: "edge",
     before: isLowHold ? "hold below" : isConversion ? "conversion above" : "edge above",
     value:
@@ -892,7 +1048,7 @@ function EdgesPageInner() {
       />
     ),
   });
-  if (modes.has("arb") || modes.has("low_hold") || modes.has("ev")) {
+  if (modes.size > 0) {
     clauses.push({
       id: "novig",
       before: "with Novig at",
@@ -1014,6 +1170,31 @@ function EdgesPageInner() {
       />
     ),
   });
+
+  if (modes.has("arb") || modes.has("low_hold") || modes.has("ev")) {
+    const effectiveLiq = minLiq ?? savedMinLiq;
+    clauses.push({
+      id: "minLiq",
+      before: "with exchange liquidity of at least",
+      value: effectiveLiq > 0 ? <span className="tabular">${effectiveLiq.toLocaleString()}</span> : "any depth",
+      heading: "Minimum liquidity",
+      title:
+        "Hide Kalshi / Polymarket US prices with less than this much $ available at the shown price (top of book). " +
+        "Arbs fall back to the next book with enough depth. Sportsbooks are never filtered. " +
+        "Default comes from Settings.",
+      control: () => (
+        <PopoverNumberInput
+          prefix="$"
+          value={effectiveLiq}
+          onChange={n => setMinLiq(clampMinStake(n))}
+          min={0}
+          max={1_000_000}
+          step={25}
+          placeholder="0"
+        />
+      ),
+    });
+  }
 
   return (
     <div className="flex flex-col gap-4">

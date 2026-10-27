@@ -21,7 +21,7 @@ from __future__ import annotations
 from .arbitrage import _ev_pairing_helpers, _find_market
 from .devig import american_to_implied_prob
 from .pairing import collect_spread_pairs, collect_total_pairs
-from .venues import book_allowed
+from .venues import OPT_IN_BOOKS, book_allowed, venue
 
 
 def _payout_ratio(american: int) -> float:
@@ -65,6 +65,8 @@ def _best_conversion_for_direction(
     free_prices = [
         p for p in _filter_prices(free_side, free_candidate_books)
         if p["price_american"] >= min_free_odds
+        # A promo can't ride a resting order — maker prices are hedge-only.
+        and p["bookmaker_key"] not in OPT_IN_BOOKS
     ]
     hedge_prices = _filter_prices(hedge_side, hedge_books_filter)
     if not free_prices or not hedge_prices:
@@ -74,8 +76,8 @@ def _best_conversion_for_direction(
     for fp in free_prices:
         r_free = _payout_ratio(fp["price_american"])
         for hp in hedge_prices:
-            if hp["bookmaker_key"] == fp["bookmaker_key"]:
-                continue  # must use two different books
+            if venue(hp["bookmaker_key"]) == venue(fp["bookmaker_key"]):
+                continue  # two different venues (novig take ≠ novig_maker)
             r_hedge = _payout_ratio(hp["price_american"])
             conv = r_free * r_hedge / (1.0 + r_hedge)
             if best is None or conv > best[2]:
@@ -147,6 +149,7 @@ def _emit(
             "book": hedge_price["bookmaker_key"],
             "price_american": hedge_price["price_american"],
             "point": hedge_price.get("point"),
+            "counterpart_price_american": hedge_price.get("counterpart_price_american"),
             "wager_type": hedge_price.get("wager_type"),
         },
     }

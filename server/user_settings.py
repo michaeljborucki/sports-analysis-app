@@ -32,6 +32,10 @@ class UserSettings:
     # install use the client's DEFAULT_VISIBLE_BOOKS). An empty list is a
     # legitimate user choice ("show nothing") and is distinct from None.
     visible_books: list[str] | None = None
+    # Edge scanners drop exchange prices whose top-of-book depth
+    # (max_stake_dollars) is below this. 0 = off. Books without a depth
+    # figure (sportsbooks) are never filtered.
+    min_liquidity_dollars: float = 0.0
 
     def is_sport_enabled(self, sport_key: str) -> bool:
         return sport_key not in self.disabled_sports
@@ -51,12 +55,18 @@ class UserSettings:
         }
         if self.visible_books is not None:
             out["visible_books"] = sorted(self.visible_books)
+        if self.min_liquidity_dollars:
+            out["min_liquidity_dollars"] = self.min_liquidity_dollars
         return out
 
     @classmethod
     def from_dict(cls, raw: dict) -> "UserSettings":
         raw_books = raw.get("visible_books")
         visible = sorted(raw_books) if isinstance(raw_books, list) else None
+        try:
+            min_liq = max(0.0, float(raw.get("min_liquidity_dollars") or 0))
+        except (TypeError, ValueError):
+            min_liq = 0.0
         return cls(
             disabled_sports=set(raw.get("disabled_sports") or []),
             disabled_markets={
@@ -65,6 +75,7 @@ class UserSettings:
                 if keys
             },
             visible_books=visible,
+            min_liquidity_dollars=min_liq,
         )
 
 
@@ -100,6 +111,7 @@ class UserSettingsStore:
                 if self._settings.visible_books is not None
                 else None
             ),
+            min_liquidity_dollars=self._settings.min_liquidity_dollars,
         )
 
     def get(self) -> UserSettings:

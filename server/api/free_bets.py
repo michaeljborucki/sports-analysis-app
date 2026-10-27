@@ -24,6 +24,9 @@ class FreeBetLeg(BaseModel):
     point: float | None = None
     # Coral33-only betslip-eligibility tag; None for every other book.
     wager_type: str | None = None
+    # Novig only: the other Novig price (maker on a take leg, take on a
+    # `novig_maker` leg). None everywhere else.
+    counterpart_price_american: int | None = None
 
 
 class FreeBetOpportunity(BaseModel):

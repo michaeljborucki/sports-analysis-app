@@ -58,6 +58,17 @@ _MAX_ASSETS_PER_SUB = 5000
 # (NOT JSON-wrapped). Send every 10s.
 _PING_INTERVAL_S = 10.0
 
+# Resubscribe-on-change. Subscriptions are only sent on connect, so a REST
+# cycle that registers NEW asset_ids used to wait for an incidental
+# disconnect before those games streamed. Every `_RESUB_CHECK_S` we compare
+# the ingestor's current set to what this connection subscribed; if any
+# registered asset is unsubscribed (and the connection is at least
+# `_RESUB_MIN_AGE_S` old, to debounce the staggered per-sport cycles) we
+# close the socket and the normal reconnect path resubscribes with the
+# current set (initial_dump gives fresh books for everything).
+_RESUB_CHECK_S = 15.0
+_RESUB_MIN_AGE_S = 30.0
+
 
 class PolymarketWSError(Exception):
     pass
@@ -101,6 +112,8 @@ class PolymarketWSClient:
         self.total_messages: int = 0
         self.total_reconnects: int = 0
         self.subscribed_assets: int = 0
+        self._subscribed: set[str] = set()
+        self.total_resubscribes: int = 0
 
     @property
     def is_connected(self) -> bool:
@@ -161,6 +174,54 @@ class PolymarketWSClient:
                 break
             backoff_idx += 1
 
+    def needs_resubscribe(self, now: float | None = None) -> bool:
+        """True when a registered asset isn't covered by the live
+        subscription and the connection is old enough to recycle. Assets
+        beyond the cap that were already capped out don't count (they
+        couldn't be subscribed anyway)."""
+        if self.connected_at is None:
+            return False
+        now = time.time() if now is None else now
+        if now - self.connected_at < _RESUB_MIN_AGE_S:
+            return False
+        current = list(self._get_asset_ids() or ())
+        if len(current) > _MAX_ASSETS_PER_SUB:
+            current = current[:_MAX_ASSETS_PER_SUB]
+        return any(a not in self._subscribed for a in current)
+
+    async def _resubscribe_watch(self, ws) -> None:
+        """Close the socket when the registered asset set has unsubscribed
+        members; the reconnect loop then subscribes the current set."""
+        try:
+            while not self._stop:
+                await asyncio.sleep(_RESUB_CHECK_S)
+                try:
+                    needed = self.needs_resubscribe()
+                except Exception:
+                    logger.exception("polymarket WS: resubscribe check failed")
+                    continue
+                if needed:
+                    self.total_resubscribes += 1
+                    logger.info(
+                        "polymarket WS: asset set changed — reconnecting to resubscribe",
+                    )
+                    try:
+                        await ws.close()
+                    except Exception:
+                        pass
+                    return
+        except asyncio.CancelledError:
+            return
+
+    def stats(self) -> dict:
+        """Read-only counters for debug endpoints."""
+        return {
+            "subscribed_assets": self.subscribed_assets,
+            "total_resubscribes": self.total_resubscribes,
+            "total_reconnects": self.total_reconnects,
+            "connected": self.is_connected,
+        }
+
     async def _connect_and_stream(self) -> AsyncIterator[dict]:
         """Single-attempt connect + subscribe + yield. Caller wraps in
         the reconnect loop. Raises PolymarketWSError when the asset list
@@ -191,6 +252,7 @@ class PolymarketWSClient:
         ) as ws:
             self.connected_at = time.time()
             self.subscribed_assets = len(assets)
+            self._subscribed = set(assets)
             logger.info("polymarket WS: connected (%d assets)", len(assets))
 
             sub_msg = {
@@ -205,6 +267,7 @@ class PolymarketWSClient:
             # configured interval. Polymarket's server requires this every
             # ≤30s; we send every 10s for a healthy margin.
             ping_task = asyncio.create_task(self._heartbeat(ws))
+            resub_task = asyncio.create_task(self._resubscribe_watch(ws))
 
             try:
                 async for raw in ws:
@@ -231,11 +294,12 @@ class PolymarketWSClient:
                                 "polymarket WS: dropping non-book event_type=%s", et,
                             )
             finally:
-                ping_task.cancel()
-                try:
-                    await ping_task
-                except (asyncio.CancelledError, Exception):
-                    pass
+                for task in (ping_task, resub_task):
+                    task.cancel()
+                    try:
+                        await task
+                    except (asyncio.CancelledError, Exception):
+                        pass
 
     async def _heartbeat(self, ws) -> None:
         """Send "PING" every `_ping_interval_s`. Cancelled when the outer

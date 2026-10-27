@@ -203,3 +203,42 @@ def test_coral33_receiving_yards_typo_still_maps():
     assert [r["outcome_name"] for r in rows] == [
         "puka nacua Over", "puka nacua Under",
     ]
+
+
+def _suffix_response(name: str) -> dict:
+    return {"Lines": [{
+        "Status": "O", "Team1ID": name, "Team2ID": "Receiving Yards",
+        "TotalPoints": 55.5, "TtlPtsAdj1": -110, "TtlPtsAdj2": -110,
+        "CorrelationID": "451-g", "GameDateTime": "2026-04-19 19:00:01.000",
+    }]}
+
+
+def test_suffixless_coral_name_adopts_events_jr_spelling():
+    rows = normalize_player_props(
+        _suffix_response("Brian Thomas"), "nfl", NOW, _stub_lookup,
+        known_players=lambda ev: {"brian thomas jr", "travis etienne"},
+    )
+    assert {r["outcome_name"] for r in rows} == {
+        "brian thomas jr Over", "brian thomas jr Under",
+    }
+
+
+def test_suffix_bridge_leaves_exact_and_ambiguous_names_alone():
+    # Bare name already on the event — no rewrite.
+    rows = normalize_player_props(
+        _suffix_response("Brian Thomas"), "nfl", NOW, _stub_lookup,
+        known_players=lambda ev: {"brian thomas", "brian thomas jr"},
+    )
+    assert {r["outcome_name"] for r in rows} == {"brian thomas Over", "brian thomas Under"}
+    # Sr and Jr both present — refuse to guess.
+    rows = normalize_player_props(
+        _suffix_response("Brian Thomas"), "nfl", NOW, _stub_lookup,
+        known_players=lambda ev: {"brian thomas sr", "brian thomas jr"},
+    )
+    assert {r["outcome_name"] for r in rows} == {"brian thomas Over", "brian thomas Under"}
+    # Unrelated longer name ("brian thomason") is not a suffix.
+    rows = normalize_player_props(
+        _suffix_response("Brian Thomas"), "nfl", NOW, _stub_lookup,
+        known_players=lambda ev: {"brian thomason"},
+    )
+    assert {r["outcome_name"] for r in rows} == {"brian thomas Over", "brian thomas Under"}

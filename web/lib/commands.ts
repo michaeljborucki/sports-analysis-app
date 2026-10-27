@@ -116,6 +116,20 @@ export const COMMANDS: Command[] = [
     "signals",
     "angles",
   ]),
+  navCommand("nav.cfb", "Go to CFB projections", "/cfb", [
+    "cfb",
+    "college football",
+    "ncaaf",
+    "projections",
+    "points per play",
+  ]),
+  navCommand("nav.nba", "Go to NBA projections", "/nba", [
+    "nba",
+    "basketball",
+    "projections",
+    "efficiency",
+    "pace",
+  ]),
   navCommand("nav.accounts", "Go to Accounts", "/accounts", [
     "accounts",
     "balances",

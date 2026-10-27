@@ -6,6 +6,8 @@ import time
 from typing import Callable, Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from ..config import LOCAL_TZ_NAME
+
 from fastapi import APIRouter, HTTPException, Query
 
 from ..odds.cache import OddsCache
@@ -35,7 +37,7 @@ def build_router(
     async def get_systems(
         date: date_type | None = Query(default=None),
         timeframe: Literal["today", "tomorrow", "upcoming"] | None = Query(default=None),
-        timezone_name: str = Query(default="America/Denver", alias="timezone"),
+        timezone_name: str = Query(default=LOCAL_TZ_NAME, alias="timezone"),
     ) -> SystemsResponse:
         now = clock()
         try:

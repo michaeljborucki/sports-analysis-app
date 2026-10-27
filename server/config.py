@@ -4,9 +4,18 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from zoneinfo import ZoneInfo
+
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# The user's local zone: calendar days for account balances, the Systems
+# page's "today", and Coral33's rendered times (it renders in the account
+# holder's zone). America/Denver until 2026-10-24, when the user moved to
+# Eastern. Override with LOCAL_TZ.
+LOCAL_TZ_NAME = os.environ.get("LOCAL_TZ", "America/New_York")
+LOCAL_TZ = ZoneInfo(LOCAL_TZ_NAME)
 
 
 @dataclass

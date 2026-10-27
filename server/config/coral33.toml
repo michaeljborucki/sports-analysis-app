@@ -358,6 +358,10 @@ nats            = "washington nationals"
 
 [team_aliases.soccer]
 # Observed Coral33 variants matched to the same fixture (2026-09-09).
+# Verified against the 2026-10-20 mapping orphans (UCL/UEL/UECL week):
+"fc porto"          = "porto"
+"slovan bratislava" = "sk slovan bratislava"
+"viking"            = "viking fk"
 "machida zelvia" = "fc machida zelvia"
 "tokyo" = "fc tokyo"
 "mito" = "mito hollyhock"
@@ -589,6 +593,12 @@ mississippi         = "ole miss"
 # Verified against the 2026-10-02 mapping orphans (UFC 2026-10-03 card):
 "mick parkin"          = "michael parkin"    # coral uses the nickname
 "alexander hernandez"  = "alex hernandez"    # Odds API uses the short form
+# Verified against the 2026-10-20 mapping orphans (UFC 2026-10-24 card + Dec 12):
+"sergei pavlovich"       = "sergey pavlovich"      # transliteration
+"ramazan temirov"        = "ramazonbek temirov"    # coral uses the short form
+"abdul rakhman yakhyaev" = "abdulrakhman yakhyaev" # coral splits the given name
+"abus magomedov"         = "abusupyian magomedov"  # coral uses the short form
+"timmy cuamba"           = "timothy cuamba"        # coral uses the nickname
 
 [team_aliases.boxing]
 # Same as UFC — fighter names usually identity-match.

@@ -46,6 +46,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable
 
+from ....config import LOCAL_TZ
 from .accounts import AccountCredential
 from curl_cffi.requests.exceptions import RequestException
 
@@ -79,13 +80,9 @@ DEFAULT_BACKFILL_WEEKS = 2
 WAGER_LOG_SCHEMA_VERSION = 2
 
 
-# Coral33's server timestamps are in America/Denver (MDT/MST). Same fix
-# we applied in the line normalizer — reuse here for wager timestamps.
-try:
-    from zoneinfo import ZoneInfo
-    _CORAL_TZ = ZoneInfo("America/Denver")
-except Exception:
-    _CORAL_TZ = timezone(-timedelta(hours=6))  # MDT fallback
+# Coral33 renders naive timestamps in the account holder's zone — the
+# user's local zone (America/Denver until 2026-10-24, Eastern since).
+_CORAL_TZ = LOCAL_TZ
 
 
 @dataclass(frozen=True)
@@ -137,7 +134,7 @@ class WagerLogEntry:
 
 def _parse_wager_datetime(s: str | None) -> datetime | None:
     """coral33 returns naive timestamps like '2026-05-06 13:26:50.343' in
-    America/Denver. Parse, attach the TZ, normalize to UTC. Returns None on
+    the user's local zone (LOCAL_TZ). Parse, attach the TZ, normalize to UTC. Returns None on
     empty / unparseable input."""
     if not s:
         return None
