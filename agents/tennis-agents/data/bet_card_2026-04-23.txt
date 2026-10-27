@@ -1,0 +1,66 @@
+
+============================================================
+  MIROFISH TENNIS BET CARD — 2026-04-23 → 2026-04-24
+  16 picks across 14 matches
+============================================================
+
+  Y. Starodubtseva vs J. Cristian — 7:00 PM MT
+  ----------------------------------------
+    total_games     | over 21.5                | -105 | Edge:  6.6% | Kelly:  0.35%
+    game_handicap   | J. Cristian 2.5          | -106 | Edge: 16.5% | Kelly:  2.41%
+
+  Y. Hanfmann vs M. Giron — 6:30 PM MT
+  ----------------------------------------
+    moneyline       | M. Giron                 | +215 | Edge:  5.7% | Kelly:  0.43%
+
+  P. Kypson vs S. Tsitsipas — 6:30 PM MT
+  ----------------------------------------
+    moneyline       | S. Tsitsipas             | -289 | Edge:  7.4% | Kelly:  3.43%
+
+  D. Altmaier vs J. M. Cerundolo — 6:30 PM MT
+  ----------------------------------------
+    moneyline       | D. Altmaier              | +115 | Edge:  5.4% | Kelly:  0.53%
+
+  M. Trungelliti vs D. Merida Aguilar — 6:30 PM MT
+  ----------------------------------------
+    game_handicap   | M. Trungelliti 1.5       | -113 | Edge: 10.6% | Kelly:  1.76%
+    total_games     | under 22.5               | -102 | Edge:  6.9% | Kelly:  0.91%
+
+  M. Landaluce vs A. Walton — 6:30 PM MT
+  ----------------------------------------
+    moneyline       | A. Walton                | +335 | Edge:  7.0% | Kelly:  0.56%
+
+  B. Bencic vs P. Marcinko — 7:00 PM MT
+  ----------------------------------------
+    moneyline       | P. Marcinko              | +340 | Edge:  6.4% | Kelly:  0.17%
+
+  Xin. Wang vs L. Samson — 7:00 PM MT
+  ----------------------------------------
+    moneyline       | L. Samson                | +100 | Edge: 14.6% | Kelly:  2.01%
+
+  I. Swiatek vs D. Snigur — 7:00 PM MT
+  ----------------------------------------
+    moneyline       | D. Snigur                | +1400 | Edge: 12.9% | Kelly:  1.12%
+
+  A. Parks vs A. Li — 7:00 PM MT
+  ----------------------------------------
+    total_games     | under 22.5               | -129 | Edge:  5.2% | Kelly:  0.27%
+
+  A. Sabalenka vs P. Stearns — 7:00 PM MT
+  ----------------------------------------
+    moneyline       | P. Stearns               | +1140 | Edge: 10.9% | Kelly:  0.38%
+
+  C. Ugo Carabelli vs G. Monfils — 11:00 AM MT
+  ----------------------------------------
+    moneyline       | G. Monfils               | +2000 | Edge: 21.4% | Kelly:  2.00%
+
+  J. Fonseca vs M. Cilic — 11:00 AM MT
+  ----------------------------------------
+    moneyline       | M. Cilic                 | +315 | Edge:  6.5% | Kelly:  0.82%
+
+  Y. Putintseva vs M. Kostyuk — 3:30 PM MT
+  ----------------------------------------
+    game_handicap   | M. Kostyuk -4.5          | -135 | Edge:  5.5% | Kelly:  0.52%
+
+  Status: Pending
+============================================================

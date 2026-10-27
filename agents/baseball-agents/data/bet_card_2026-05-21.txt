@@ -1,0 +1,26 @@
+
+============================================================
+  MAINLINE BET CARD — 2026-05-21
+  6 picks across 4 games
+============================================================
+
+  CLE@DET — 1:10 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  -111 | Mkt: 51.3% | Model: 57.1% | Edge:  5.8% | Kelly:  2.39% | BE:  -125
+
+  PIT@STL — 1:15 PM ET
+  ----------------------------------------
+    total              | under 7.0            |  +102 | Mkt: 48.2% | Model: 54.8% | Edge:  6.6% | Kelly:  2.60% | BE:  -115
+    first_5_rl         | home +0.5            |  -130 | Mkt: 55.1% | Model: 61.0% | Edge:  5.9% | Kelly:  2.57% | BE:  -150
+
+  NYM@WSH — 4:05 PM ET
+  ----------------------------------------
+    first_5_rl         | away +0.5            |  -145 | Mkt: 57.6% | Model: 74.1% | Edge: 15.0% | Kelly:  8.21% | BE:  -280
+    team_total_away    | away under 3.5       |  +113 | Mkt: 45.1% | Model: 56.4% | Edge: 11.3% | Kelly:  4.46% | BE:  -120
+
+  COL@ARI — 9:40 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  +105 | Mkt: 47.9% | Model: 56.4% | Edge:  8.6% | Kelly:  3.72% | BE:  -120
+
+  Status: Pending
+============================================================

@@ -1,0 +1,24 @@
+{
+  "date": "2026-05-11",
+  "generated_at": "2026-05-11T18:43:20",
+  "total_picks": 1,
+  "games": [
+    {
+      "game": "SEA@HOU",
+      "game_time_et": "8:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 4.5",
+          "odds": -108,
+          "market_prob": 0.5,
+          "model_prob": 0.5641,
+          "edge": 0.0641,
+          "kelly_pct": 0.0233,
+          "be_odds": -120,
+          "result": null
+        }
+      ]
+    }
+  ]
+}

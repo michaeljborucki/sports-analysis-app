@@ -1,0 +1,394 @@
+{
+  "2026-04-18": [
+    "ATL@PHI|total|under 7.0",
+    "BAL@CLE|nrfi|NRFI",
+    "BAL@CLE|total|under 7.5",
+    "CIN@MIN|total|under 8.0",
+    "KC@NYY|run_line|home -1.5",
+    "NYM@CHC|nrfi|NRFI",
+    "NYM@CHC|total|under 8.5",
+    "SD@LAA|nrfi|NRFI",
+    "SD@LAA|total|under 9.5",
+    "STL@HOU|run_line|home -1.5",
+    "TEX@SEA|nrfi|NRFI",
+    "TEX@SEA|run_line|home -1.5",
+    "TEX@SEA|total|under 7.0",
+    "TOR@ARI|run_line|home -1.5",
+    "TOR@ARI|total|under 9.0"
+  ],
+  "2026-04-19": [
+    "CIN@MIN|total|under 8.0",
+    "CWS@OAK|nrfi|NRFI",
+    "CWS@OAK|total|under 9.5",
+    "KC@NYY|run_line|home -1.5",
+    "NYM@CHC|run_line|home -1.5",
+    "SD@LAA|nrfi|NRFI",
+    "SD@LAA|total|under 9.0",
+    "STL@HOU|run_line|home -1.5",
+    "TEX@SEA|run_line|home -1.5",
+    "TEX@SEA|total|under 7.0",
+    "TOR@ARI|nrfi|NRFI",
+    "TOR@ARI|run_line|away -1.5",
+    "TOR@ARI|total|under 8.0"
+  ],
+  "2026-04-20": [
+    "ATL@WSH|nrfi|NRFI",
+    "ATL@WSH|total|under 8.0",
+    "BAL@KC|nrfi|NRFI",
+    "BAL@KC|total|under 9.0",
+    "CIN@TB|nrfi|NRFI",
+    "CIN@TB|total|under 8.0",
+    "HOU@CLE|total|under 7.5",
+    "OAK@SEA|nrfi|NRFI",
+    "OAK@SEA|run_line|home -1.5",
+    "OAK@SEA|total|under 8.0",
+    "STL@MIA|nrfi|NRFI",
+    "STL@MIA|run_line|home -1.5",
+    "STL@MIA|total|under 8.5",
+    "TOR@LAA|total|under 7.5"
+  ],
+  "2026-04-21": [
+    "ATL@WSH|nrfi|NRFI",
+    "BAL@KC|nrfi|NRFI",
+    "BAL@KC|total|under 9.0",
+    "CIN@TB|nrfi|NRFI",
+    "CIN@TB|total|under 7.5",
+    "HOU@CLE|nrfi|NRFI",
+    "HOU@CLE|run_line|home -1.5",
+    "HOU@CLE|total|under 8.5",
+    "LAD@SF|nrfi|NRFI",
+    "MIL@DET|nrfi|NRFI",
+    "MIL@DET|total|under 8.5",
+    "MIN@NYM|run_line|home -1.5",
+    "MIN@NYM|total|under 7.5",
+    "OAK@SEA|nrfi|NRFI",
+    "OAK@SEA|run_line|home -1.5",
+    "PIT@TEX|nrfi|NRFI",
+    "STL@MIA|nrfi|NRFI",
+    "STL@MIA|total|under 8.5",
+    "TOR@LAA|nrfi|NRFI"
+  ],
+  "2026-04-22": [
+    "BAL@KC|nrfi|NRFI",
+    "CIN@TB|nrfi|NRFI",
+    "CIN@TB|run_line|home -1.5",
+    "CWS@ARI|nrfi|NRFI",
+    "CWS@ARI|run_line|home -1.5",
+    "LAD@SF|nrfi|NRFI",
+    "MIL@DET|run_line|home -1.5",
+    "MIL@DET|total|under 8.0",
+    "MIN@NYM|run_line|home -1.5",
+    "OAK@SEA|nrfi|NRFI",
+    "PIT@TEX|nrfi|NRFI",
+    "STL@MIA|nrfi|NRFI",
+    "TOR@LAA|nrfi|NRFI",
+    "TOR@LAA|run_line|home -1.5",
+    "TOR@LAA|total|under 8.0"
+  ],
+  "2026-04-23": [
+    "LAD@SF|nrfi|NRFI",
+    "MIN@NYM|nrfi|NRFI",
+    "MIN@NYM|run_line|away -1.5",
+    "PHI@CHC|nrfi|NRFI",
+    "PIT@TEX|nrfi|NRFI",
+    "PIT@TEX|run_line|home -1.5"
+  ],
+  "2026-04-24": [
+    "CLE@TOR|nrfi|NRFI",
+    "COL@NYM|nrfi|NRFI",
+    "DET@CIN|nrfi|NRFI",
+    "LAA@KC|nrfi|NRFI",
+    "MIN@TB|nrfi|NRFI",
+    "OAK@TEX|run_line|home -1.5",
+    "PHI@ATL|nrfi|NRFI",
+    "SEA@STL|nrfi|NRFI",
+    "SEA@STL|total|under 8.0"
+  ],
+  "2026-04-25": [
+    "BOS@BAL|team_total_away|away under 3.5",
+    "CLE@TOR|run_line|home -1.5",
+    "CLE@TOR|team_total_home|home under 3.5",
+    "MIA@SF|team_total_away|away under 3.5",
+    "MIA@SF|team_total_home|home under 3.5",
+    "MIN@TB|run_line|home -1.5",
+    "MIN@TB|team_total_away|away under 3.5",
+    "MIN@TB|team_total_home|home under 4.5",
+    "SD@ARI|team_total_home|home under 7.5",
+    "SD@ARI|total|under 16.0",
+    "SEA@STL|team_total_home|home under 3.5",
+    "WSH@CWS|team_total_away|away under 3.5"
+  ],
+  "2026-04-26": [
+    "BOS@BAL|run_line|home -1.5",
+    "BOS@BAL|team_total_home|home under 3.5",
+    "CHC@LAD|team_total_home|home under 4.5",
+    "CLE@TOR|run_line|home -1.5",
+    "CLE@TOR|team_total_home|home under 4.5",
+    "COL@NYM|run_line|home -1.5",
+    "COL@NYM|team_total_home|home under 4.5",
+    "LAA@KC|team_total_home|home under 4.5",
+    "MIA@SF|team_total_away|away under 3.5",
+    "MIA@SF|team_total_home|home under 3.5",
+    "MIN@TB|run_line|home -1.5",
+    "MIN@TB|team_total_away|away under 3.5",
+    "MIN@TB|team_total_home|home under 4.5",
+    "NYY@HOU|team_total_home|home under 4.5",
+    "OAK@TEX|team_total_away|away under 3.5",
+    "OAK@TEX|team_total_home|home under 4.5",
+    "PHI@ATL|team_total_home|home under 4.5",
+    "PIT@MIL|team_total_away|away under 3.5",
+    "PIT@MIL|team_total_home|home under 3.5",
+    "SD@ARI|team_total_home|home under 6.5",
+    "SD@ARI|total|under 15.0",
+    "SEA@STL|team_total_home|home under 3.5",
+    "WSH@CWS|team_total_home|home under 3.5"
+  ],
+  "2026-04-27": [
+    "BOS@TOR|run_line|home -1.5",
+    "CHC@SD|team_total_away|away under 3.5",
+    "LAA@CWS|team_total_away|away under 4.5",
+    "MIA@LAD|team_total_away|away under 2.5",
+    "SEA@MIN|team_total_away|away under 4.5",
+    "SEA@MIN|team_total_home|home under 3.5"
+  ],
+  "2026-04-28": [
+    "CHC@SD|run_line|away -1.5",
+    "SF@PHI|run_line|home -1.5",
+    "STL@PIT|run_line|home -1.5",
+    "TB@CLE|run_line|home -1.5"
+  ],
+  "2026-04-29": [
+    "SF@PHI|run_line|home -1.5",
+    "STL@PIT|run_line|home -1.5",
+    "WSH@NYM|run_line|home -1.5"
+  ],
+  "2026-04-30": [
+    "COL@CIN|run_line|home -1.5",
+    "SF@PHI|run_line|home -1.5",
+    "STL@PIT|run_line|home -1.5",
+    "WSH@NYM|run_line|home -1.5"
+  ],
+  "2026-05-01": [
+    "ARI@CHC|run_line|home -1.5",
+    "CIN@PIT|run_line|home -1.5",
+    "CWS@SD|run_line|home -1.5",
+    "PHI@MIA|moneyline|away",
+    "SF@TB|run_line|home -1.5"
+  ],
+  "2026-05-02": [
+    "ATL@COL|total|over 9.5",
+    "CIN@PIT|run_line|home -1.5",
+    "CLE@OAK|run_line|home -1.5",
+    "HOU@BOS|run_line|home -1.5",
+    "TEX@DET|run_line|home -1.5"
+  ],
+  "2026-05-03": [
+    "PHI@MIA|run_line|away -1.5"
+  ],
+  "2026-05-04": [
+    "CWS@LAA|run_line|home -1.5",
+    "PHI@MIA|nrfi|NRFI",
+    "SD@SF|nrfi|NRFI"
+  ],
+  "2026-05-05": [
+    "ATL@SEA|nrfi|NRFI",
+    "ATL@SEA|run_line|home -1.5",
+    "BAL@MIA|nrfi|NRFI",
+    "BAL@MIA|run_line|home -1.5",
+    "CIN@CHC|run_line|home -1.5",
+    "CLE@KC|run_line|away -1.5",
+    "TEX@NYY|nrfi|NRFI"
+  ],
+  "2026-05-06": [
+    "ATL@SEA|nrfi|NRFI",
+    "ATL@SEA|total|under 8.0",
+    "BAL@MIA|nrfi|NRFI",
+    "BAL@MIA|run_line|home -1.5",
+    "BAL@MIA|total|under 8.5",
+    "BOS@DET|total|under 8.5",
+    "OAK@PHI|moneyline|home",
+    "OAK@PHI|run_line|home -1.5",
+    "PIT@ARI|run_line|away -1.5",
+    "SD@SF|nrfi|NRFI",
+    "TOR@TB|run_line|home -1.5"
+  ],
+  "2026-05-07": [
+    "BAL@MIA|total|under 8.0",
+    "CIN@CHC|nrfi|NRFI",
+    "NYM@COL|moneyline|home"
+  ],
+  "2026-05-08": [
+    "ATL@LAD|moneyline|away",
+    "OAK@BAL|run_line|home -1.5",
+    "TB@BOS|run_line|home -1.5",
+    "WSH@MIA|total|under 8.0"
+  ],
+  "2026-05-09": [
+    "ATL@LAD|nrfi|NRFI",
+    "DET@KC|moneyline|home",
+    "DET@KC|nrfi|NRFI",
+    "STL@SD|nrfi|NRFI",
+    "WSH@MIA|run_line|home -1.5"
+  ],
+  "2026-05-10": [
+    "NYM@ARI|moneyline|home",
+    "PIT@SF|total|under 8.0",
+    "STL@SD|nrfi|NRFI",
+    "WSH@MIA|nrfi|NRFI",
+    "WSH@MIA|run_line|home -1.5"
+  ],
+  "2026-05-12": [
+    "COL@PIT|run_line|home -1.5",
+    "MIA@MIN|nrfi|NRFI",
+    "MIA@MIN|total|under 9.0",
+    "PHI@BOS|moneyline|away",
+    "PHI@BOS|run_line|away -1.5",
+    "SD@MIL|run_line|home -1.5",
+    "SEA@HOU|moneyline|home",
+    "SEA@HOU|run_line|home 1.5",
+    "STL@OAK|nrfi|NRFI",
+    "TB@TOR|nrfi|NRFI",
+    "WSH@CIN|run_line|home -1.5"
+  ],
+  "2026-05-13": [
+    "COL@PIT|nrfi|NRFI",
+    "DET@NYM|nrfi|NRFI",
+    "SD@MIL|run_line|home -1.5",
+    "STL@OAK|nrfi|NRFI"
+  ],
+  "2026-05-17": [
+    "BAL@WSH|total|under 10.0",
+    "CIN@CLE|total|under 8.5",
+    "KC@STL|total|under 9.0",
+    "MIL@MIN|moneyline|home",
+    "NYY@NYM|moneyline|home",
+    "NYY@NYM|nrfi|NRFI",
+    "NYY@NYM|total|under 8.5"
+  ],
+  "2026-05-18": [
+    "BAL@TB|moneyline|home",
+    "BAL@TB|run_line|home -1.5",
+    "BOS@KC|total|under 9.0",
+    "CLE@DET|run_line|home -1.5",
+    "CLE@DET|total|under 8.0",
+    "MIL@CHC|nrfi|NRFI",
+    "NYM@WSH|nrfi|NRFI",
+    "NYM@WSH|total|under 10.0",
+    "SF@ARI|run_line|home -1.5"
+  ],
+  "2026-05-19": [
+    "CIN@PHI|run_line|home -1.5",
+    "CWS@SEA|nrfi|NRFI",
+    "CWS@SEA|run_line|home -1.5",
+    "HOU@MIN|run_line|home -1.5",
+    "LAD@SD|total|under 8.0",
+    "PIT@STL|total|under 8.0",
+    "TOR@NYY|nrfi|NRFI",
+    "TOR@NYY|run_line|home -1.5"
+  ],
+  "2026-05-20": [
+    "ATL@MIA|moneyline|away",
+    "ATL@MIA|run_line|home -1.5",
+    "CIN@PHI|run_line|home -1.5",
+    "HOU@MIN|run_line|home -1.5",
+    "OAK@LAA|nrfi|NRFI",
+    "OAK@LAA|total|under 9.5"
+  ],
+  "2026-05-21": [
+    "PIT@STL|total|under 7.0"
+  ],
+  "2026-05-22": [
+    "CLE@PHI|run_line|home -1.5",
+    "CWS@SF|run_line|away -1.5"
+  ],
+  "2026-05-26": [
+    "ARI@SF|nrfi|NRFI",
+    "ARI@SF|total|under 8.0",
+    "CHC@PIT|total|under 8.0",
+    "COL@LAD|moneyline|home",
+    "HOU@TEX|run_line|home -1.5",
+    "LAA@DET|total|under 8.5",
+    "MIA@TOR|nrfi|NRFI",
+    "MIA@TOR|run_line|home -1.5",
+    "PHI@SD|nrfi|NRFI",
+    "SEA@OAK|nrfi|NRFI",
+    "STL@MIL|nrfi|NRFI",
+    "WSH@CLE|run_line|home -1.5"
+  ],
+  "2026-05-27": [
+    "CIN@NYM|moneyline|away",
+    "CIN@NYM|total|under 8.0",
+    "HOU@TEX|run_line|home -1.5",
+    "MIA@TOR|run_line|home -1.5",
+    "NYY@KC|nrfi|NRFI",
+    "NYY@KC|total|under 8.5",
+    "STL@MIL|total|under 8.0",
+    "TB@BAL|total|under 9.0",
+    "WSH@CLE|moneyline|home",
+    "WSH@CLE|run_line|home -1.5"
+  ],
+  "2026-05-28": [
+    "TOR@BAL|run_line|home -1.5"
+  ],
+  "2026-05-29": [
+    "BOS@CLE|moneyline|home",
+    "MIL@HOU|moneyline|home",
+    "MIN@PIT|nrfi|NRFI",
+    "MIN@PIT|run_line|home -1.5",
+    "MIN@PIT|total|under 8.0",
+    "TOR@BAL|moneyline|away"
+  ],
+  "2026-05-30": [
+    "KC@TEX|nrfi|NRFI",
+    "MIN@PIT|nrfi|NRFI",
+    "PHI@LAD|nrfi|NRFI"
+  ],
+  "2026-05-31": [
+    "NYY@OAK|nrfi|NRFI",
+    "NYY@OAK|total|under 9.5",
+    "PHI@LAD|moneyline|away",
+    "PHI@LAD|run_line|away -1.5",
+    "SD@WSH|moneyline|home",
+    "SD@WSH|total|under 9.0",
+    "TOR@BAL|run_line|home -1.5"
+  ],
+  "2026-06-01": [
+    "CWS@MIN|run_line|home -1.5",
+    "MIA@WSH|run_line|home -1.5",
+    "MIA@WSH|total|under 8.0",
+    "NYM@SEA|moneyline|home",
+    "NYM@SEA|run_line|home -1.5",
+    "SF@MIL|moneyline|away",
+    "SF@MIL|run_line|home -1.5"
+  ],
+  "2026-06-02": [
+    "NYM@SEA|moneyline|home"
+  ],
+  "2026-06-03": [
+    "CWS@MIN|run_line|home -1.5",
+    "KC@CIN|run_line|home -1.5"
+  ],
+  "2026-06-04": [
+    "BAL@BOS|moneyline|home"
+  ],
+  "2026-06-06": [
+    "CIN@STL|total|under 9.0",
+    "CWS@PHI|moneyline|home",
+    "CWS@PHI|run_line|home -1.5",
+    "KC@MIN|run_line|home -1.5",
+    "TB@MIA|moneyline|away"
+  ],
+  "2026-06-07": [
+    "BAL@TOR|run_line|home -1.5",
+    "BOS@NYY|run_line|home -1.5",
+    "CWS@PHI|moneyline|home",
+    "KC@MIN|total|under 8.5",
+    "NYM@SD|moneyline|away",
+    "NYM@SD|run_line|away -1.5",
+    "NYM@SD|total|under 7.5",
+    "PIT@ATL|moneyline|home",
+    "PIT@ATL|run_line|home -1.5",
+    "SEA@DET|total|under 8.5",
+    "WSH@ARI|nrfi|NRFI"
+  ]
+}

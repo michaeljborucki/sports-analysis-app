@@ -1,0 +1,108 @@
+{
+  "823950:5735fbdee7b06409": {
+    "starters_hash": "5735fbdee7b06409",
+    "game_pk": 823950,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "LAD",
+          "reasoning": "Emmet Sheehan exhibits superior command metrics compared to Landen Roupp, with a 7.0 K/BB ratio in his last start versus Roupp's 2.7. While both arms carry small-sample volatility, Sheehan's ability to generate swing-and-miss (10 K in 6.1 IP on 4/24) and limit walks provides a higher floor. Roupp's inconsistency\u2014alternating between 0 ER and 4 ER outings\u2014with elevated pitch counts (94+ in 3 of last 5) suggests earlier bullpen exposure. Both pitchers face limited third-time-through-order risk given pitch efficiency concerns, but Sheehan's extra day of rest (6 days vs 5) and cleaner mechanics provide a decisive F5 advantage."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "LAD",
+          "reasoning": "The Dodgers possess a significant structural advantage in plate discipline and isolated power. LAD's lineup averages a 9.1% BB% versus SF's 7.6%, with superior power threats (Muncy 4.9% HR rate, Pages 4.2%, Rushing 5.0%) against a pitcher in Roupp who has shown home run vulnerability in longer outings. The Giants' contact-oriented approach (Arraez, Lee) plays into Sheehan's pitch-to-contact profile in favorable ways, but their collective .235 AVG and lack of hard contact limits sequencing potential. The Dodgers' left-handed heavy core (Freeman, Tucker, Muncy) creates platoon pressure on the right-handed Roupp, though his splits are unknown."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "LAD",
+          "reasoning": "Both bullpens enter fresh, but the Dodgers' organizational depth provides superior high-leverage options in middle innings. Given Roupp's recent pitch counts (88-106) and Sheehan's similar workload (77-101), both starters are likely to exit before the 6th inning in a competitive game. The delta between F5 and full-game win probability favors Los Angeles, as their offensive depth creates better late-inning scoring opportunities against a Giants bullpen that will likely face 12+ outs. The Giants' weaker lineup exacerbates their bullpen exposure, as they cannot afford early deficits."
+        },
+        {
+          "role": "environment",
+          "game_winner": "LAD",
+          "reasoning": "Dodger Stadium's 0.98 park factor and calm wind conditions (0 mph) suppress run scoring slightly, favoring pitchers with good control. The 72\u00b0F temperature provides ideal grip for breaking balls, benefiting Sheehan's secondaries more than Roupp's sinker-heavy mix. Day-game shadows and visibility factors typically favor pitchers early, but the lack of wind eliminates the 'fly ball penalty' that might otherwise suppress LAD's power. Conditions suggest a slight under bias on totals, particularly in the first five innings before bullpen fatigue accumulates."
+        },
+        {
+          "role": "market",
+          "game_winner": "LAD",
+          "reasoning": "The market prices LAD at 61.9% (-161), which efficiently captures the lineup disparity but potentially overweights name recognition given pitching uncertainty. The total of 7.5 with Under +110 presents slight value given environmental factors and early-season offensive rust (both lineups hitting .230-.240). NRFI at -128 (56.1%) appears steep for two unproven starters facing top-of-order hitters; YRFI at +123 holds mathematical value. SF +156 offers contrarian value only if Roupp replicates his 6 IP/0 ER ceiling from 4/16, but the base case supports market efficiency."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "SF",
+          "reasoning": "The obvious narrative\u2014'Dodgers at home against a weak Giants lineup'\u2014ignores that Sheehan has lasted 5+ innings only twice in five starts and carries significant volatility (4 ER in 4.2 IP on 5/1). Roupp has shown ace-level upside (7.2 IP, 3 ER with 6 K/2 BB) and could exploit a Dodgers lineup that, despite high walk rates, is collectively hitting .228 with RISP. The Giants' contact-heavy approach (low K% with Arraez/Lee) is the exact profile that disrupts Sheehan's rhythm. The true probability gap is narrower than the 61.9/38.1 split implies, creating value on SF +156 and SF F5 if Roupp's command is sharp early."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.6,
+          "away_win_prob": 0.4,
+          "value_side": "away",
+          "edge": 0.019,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.38,
+          "value_side": "underdog_rl",
+          "edge": 0.025,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 7.0,
+          "over_prob": 0.45,
+          "under_prob": 0.55,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "under",
+          "edge": 0.048,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.52,
+          "f1_home_lead_prob": 0.38,
+          "f1_away_lead_prob": 0.32,
+          "f1_tie_prob": 0.3,
+          "nrfi_value": "none",
+          "f1_rl_value": "none",
+          "confidence": "low"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.52,
+          "f3_away_win_prob": 0.35,
+          "f3_projected_total": 2.4,
+          "f3_home_lead_prob": 0.4,
+          "f3_away_lead_prob": 0.28,
+          "f3_tie_prob": 0.32,
+          "f3_ml_value": "none",
+          "f3_total_value": "none",
+          "f3_rl_value": "none",
+          "confidence": "low"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.55,
+          "f5_away_win_prob": 0.38,
+          "f5_projected_total": 3.8,
+          "f5_home_lead_prob": 0.46,
+          "f5_away_lead_prob": 0.31,
+          "f5_tie_prob": 0.23,
+          "f5_ml_value": "none",
+          "f5_total_value": "none",
+          "f5_rl_value": "none",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "away": 3,
+          "home": 4
+        },
+        "key_factors": [
+          "High variance in starting pitcher performance due to limited MLB sample sizes",
+          "Dodgers' superior walk rate and power versus Giants' contact-heavy weak lineup",
+          "Calm wind and pitcher-friendly park factor suppressing run environment"
+        ]
+      }
+    },
+    "cached_at": "2026-05-15T01:39:57.269174+00:00"
+  }
+}

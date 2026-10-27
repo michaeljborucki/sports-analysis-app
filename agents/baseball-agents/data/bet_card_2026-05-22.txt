@@ -1,0 +1,23 @@
+
+============================================================
+  MAINLINE BET CARD — 2026-05-22
+  6 picks across 3 games
+============================================================
+
+  CLE@PHI — 6:40 PM ET
+  ----------------------------------------
+    team_total_away    | away under 2.5       |  +101 | Mkt: 47.8% | Model: 56.6% | Edge:  8.9% | Kelly:  3.43% | BE:  -125
+    first_5_rl         | away +0.5            |  +100 | Mkt: 47.7% | Model: 54.9% | Edge:  7.2% | Kelly:  2.45% | BE:  -115
+    run_line           | home -1.5            |  +136 | Mkt: 41.5% | Model: 47.1% | Edge:  5.5% | Kelly:  2.04% | BE:  +105
+
+  CWS@SF — 10:15 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  +101 | Mkt: 47.8% | Model: 56.4% | Edge:  8.6% | Kelly:  3.31% | BE:  -120
+    run_line           | away -1.5            |  +160 | Mkt: 38.3% | Model: 43.5% | Edge:  5.2% | Kelly:  2.06% | BE:  +125
+
+  OAK@SD — 9:40 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  -102 | Mkt: 48.6% | Model: 57.1% | Edge:  8.6% | Kelly:  3.36% | BE:  -125
+
+  Status: Pending
+============================================================

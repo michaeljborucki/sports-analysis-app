@@ -1,0 +1,108 @@
+{
+  "date": "2026-06-03",
+  "generated_at": "2026-06-03T18:30:01",
+  "total_picks": 7,
+  "games": [
+    {
+      "game": "CWS@MIN",
+      "game_time_et": "1:40 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": 116,
+          "market_prob": 0.4442,
+          "model_prob": 0.5641,
+          "edge": 0.1199,
+          "kelly_pct": 0.0471,
+          "be_odds": -120,
+          "result": null
+        },
+        {
+          "bet_type": "run_line",
+          "side": "home -1.5",
+          "odds": 145,
+          "market_prob": 0.4046,
+          "model_prob": 0.4647,
+          "edge": 0.0601,
+          "kelly_pct": 0.0239,
+          "be_odds": 110,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "SD@PHI",
+      "game_time_et": "6:40 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 2.5",
+          "odds": 124,
+          "market_prob": 0.426,
+          "model_prob": 0.5641,
+          "edge": 0.1381,
+          "kelly_pct": 0.0532,
+          "be_odds": -120,
+          "result": null
+        },
+        {
+          "bet_type": "first_5_rl",
+          "side": "away +0.5",
+          "odds": 143,
+          "market_prob": 0.4053,
+          "model_prob": 0.4967,
+          "edge": 0.0914,
+          "kelly_pct": 0.0362,
+          "be_odds": 95,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "KC@CIN",
+      "game_time_et": "7:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": -113,
+          "market_prob": 0.513,
+          "model_prob": 0.5709,
+          "edge": 0.0579,
+          "kelly_pct": 0.0215,
+          "be_odds": -125,
+          "result": null
+        },
+        {
+          "bet_type": "run_line",
+          "side": "home -1.5",
+          "odds": 140,
+          "market_prob": 0.4103,
+          "model_prob": 0.4667,
+          "edge": 0.0564,
+          "kelly_pct": 0.0215,
+          "be_odds": 105,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "OAK@CHC",
+      "game_time_et": "8:05 PM ET",
+      "picks": [
+        {
+          "bet_type": "run_line",
+          "side": "home -1.5",
+          "odds": 162,
+          "market_prob": 0.3716,
+          "model_prob": 0.4507,
+          "edge": 0.0791,
+          "kelly_pct": 0.0279,
+          "be_odds": 115,
+          "result": null
+        }
+      ]
+    }
+  ]
+}

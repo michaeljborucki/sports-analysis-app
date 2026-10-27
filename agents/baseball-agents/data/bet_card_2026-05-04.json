@@ -1,0 +1,160 @@
+{
+  "date": "2026-05-04",
+  "generated_at": "2026-05-04T18:19:57",
+  "total_picks": 9,
+  "games": [
+    {
+      "game": "BOS@DET",
+      "game_time_et": "6:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_home",
+          "side": "home under 3.5",
+          "odds": 110,
+          "market_prob": 0.465,
+          "model_prob": 0.5417,
+          "edge": 0.0767,
+          "kelly_pct": 0.0313,
+          "be_odds": -110,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "NYM@COL",
+      "game_time_et": "5:40 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 5.5",
+          "odds": 102,
+          "market_prob": 0.4832,
+          "model_prob": 0.5641,
+          "edge": 0.0809,
+          "kelly_pct": 0.0342,
+          "be_odds": -120,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "TOR@TB",
+      "game_time_et": "6:40 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": 105,
+          "market_prob": 0.4707,
+          "model_prob": 0.5641,
+          "edge": 0.0934,
+          "kelly_pct": 0.0372,
+          "be_odds": -120,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "CIN@CHC",
+      "game_time_et": "7:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 4.5",
+          "odds": 100,
+          "market_prob": 0.48,
+          "model_prob": 0.5641,
+          "edge": 0.0841,
+          "kelly_pct": 0.0321,
+          "be_odds": -120,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "PHI@MIA",
+      "game_time_et": "6:40 PM ET",
+      "picks": [
+        {
+          "bet_type": "nrfi",
+          "side": "NRFI",
+          "odds": -108,
+          "market_prob": 0.5,
+          "model_prob": 0.5804,
+          "edge": 0.0804,
+          "kelly_pct": 0.0318,
+          "be_odds": -130,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "ATL@SEA",
+      "game_time_et": "9:40 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": -114,
+          "market_prob": 0.5166,
+          "model_prob": 0.5714,
+          "edge": 0.0548,
+          "kelly_pct": 0.0207,
+          "be_odds": -125,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "CWS@LAA",
+      "game_time_et": "9:38 PM ET",
+      "picks": [
+        {
+          "bet_type": "run_line",
+          "side": "home -1.5",
+          "odds": 144,
+          "market_prob": 0.3993,
+          "model_prob": 0.4906,
+          "edge": 0.0913,
+          "kelly_pct": 0.0342,
+          "be_odds": 95,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "MIL@STL",
+      "game_time_et": "7:45 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 4.5",
+          "odds": -103,
+          "market_prob": 0.4917,
+          "model_prob": 0.5641,
+          "edge": 0.0724,
+          "kelly_pct": 0.0288,
+          "be_odds": -120,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "SD@SF",
+      "game_time_et": "9:45 PM ET",
+      "picks": [
+        {
+          "bet_type": "nrfi",
+          "side": "NRFI",
+          "odds": -115,
+          "market_prob": 0.525,
+          "model_prob": 0.5871,
+          "edge": 0.0621,
+          "kelly_pct": 0.028,
+          "be_odds": -135,
+          "result": null
+        }
+      ]
+    }
+  ]
+}

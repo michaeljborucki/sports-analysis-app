@@ -1,0 +1,41 @@
+{
+  "date": "2026-06-02",
+  "generated_at": "2026-06-02T21:29:43",
+  "total_picks": 2,
+  "games": [
+    {
+      "game": "NYM@SEA",
+      "game_time_et": "9:40 PM ET",
+      "picks": [
+        {
+          "bet_type": "moneyline",
+          "side": "home",
+          "odds": -137,
+          "market_prob": 0.5828,
+          "model_prob": 0.6197,
+          "edge": 0.0369,
+          "kelly_pct": 0.0247,
+          "be_odds": -155,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "COL@LAA",
+      "game_time_et": "9:38 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": 100,
+          "market_prob": 0.4868,
+          "model_prob": 0.5709,
+          "edge": 0.0841,
+          "kelly_pct": 0.0355,
+          "be_odds": -125,
+          "result": null
+        }
+      ]
+    }
+  ]
+}

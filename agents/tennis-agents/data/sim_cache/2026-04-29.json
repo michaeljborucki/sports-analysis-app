@@ -1,0 +1,155 @@
+{
+  "J. Sinner vs R. Jodar": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 6,
+      "cost_usd": 0.0613
+    }
+  },
+  "A. Fils vs J. Lehecka": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Jiri Lehecka",
+        "reasoning": "Lehecka has a higher ace rate (7.4 vs 4.7) and a slightly better first serve won percentage (74.8% vs 73.4%). While Fils's second serve won percentage is higher, Lehecka's first serve is a more potent weapon, especially on a hard court. Both players have solid hold percentages on hard courts, but Lehecka's raw power gives him a slight edge in generating free points."
+      },
+      {
+        "role": "return",
+        "pick": "Jiri Lehecka",
+        "reasoning": "Lehecka boasts a higher return points won percentage (37.4% vs 35.1%) and a significantly better break point conversion rate (50.8% vs 33.8%). This indicates he's more effective at capitalizing on opportunities and disrupting his opponent's serve games. Fils's return game, while decent, doesn't match Lehecka's efficiency in crucial moments."
+      },
+      {
+        "role": "surface",
+        "pick": "Jiri Lehecka",
+        "reasoning": "Both players are comfortable on hard courts, but Lehecka's aggressive baseline game and powerful serve are slightly more suited to the speed of outdoor hard courts. His Elo rating on this surface is also slightly higher than Fils'. Fils has a good hard court game, but Lehecka's ability to dictate play with his forehand and serve might give him an edge."
+      },
+      {
+        "role": "form",
+        "pick": "Arthur Fils",
+        "reasoning": "Fils is in exceptional form, with a 20-5 season record and an impressive run of recent wins, including victories over strong opponents. His recent win against Lehecka (6-2 6-2) is particularly relevant, showing his current dominance. Lehecka's form is also good, but he has had some tougher matches and the head-to-head against Fils recently leans heavily toward Fils."
+      },
+      {
+        "role": "market",
+        "pick": "Jiri Lehecka",
+        "reasoning": "The moneyline for Fils at -6200 implies an absurd 98.6% win probability, which is a massive overvaluation given the head-to-head is 2-2 and Lehecka is a strong player. Even with Fils's recent dominant win, a 1.4% implied probability for Lehecka is profoundly incorrect. There is significant value on Lehecka at 2900, as his actual win probability is much higher than what the market suggests, likely closer to 20-25%."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Jiri Lehecka",
+        "reasoning": "The market is heavily influenced by Fils's recent 6-2 6-2 victory over Lehecka. However, their overall head-to-head is 2-2, indicating that Lehecka is capable of beating Fils. Lehecka's powerful serve and forehand can be a nightmare for any opponent, and he has shown he can beat top players. The motivation for Lehecka to avenge that recent loss and demonstrate his true level in a Quarter-final could be a significant factor. The extreme odds on Fils suggest the market is overlooking Lehecka's potential to cause an upset or at least make the match much closer than anticipated."
+      }
+    ],
+    "predictions": {
+      "game_handicap": {
+        "favorite_cover_prob": 0.525,
+        "value_side": "underdog",
+        "edge": 0.0,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gpt4o": 0.75,
+            "gemini": 0.45,
+            "claude": 0.45,
+            "maverick": 0.6,
+            "kimi": 0.42,
+            "deepseek": 0.6
+          }
+        }
+      },
+      "total_games": {
+        "projected_games": 21.5,
+        "over_prob": 0.535,
+        "under_prob": 0.465,
+        "value_side": "over",
+        "edge": 0.0,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "over_prob": {
+            "gpt4o": 0.45,
+            "gemini": 0.55,
+            "claude": 0.52,
+            "maverick": 0.55,
+            "kimi": 0.55,
+            "deepseek": 0.5
+          },
+          "under_prob": {
+            "gpt4o": 0.55,
+            "gemini": 0.45,
+            "claude": 0.48,
+            "maverick": 0.45,
+            "kimi": 0.45,
+            "deepseek": 0.5
+          },
+          "projected_games": {
+            "gpt4o": 20.5,
+            "gemini": 22.0,
+            "claude": 21.5,
+            "maverick": 20.5,
+            "kimi": 23.2,
+            "deepseek": 21.5
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Arthur Fils",
+        "score": "6-4 4-6 6-3"
+      },
+      "key_factors": [
+        "Fils's current dominant form",
+        "Lehecka's strong serve and return statistics",
+        "Head-to-head parity outside of the most recent match",
+        "Market overreaction to Fils's recent win"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 27,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 2,
+        "soft": 1,
+        "none": 0
+      },
+      "killed": [
+        "moneyline"
+      ],
+      "challenger_verdicts": {
+        "moneyline": "kill",
+        "game_handicap": "approve",
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "gpt4o": {
+          "runs": 7,
+          "weight_sum": 1.8
+        },
+        "gemini": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "claude": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "maverick": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "kimi": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 7,
+          "weight_sum": 1.9
+        }
+      },
+      "cost_usd": 0.3203
+    },
+    "ensemble_runs": 1
+  }
+}

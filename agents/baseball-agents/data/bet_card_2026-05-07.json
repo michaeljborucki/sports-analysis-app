@@ -1,0 +1,97 @@
+{
+  "date": "2026-05-07",
+  "generated_at": "2026-05-07T17:18:21",
+  "total_picks": 6,
+  "games": [
+    {
+      "game": "NYM@COL",
+      "game_time_et": "3:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "moneyline",
+          "side": "home",
+          "odds": 134,
+          "market_prob": 0.4202,
+          "model_prob": 0.4551,
+          "edge": 0.0349,
+          "kelly_pct": 0.0121,
+          "be_odds": 115,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "CIN@CHC",
+      "game_time_et": "2:20 PM ET",
+      "picks": [
+        {
+          "bet_type": "nrfi",
+          "side": "NRFI",
+          "odds": -105,
+          "market_prob": 0.5,
+          "model_prob": 0.5762,
+          "edge": 0.0762,
+          "kelly_pct": 0.0328,
+          "be_odds": -130,
+          "result": null
+        },
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": -105,
+          "market_prob": 0.5,
+          "model_prob": 0.5714,
+          "edge": 0.0714,
+          "kelly_pct": 0.0303,
+          "be_odds": -125,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "BAL@MIA",
+      "game_time_et": "6:40 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": 108,
+          "market_prob": 0.4609,
+          "model_prob": 0.5714,
+          "edge": 0.1105,
+          "kelly_pct": 0.0436,
+          "be_odds": -125,
+          "result": null
+        },
+        {
+          "bet_type": "total",
+          "side": "under 8.0",
+          "odds": 100,
+          "market_prob": 0.4927,
+          "model_prob": 0.5476,
+          "edge": 0.0549,
+          "kelly_pct": 0.0238,
+          "be_odds": -115,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "STL@SD",
+      "game_time_et": "10:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": -112,
+          "market_prob": 0.5131,
+          "model_prob": 0.5714,
+          "edge": 0.0583,
+          "kelly_pct": 0.0228,
+          "be_odds": -125,
+          "result": null
+        }
+      ]
+    }
+  ]
+}

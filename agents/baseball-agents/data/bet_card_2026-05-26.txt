@@ -1,0 +1,66 @@
+
+============================================================
+  MAINLINE BET CARD — 2026-05-26
+  25 picks across 11 games
+============================================================
+
+  WSH@CLE — 6:10 PM ET
+  ----------------------------------------
+    run_line           | home -1.5            |  +174 | Mkt: 36.4% | Model: 42.9% | Edge:  6.5% | Kelly:  2.53% | BE:  +125
+    team_total_away    | away under 3.5       |  -113 | Mkt: 51.1% | Model: 56.4% | Edge:  5.3% | Kelly:  1.79% | BE:  -120
+
+  TB@BAL — 6:35 PM ET
+  ----------------------------------------
+    first_5_rl         | home +0.5            |  -145 | Mkt: 57.5% | Model: 65.6% | Edge:  8.2% | Kelly:  3.96% | BE:  -185
+
+  CHC@PIT — 6:40 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  +107 | Mkt: 46.8% | Model: 57.1% | Edge: 10.3% | Kelly:  4.27% | BE:  -125
+    total              | under 8.0            |  +101 | Mkt: 48.2% | Model: 54.8% | Edge:  6.5% | Kelly:  2.49% | BE:  -115
+
+  LAA@DET — 6:40 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  +118 | Mkt: 44.1% | Model: 56.8% | Edge: 12.7% | Kelly:  5.05% | BE:  -125
+    total              | under 8.5            |  +114 | Mkt: 46.3% | Model: 54.8% | Edge:  8.5% | Kelly:  3.77% | BE:  -115
+
+  MIA@TOR — 7:07 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  -103 | Mkt: 49.2% | Model: 56.4% | Edge:  7.2% | Kelly:  2.88% | BE:  -120
+    run_line           | home -1.5            |  +176 | Mkt: 36.2% | Model: 42.6% | Edge:  6.4% | Kelly:  2.50% | BE:  +130
+    nrfi               | NRFI                 |  -115 | Mkt: 52.9% | Model: 59.1% | Edge:  6.1% | Kelly:  3.01% | BE:  -135
+
+  STL@MIL — 7:40 PM ET
+  ----------------------------------------
+    first_5_rl         | away +0.5            |  +110 | Mkt: 46.0% | Model: 54.0% | Edge:  8.0% | Kelly:  3.03% | BE:  -110
+    nrfi               | NRFI                 |  -109 | Mkt: 51.3% | Model: 58.7% | Edge:  7.4% | Kelly:  3.43% | BE:  -135
+
+  PHI@SD — 9:40 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  +103 | Mkt: 47.3% | Model: 56.4% | Edge:  9.1% | Kelly:  3.52% | BE:  -120
+    nrfi               | NRFI                 |  -111 | Mkt: 51.3% | Model: 57.7% | Edge:  6.4% | Kelly:  2.71% | BE:  -130
+    first_5_rl         | home +0.5            |  -140 | Mkt: 57.5% | Model: 63.4% | Edge:  5.9% | Kelly:  3.02% | BE:  -165
+
+  HOU@TEX — 8:05 PM ET
+  ----------------------------------------
+    first_5_rl         | away +0.5            |  -120 | Mkt: 52.3% | Model: 64.2% | Edge: 11.9% | Kelly:  5.30% | BE:  -170
+    team_total_away    | away under 3.5       |  +101 | Mkt: 47.8% | Model: 56.4% | Edge:  8.6% | Kelly:  3.31% | BE:  -120
+    run_line           | home -1.5            |  +164 | Mkt: 37.1% | Model: 42.7% | Edge:  5.6% | Kelly:  1.94% | BE:  +125
+
+  SEA@OAK — 9:40 PM ET
+  ----------------------------------------
+    nrfi               | NRFI                 |  +126 | Mkt: 44.4% | Model: 51.6% | Edge:  7.3% | Kelly:  3.30% | BE:  -100
+    team_total_away    | away under 4.5       |  -105 | Mkt: 49.5% | Model: 56.4% | Edge:  6.9% | Kelly:  2.66% | BE:  -120
+
+  ARI@SF — 9:45 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  +114 | Mkt: 45.3% | Model: 56.4% | Edge: 11.1% | Kelly:  4.54% | BE:  -120
+    nrfi               | NRFI                 |  -108 | Mkt: 51.0% | Model: 59.1% | Edge:  8.1% | Kelly:  3.73% | BE:  -135
+    first_5_rl         | home +0.5            |  -150 | Mkt: 58.4% | Model: 64.6% | Edge:  6.2% | Kelly:  2.86% | BE:  -175
+    total              | under 8.0            |  +100 | Mkt: 48.8% | Model: 54.8% | Edge:  6.0% | Kelly:  2.38% | BE:  -115
+
+  COL@LAD — 10:10 PM ET
+  ----------------------------------------
+    moneyline          | home                 |  -216 | Mkt: 69.0% | Model: 72.5% | Edge:  3.4% | Kelly:  3.24% | BE:  -255
+
+  Status: Pending
+============================================================

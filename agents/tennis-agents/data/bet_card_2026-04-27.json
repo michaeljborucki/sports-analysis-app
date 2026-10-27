@@ -1,0 +1,33 @@
+{
+  "label": "2026-04-27",
+  "generated_at": "2026-04-27T22:33:18",
+  "total_picks": 1,
+  "total_matches": 1,
+  "record": {
+    "wins": 0,
+    "losses": 0,
+    "pushes": 0,
+    "settled": 0,
+    "pending": 1,
+    "profit_units": 0.0
+  },
+  "picks": [
+    {
+      "date": "2026-04-27",
+      "start_time": "2026-04-27 11:00",
+      "game": "A. Davidovich Fokina vs C. Ruud",
+      "player_a": "A. Davidovich Fokina",
+      "player_b": "C. Ruud",
+      "bet_type": "moneyline",
+      "side": "A. Davidovich Fokina",
+      "side_raw": "player_a",
+      "odds": 191,
+      "sim_prob": 0.4,
+      "market_prob": 0.321639,
+      "edge": 0.0784,
+      "kelly_pct": 0.015,
+      "result": null,
+      "profit": null
+    }
+  ]
+}

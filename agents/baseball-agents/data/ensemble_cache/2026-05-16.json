@@ -1,0 +1,356 @@
+{
+  "824278:720d6841c2f0b659": {
+    "starters_hash": "720d6841c2f0b659",
+    "game_pk": 824278,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "DET",
+          "reasoning": "Casey Mize holds a substantial experience and stamina advantage over Mason Fluharty, who is clearly deployed as an opener (averaging 0.6 IP per appearance). While Mize carries 18 days of rust, his ability to generate weak contact and navigate a lineup 2-3 times outweighs Fluharty's limited exposure. TOR's time-through-order penalty will arrive in the 3rd-4th inning, while Mize can sustain quality through 5-6 frames."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "DET",
+          "reasoning": "Both lineups exhibit below-average production (collective wOBA approx .290-.300), but DET generates superior plate discipline with three regulars sporting 11%+ walk rates (Greene, Torkelson, McGonigle) versus TOR's aggressive approach. Comerica's 0.96 park factor and spacious alleys neutralize TOR's marginal power advantage (Okamoto, Guerrero), while benefiting DET's gap hitters."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "TOR",
+          "reasoning": "With Fluharty limited to 1-2 innings, TOR will deploy a fully rested bullpen early, effectively converting this into a 'pen game' where quantity of arms matches Mize's duration. DET's bullpen faces higher leverage in the 6th-7th if Mize shows rust. If the game remains close post-6th, TOR's fresh relief corps provides a slight full-game advantage despite the F5 deficit."
+        },
+        {
+          "role": "environment",
+          "game_winner": "none",
+          "reasoning": "Comerica Park's pitcher-friendly dimensions (0.96 PF) suppress home runs, particularly to right-center. 72\u00b0F with calm winds eliminates thermal carry. Day game conditions typically boost offense slightly, but the neutral weather and park effects combine to suppress scoring by approximately 0.3-0.4 runs relative to league average."
+        },
+        {
+          "role": "market",
+          "game_winner": "none",
+          "reasoning": "Current pricing (DET -111 / 53.0% implied) efficiently captures the Mize-vs-Opener dynamic. The F3 ML (-129) overstates Mize's command certainty given the 18-day layoff. Public money likely flows toward Mize's prospect pedigree while underestimating Fluharty's high-spin, short-burst effectiveness. No material edge on full-game ML, but situational value exists in F5 markets."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "TOR",
+          "reasoning": "The obvious narrative ('Mize returns to dominate the unknown opener') ignores that pitchers on 18+ days rest historically show diminished command within the first 30 pitches. Fluharty's 0.00 ERA across 5 short appearances suggests elite stuff in bursts that could neutralize DET's top order. Additionally, Guerrero Jr.'s .241 AVG and .353 SLG represent massive negative variance from career norms (.290/.500), signaling imminent positive regression against a potentially rusty Mize."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.54,
+          "away_win_prob": 0.46,
+          "value_side": "none",
+          "edge": 0.01,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.38,
+          "value_side": "none",
+          "edge": 0.02,
+          "confidence": "low"
+        },
+        "total": {
+          "projected_total": 8.0,
+          "over_prob": 0.45,
+          "under_prob": 0.55,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "over",
+          "edge": 0.04,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.6,
+          "f1_home_lead_prob": 0.18,
+          "f1_away_lead_prob": 0.15,
+          "f1_tie_prob": 0.67,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.56,
+          "f3_away_win_prob": 0.34,
+          "f3_projected_total": 3.0,
+          "f3_home_lead_prob": 0.2,
+          "f3_away_lead_prob": 0.12,
+          "f3_tie_prob": 0.68,
+          "f3_ml_value": "none",
+          "f3_total_value": "under",
+          "f3_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.58,
+          "f5_away_win_prob": 0.32,
+          "f5_projected_total": 4.4,
+          "f5_home_lead_prob": 0.28,
+          "f5_away_lead_prob": 0.15,
+          "f5_tie_prob": 0.57,
+          "f5_ml_value": "home",
+          "f5_total_value": "under",
+          "f5_rl_value": "none",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "away": 3,
+          "home": 4
+        },
+        "key_factors": [
+          "Mize 18-day rest rust potential",
+          "Fluharty opener strategy limits early TOR exposure",
+          "Comerica park factor suppressing power",
+          "Guerrero negative regression candidate"
+        ]
+      }
+    },
+    "cached_at": "2026-05-16T15:14:02.151211+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "DET",
+          "reasoning": "The starting-pitching edge is the clearest separator. Mason Fluharty's recent usage strongly suggests an opener/bullpen game profile rather than a stretched starter; his last five appearances total only 3.0 innings, and he is on 3 days rest. That sharply lowers Toronto's F3/F5 outlook because Detroit should see multiple arms early, and bullpen-game sequencing can break if any bridge reliever lacks command. Casey Mize has more established starter shape, with several recent outings of 5.2-6.2 innings and good run prevention in 4 of his last 5. The concern is rust after 18 days rest and uncertain pitch count, so Detroit's edge is meaningful but not overwhelming."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "DET",
+          "reasoning": "Neither lineup is performing especially well, but Detroit's offense has a slightly better on-base foundation at the top and is better positioned against a likely Toronto bullpen game. Toronto's lineup has recognizable names, yet most core bats are underperforming their typical slugging standards, and the bottom third looks light. Detroit also benefits from not having to solve a traditional starter multiple times; instead, they can pressure several relievers and potentially catch one weak link. Counterpoint: Toronto still has more proven middle-order talent than current stat lines show, so a sudden power rebound is plausible."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "TOR",
+          "reasoning": "Bullpen state is listed as fresh for both clubs, which reduces late-game fatigue concerns. Toronto's path improves later because a planned bullpen game can be effective when the entire relief group is rested and deployed aggressively by matchup. Detroit's edge from Mize may narrow if he is capped around 70-80 pitches after the long layoff, pushing this game to the bullpens earlier than expected. If Mize exits after 4-5 innings, the full-game line should be closer than the F5 line."
+        },
+        {
+          "role": "environment",
+          "game_winner": "DET",
+          "reasoning": "Comerica Park with a 0.96 park factor, calm wind, and mild 72-degree daytime conditions points to near-neutral to slightly suppressed scoring. The lack of wind removes a major over catalyst, and Comerica's dimensions reduce cheap home-run carry. That slightly favors the more stable starting pitcher and supports Detroit's modest edge while keeping the total from drifting too high. The counter-case is that a bullpen game can create scattered run spikes through walks and matchup misses, which are less park-dependent."
+        },
+        {
+          "role": "market",
+          "game_winner": "DET",
+          "reasoning": "The market has Detroit around 53%, and that looks like a strong anchor. Given the unusual Toronto starter situation, Detroit deserves to be a bit stronger than the raw moneyline implies, especially in early-game segments. But because Mize is returning from an 18-day gap, it is difficult to justify a large departure from market. The likely inefficiency is not on full-game moneyline so much as on Detroit early, where the starting-pitching stability matters most."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "TOR",
+          "reasoning": "The obvious story is 'bullpen game equals auto-fade Toronto,' but that can be overstated when the bullpen is fresh and the opposing offense is mediocre. Mize's layoff is real risk: command can be rusty, velocity can fluctuate, and if he is limited, Detroit may only own a narrow first-half edge before the game becomes a reliever contest. Toronto's lineup also has more latent upside than its current slash lines indicate. If public bettors overreact to the unknown starter tag, Toronto becomes the sharper contrarian side full-game."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.5496,
+          "away_win_prob": 0.4504,
+          "value_side": "home",
+          "edge": 0.02,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.4124,
+          "value_side": "underdog_rl",
+          "edge": 0.06,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 8.0395,
+          "over_prob": 0.4526,
+          "under_prob": 0.5474,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "over",
+          "edge": 0.03,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.5884,
+          "nrfi_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.4727,
+          "f3_away_win_prob": 0.3546,
+          "f3_projected_total": 2.8792,
+          "f3_home_lead_prob": 0.3856,
+          "f3_away_lead_prob": 0.27,
+          "f3_tie_prob": 0.3264,
+          "f3_ml_value": "home",
+          "f3_total_value": "under",
+          "f3_rl_value": "home",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.5177,
+          "f5_away_win_prob": 0.3627,
+          "f5_projected_total": 4.425,
+          "f5_home_lead_prob": 0.4392,
+          "f5_away_lead_prob": 0.3,
+          "f5_tie_prob": 0.2535,
+          "f5_ml_value": "home",
+          "f5_total_value": "under",
+          "f5_rl_value": "home",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "home": 4.43,
+          "away": 3.27
+        },
+        "key_factors": [
+          "Detroit has the more conventional starter, while Toronto appears likely to use an opener/bullpen game.",
+          "Both bullpens are fresh, which narrows Detroit's full-game edge relative to the early innings.",
+          "Comerica and calm weather slightly suppress scoring, supporting a modest lean to the under."
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 41,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 10,
+          "soft": 2,
+          "none": 1
+        },
+        "killed": [],
+        "challenger_verdicts": {
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "Home ML at -111 with consensus 53% implied, model at 55%. TOR using Mason Fluharty as opener (clearly a bullpen game based on 0.1-1.0 IP outings) vs Mize as conventional starter supports home edge. Strong 5/6 agreement.",
+            "flaw_found": null
+          },
+          "total_under": {
+            "verdict": "approve",
+            "reasoning": "Comerica Park factor 0.96, calm weather, both lineups have modest offensive profiles. 6/6 model agreement. No factual flaws identified.",
+            "flaw_found": null
+          },
+          "run_line_underdog": {
+            "verdict": "approve",
+            "reasoning": "TOR +1.5 at 165 with market consensus 61.6% \u2014 solid edge. Bullpen game with fresh pen often keeps games close. Soft consensus but mathematically supported.",
+            "flaw_found": null
+          },
+          "team_total_home_under": {
+            "verdict": "approve",
+            "reasoning": "DET projected 4.43 vs line 4.5. Tight but consistent with overall under lean. 6/6 agreement.",
+            "flaw_found": null
+          },
+          "team_total_away_under": {
+            "verdict": "approve",
+            "reasoning": "TOR projected 3.27 vs line 3.5. Mize coming off 18 days rest could be sharp or rusty, but lineup is weak. 5/6 agreement.",
+            "flaw_found": null
+          },
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "NRFI at -119, model 58.8%. TOR using opener Fluharty likely limits first-inning exposure (very short outings). Mize vs TOR top with Springer/Guerrero is the counter but consensus is strong.",
+            "flaw_found": null
+          },
+          "first_3_ml_home": {
+            "verdict": "approve",
+            "reasoning": "DET F3 ML -129 with model giving home meaningful edge through bullpen game exposure for TOR early. Reasonable.",
+            "flaw_found": null
+          },
+          "first_3_total_under": {
+            "verdict": "approve",
+            "reasoning": "F3 projected 2.88. Conservative scoring projection aligns with opener game + Mize history of efficient starts. 6/6 agree.",
+            "flaw_found": null
+          },
+          "first_3_rl_home": {
+            "verdict": "approve",
+            "reasoning": "Soft consensus but consistent with home edge story. No concrete flaw identified.",
+            "flaw_found": null
+          },
+          "first_5_ml_home": {
+            "verdict": "approve",
+            "reasoning": "Consistent with starter edge \u2014 Mize as conventional starter vs TOR bullpen game through 5 innings. Strong consensus.",
+            "flaw_found": null
+          },
+          "first_5_total_under": {
+            "verdict": "approve",
+            "reasoning": "F5 projected 4.43, consistent with park/weather/pitching. Strong 6/6 agreement.",
+            "flaw_found": null
+          },
+          "first_5_rl_home": {
+            "verdict": "approve",
+            "reasoning": "Consistent with overall home edge story through 5. No concrete flaw.",
+            "flaw_found": null
+          },
+          "run_line": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "team_total_away": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "gemini": {
+            "runs": 5,
+            "weight_sum": 13.4
+          },
+          "claude": {
+            "runs": 7,
+            "weight_sum": 13.4
+          },
+          "gpt4o": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "kimi": {
+            "runs": 7,
+            "weight_sum": 13.2
+          },
+          "deepseek": {
+            "runs": 7,
+            "weight_sum": 13.2
+          }
+        },
+        "cost_usd": 0.7272
+      },
+      "ensemble_runs": 1
+    }
+  }
+}

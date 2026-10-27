@@ -1,0 +1,145 @@
+date,game,tour,market,side,line,close_odds,close_prob_devig,captured_at
+2026-04-19,F. Cobolli vs B. Shelton,atp,moneyline,player_a,,-106,0.489594,2026-04-19T11:30:00Z
+2026-04-19,F. Cobolli vs B. Shelton,atp,moneyline,player_b,,-115,0.510406,2026-04-19T11:30:00Z
+2026-04-19,F. Cobolli vs B. Shelton,atp,game_handicap,player_a,0.0,-115,0.5,2026-04-19T11:30:00Z
+2026-04-19,F. Cobolli vs B. Shelton,atp,game_handicap,player_b,0.0,-115,0.5,2026-04-19T11:30:00Z
+2026-04-19,F. Cobolli vs B. Shelton,atp,total_games,over,24.5,-120,0.511204,2026-04-19T11:30:00Z
+2026-04-19,F. Cobolli vs B. Shelton,atp,total_games,under,24.5,-110,0.488796,2026-04-19T11:30:00Z
+2026-04-19,A. Rublev vs A. Fils,atp,moneyline,player_a,,210,0.293277,2026-04-19T13:55:00Z
+2026-04-19,A. Rublev vs A. Fils,atp,moneyline,player_b,,-265,0.706723,2026-04-19T13:55:00Z
+2026-04-19,A. Rublev vs A. Fils,atp,game_handicap,player_a,3.5,-125,0.522426,2026-04-19T13:55:00Z
+2026-04-19,A. Rublev vs A. Fils,atp,game_handicap,player_b,-3.5,-105,0.477574,2026-04-19T13:55:00Z
+2026-04-19,A. Rublev vs A. Fils,atp,total_games,over,22.5,-105,0.477574,2026-04-19T13:55:00Z
+2026-04-19,A. Rublev vs A. Fils,atp,total_games,under,22.5,-125,0.522426,2026-04-19T13:55:00Z
+2026-04-23,P. Kypson vs S. Tsitsipas,atp,moneyline,player_a,,203,0.301096,2026-04-23T12:05:00Z
+2026-04-23,P. Kypson vs S. Tsitsipas,atp,moneyline,player_b,,-255,0.698904,2026-04-23T12:05:00Z
+2026-04-23,P. Kypson vs S. Tsitsipas,atp,game_handicap,player_a,3.5,-129,0.535128,2026-04-23T12:05:00Z
+2026-04-23,P. Kypson vs S. Tsitsipas,atp,game_handicap,player_b,-3.5,102,0.464872,2026-04-23T12:05:00Z
+2026-04-23,P. Kypson vs S. Tsitsipas,atp,total_games,over,22.5,-122,0.519256,2026-04-23T12:05:00Z
+2026-04-23,P. Kypson vs S. Tsitsipas,atp,total_games,under,22.5,-105,0.480744,2026-04-23T12:05:00Z
+2026-04-23,M. Trungelliti vs D. Merida Aguilar,atp,moneyline,player_a,,124,0.426872,2026-04-23T13:15:00Z
+2026-04-23,M. Trungelliti vs D. Merida Aguilar,atp,moneyline,player_b,,-144,0.573128,2026-04-23T13:15:00Z
+2026-04-23,M. Trungelliti vs D. Merida Aguilar,atp,game_handicap,player_a,1.5,-113,0.506961,2026-04-23T13:15:00Z
+2026-04-23,M. Trungelliti vs D. Merida Aguilar,atp,game_handicap,player_b,-1.5,-107,0.493039,2026-04-23T13:15:00Z
+2026-04-23,M. Trungelliti vs D. Merida Aguilar,atp,total_games,over,22.5,-120,0.523229,2026-04-23T13:15:00Z
+2026-04-23,M. Trungelliti vs D. Merida Aguilar,atp,total_games,under,22.5,100,0.476771,2026-04-23T13:15:00Z
+2026-04-23,C. Ugo Carabelli vs G. Monfils,atp,moneyline,player_a,,-190,0.634593,2026-04-23T14:05:00Z
+2026-04-23,C. Ugo Carabelli vs G. Monfils,atp,moneyline,player_b,,155,0.365407,2026-04-23T14:05:00Z
+2026-04-23,C. Ugo Carabelli vs G. Monfils,atp,game_handicap,player_a,-2.5,-109,0.490912,2026-04-23T14:05:00Z
+2026-04-23,C. Ugo Carabelli vs G. Monfils,atp,game_handicap,player_b,2.5,-117,0.509088,2026-04-23T14:05:00Z
+2026-04-23,C. Ugo Carabelli vs G. Monfils,atp,total_games,over,22.5,-113,0.5,2026-04-23T14:05:00Z
+2026-04-23,C. Ugo Carabelli vs G. Monfils,atp,total_games,under,22.5,-113,0.5,2026-04-23T14:05:00Z
+2026-04-23,D. Altmaier vs J. M. Cerundolo,atp,moneyline,player_a,,130,0.411677,2026-04-23T14:35:00Z
+2026-04-23,D. Altmaier vs J. M. Cerundolo,atp,moneyline,player_b,,-155,0.588323,2026-04-23T14:35:00Z
+2026-04-23,D. Altmaier vs J. M. Cerundolo,atp,game_handicap,player_a,1.5,-109,0.490912,2026-04-23T14:35:00Z
+2026-04-23,D. Altmaier vs J. M. Cerundolo,atp,game_handicap,player_b,-1.5,-117,0.509088,2026-04-23T14:35:00Z
+2026-04-23,D. Altmaier vs J. M. Cerundolo,atp,total_games,over,22.5,-122,0.520462,2026-04-23T14:35:00Z
+2026-04-23,D. Altmaier vs J. M. Cerundolo,atp,total_games,under,22.5,-104,0.479538,2026-04-23T14:35:00Z
+2026-04-23,M. Landaluce vs A. Walton,atp,moneyline,player_a,,-475,0.809877,2026-04-23T16:05:00Z
+2026-04-23,M. Landaluce vs A. Walton,atp,moneyline,player_b,,350,0.190123,2026-04-23T16:05:00Z
+2026-04-23,M. Landaluce vs A. Walton,atp,game_handicap,player_a,-4.5,102,0.463858,2026-04-23T16:05:00Z
+2026-04-23,M. Landaluce vs A. Walton,atp,game_handicap,player_b,4.5,-130,0.536142,2026-04-23T16:05:00Z
+2026-04-23,M. Landaluce vs A. Walton,atp,total_games,over,21.5,-113,0.5,2026-04-23T16:05:00Z
+2026-04-23,M. Landaluce vs A. Walton,atp,total_games,under,21.5,-113,0.5,2026-04-23T16:05:00Z
+2026-04-23,Y. Starodubtseva vs J. Cristian,wta,moneyline,player_a,,-148,0.572916,2026-04-23T09:00:00Z
+2026-04-23,Y. Starodubtseva vs J. Cristian,wta,moneyline,player_b,,120,0.427084,2026-04-23T09:00:00Z
+2026-04-23,Y. Starodubtseva vs J. Cristian,wta,game_handicap,player_a,-2.5,-107,0.487459,2026-04-23T09:00:00Z
+2026-04-23,Y. Starodubtseva vs J. Cristian,wta,game_handicap,player_b,2.5,-118,0.512541,2026-04-23T09:00:00Z
+2026-04-23,Y. Starodubtseva vs J. Cristian,wta,total_games,over,21.5,-108,0.488639,2026-04-23T09:00:00Z
+2026-04-23,Y. Starodubtseva vs J. Cristian,wta,total_games,under,21.5,-118,0.511361,2026-04-23T09:00:00Z
+2026-04-23,Xin. Wang vs L. Samson,wta,moneyline,player_a,,-125,0.528543,2026-04-23T10:15:00Z
+2026-04-23,Xin. Wang vs L. Samson,wta,moneyline,player_b,,100,0.471457,2026-04-23T10:15:00Z
+2026-04-23,Xin. Wang vs L. Samson,wta,game_handicap,player_a,-0.5,-120,0.511204,2026-04-23T10:15:00Z
+2026-04-23,Xin. Wang vs L. Samson,wta,game_handicap,player_b,0.5,-110,0.488796,2026-04-23T10:15:00Z
+2026-04-23,Xin. Wang vs L. Samson,wta,total_games,over,21.5,-115,0.5,2026-04-23T10:15:00Z
+2026-04-23,Xin. Wang vs L. Samson,wta,total_games,under,21.5,-115,0.5,2026-04-23T10:15:00Z
+2026-04-23,I. Swiatek vs D. Snigur,wta,moneyline,player_a,,-15000,0.988499,2026-04-23T12:05:00Z
+2026-04-23,I. Swiatek vs D. Snigur,wta,moneyline,player_b,,1200,0.011501,2026-04-23T12:05:00Z
+2026-04-23,I. Swiatek vs D. Snigur,wta,game_handicap,player_a,-7.5,-113,0.491159,2026-04-23T12:05:00Z
+2026-04-23,I. Swiatek vs D. Snigur,wta,game_handicap,player_b,7.5,-121,0.508841,2026-04-23T12:05:00Z
+2026-04-23,I. Swiatek vs D. Snigur,wta,total_games,over,16.5,-134,0.533989,2026-04-23T12:05:00Z
+2026-04-23,I. Swiatek vs D. Snigur,wta,total_games,under,16.5,-103,0.466011,2026-04-23T12:05:00Z
+2026-04-23,A. Sabalenka vs P. Stearns,wta,moneyline,player_a,,-2800,0.95707,2026-04-23T12:55:00Z
+2026-04-23,A. Sabalenka vs P. Stearns,wta,moneyline,player_b,,1140,0.04293,2026-04-23T12:55:00Z
+2026-04-23,A. Sabalenka vs P. Stearns,wta,game_handicap,player_a,-6.5,-110,0.488796,2026-04-23T12:55:00Z
+2026-04-23,A. Sabalenka vs P. Stearns,wta,game_handicap,player_b,6.5,-120,0.511204,2026-04-23T12:55:00Z
+2026-04-23,A. Sabalenka vs P. Stearns,wta,total_games,over,17.5,-130,0.533684,2026-04-23T12:55:00Z
+2026-04-23,A. Sabalenka vs P. Stearns,wta,total_games,under,17.5,100,0.466316,2026-04-23T12:55:00Z
+2026-04-23,A. Parks vs A. Li,wta,moneyline,player_a,,108,0.454826,2026-04-23T13:25:00Z
+2026-04-23,A. Parks vs A. Li,wta,moneyline,player_b,,-132,0.545174,2026-04-23T13:25:00Z
+2026-04-23,A. Parks vs A. Li,wta,game_handicap,player_a,1.5,-115,0.505699,2026-04-23T13:25:00Z
+2026-04-23,A. Parks vs A. Li,wta,game_handicap,player_b,-1.5,-110,0.494301,2026-04-23T13:25:00Z
+2026-04-23,A. Parks vs A. Li,wta,total_games,over,21.5,-127,0.530619,2026-04-23T13:25:00Z
+2026-04-23,A. Parks vs A. Li,wta,total_games,under,21.5,100,0.469381,2026-04-23T13:25:00Z
+2026-04-24,Y. Putintseva vs M. Kostyuk,wta,moneyline,player_a,,275,0.238535,2026-04-24T13:25:00Z
+2026-04-24,Y. Putintseva vs M. Kostyuk,wta,moneyline,player_b,,-350,0.761465,2026-04-24T13:25:00Z
+2026-04-24,Y. Putintseva vs M. Kostyuk,wta,game_handicap,player_a,4.5,100,0.466316,2026-04-24T13:25:00Z
+2026-04-24,Y. Putintseva vs M. Kostyuk,wta,game_handicap,player_b,-4.5,-130,0.533684,2026-04-24T13:25:00Z
+2026-04-24,Y. Putintseva vs M. Kostyuk,wta,total_games,over,20.5,-105,0.477574,2026-04-24T13:25:00Z
+2026-04-24,Y. Putintseva vs M. Kostyuk,wta,total_games,under,20.5,-125,0.522426,2026-04-24T13:25:00Z
+2026-04-25,J. M. Cerundolo vs L. Darderi,atp,moneyline,player_a,,142,0.386449,2026-04-25T10:55:00Z
+2026-04-25,J. M. Cerundolo vs L. Darderi,atp,moneyline,player_b,,-174,0.613551,2026-04-25T10:55:00Z
+2026-04-25,J. M. Cerundolo vs L. Darderi,atp,game_handicap,player_a,2.5,-109,0.487632,2026-04-25T10:55:00Z
+2026-04-25,J. M. Cerundolo vs L. Darderi,atp,game_handicap,player_b,-2.5,-120,0.512368,2026-04-25T10:55:00Z
+2026-04-25,J. M. Cerundolo vs L. Darderi,atp,total_games,over,22.5,-109,0.487632,2026-04-25T10:55:00Z
+2026-04-25,J. M. Cerundolo vs L. Darderi,atp,total_games,under,22.5,-120,0.512368,2026-04-25T10:55:00Z
+2026-04-25,U. Humbert vs T. Atmane,atp,moneyline,player_a,,108,0.456831,2026-04-25T12:25:00Z
+2026-04-25,U. Humbert vs T. Atmane,atp,moneyline,player_b,,-130,0.543169,2026-04-25T12:25:00Z
+2026-04-25,U. Humbert vs T. Atmane,atp,game_handicap,player_a,1.5,-130,0.521679,2026-04-25T12:25:00Z
+2026-04-25,U. Humbert vs T. Atmane,atp,game_handicap,player_b,-1.5,-110,0.478321,2026-04-25T12:25:00Z
+2026-04-25,U. Humbert vs T. Atmane,atp,total_games,over,22.5,-135,0.532559,2026-04-25T12:25:00Z
+2026-04-25,U. Humbert vs T. Atmane,atp,total_games,under,22.5,-105,0.467441,2026-04-25T12:25:00Z
+2026-04-25,B. Nakashima vs A. Blockx,atp,moneyline,player_a,,129,0.404243,2026-04-25T12:40:00Z
+2026-04-25,B. Nakashima vs A. Blockx,atp,moneyline,player_b,,-165,0.595757,2026-04-25T12:40:00Z
+2026-04-25,B. Nakashima vs A. Blockx,atp,game_handicap,player_a,1.5,-120,0.5,2026-04-25T12:40:00Z
+2026-04-25,B. Nakashima vs A. Blockx,atp,game_handicap,player_b,-1.5,-120,0.5,2026-04-25T12:40:00Z
+2026-04-25,B. Nakashima vs A. Blockx,atp,total_games,over,24.5,-115,0.489168,2026-04-25T12:40:00Z
+2026-04-25,B. Nakashima vs A. Blockx,atp,total_games,under,24.5,-125,0.510832,2026-04-25T12:40:00Z
+2026-04-25,L. Tien vs D. Vallejo,atp,moneyline,player_a,,130,0.408294,2026-04-25T14:55:00Z
+2026-04-25,L. Tien vs D. Vallejo,atp,moneyline,player_b,,-159,0.591706,2026-04-25T14:55:00Z
+2026-04-25,L. Tien vs D. Vallejo,atp,game_handicap,player_a,1.5,-105,0.477574,2026-04-25T14:55:00Z
+2026-04-25,L. Tien vs D. Vallejo,atp,game_handicap,player_b,-1.5,-125,0.522426,2026-04-25T14:55:00Z
+2026-04-25,L. Tien vs D. Vallejo,atp,total_games,over,22.5,-105,0.477574,2026-04-25T14:55:00Z
+2026-04-25,L. Tien vs D. Vallejo,atp,total_games,under,22.5,-125,0.522426,2026-04-25T14:55:00Z
+2026-04-25,H. Baptiste vs J. Paolini,wta,moneyline,player_a,,132,0.404076,2026-04-25T13:25:00Z
+2026-04-25,H. Baptiste vs J. Paolini,wta,moneyline,player_b,,-162,0.595924,2026-04-25T13:25:00Z
+2026-04-25,H. Baptiste vs J. Paolini,wta,game_handicap,player_a,2.5,-115,0.5,2026-04-25T13:25:00Z
+2026-04-25,H. Baptiste vs J. Paolini,wta,game_handicap,player_b,-2.5,-115,0.5,2026-04-25T13:25:00Z
+2026-04-25,H. Baptiste vs J. Paolini,wta,total_games,over,21.5,-115,0.5,2026-04-25T13:25:00Z
+2026-04-25,H. Baptiste vs J. Paolini,wta,total_games,under,21.5,-115,0.5,2026-04-25T13:25:00Z
+2026-04-26,T. Griekspoor vs L. Musetti,atp,moneyline,player_a,,294,0.220921,2026-04-26T11:50:00Z
+2026-04-26,T. Griekspoor vs L. Musetti,atp,moneyline,player_b,,-393,0.779079,2026-04-26T11:50:00Z
+2026-04-26,T. Griekspoor vs L. Musetti,atp,game_handicap,player_a,3.5,110,0.44202,2026-04-26T11:50:00Z
+2026-04-26,T. Griekspoor vs L. Musetti,atp,game_handicap,player_b,-3.5,-143,0.55798,2026-04-26T11:50:00Z
+2026-04-26,T. Griekspoor vs L. Musetti,atp,total_games,over,22.5,102,0.461849,2026-04-26T11:50:00Z
+2026-04-26,T. Griekspoor vs L. Musetti,atp,total_games,under,22.5,-132,0.538151,2026-04-26T11:50:00Z
+2026-04-26,K. Siniakova vs C. McNally,wta,moneyline,player_a,,115,0.43484,2026-04-26T09:00:00Z
+2026-04-26,K. Siniakova vs C. McNally,wta,moneyline,player_b,,-145,0.56516,2026-04-26T09:00:00Z
+2026-04-26,K. Siniakova vs C. McNally,wta,game_handicap,player_a,1.5,-107,0.48528,2026-04-26T09:00:00Z
+2026-04-26,K. Siniakova vs C. McNally,wta,game_handicap,player_b,-1.5,-120,0.51472,2026-04-26T09:00:00Z
+2026-04-26,K. Siniakova vs C. McNally,wta,total_games,over,21.5,-114,0.502272,2026-04-26T09:00:00Z
+2026-04-26,K. Siniakova vs C. McNally,wta,total_games,under,21.5,-112,0.497728,2026-04-26T09:00:00Z
+2026-04-28,A. Sabalenka vs H. Baptiste,wta,moneyline,player_a,,-835,0.878156,2026-04-28T17:55:00Z
+2026-04-28,A. Sabalenka vs H. Baptiste,wta,moneyline,player_b,,525,0.121844,2026-04-28T17:55:00Z
+2026-04-28,A. Sabalenka vs H. Baptiste,wta,game_handicap,player_a,-5.5,-114,0.5,2026-04-28T17:55:00Z
+2026-04-28,A. Sabalenka vs H. Baptiste,wta,game_handicap,player_b,5.5,-114,0.5,2026-04-28T17:55:00Z
+2026-04-28,A. Sabalenka vs H. Baptiste,wta,total_games,over,19.5,-105,0.481815,2026-04-28T17:55:00Z
+2026-04-28,A. Sabalenka vs H. Baptiste,wta,total_games,under,19.5,-121,0.518185,2026-04-28T17:55:00Z
+2026-05-06,Marton Fucsovics vs Dino Prizmic,atp,moneyline,player_a,,245,0.255751,2026-05-06T14:15:00Z
+2026-05-06,Marton Fucsovics vs Dino Prizmic,atp,moneyline,player_b,,-325,0.744249,2026-05-06T14:15:00Z
+2026-05-06,Marton Fucsovics vs Dino Prizmic,atp,game_handicap,player_a,4.5,-141,0.553887,2026-05-06T14:15:00Z
+2026-05-06,Marton Fucsovics vs Dino Prizmic,atp,game_handicap,player_b,-4.5,108,0.446113,2026-05-06T14:15:00Z
+2026-05-06,Marton Fucsovics vs Dino Prizmic,atp,total_games,over,21.5,-113,0.497744,2026-05-06T14:15:00Z
+2026-05-06,Marton Fucsovics vs Dino Prizmic,atp,total_games,under,21.5,-115,0.502256,2026-05-06T14:15:00Z
+2026-05-06,Jacob Fearnley vs Giovanni Mpetshi Perricard,atp,moneyline,player_a,,-170,0.608905,2026-05-06T15:10:00Z
+2026-05-06,Jacob Fearnley vs Giovanni Mpetshi Perricard,atp,moneyline,player_b,,140,0.391095,2026-05-06T15:10:00Z
+2026-05-06,Jacob Fearnley vs Giovanni Mpetshi Perricard,atp,game_handicap,player_a,-1.5,-132,0.538151,2026-05-06T15:10:00Z
+2026-05-06,Jacob Fearnley vs Giovanni Mpetshi Perricard,atp,game_handicap,player_b,1.5,102,0.461849,2026-05-06T15:10:00Z
+2026-05-06,Jacob Fearnley vs Giovanni Mpetshi Perricard,atp,total_games,over,23.5,-110,0.490975,2026-05-06T15:10:00Z
+2026-05-06,Jacob Fearnley vs Giovanni Mpetshi Perricard,atp,total_games,under,23.5,-118,0.509025,2026-05-06T15:10:00Z
+2026-05-06,Noemi Basiletti vs Ajla Tomljanovic,wta,moneyline,player_a,,310,0.210254,2026-05-06T14:15:00Z
+2026-05-06,Noemi Basiletti vs Ajla Tomljanovic,wta,moneyline,player_b,,-420,0.789746,2026-05-06T14:15:00Z
+2026-05-06,Noemi Basiletti vs Ajla Tomljanovic,wta,game_handicap,player_a,5.5,-139,0.551993,2026-05-06T14:15:00Z
+2026-05-06,Noemi Basiletti vs Ajla Tomljanovic,wta,game_handicap,player_b,-5.5,108,0.448007,2026-05-06T14:15:00Z
+2026-05-06,Noemi Basiletti vs Ajla Tomljanovic,wta,total_games,over,19.5,-124,0.520179,2026-05-06T14:15:00Z
+2026-05-06,Noemi Basiletti vs Ajla Tomljanovic,wta,total_games,under,19.5,-106,0.479821,2026-05-06T14:15:00Z

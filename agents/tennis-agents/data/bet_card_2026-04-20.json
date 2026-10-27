@@ -1,0 +1,50 @@
+{
+  "label": "2026-04-20",
+  "generated_at": "2026-04-20T02:11:44",
+  "total_picks": 2,
+  "total_matches": 2,
+  "record": {
+    "wins": 0,
+    "losses": 0,
+    "pushes": 0,
+    "settled": 0,
+    "pending": 2,
+    "profit_units": 0.0
+  },
+  "picks": [
+    {
+      "date": "2026-04-20",
+      "start_time": "2026-04-20 17:30",
+      "game": "Z. Svajda vs R. Sakamoto",
+      "player_a": "Z. Svajda",
+      "player_b": "R. Sakamoto",
+      "bet_type": "game_handicap",
+      "side": "Z. Svajda 1.5",
+      "side_raw": "player_a 1.5",
+      "odds": 115,
+      "sim_prob": 0.5083,
+      "market_prob": 0.4443,
+      "edge": 0.064,
+      "kelly_pct": 0.0081,
+      "result": null,
+      "profit": null
+    },
+    {
+      "date": "2026-04-20",
+      "start_time": "2026-04-20 17:30",
+      "game": "C. Garin vs N. Jarry",
+      "player_a": "C. Garin",
+      "player_b": "N. Jarry",
+      "bet_type": "game_handicap",
+      "side": "N. Jarry 2.5",
+      "side_raw": "player_b 2.5",
+      "odds": 100,
+      "sim_prob": 0.59,
+      "market_prob": 0.4768,
+      "edge": 0.1132,
+      "kelly_pct": 0.0315,
+      "result": null,
+      "profit": null
+    }
+  ]
+}

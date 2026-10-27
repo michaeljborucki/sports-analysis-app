@@ -1,0 +1,619 @@
+{
+  "V. Gaubas vs F. Auger-Aliassime": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 6,
+      "cost_usd": 0.0574
+    }
+  },
+  "M. Navone vs A. Zverev": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 6,
+      "cost_usd": 0.0569
+    }
+  },
+  "U. Humbert vs T. Atmane": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Ugo Humbert",
+        "reasoning": "Humbert has a slightly higher first serve percentage and wins a decent amount on his second serve. His ace potential is significant, which could trouble Atmane, who has a lower return points won percentage."
+      },
+      {
+        "role": "return",
+        "pick": "Ugo Humbert",
+        "reasoning": "Humbert's return game is stronger, with a higher percentage of return points won and break point conversion. He can neutralize Atmane's serve effectively."
+      },
+      {
+        "role": "surface",
+        "pick": "Ugo Humbert",
+        "reasoning": "Humbert's overall performance and recent form on hard courts are superior despite neither having played on this surface this season. His higher surface Elo indicates better adaptation."
+      },
+      {
+        "role": "form",
+        "pick": "Ugo Humbert",
+        "reasoning": "Humbert has a strong recent form with wins against top players. He is well-rested with 18 days since his last match, suggesting he is peaking and competitive sharpness is high."
+      },
+      {
+        "role": "market",
+        "pick": "Ugo Humbert",
+        "reasoning": "The betting line heavily favors Atmane, but Humbert's recent form and overall metrics suggest he is undervalued. There's potential for market inefficiency."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Terence Atmane",
+        "reasoning": "Atmane has played more recently, which might give him an edge in match readiness. His ability to pull off tight victories against notable players may be underestimated."
+      }
+    ],
+    "predictions": {
+      "total_games": {
+        "projected_games": 21.5,
+        "over_prob": 0.55,
+        "under_prob": 0.45,
+        "value_side": "over",
+        "edge": 0.05,
+        "confidence": "high",
+        "_per_model_medians": {
+          "over_prob": {
+            "gpt4o": 0.55,
+            "gemini": 0.55,
+            "claude": 0.52,
+            "maverick": 0.55,
+            "kimi": 0.58,
+            "deepseek": 0.5
+          },
+          "under_prob": {
+            "gpt4o": 0.45,
+            "gemini": 0.45,
+            "claude": 0.48,
+            "maverick": 0.45,
+            "kimi": 0.42,
+            "deepseek": 0.5
+          },
+          "projected_games": {
+            "gpt4o": 22.5,
+            "gemini": 21.5,
+            "claude": 21.5,
+            "maverick": 20.5,
+            "kimi": 22.3,
+            "deepseek": 19.5
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Ugo Humbert",
+        "score": "6-4 6-3"
+      },
+      "key_factors": [
+        "Serve and return statistics favor Humbert",
+        "Humbert's strong recent form against top players",
+        "Market inefficiency suggesting Humbert is undervalued"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 27,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 1,
+        "soft": 1,
+        "none": 1
+      },
+      "killed": [
+        "moneyline"
+      ],
+      "challenger_verdicts": {
+        "moneyline": "kill",
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "gpt4o": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "gemini": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "claude": {
+          "runs": 7,
+          "weight_sum": 1.9
+        },
+        "maverick": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "kimi": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 7,
+          "weight_sum": 1.5
+        }
+      },
+      "cost_usd": 0.3292
+    },
+    "ensemble_runs": 1
+  },
+  "L. Tien vs D. Vallejo": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Learner Tien",
+        "reasoning": "Learner Tien's serve statistics are notably stronger, especially his 73.0% first serve won percentage compared to Vallejo Adolfo's 69.8%. Tien also generates significantly more aces per match (9.2 vs 3.7). While his second serve vulnerability (50.1% won) is a slight concern, the overall power and effectiveness of his first serve should give him an edge in holding serve on hard courts."
+      },
+      {
+        "role": "return",
+        "pick": "Daniel Vallejo Adolfo",
+        "reasoning": "Vallejo Adolfo has a higher return points won percentage at 41.7% compared to Tien's 36.2%, and a much better break point conversion rate (52.1% vs 38.2%). This suggests he is more effective at neutralizing serves and capitalizing on break opportunities. Tien's second serve vulnerability could be exploited by Vallejo Adolfo's return game."
+      },
+      {
+        "role": "surface",
+        "pick": "Learner Tien",
+        "reasoning": "Both players have 0-0 records on this specific surface this season, so there isn't direct data. However, Tien's higher ace count and stronger first serve points won percentage are generally more advantageous on outdoor hard courts, which reward aggressive serving. Vallejo Adolfo's game, while solid, doesn't suggest a specific hard-court advantage over Tien's serving prowess."
+      },
+      {
+        "role": "form",
+        "pick": "Learner Tien",
+        "reasoning": "Learner Tien's recent form, despite a 22-day break, includes wins against high-caliber opponents like Kecmanovic, Tiafoe, Paul, and Shelton. While these are exhibition or non-ATP tour matches, they indicate a high level of competitive sharpness and ability to challenge top players. Vallejo Adolfo's recent wins are against lower-ranked opponents, and while his overall season record is good, the quality of opposition in Tien's recent matches is more impressive, suggesting he is peaking."
+      },
+      {
+        "role": "market",
+        "pick": "Learner Tien",
+        "reasoning": "The market has Vallejo Adolfo as a -159 favorite, implying a 58.8% win probability. However, Tien's Elo rating (1756 vs 1594), superior serve stats, and recent wins against stronger opponents suggest he is being undervalued. The market might be overreacting to Vallejo Adolfo's slightly better season record and recent match activity, without fully factoring in the quality of Tien's recent performances. There appears to be value on Tien at +130."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Learner Tien",
+        "reasoning": "The consensus might lean towards Vallejo Adolfo due to his recent activity and slightly better season record. However, Tien's 22-day break could be a double-edged sword \u2013 either rust or renewed energy. Given his strong performances against top players in recent, albeit non-official, matches, it's more likely he's refreshed and ready. Vallejo Adolfo's high break point conversion rate is concerning, but Tien's dominant first serve can negate many of those opportunities. The market is overlooking Tien's higher ceiling and potential for an upset."
+      }
+    ],
+    "predictions": {
+      "game_handicap": {
+        "favorite_cover_prob": 0.485,
+        "value_side": "underdog",
+        "edge": 0.05,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gemini": 0.45,
+            "gpt4o": 0.52,
+            "claude": 0.45,
+            "maverick": 0.52,
+            "kimi": 0.44,
+            "deepseek": 0.6
+          }
+        }
+      },
+      "total_games": {
+        "projected_games": 22.0,
+        "over_prob": 0.55,
+        "under_prob": 0.45,
+        "value_side": "over",
+        "edge": 0.05,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "over_prob": {
+            "gemini": 0.55,
+            "gpt4o": 0.48,
+            "claude": 0.55,
+            "maverick": 0.55,
+            "kimi": 0.56,
+            "deepseek": 0.5
+          },
+          "under_prob": {
+            "gemini": 0.45,
+            "gpt4o": 0.52,
+            "claude": 0.45,
+            "maverick": 0.45,
+            "kimi": 0.44,
+            "deepseek": 0.5
+          },
+          "projected_games": {
+            "gemini": 23.5,
+            "gpt4o": 22.5,
+            "claude": 21.5,
+            "maverick": 21.5,
+            "kimi": 23.2,
+            "deepseek": 19.5
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Daniel Vallejo Adolfo",
+        "score": "7-6 4-6 6-4"
+      },
+      "key_factors": [
+        "Learner Tien's superior first serve and ace count",
+        "Daniel Vallejo Adolfo's effective return game and break point conversion",
+        "Learner Tien's strong recent form against higher-ranked opponents",
+        "Tien's higher Elo rating despite market perception",
+        "Both players' hard court acclimation after a break or different surface play"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 27,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 3,
+        "soft": 0,
+        "none": 0
+      },
+      "killed": [
+        "moneyline"
+      ],
+      "challenger_verdicts": {
+        "moneyline": "kill",
+        "game_handicap": "approve",
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "gemini": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "gpt4o": {
+          "runs": 7,
+          "weight_sum": 3.0
+        },
+        "claude": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "maverick": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "kimi": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 7,
+          "weight_sum": 1.2
+        }
+      },
+      "cost_usd": 0.3046
+    },
+    "ensemble_runs": 1
+  },
+  "D. Merida Aguilar vs C. Moutet": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Corentin Moutet",
+        "reasoning": "Moutet's serve, although not as strong in aces, is backed by slightly better second serve points won and comparable first serve effectiveness. Merida Aguilar has a higher ace potential but might face challenges against Moutet's return skills."
+      },
+      {
+        "role": "return",
+        "pick": "Daniel Merida Aguilar",
+        "reasoning": "Merida Aguilar exhibits a higher break point conversion rate and return points won percentage, suggesting he can effectively neutralize Moutet's serve and control rallies."
+      },
+      {
+        "role": "surface",
+        "pick": "Daniel Merida Aguilar",
+        "reasoning": "Both players have yet to play on hard courts this season, but Merida Aguilar's recent form and height advantage could translate well to the fast-paced outdoor hard surface."
+      },
+      {
+        "role": "form",
+        "pick": "Daniel Merida Aguilar",
+        "reasoning": "Merida Aguilar is coming off several wins and recent matches, indicating competitive sharpness. Moutet has had more days off, which might affect his match readiness."
+      },
+      {
+        "role": "market",
+        "pick": "Daniel Merida Aguilar",
+        "reasoning": "The betting lines seem to favor Moutet due to name recognition, but Merida Aguilar's recent form and potential on hard courts offer better value than implied."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Corentin Moutet",
+        "reasoning": "Despite Merida Aguilar's recent form, Moutet's experience and ability to handle pressure could be underestimated. His left-handed play might disrupt Merida Aguilar's rhythm."
+      }
+    ],
+    "predictions": {
+      "game_handicap": {
+        "favorite_cover_prob": 0.465,
+        "value_side": "none",
+        "edge": 0.0,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gpt4o": 0.5,
+            "gemini": 0.48,
+            "claude": 0.45,
+            "maverick": 0.6,
+            "kimi": 0.41,
+            "deepseek": 0.35
+          }
+        }
+      },
+      "total_games": {
+        "projected_games": 22.0,
+        "over_prob": 0.52,
+        "under_prob": 0.48,
+        "value_side": "over",
+        "edge": 0.1,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "over_prob": {
+            "gpt4o": 0.52,
+            "gemini": 0.52,
+            "claude": 0.52,
+            "maverick": 0.55,
+            "kimi": 0.56,
+            "deepseek": 0.4
+          },
+          "under_prob": {
+            "gpt4o": 0.48,
+            "gemini": 0.48,
+            "claude": 0.48,
+            "maverick": 0.45,
+            "kimi": 0.44,
+            "deepseek": 0.6
+          },
+          "projected_games": {
+            "gpt4o": 22.5,
+            "gemini": 22.5,
+            "claude": 21.5,
+            "maverick": 21.5,
+            "kimi": 23.2,
+            "deepseek": 19.5
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Daniel Merida Aguilar",
+        "score": "6-4 3-6 6-4"
+      },
+      "key_factors": [
+        "Merida Aguilar's strong recent form",
+        "Moutet's experience and left-handed play",
+        "Outdoor hard surface dynamics"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 31,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 3,
+        "soft": 0,
+        "none": 0
+      },
+      "killed": [
+        "moneyline"
+      ],
+      "challenger_verdicts": {
+        "moneyline": "kill",
+        "game_handicap": "approve",
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "gpt4o": {
+          "runs": 7,
+          "weight_sum": 3.3
+        },
+        "gemini": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "claude": {
+          "runs": 7,
+          "weight_sum": 3.3
+        },
+        "maverick": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "kimi": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 7,
+          "weight_sum": 1.9
+        }
+      },
+      "cost_usd": 0.3752
+    },
+    "ensemble_runs": 1
+  },
+  "N. Budkov Kjaer vs D. Shapovalov": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 2,
+      "total_calls": 26,
+      "cost_usd": 0.2306
+    }
+  },
+  "D. Medvedev vs F. Marozsan": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Daniil Medvedev",
+        "reasoning": "Medvedev has a strong serve with 67.3% first serve percentage and 72.7% first serve won. He averages 7.8 aces per match, indicating significant ace potential. Marozsan's return stats are not particularly strong, making Medvedev's serve a significant advantage."
+      },
+      {
+        "role": "return",
+        "pick": "Daniil Medvedev",
+        "reasoning": "Medvedev wins 41.4% of return points and has a 50.4% break point conversion rate, showing effectiveness in breaking his opponent's serve. Marozsan's serve stats are decent but not exceptional, and Medvedev's return game is likely to neutralize Marozsan's serve effectively."
+      },
+      {
+        "role": "surface",
+        "pick": "Daniil Medvedev",
+        "reasoning": "Both players are on a hard court, which is a common surface. Medvedev has a higher Elo rating overall and on hard courts specifically, indicating a general skill advantage that should hold on this surface."
+      },
+      {
+        "role": "form",
+        "pick": "Daniil Medvedev",
+        "reasoning": "Medvedev has been in strong form recently, winning his last several matches convincingly. He has had 17 days since his last match, which is a reasonable rest period. Marozsan has played more recently but has a more mixed recent form record."
+      },
+      {
+        "role": "market",
+        "pick": "Fabian Marozsan",
+        "reasoning": "The moneyline odds imply a 58.8% win probability for Medvedev. While Medvedev is favored, the odds might be overestimating his chances given Marozsan's recent competitive form and the fact that this is a fresh matchup on a hard court. Marozsan's +119 odds might offer value."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Fabian Marozsan",
+        "reasoning": "While Medvedev is the favorite and has a strong overall record, Marozsan has shown resilience in his recent matches. Marozsan has a decent serve and has beaten higher-ranked opponents recently. The head-to-head is in Medvedev's favor, but all previous matches were on different surfaces. Marozsan's 'nothing to lose' attitude could make him a contrarian pick worth considering."
+      }
+    ],
+    "predictions": {
+      "game_handicap": {
+        "favorite_cover_prob": 0.625,
+        "value_side": "underdog",
+        "edge": 0.1,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gemini": 0.65,
+            "gpt4o": 0.6,
+            "claude": 0.68,
+            "maverick": 0.55,
+            "kimi": 0.58,
+            "deepseek": 0.7
+          }
+        }
+      },
+      "total_games": {
+        "projected_games": 21.0,
+        "over_prob": 0.45,
+        "under_prob": 0.55,
+        "value_side": "over",
+        "edge": 0.05,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "over_prob": {
+            "gemini": 0.45,
+            "gpt4o": 0.48,
+            "claude": 0.45,
+            "maverick": 0.52,
+            "kimi": 0.44,
+            "deepseek": 0.4
+          },
+          "under_prob": {
+            "gemini": 0.55,
+            "gpt4o": 0.52,
+            "claude": 0.55,
+            "maverick": 0.48,
+            "kimi": 0.56,
+            "deepseek": 0.6
+          },
+          "projected_games": {
+            "gemini": 21.5,
+            "gpt4o": 21.5,
+            "claude": 19.5,
+            "maverick": 20.5,
+            "kimi": 21.5,
+            "deepseek": 19.0
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Daniil Medvedev",
+        "score": "6-4 6-3"
+      },
+      "key_factors": [
+        "Medvedev's strong serve and return",
+        "Medvedev's recent form",
+        "Marozsan's resilience and competitive spirit"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 27,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 1,
+        "soft": 2,
+        "none": 0
+      },
+      "killed": [
+        "moneyline"
+      ],
+      "challenger_verdicts": {
+        "moneyline": "kill",
+        "game_handicap": "approve",
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "gemini": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "gpt4o": {
+          "runs": 7,
+          "weight_sum": 2.6
+        },
+        "claude": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "maverick": {
+          "runs": 7,
+          "weight_sum": 3.6
+        },
+        "kimi": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 3,
+          "weight_sum": 3.0
+        }
+      },
+      "cost_usd": 0.2309
+    },
+    "ensemble_runs": 1
+  },
+  "A. Sabalenka vs J. Cristian": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 6,
+      "cost_usd": 0.0607
+    }
+  },
+  "A. Kalinina vs N. Osaka": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 6,
+      "cost_usd": 0.0525
+    }
+  },
+  "A. Bublik vs S. Tsitsipas": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 5,
+      "cost_usd": 0.049
+    }
+  }
+}

@@ -1,0 +1,901 @@
+
+============================================================
+  MIROFISH BET CARD — 2026-04-01
+  865 picks across 9 games
+============================================================
+
+  WSH@PHI
+  ----------------------------------------
+    first_5_rl   | home -1.5            | +116 | Mkt: 43.9% | Model: 56.5% | Edge: 12.6% | Kelly:  4.74%
+    first_3_total | over 2.5             | +100 | Mkt: 47.1% | Model: 64.8% | Edge: 17.7% | Kelly:  7.42%
+    pitcher_outs | Cade Cavalli over 14.5 | -129 | Mkt: 53.3% | Model: 98.0% | Edge: 44.8% | Kelly: 23.87%
+    pitcher_outs | Cristopher Sanchez over 18.5 | +130 | Mkt: 43.2% | Model: 100.0% | Edge: 56.8% | Kelly: 25.00%
+    pitcher_strikeouts | Cristopher Sanchez over 6.5 | -143 | Mkt: 57.1% | Model: 86.2% | Edge: 29.0% | Kelly: 16.59%
+    pitcher_strikeouts | Cade Cavalli over 4.5 | +110 | Mkt: 45.7% | Model: 62.8% | Edge: 17.1% | Kelly:  7.23%
+    batter_hits  | Joey Wiemer under 0.5 | +115 | Mkt: 43.0% | Model: 67.1% | Edge: 24.1% | Kelly:  9.63%
+    batter_hits  | Trea Turner under 1.5 | -185 | Mkt: 64.6% | Model: 89.7% | Edge: 25.1% | Kelly: 17.69%
+    batter_hits  | Alec Bohm under 0.5  | +175 | Mkt: 32.5% | Model: 69.4% | Edge: 36.9% | Kelly: 12.97%
+    batter_hits  | Bryce Harper under 0.5 | +201 | Mkt: 31.8% | Model: 71.8% | Edge: 40.0% | Kelly: 14.43%
+    batter_hits  | Curtis Mead under 0.5 | +155 | Mkt: 35.3% | Model: 62.4% | Edge: 27.1% | Kelly:  9.53%
+    batter_hits  | Daylen Lile under 0.5 | +155 | Mkt: 38.4% | Model: 47.2% | Edge:  8.8% | Kelly:  3.27%
+    batter_hits  | Brady House under 0.5 | +155 | Mkt: 36.9% | Model: 67.6% | Edge: 30.7% | Kelly: 11.68%
+    batter_hits  | Kyle Schwarber under 0.5 | +140 | Mkt: 39.9% | Model: 66.4% | Edge: 26.5% | Kelly: 10.62%
+    batter_hits  | James Wood under 0.5 | +130 | Mkt: 41.6% | Model: 85.3% | Edge: 43.7% | Kelly: 18.48%
+    batter_hits  | Nasim Nunez under 0.5 | +125 | Mkt: 45.0% | Model: 70.9% | Edge: 25.9% | Kelly: 11.92%
+    batter_hits  | Jacob Young under 0.5 | +120 | Mkt: 42.5% | Model: 71.2% | Edge: 28.6% | Kelly: 11.79%
+    batter_hits  | CJ Abrams under 0.5  | +110 | Mkt: 45.0% | Model: 69.1% | Edge: 24.1% | Kelly: 10.23%
+    batter_hits  | Drew Millas under 0.5 | -105 | Mkt: 47.9% | Model: 70.9% | Edge: 23.0% | Kelly: 10.08%
+    batter_hits_runs_rbis | Trea Turner under 2.5 | -150 | Mkt: 57.5% | Model: 91.2% | Edge: 33.7% | Kelly: 19.50%
+    batter_hits_runs_rbis | Alec Bohm under 1.5  | +122 | Mkt: 41.9% | Model: 76.3% | Edge: 34.4% | Kelly: 14.20%
+    batter_hits_runs_rbis | Bryce Harper under 1.5 | +113 | Mkt: 44.2% | Model: 89.1% | Edge: 44.9% | Kelly: 19.86%
+    batter_hits_runs_rbis | Adolis Garcia under 1.5 | -103 | Mkt: 48.3% | Model: 58.8% | Edge: 10.5% | Kelly:  4.08%
+    batter_hits_runs_rbis | Kyle Schwarber under 1.5 | +100 | Mkt: 46.9% | Model: 73.3% | Edge: 26.3% | Kelly: 11.63%
+    batter_hits_runs_rbis | J.T. Realmuto under 1.5 | -112 | Mkt: 50.2% | Model: 62.4% | Edge: 12.2% | Kelly:  5.08%
+    batter_hits_runs_rbis | Justin Crawford under 1.5 | -130 | Mkt: 56.1% | Model: 66.2% | Edge: 10.2% | Kelly:  5.58%
+    batter_hits_runs_rbis | Bryson Stott under 1.5 | -125 | Mkt: 52.7% | Model: 57.8% | Edge:  5.1% | Kelly:  1.25%
+    batter_hits_runs_rbis | Daylen Lile under 1.5 | -139 | Mkt: 55.4% | Model: 74.3% | Edge: 18.9% | Kelly:  9.63%
+    batter_hits_runs_rbis | Brady House under 1.5 | -145 | Mkt: 56.1% | Model: 88.1% | Edge: 32.0% | Kelly: 17.70%
+    batter_hits_runs_rbis | Curtis Mead under 1.5 | -148 | Mkt: 57.3% | Model: 84.7% | Edge: 27.5% | Kelly: 15.54%
+    batter_hits_runs_rbis | James Wood under 1.5 | -160 | Mkt: 59.2% | Model: 93.6% | Edge: 34.3% | Kelly: 20.82%
+    batter_hits_runs_rbis | Nasim Nunez under 1.5 | -165 | Mkt: 60.1% | Model: 89.7% | Edge: 29.6% | Kelly: 18.15%
+    batter_hits_runs_rbis | Jacob Young under 1.5 | -200 | Mkt: 63.8% | Model: 90.8% | Edge: 27.0% | Kelly: 18.09%
+    batter_hits_runs_rbis | Joey Wiemer under 1.5 | -160 | Mkt: 59.2% | Model: 86.4% | Edge: 27.1% | Kelly: 16.15%
+    batter_hits_runs_rbis | CJ Abrams under 0.5  | +130 | Mkt: 40.0% | Model: 67.4% | Edge: 27.3% | Kelly: 10.56%
+    batter_hits_runs_rbis | Drew Millas under 0.5 | +140 | Mkt: 40.6% | Model: 70.2% | Edge: 29.6% | Kelly: 12.23%
+    batter_rbis  | James Wood under 0.5 | -397 | Mkt: 78.1% | Model: 96.6% | Edge: 18.5% | Kelly: 20.82%
+    batter_rbis  | Kyle Schwarber under 0.5 | -175 | Mkt: 60.9% | Model: 73.5% | Edge: 12.7% | Kelly:  6.79%
+    batter_rbis  | Bryce Harper under 0.5 | -185 | Mkt: 61.6% | Model: 96.0% | Edge: 34.4% | Kelly: 22.18%
+    batter_rbis  | Adolis Garcia under 0.5 | -205 | Mkt: 64.5% | Model: 77.4% | Edge: 13.0% | Kelly:  7.80%
+    batter_rbis  | Alec Bohm under 0.5  | -210 | Mkt: 64.8% | Model: 81.0% | Edge: 16.2% | Kelly: 10.29%
+    batter_rbis  | Trea Turner under 0.5 | -235 | Mkt: 67.5% | Model: 86.5% | Edge: 19.1% | Kelly: 13.73%
+    batter_rbis  | J.T. Realmuto under 0.5 | -251 | Mkt: 69.6% | Model: 74.8% | Edge:  5.2% | Kelly:  2.87%
+    batter_rbis  | Bryson Stott under 0.5 | -250 | Mkt: 69.1% | Model: 81.6% | Edge: 12.5% | Kelly:  8.87%
+    batter_rbis  | Brady House under 0.5 | -330 | Mkt: 75.1% | Model: 95.4% | Edge: 20.3% | Kelly: 20.06%
+    batter_rbis  | Daylen Lile under 0.5 | -351 | Mkt: 75.8% | Model: 92.5% | Edge: 16.8% | Kelly: 16.57%
+    batter_rbis  | Joey Wiemer under 0.5 | -325 | Mkt: 75.0% | Model: 92.4% | Edge: 17.4% | Kelly: 16.93%
+    batter_rbis  | Curtis Mead under 0.5 | -375 | Mkt: 77.3% | Model: 95.1% | Edge: 17.8% | Kelly: 19.18%
+    batter_rbis  | Nasim Nunez under 0.5 | -456 | Mkt: 80.4% | Model: 93.8% | Edge: 13.4% | Kelly: 16.38%
+    batter_rbis  | CJ Abrams under 0.5  | -450 | Mkt: 79.7% | Model: 93.0% | Edge: 13.3% | Kelly: 15.40%
+    batter_rbis  | Jacob Young under 0.5 | -467 | Mkt: 80.3% | Model: 95.6% | Edge: 15.3% | Kelly: 18.79%
+    batter_rbis  | Drew Millas under 0.5 | -472 | Mkt: 80.3% | Model: 95.9% | Edge: 15.5% | Kelly: 19.08%
+    batter_total_bases | Jacob Young under 0.5 | +117 | Mkt: 43.3% | Model: 71.2% | Edge: 27.9% | Kelly: 11.64%
+    batter_total_bases | Kyle Schwarber under 1.5 | -150 | Mkt: 57.7% | Model: 76.2% | Edge: 18.5% | Kelly: 10.10%
+    batter_total_bases | Bryce Harper under 1.5 | -135 | Mkt: 55.6% | Model: 97.0% | Edge: 41.4% | Kelly: 23.25%
+    batter_total_bases | Nasim Nunez under 0.5 | +115 | Mkt: 46.0% | Model: 70.9% | Edge: 25.0% | Kelly: 11.41%
+    batter_total_bases | Adolis Garcia under 1.5 | -150 | Mkt: 58.6% | Model: 66.2% | Edge:  7.6% | Kelly:  3.85%
+    batter_total_bases | Curtis Mead under 1.5 | -200 | Mkt: 64.5% | Model: 83.3% | Edge: 18.8% | Kelly: 12.46%
+    batter_total_bases | Trea Turner under 1.5 | -114 | Mkt: 52.8% | Model: 80.9% | Edge: 28.0% | Kelly: 14.77%
+    batter_total_bases | Alec Bohm under 1.5  | -135 | Mkt: 57.5% | Model: 82.3% | Edge: 24.9% | Kelly: 14.62%
+    batter_total_bases | CJ Abrams under 0.5  | +104 | Mkt: 46.2% | Model: 69.1% | Edge: 22.9% | Kelly:  9.83%
+    batter_total_bases | J.T. Realmuto under 1.5 | -178 | Mkt: 62.0% | Model: 69.0% | Edge:  7.1% | Kelly:  3.48%
+    batter_total_bases | James Wood under 0.5 | +128 | Mkt: 41.9% | Model: 85.3% | Edge: 43.4% | Kelly: 18.44%
+    batter_total_bases | Joey Wiemer under 0.5 | +119 | Mkt: 42.4% | Model: 67.1% | Edge: 24.7% | Kelly:  9.87%
+    batter_total_bases | Daylen Lile under 0.5 | +142 | Mkt: 39.4% | Model: 47.2% | Edge:  7.8% | Kelly:  2.49%
+    batter_total_bases | Brady House under 1.5 | -190 | Mkt: 63.2% | Model: 92.9% | Edge: 29.7% | Kelly: 19.88%
+    batter_total_bases | Drew Millas under 0.5 | +100 | Mkt: 46.6% | Model: 70.9% | Edge: 24.2% | Kelly: 10.44%
+    pitcher_earned_runs | Cristopher Sanchez under 1.5 | -130 | Mkt: 53.8% | Model: 95.6% | Edge: 41.8% | Kelly: 22.48%
+    pitcher_earned_runs | Cade Cavalli under 2.5 | -116 | Mkt: 52.5% | Model: 73.0% | Edge: 20.5% | Kelly: 10.44%
+    pitcher_hits_allowed | Cristopher Sanchez under 4.5 | +120 | Mkt: 41.8% | Model: 88.0% | Edge: 46.2% | Kelly: 19.48%
+    pitcher_hits_allowed | Cade Cavalli under 5.5 | -158 | Mkt: 58.2% | Model: 70.2% | Edge: 12.0% | Kelly:  5.76%
+    batter_runs_scored | Kyle Schwarber under 0.5 | +105 | Mkt: 46.5% | Model: 72.0% | Edge: 25.5% | Kelly: 11.35%
+    batter_runs_scored | Trea Turner under 0.5 | -105 | Mkt: 48.3% | Model: 87.0% | Edge: 38.7% | Kelly: 18.35%
+    batter_runs_scored | Bryce Harper under 0.5 | -115 | Mkt: 51.2% | Model: 88.4% | Edge: 37.3% | Kelly: 18.78%
+    batter_runs_scored | Adolis Garcia under 0.5 | -135 | Mkt: 56.1% | Model: 66.3% | Edge: 10.3% | Kelly:  5.22%
+    batter_runs_scored | Alec Bohm under 0.5  | -135 | Mkt: 56.6% | Model: 67.4% | Edge: 10.8% | Kelly:  5.82%
+    batter_runs_scored | J.T. Realmuto under 0.5 | -165 | Mkt: 61.6% | Model: 73.5% | Edge: 11.9% | Kelly:  7.43%
+    batter_runs_scored | Justin Crawford under 0.5 | -170 | Mkt: 62.6% | Model: 78.2% | Edge: 15.6% | Kelly: 10.31%
+    batter_runs_scored | Brandon Marsh under 0.5 | -180 | Mkt: 61.3% | Model: 68.9% | Edge:  7.6% | Kelly:  3.22%
+    batter_runs_scored | James Wood under 0.5 | -200 | Mkt: 65.6% | Model: 94.7% | Edge: 29.0% | Kelly: 21.01%
+    batter_runs_scored | Curtis Mead under 0.5 | -235 | Mkt: 67.7% | Model: 89.6% | Edge: 21.8% | Kelly: 16.26%
+    batter_runs_scored | Brady House under 0.5 | -250 | Mkt: 70.5% | Model: 91.9% | Edge: 21.4% | Kelly: 17.95%
+    batter_runs_scored | Daylen Lile under 0.5 | -271 | Mkt: 71.0% | Model: 88.1% | Edge: 17.1% | Kelly: 13.94%
+    batter_runs_scored | Nasim Nunez under 0.5 | -280 | Mkt: 73.1% | Model: 95.2% | Edge: 22.1% | Kelly: 20.46%
+    batter_runs_scored | Joey Wiemer under 0.5 | -250 | Mkt: 69.7% | Model: 92.3% | Edge: 22.6% | Kelly: 18.25%
+    batter_runs_scored | CJ Abrams under 0.5  | -300 | Mkt: 73.0% | Model: 94.7% | Edge: 21.7% | Kelly: 19.66%
+    batter_runs_scored | Drew Millas under 0.5 | -320 | Mkt: 73.7% | Model: 95.6% | Edge: 21.9% | Kelly: 20.40%
+    batter_runs_scored | Jacob Young under 0.5 | -330 | Mkt: 74.8% | Model: 95.4% | Edge: 20.6% | Kelly: 20.03%
+    batter_strikeouts | Daylen Lile under 0.5 | +155 | Mkt: 35.2% | Model: 53.4% | Edge: 18.1% | Kelly:  5.82%
+    batter_strikeouts | Brandon Marsh under 0.5 | +175 | Mkt: 32.5% | Model: 40.8% | Edge:  8.3% | Kelly:  1.76%
+    batter_strikeouts | Joey Wiemer under 1.5 | -220 | Mkt: 65.7% | Model: 71.2% | Edge:  5.4% | Kelly:  1.93%
+    batter_strikeouts | Jacob Young over 0.5 | -160 | Mkt: 58.3% | Model: 71.3% | Edge: 13.0% | Kelly:  6.36%
+    batter_strikeouts | Bryce Harper under 0.5 | +125 | Mkt: 40.8% | Model: 51.1% | Edge: 10.3% | Kelly:  3.01%
+    batter_strikeouts | Brady House under 1.5 | -118 | Mkt: 50.9% | Model: 62.2% | Edge: 11.3% | Kelly:  4.40%
+    batter_strikeouts | Curtis Mead over 0.5 | -225 | Mkt: 66.3% | Model: 76.4% | Edge: 10.1% | Kelly:  5.81%
+    batter_strikeouts | Bryson Stott over 0.5 | -105 | Mkt: 47.8% | Model: 61.0% | Edge: 13.3% | Kelly:  5.02%
+    batter_strikeouts | Alec Bohm under 0.5  | -120 | Mkt: 51.1% | Model: 82.2% | Edge: 31.1% | Kelly: 15.23%
+    batter_hits  | Alec Bohm under 1.5  | -225 | Mkt: 66.7% | Model: 96.2% | Edge: 29.6% | Kelly: 21.95%
+
+  PIT@CIN
+  ----------------------------------------
+    total        | over 7.5             | +103 | Mkt: 48.2% | Model: 58.1% | Edge:  9.9% | Kelly:  4.35%
+    team_total_home | home over 3.5        | +124 | Mkt: 42.6% | Model: 73.5% | Edge: 30.9% | Kelly: 13.03%
+    team_total_away | away under 4.5       | -136 | Mkt: 55.7% | Model: 62.9% | Edge:  7.2% | Kelly:  3.10%
+    first_5_rl   | home +0.5            | +100 | Mkt: 49.4% | Model: 67.7% | Edge: 18.3% | Kelly:  8.85%
+    nrfi         | YRFI                 | +140 | Mkt: 39.9% | Model: 53.9% | Edge: 14.0% | Kelly:  5.24%
+    first_3_ml   | home F3 ML           | +145 | Mkt: 39.9% | Model: 48.9% | Edge:  8.9% | Kelly:  3.40%
+    first_3_total | over 1.5             | -154 | Mkt: 58.8% | Model: 86.8% | Edge: 28.1% | Kelly: 16.63%
+    first_3_rl   | home +0.5            | -135 | Mkt: 55.7% | Model: 69.4% | Edge: 13.8% | Kelly:  7.04%
+    pitcher_strikeouts | Paul Skenes under 7.5 | -125 | Mkt: 54.5% | Model: 83.6% | Edge: 29.1% | Kelly: 15.78%
+    pitcher_strikeouts | Andrew Abbott under 5.5 | +100 | Mkt: 48.8% | Model: 77.3% | Edge: 28.5% | Kelly: 13.64%
+    batter_total_bases | Bryan Reynolds under 1.5 | -159 | Mkt: 59.3% | Model: 86.2% | Edge: 26.9% | Kelly: 16.09%
+    batter_total_bases | TJ Friedl under 0.5  | +110 | Mkt: 44.6% | Model: 74.1% | Edge: 29.6% | Kelly: 12.66%
+    batter_total_bases | Elly De La Cruz under 0.5 | +120 | Mkt: 43.2% | Model: 57.8% | Edge: 14.7% | Kelly:  5.68%
+    batter_total_bases | Spencer Steer over 0.5 | -135 | Mkt: 54.5% | Model: 64.5% | Edge: 10.0% | Kelly:  4.13%
+    batter_total_bases | Tyler Stephenson over 0.5 | +100 | Mkt: 48.0% | Model: 61.3% | Edge: 13.3% | Kelly:  5.67%
+    batter_total_bases | Will Benson over 0.5 | -103 | Mkt: 48.0% | Model: 63.0% | Edge: 15.0% | Kelly:  6.23%
+    batter_total_bases | Matt McLain under 0.5 | +117 | Mkt: 43.3% | Model: 51.8% | Edge:  8.6% | Kelly:  2.67%
+    batter_total_bases | Ke'Bryan Hayes over 0.5 | -123 | Mkt: 52.1% | Model: 60.1% | Edge:  7.9% | Kelly:  2.73%
+    batter_total_bases | Nick Gonzales under 1.5 | -130 | Mkt: 54.5% | Model: 59.8% | Edge:  5.2% | Kelly:  1.87%
+    batter_total_bases | Jake Mangum under 1.5 | -135 | Mkt: 56.1% | Model: 65.4% | Edge:  9.3% | Kelly:  4.68%
+    batter_total_bases | Marcell Ozuna under 1.5 | -176 | Mkt: 61.3% | Model: 67.8% | Edge:  6.6% | Kelly:  2.80%
+    batter_total_bases | Jared Triolo over 0.5 | -155 | Mkt: 58.9% | Model: 65.9% | Edge:  6.9% | Kelly:  3.24%
+    batter_total_bases | Spencer Horwitz over 0.5 | -143 | Mkt: 55.8% | Model: 65.1% | Edge:  9.3% | Kelly:  3.80%
+    batter_total_bases | Henry Davis over 0.5 | -125 | Mkt: 53.1% | Model: 63.7% | Edge: 10.6% | Kelly:  4.58%
+    batter_total_bases | Nick Yorke under 1.5 | -200 | Mkt: 64.7% | Model: 71.0% | Edge:  6.2% | Kelly:  3.22%
+    batter_total_bases | Oneil Cruz over 0.5  | -145 | Mkt: 56.5% | Model: 68.9% | Edge: 12.4% | Kelly:  5.95%
+    batter_total_bases | Sal Stewart over 0.5 | -185 | Mkt: 62.4% | Model: 83.7% | Edge: 21.3% | Kelly: 13.38%
+    batter_hits  | Tyler Stephenson over 0.5 | +100 | Mkt: 49.4% | Model: 61.3% | Edge: 11.9% | Kelly:  5.67%
+    batter_hits  | Bryan Reynolds under 0.5 | +165 | Mkt: 35.9% | Model: 51.3% | Edge: 15.4% | Kelly:  5.46%
+    batter_hits  | Will Benson over 0.5 | +100 | Mkt: 47.7% | Model: 63.0% | Edge: 15.3% | Kelly:  6.51%
+    batter_hits  | Spencer Steer over 0.5 | -135 | Mkt: 54.9% | Model: 64.5% | Edge:  9.6% | Kelly:  4.13%
+    batter_hits  | Jared Triolo over 0.5 | -155 | Mkt: 60.4% | Model: 65.9% | Edge:  5.4% | Kelly:  3.24%
+    batter_hits  | Elly De La Cruz under 0.5 | +120 | Mkt: 44.0% | Model: 57.8% | Edge: 13.8% | Kelly:  5.68%
+    batter_hits  | TJ Friedl under 0.5  | +113 | Mkt: 43.9% | Model: 74.1% | Edge: 30.3% | Kelly: 12.81%
+    batter_hits  | Nick Yorke over 0.5  | -165 | Mkt: 60.9% | Model: 66.4% | Edge:  5.6% | Kelly:  2.77%
+    batter_hits  | Matt McLain under 0.5 | +121 | Mkt: 42.0% | Model: 51.8% | Edge:  9.8% | Kelly:  3.01%
+    batter_hits  | Nick Gonzales over 1.5 | +172 | Mkt: 33.4% | Model: 39.9% | Edge:  6.4% | Kelly:  1.22%
+    batter_hits  | Ke'Bryan Hayes over 0.5 | -125 | Mkt: 53.5% | Model: 60.1% | Edge:  6.6% | Kelly:  2.54%
+    batter_hits  | Sal Stewart over 0.5 | -180 | Mkt: 62.2% | Model: 83.7% | Edge: 21.5% | Kelly: 13.59%
+    batter_hits  | Marcell Ozuna over 0.5 | -135 | Mkt: 59.7% | Model: 68.9% | Edge:  9.3% | Kelly:  6.75%
+    batter_hits  | Spencer Horwitz over 0.5 | -147 | Mkt: 57.2% | Model: 65.1% | Edge:  7.9% | Kelly:  3.45%
+    batter_hits  | Oneil Cruz over 0.5  | -142 | Mkt: 56.8% | Model: 68.9% | Edge: 12.1% | Kelly:  6.19%
+    batter_hits  | Henry Davis over 0.5 | -125 | Mkt: 55.1% | Model: 63.7% | Edge:  8.6% | Kelly:  4.58%
+    batter_hits_runs_rbis | Spencer Horwitz over 0.5 | -170 | Mkt: 60.1% | Model: 68.4% | Edge:  8.3% | Kelly:  3.67%
+    batter_hits_runs_rbis | Jake Mangum under 1.5 | +112 | Mkt: 44.8% | Model: 52.8% | Edge:  8.0% | Kelly:  2.65%
+    batter_hits_runs_rbis | Spencer Steer over 1.5 | +145 | Mkt: 38.0% | Model: 48.8% | Edge: 10.8% | Kelly:  3.36%
+    batter_hits_runs_rbis | TJ Friedl under 0.5  | +145 | Mkt: 37.2% | Model: 60.4% | Edge: 23.1% | Kelly:  8.25%
+    batter_hits_runs_rbis | Will Benson over 0.5 | -120 | Mkt: 52.6% | Model: 68.7% | Edge: 16.2% | Kelly:  7.81%
+    batter_hits_runs_rbis | Tyler Stephenson over 0.5 | -155 | Mkt: 58.5% | Model: 66.0% | Edge:  7.5% | Kelly:  3.30%
+    batter_hits_runs_rbis | Bryan Reynolds under 1.5 | -105 | Mkt: 48.8% | Model: 74.4% | Edge: 25.6% | Kelly: 11.90%
+    batter_hits_runs_rbis | Sal Stewart over 1.5 | +107 | Mkt: 45.4% | Model: 74.2% | Edge: 28.8% | Kelly: 12.52%
+    batter_hits_runs_rbis | Ke'Bryan Hayes over 0.5 | -155 | Mkt: 58.6% | Model: 64.5% | Edge:  5.9% | Kelly:  2.34%
+    batter_rbis  | Tyler Stephenson over 0.5 | +315 | Mkt: 23.1% | Model: 29.4% | Edge:  6.3% | Kelly:  1.73%
+    batter_rbis  | Marcell Ozuna under 0.5 | -211 | Mkt: 66.9% | Model: 81.0% | Edge: 14.1% | Kelly: 10.23%
+    batter_rbis  | Bryan Reynolds under 0.5 | -229 | Mkt: 67.7% | Model: 85.4% | Edge: 17.7% | Kelly: 12.96%
+    batter_rbis  | Nick Gonzales under 0.5 | -225 | Mkt: 66.7% | Model: 81.7% | Edge: 15.0% | Kelly: 10.12%
+    batter_rbis  | Sal Stewart over 0.5 | +180 | Mkt: 31.6% | Model: 44.9% | Edge: 13.4% | Kelly:  3.58%
+    batter_rbis  | Oneil Cruz under 0.5 | -250 | Mkt: 69.5% | Model: 81.1% | Edge: 11.6% | Kelly:  8.46%
+    batter_rbis  | Jared Triolo under 0.5 | -298 | Mkt: 73.6% | Model: 82.0% | Edge:  8.5% | Kelly:  7.13%
+    batter_rbis  | Henry Davis under 0.5 | -295 | Mkt: 72.0% | Model: 81.9% | Edge:  9.9% | Kelly:  7.17%
+    batter_rbis  | Jake Mangum under 0.5 | -326 | Mkt: 74.6% | Model: 81.7% | Edge:  7.1% | Kelly:  5.49%
+    batter_rbis  | Spencer Steer over 0.5 | +250 | Mkt: 25.1% | Model: 33.1% | Edge:  7.9% | Kelly:  1.57%
+    batter_rbis  | Spencer Horwitz under 0.5 | -300 | Mkt: 73.0% | Model: 80.1% | Edge:  7.1% | Kelly:  5.10%
+    batter_rbis  | Matt McLain under 0.5 | -350 | Mkt: 75.4% | Model: 89.4% | Edge: 14.0% | Kelly: 13.10%
+    batter_rbis  | Will Benson over 0.5 | +260 | Mkt: 23.8% | Model: 31.3% | Edge:  7.5% | Kelly:  1.21%
+    batter_rbis  | Nick Yorke under 0.5 | -275 | Mkt: 72.6% | Model: 81.8% | Edge:  9.1% | Kelly:  7.90%
+    batter_rbis  | Ke'Bryan Hayes over 0.5 | +320 | Mkt: 19.8% | Model: 27.5% | Edge:  7.7% | Kelly:  1.22%
+    batter_rbis  | TJ Friedl under 0.5  | -450 | Mkt: 79.8% | Model: 91.6% | Edge: 11.8% | Kelly: 13.51%
+    pitcher_earned_runs | Andrew Abbott under 2.5 | -146 | Mkt: 58.5% | Model: 84.8% | Edge: 26.3% | Kelly: 15.63%
+    pitcher_earned_runs | Paul Skenes over 1.5 | +100 | Mkt: 46.3% | Model: 61.6% | Edge: 15.2% | Kelly:  5.78%
+    pitcher_hits_allowed | Paul Skenes over 3.5 | -130 | Mkt: 54.6% | Model: 79.0% | Edge: 24.3% | Kelly: 12.91%
+    pitcher_hits_allowed | Andrew Abbott over 5.5 | +107 | Mkt: 44.7% | Model: 77.4% | Edge: 32.7% | Kelly: 14.06%
+    batter_runs_scored | Jake Mangum under 0.5 | -145 | Mkt: 57.5% | Model: 74.9% | Edge: 17.4% | Kelly:  9.61%
+    batter_runs_scored | Nick Gonzales under 0.5 | -160 | Mkt: 58.3% | Model: 79.6% | Edge: 21.3% | Kelly: 11.75%
+    batter_runs_scored | Marcell Ozuna under 0.5 | -165 | Mkt: 60.9% | Model: 73.8% | Edge: 13.0% | Kelly:  7.67%
+    batter_runs_scored | Bryan Reynolds under 0.5 | -175 | Mkt: 60.9% | Model: 85.8% | Edge: 24.9% | Kelly: 15.21%
+    batter_runs_scored | Oneil Cruz under 0.5 | -165 | Mkt: 60.1% | Model: 74.5% | Edge: 14.4% | Kelly:  8.13%
+    batter_runs_scored | Henry Davis under 0.5 | -185 | Mkt: 63.4% | Model: 80.2% | Edge: 16.8% | Kelly: 10.89%
+    batter_runs_scored | Jared Triolo under 0.5 | -185 | Mkt: 63.1% | Model: 76.1% | Edge: 13.0% | Kelly:  7.97%
+    batter_runs_scored | Elly De La Cruz over 0.5 | +155 | Mkt: 35.9% | Model: 41.4% | Edge:  5.6% | Kelly:  0.92%
+    batter_runs_scored | Sal Stewart over 0.5 | +160 | Mkt: 35.5% | Model: 67.3% | Edge: 31.8% | Kelly: 11.72%
+    batter_runs_scored | Spencer Horwitz under 0.5 | -200 | Mkt: 64.8% | Model: 78.6% | Edge: 13.8% | Kelly:  8.96%
+    batter_runs_scored | TJ Friedl under 0.5  | -200 | Mkt: 64.1% | Model: 79.3% | Edge: 15.1% | Kelly:  9.45%
+    batter_runs_scored | Nick Yorke under 0.5 | -185 | Mkt: 63.4% | Model: 76.0% | Edge: 12.6% | Kelly:  7.90%
+    batter_strikeouts | Matt McLain under 1.5 | -110 | Mkt: 48.9% | Model: 81.7% | Edge: 32.9% | Kelly: 15.41%
+    batter_strikeouts | TJ Friedl over 0.5   | -250 | Mkt: 68.5% | Model: 74.8% | Edge:  6.3% | Kelly:  2.97%
+    batter_strikeouts | Nick Yorke under 0.5 | +150 | Mkt: 36.2% | Model: 45.0% | Edge:  8.8% | Kelly:  2.07%
+    batter_strikeouts | Bryan Reynolds under 1.5 | -210 | Mkt: 64.8% | Model: 78.5% | Edge: 13.7% | Kelly:  8.32%
+    batter_strikeouts | Tyler Stephenson under 1.5 | -190 | Mkt: 62.4% | Model: 79.6% | Edge: 17.2% | Kelly: 10.21%
+    batter_strikeouts | Sal Stewart under 1.5 | -275 | Mkt: 70.7% | Model: 91.5% | Edge: 20.8% | Kelly: 17.05%
+    batter_strikeouts | Nick Gonzales under 0.5 | +175 | Mkt: 32.5% | Model: 57.6% | Edge: 25.1% | Kelly:  8.34%
+    batter_strikeouts | Will Benson under 1.5 | -160 | Mkt: 58.3% | Model: 77.7% | Edge: 19.4% | Kelly: 10.51%
+    batter_strikeouts | Jared Triolo under 0.5 | +165 | Mkt: 33.7% | Model: 47.5% | Edge: 13.8% | Kelly:  3.91%
+    batter_strikeouts | Spencer Steer under 1.5 | -250 | Mkt: 68.5% | Model: 75.3% | Edge:  6.8% | Kelly:  3.42%
+    batter_strikeouts | Elly De La Cruz under 1.5 | -115 | Mkt: 50.0% | Model: 62.2% | Edge: 12.2% | Kelly:  4.71%
+    batter_strikeouts | Marcell Ozuna under 0.5 | +140 | Mkt: 37.6% | Model: 43.7% | Edge:  6.0% | Kelly:  0.86%
+    batter_strikeouts | Oneil Cruz under 1.5 | -115 | Mkt: 50.0% | Model: 85.1% | Edge: 35.1% | Kelly: 17.01%
+    batter_strikeouts | Spencer Horwitz under 0.5 | +120 | Mkt: 41.7% | Model: 49.3% | Edge:  7.6% | Kelly:  1.76%
+    batter_strikeouts | Henry Davis under 0.5 | +180 | Mkt: 31.5% | Model: 49.6% | Edge: 18.1% | Kelly:  5.39%
+    batter_total_bases | Sal Stewart over 1.5 | +152 | Mkt: 36.1% | Model: 67.4% | Edge: 31.3% | Kelly: 11.48%
+    batter_hits_runs_rbis | TJ Friedl under 1.5  | -190 | Mkt: 62.7% | Model: 83.3% | Edge: 20.5% | Kelly: 12.89%
+
+  TEX@BAL
+  ----------------------------------------
+    first_3_total | over 2.5             | -108 | Mkt: 48.6% | Model: 62.1% | Edge: 13.5% | Kelly:  5.30%
+    batter_hits  | Josh Jung under 0.5  | +152 | Mkt: 36.1% | Model: 66.5% | Edge: 30.4% | Kelly: 11.10%
+    batter_hits  | Gunnar Henderson under 1.5 | -263 | Mkt: 69.9% | Model: 88.0% | Edge: 18.1% | Kelly: 14.11%
+    batter_hits  | Corey Seager under 0.5 | +160 | Mkt: 34.9% | Model: 70.3% | Edge: 35.4% | Kelly: 12.93%
+    batter_hits  | Wyatt Langford under 0.5 | +165 | Mkt: 34.6% | Model: 77.3% | Edge: 42.7% | Kelly: 15.89%
+    batter_hits  | Coby Mayo over 0.5   | -155 | Mkt: 59.3% | Model: 65.1% | Edge:  5.8% | Kelly:  2.75%
+    batter_hits  | Taylor Ward over 0.5 | -130 | Mkt: 58.5% | Model: 68.2% | Edge:  9.7% | Kelly:  6.72%
+    batter_hits  | Samuel Basallo over 0.5 | -155 | Mkt: 60.6% | Model: 66.8% | Edge:  6.2% | Kelly:  3.84%
+    batter_hits  | Sam Haggerty under 0.5 | +115 | Mkt: 45.4% | Model: 68.9% | Edge: 23.4% | Kelly: 10.45%
+    batter_hits  | Jake Burger under 0.5 | +180 | Mkt: 32.8% | Model: 57.8% | Edge: 25.0% | Kelly:  8.60%
+    batter_hits  | Andrew McCutchen under 0.5 | +129 | Mkt: 40.4% | Model: 67.0% | Edge: 26.6% | Kelly: 10.36%
+    batter_hits  | Colton Cowser over 0.5 | -130 | Mkt: 54.1% | Model: 62.7% | Edge:  8.6% | Kelly:  3.55%
+    batter_hits  | Ezequiel Duran under 0.5 | +140 | Mkt: 38.4% | Model: 67.7% | Edge: 29.4% | Kelly: 11.16%
+    batter_hits  | Brandon Nimmo under 0.5 | +180 | Mkt: 36.1% | Model: 50.5% | Edge: 14.4% | Kelly:  5.76%
+    batter_hits  | Dylan Beavers over 0.5 | -155 | Mkt: 58.4% | Model: 64.3% | Edge:  6.0% | Kelly:  2.27%
+    batter_hits  | Danny Jansen under 0.5 | +115 | Mkt: 43.1% | Model: 65.8% | Edge: 22.7% | Kelly:  9.01%
+    batter_hits_runs_rbis | Brandon Nimmo under 1.5 | -105 | Mkt: 47.8% | Model: 78.9% | Edge: 31.2% | Kelly: 14.21%
+    batter_hits_runs_rbis | Wyatt Langford under 1.5 | -108 | Mkt: 48.9% | Model: 93.2% | Edge: 44.3% | Kelly: 21.45%
+    batter_hits_runs_rbis | Corey Seager under 1.5 | -105 | Mkt: 49.4% | Model: 90.3% | Edge: 40.8% | Kelly: 20.01%
+    batter_hits_runs_rbis | Jake Burger under 1.5 | -105 | Mkt: 50.0% | Model: 84.2% | Edge: 34.2% | Kelly: 16.88%
+    batter_hits_runs_rbis | Taylor Ward under 1.5 | -118 | Mkt: 51.5% | Model: 57.2% | Edge:  5.7% | Kelly:  1.69%
+    batter_hits_runs_rbis | Gunnar Henderson under 1.5 | +105 | Mkt: 46.0% | Model: 64.0% | Edge: 18.0% | Kelly:  7.45%
+    batter_hits_runs_rbis | Pete Alonso under 1.5 | -102 | Mkt: 47.4% | Model: 53.5% | Edge:  6.1% | Kelly:  1.52%
+    batter_hits_runs_rbis | Josh Jung under 1.5  | -130 | Mkt: 54.0% | Model: 86.2% | Edge: 32.2% | Kelly: 17.04%
+    batter_hits_runs_rbis | Andrew McCutchen under 1.5 | -140 | Mkt: 55.5% | Model: 86.8% | Edge: 31.3% | Kelly: 17.09%
+    batter_hits_runs_rbis | Ezequiel Duran under 1.5 | -144 | Mkt: 58.3% | Model: 87.0% | Edge: 28.7% | Kelly: 17.08%
+    batter_hits_runs_rbis | Dylan Beavers over 1.5 | +135 | Mkt: 40.7% | Model: 46.4% | Edge:  5.7% | Kelly:  1.68%
+    batter_hits_runs_rbis | Danny Jansen under 1.5 | -159 | Mkt: 59.2% | Model: 86.8% | Edge: 27.7% | Kelly: 16.48%
+    batter_hits_runs_rbis | Colton Cowser over 1.5 | +135 | Mkt: 39.1% | Model: 44.2% | Edge:  5.1% | Kelly:  0.73%
+    batter_hits_runs_rbis | Sam Haggerty under 0.5 | +125 | Mkt: 41.2% | Model: 64.7% | Edge: 23.5% | Kelly:  9.13%
+    batter_total_bases | Gunnar Henderson under 1.5 | -135 | Mkt: 55.6% | Model: 68.1% | Edge: 12.6% | Kelly:  6.27%
+    batter_total_bases | Corey Seager under 1.5 | -160 | Mkt: 59.2% | Model: 95.5% | Edge: 36.2% | Kelly: 22.06%
+    batter_total_bases | Josh Jung under 1.5  | -175 | Mkt: 62.0% | Model: 91.9% | Edge: 29.9% | Kelly: 19.43%
+    batter_total_bases | Jake Burger under 1.5 | -142 | Mkt: 56.7% | Model: 89.7% | Edge: 32.9% | Kelly: 18.76%
+    batter_total_bases | Pete Alonso under 1.5 | -135 | Mkt: 56.6% | Model: 64.5% | Edge:  7.9% | Kelly:  4.14%
+    batter_total_bases | Taylor Ward under 1.5 | -170 | Mkt: 61.2% | Model: 66.7% | Edge:  5.5% | Kelly:  2.55%
+    batter_total_bases | Coby Mayo over 0.5   | -152 | Mkt: 57.6% | Model: 65.1% | Edge:  7.4% | Kelly:  3.01%
+    batter_total_bases | Brandon Nimmo under 1.5 | -164 | Mkt: 60.1% | Model: 85.8% | Edge: 25.7% | Kelly: 15.60%
+    batter_total_bases | Andrew McCutchen under 0.5 | +129 | Mkt: 40.4% | Model: 67.0% | Edge: 26.6% | Kelly: 10.36%
+    batter_total_bases | Ezequiel Duran under 0.5 | +135 | Mkt: 39.7% | Model: 67.7% | Edge: 28.1% | Kelly: 10.95%
+    batter_total_bases | Colton Cowser over 0.5 | -135 | Mkt: 54.5% | Model: 62.7% | Edge:  8.2% | Kelly:  3.08%
+    batter_total_bases | Wyatt Langford under 1.5 | -150 | Mkt: 58.4% | Model: 97.0% | Edge: 38.6% | Kelly: 23.15%
+    batter_total_bases | Sam Haggerty under 0.5 | +115 | Mkt: 44.4% | Model: 68.9% | Edge: 24.4% | Kelly: 10.45%
+    batter_total_bases | Dylan Beavers over 0.5 | -147 | Mkt: 56.7% | Model: 64.3% | Edge:  7.6% | Kelly:  2.98%
+    batter_total_bases | Danny Jansen under 0.5 | +115 | Mkt: 43.5% | Model: 65.8% | Edge: 22.3% | Kelly:  9.01%
+    pitcher_earned_runs | Trevor Rogers under 2.5 | -153 | Mkt: 58.7% | Model: 97.2% | Edge: 38.6% | Kelly: 23.24%
+    pitcher_earned_runs | Nathan Eovaldi under 2.5 | -131 | Mkt: 55.7% | Model: 68.6% | Edge: 12.9% | Kelly:  6.88%
+    pitcher_hits_allowed | Trevor Rogers under 5.5 | -159 | Mkt: 58.2% | Model: 90.7% | Edge: 32.4% | Kelly: 18.95%
+    pitcher_outs | Nathan Eovaldi under 17.5 | +105 | Mkt: 46.3% | Model: 90.7% | Edge: 44.4% | Kelly: 20.45%
+    pitcher_outs | Trevor Rogers over 17.5 | -130 | Mkt: 55.4% | Model: 99.9% | Edge: 44.5% | Kelly: 24.92%
+    pitcher_strikeouts | Trevor Rogers under 5.5 | -140 | Mkt: 57.0% | Model: 66.5% | Edge:  9.4% | Kelly:  4.88%
+    pitcher_strikeouts | Nathan Eovaldi under 6.5 | -149 | Mkt: 57.7% | Model: 83.4% | Edge: 25.7% | Kelly: 14.64%
+    batter_rbis  | Jake Burger under 0.5 | -185 | Mkt: 62.4% | Model: 93.7% | Edge: 31.3% | Kelly: 20.52%
+    batter_rbis  | Pete Alonso under 0.5 | -200 | Mkt: 63.8% | Model: 72.3% | Edge:  8.5% | Kelly:  4.23%
+    batter_rbis  | Corey Seager under 0.5 | -200 | Mkt: 64.3% | Model: 95.5% | Edge: 31.1% | Kelly: 21.60%
+    batter_rbis  | Wyatt Langford under 0.5 | -235 | Mkt: 67.5% | Model: 94.6% | Edge: 27.1% | Kelly: 20.46%
+    batter_rbis  | Gunnar Henderson under 0.5 | -220 | Mkt: 66.8% | Model: 72.0% | Edge:  5.2% | Kelly:  2.63%
+    batter_rbis  | Brandon Nimmo under 0.5 | -276 | Mkt: 72.0% | Model: 91.6% | Edge: 19.6% | Kelly: 17.06%
+    batter_rbis  | Taylor Ward under 0.5 | -289 | Mkt: 73.8% | Model: 88.1% | Edge: 14.3% | Kelly: 13.44%
+    batter_rbis  | Josh Jung under 0.5  | -285 | Mkt: 71.3% | Model: 92.8% | Edge: 21.5% | Kelly: 18.09%
+    batter_rbis  | Danny Jansen under 0.5 | -250 | Mkt: 69.8% | Model: 93.9% | Edge: 24.1% | Kelly: 19.68%
+    batter_rbis  | Andrew McCutchen under 0.5 | -285 | Mkt: 71.6% | Model: 94.7% | Edge: 23.1% | Kelly: 19.88%
+    batter_rbis  | Ezequiel Duran under 0.5 | -325 | Mkt: 74.3% | Model: 91.7% | Edge: 17.4% | Kelly: 16.14%
+    batter_rbis  | Sam Haggerty under 0.5 | -350 | Mkt: 76.1% | Model: 92.5% | Edge: 16.4% | Kelly: 16.56%
+    batter_runs_scored | Wyatt Langford under 0.5 | -125 | Mkt: 53.5% | Model: 96.9% | Edge: 43.5% | Kelly: 23.28%
+    batter_runs_scored | Gunnar Henderson under 0.5 | -135 | Mkt: 54.5% | Model: 68.7% | Edge: 14.2% | Kelly:  6.59%
+    batter_runs_scored | Brandon Nimmo under 0.5 | -135 | Mkt: 56.1% | Model: 91.6% | Edge: 35.5% | Kelly: 20.08%
+    batter_runs_scored | Taylor Ward under 0.5 | -145 | Mkt: 58.8% | Model: 73.3% | Edge: 14.5% | Kelly:  8.65%
+    batter_runs_scored | Corey Seager under 0.5 | -150 | Mkt: 57.0% | Model: 89.6% | Edge: 32.6% | Kelly: 18.51%
+    batter_runs_scored | Pete Alonso under 0.5 | -150 | Mkt: 57.5% | Model: 62.6% | Edge:  5.1% | Kelly:  1.64%
+    batter_runs_scored | Jake Burger under 0.5 | -155 | Mkt: 57.9% | Model: 93.7% | Edge: 35.8% | Kelly: 20.97%
+    batter_runs_scored | Danny Jansen under 0.5 | -175 | Mkt: 61.7% | Model: 89.6% | Edge: 27.9% | Kelly: 17.85%
+    batter_runs_scored | Andrew McCutchen under 0.5 | -185 | Mkt: 62.8% | Model: 89.5% | Edge: 26.8% | Kelly: 17.55%
+    batter_runs_scored | Josh Jung under 0.5  | -200 | Mkt: 64.1% | Model: 90.0% | Edge: 25.8% | Kelly: 17.47%
+    batter_runs_scored | Ezequiel Duran under 0.5 | -215 | Mkt: 65.7% | Model: 90.9% | Edge: 25.2% | Kelly: 17.87%
+    batter_runs_scored | Sam Haggerty under 0.5 | -220 | Mkt: 66.6% | Model: 91.9% | Edge: 25.3% | Kelly: 18.50%
+    batter_strikeouts | Wyatt Langford under 0.5 | +195 | Mkt: 29.5% | Model: 54.6% | Edge: 25.1% | Kelly:  7.83%
+    batter_strikeouts | Josh Jung under 0.5  | +170 | Mkt: 32.8% | Model: 52.6% | Edge: 19.8% | Kelly:  6.19%
+    batter_strikeouts | Danny Jansen under 0.5 | +155 | Mkt: 35.2% | Model: 51.2% | Edge: 16.0% | Kelly:  4.92%
+    batter_strikeouts | Andrew McCutchen under 0.5 | +175 | Mkt: 32.5% | Model: 49.4% | Edge: 16.9% | Kelly:  5.11%
+    batter_strikeouts | Sam Haggerty under 0.5 | +125 | Mkt: 40.8% | Model: 54.5% | Edge: 13.8% | Kelly:  4.54%
+    batter_strikeouts | Gunnar Henderson over 0.5 | -165 | Mkt: 59.2% | Model: 71.3% | Edge: 12.1% | Kelly:  5.97%
+    batter_strikeouts | Colton Cowser under 1.5 | -250 | Mkt: 68.5% | Model: 80.1% | Edge: 11.6% | Kelly:  7.62%
+    batter_strikeouts | Corey Seager under 0.5 | +165 | Mkt: 33.7% | Model: 61.3% | Edge: 27.7% | Kelly:  9.48%
+    batter_strikeouts | Ezequiel Duran under 0.5 | +150 | Mkt: 36.2% | Model: 51.9% | Edge: 15.7% | Kelly:  4.96%
+    batter_strikeouts | Jake Burger under 1.5 | -275 | Mkt: 70.5% | Model: 76.1% | Edge:  5.6% | Kelly:  2.55%
+    batter_strikeouts | Jeremiah Jackson under 0.5 | +155 | Mkt: 35.2% | Model: 40.8% | Edge:  5.6% | Kelly:  0.64%
+    batter_strikeouts | Dylan Beavers under 1.5 | -275 | Mkt: 70.7% | Model: 78.9% | Edge:  8.2% | Kelly:  5.24%
+    batter_strikeouts | Taylor Ward under 0.5 | +140 | Mkt: 37.6% | Model: 46.4% | Edge:  8.8% | Kelly:  2.04%
+    batter_strikeouts | Coby Mayo under 1.5  | -250 | Mkt: 68.5% | Model: 76.6% | Edge:  8.1% | Kelly:  4.52%
+    batter_strikeouts | Brandon Nimmo under 0.5 | +195 | Mkt: 29.5% | Model: 63.2% | Edge: 33.6% | Kelly: 11.07%
+    team_total_home | home over 3.5        | -135 | Mkt: 56.1% | Model: 73.5% | Edge: 17.4% | Kelly:  9.43%
+    batter_hits  | Gunnar Henderson under 0.5 | +196 | Mkt: 30.5% | Model: 52.4% | Edge: 21.9% | Kelly:  7.02%
+
+  COL@TOR
+  ----------------------------------------
+    run_line     | home -1.5            | -120 | Mkt: 53.5% | Model: 60.8% | Edge:  7.3% | Kelly:  3.44%
+    team_total_away | away under 2.5       | +106 | Mkt: 47.0% | Model: 67.7% | Edge: 20.7% | Kelly:  9.29%
+    first_5_rl   | home -1.5            | +112 | Mkt: 45.2% | Model: 63.9% | Edge: 18.7% | Kelly:  7.92%
+    nrfi         | NRFI                 | -115 | Mkt: 51.8% | Model: 59.6% | Edge:  7.8% | Kelly:  3.27%
+    first_3_total | over 2.5             | -105 | Mkt: 48.1% | Model: 57.7% | Edge:  9.6% | Kelly:  3.31%
+    pitcher_outs | Kyle Freeland under 15.5 | -103 | Mkt: 50.1% | Model: 73.9% | Edge: 23.8% | Kelly: 11.74%
+    pitcher_outs | Kevin Gausman over 18.5 | +140 | Mkt: 39.5% | Model: 51.7% | Edge: 12.2% | Kelly:  4.32%
+    pitcher_strikeouts | Kyle Freeland under 3.5 | -110 | Mkt: 51.8% | Model: 95.6% | Edge: 43.8% | Kelly: 22.70%
+    pitcher_strikeouts | Kevin Gausman under 7.5 | -141 | Mkt: 56.5% | Model: 82.3% | Edge: 25.9% | Kelly: 14.34%
+    batter_hits  | Kyle Karros over 0.5 | -120 | Mkt: 51.7% | Model: 62.1% | Edge: 10.3% | Kelly:  4.13%
+    batter_hits  | Alejandro Kirk under 1.5 | -275 | Mkt: 71.5% | Model: 77.1% | Edge:  5.5% | Kelly:  3.49%
+    batter_hits  | Vladimir Guerrero Jr. under 1.5 | -210 | Mkt: 66.0% | Model: 73.0% | Edge:  7.0% | Kelly:  4.04%
+    batter_hits  | George Springer under 1.5 | -190 | Mkt: 65.3% | Model: 93.0% | Edge: 27.7% | Kelly: 19.93%
+    batter_hits  | Ezequiel Tovar over 0.5 | -170 | Mkt: 60.5% | Model: 70.2% | Edge:  9.7% | Kelly:  4.88%
+    batter_hits  | Brenton Doyle over 0.5 | -125 | Mkt: 52.8% | Model: 62.7% | Edge:  9.8% | Kelly:  4.01%
+    batter_hits  | Andres Gimenez over 0.5 | -185 | Mkt: 62.3% | Model: 70.5% | Edge:  8.3% | Kelly:  3.99%
+    batter_hits  | Hunter Goodman over 0.5 | -165 | Mkt: 61.6% | Model: 75.2% | Edge: 13.6% | Kelly:  8.60%
+    batter_hits  | Kazuma Okamoto under 0.5 | +176 | Mkt: 32.6% | Model: 50.4% | Edge: 17.8% | Kelly:  5.56%
+    batter_hits  | Jordan Beck over 0.5 | -135 | Mkt: 55.0% | Model: 66.8% | Edge: 11.8% | Kelly:  5.52%
+    batter_hits  | Willi Castro under 0.5 | +115 | Mkt: 44.9% | Model: 57.9% | Edge: 12.9% | Kelly:  5.30%
+    batter_hits  | TJ Rumfield over 0.5 | -150 | Mkt: 58.0% | Model: 79.8% | Edge: 21.9% | Kelly: 12.39%
+    batter_hits  | Troy Johnston over 0.5 | -160 | Mkt: 59.7% | Model: 69.4% | Edge:  9.7% | Kelly:  5.10%
+    batter_hits  | Brett Sullivan over 0.5 | -120 | Mkt: 52.3% | Model: 64.1% | Edge: 11.8% | Kelly:  5.25%
+    batter_hits_runs_rbis | Alejandro Kirk under 1.5 | +125 | Mkt: 42.8% | Model: 52.1% | Edge:  9.3% | Kelly:  3.43%
+    batter_hits_runs_rbis | Ezequiel Tovar over 1.5 | +130 | Mkt: 41.2% | Model: 52.9% | Edge: 11.8% | Kelly:  4.18%
+    batter_hits_runs_rbis | George Springer under 1.5 | +122 | Mkt: 41.5% | Model: 71.7% | Edge: 30.2% | Kelly: 12.13%
+    batter_hits_runs_rbis | Vladimir Guerrero Jr. under 2.5 | -125 | Mkt: 54.8% | Model: 75.5% | Edge: 20.8% | Kelly: 11.23%
+    batter_hits_runs_rbis | Kazuma Okamoto under 1.5 | +115 | Mkt: 44.9% | Model: 64.3% | Edge: 19.4% | Kelly:  8.32%
+    batter_hits_runs_rbis | Andres Gimenez over 1.5 | +110 | Mkt: 44.9% | Model: 50.1% | Edge:  5.2% | Kelly:  1.18%
+    batter_hits_runs_rbis | Hunter Goodman over 1.5 | +115 | Mkt: 43.7% | Model: 56.0% | Edge: 12.3% | Kelly:  4.42%
+    batter_hits_runs_rbis | Troy Johnston over 1.5 | +132 | Mkt: 39.5% | Model: 52.3% | Edge: 12.8% | Kelly:  4.05%
+    batter_hits_runs_rbis | TJ Rumfield over 0.5 | -175 | Mkt: 60.9% | Model: 82.9% | Edge: 22.0% | Kelly: 13.21%
+    batter_hits_runs_rbis | Jordan Beck over 0.5 | -171 | Mkt: 60.6% | Model: 71.0% | Edge: 10.5% | Kelly:  5.38%
+    batter_hits_runs_rbis | Willi Castro under 0.5 | +145 | Mkt: 39.7% | Model: 51.7% | Edge: 12.0% | Kelly:  4.60%
+    batter_hits_runs_rbis | Brenton Doyle over 0.5 | -152 | Mkt: 59.4% | Model: 68.4% | Edge:  9.0% | Kelly:  5.10%
+    batter_hits_runs_rbis | Kyle Karros over 0.5 | -145 | Mkt: 56.5% | Model: 67.5% | Edge: 11.0% | Kelly:  5.10%
+    batter_hits_runs_rbis | Brett Sullivan over 0.5 | -140 | Mkt: 55.5% | Model: 69.1% | Edge: 13.6% | Kelly:  6.46%
+    batter_rbis  | Kazuma Okamoto under 0.5 | -160 | Mkt: 61.2% | Model: 74.5% | Edge: 13.3% | Kelly:  8.45%
+    batter_rbis  | Vladimir Guerrero Jr. under 0.5 | -165 | Mkt: 60.1% | Model: 82.7% | Edge: 22.6% | Kelly: 13.51%
+    batter_rbis  | George Springer under 0.5 | -175 | Mkt: 62.3% | Model: 78.9% | Edge: 16.6% | Kelly: 10.52%
+    batter_rbis  | Alejandro Kirk under 0.5 | -200 | Mkt: 64.6% | Model: 72.6% | Edge:  8.1% | Kelly:  4.48%
+    batter_rbis  | Davis Schneider under 0.5 | -235 | Mkt: 67.5% | Model: 80.4% | Edge: 12.9% | Kelly:  8.57%
+    batter_rbis  | Ezequiel Tovar over 0.5 | +252 | Mkt: 26.3% | Model: 32.6% | Edge:  6.3% | Kelly:  1.48%
+    batter_rbis  | Jordan Beck over 0.5 | +280 | Mkt: 22.2% | Model: 28.6% | Edge:  6.3% | Kelly:  0.77%
+    batter_rbis  | TJ Rumfield over 0.5 | +301 | Mkt: 24.1% | Model: 31.5% | Edge:  7.4% | Kelly:  2.19%
+    batter_rbis  | Brenton Doyle over 0.5 | +311 | Mkt: 21.5% | Model: 29.7% | Edge:  8.1% | Kelly:  1.76%
+    batter_rbis  | Kyle Karros over 0.5 | +336 | Mkt: 18.7% | Model: 28.9% | Edge: 10.2% | Kelly:  1.95%
+    batter_rbis  | Troy Johnston over 0.5 | +339 | Mkt: 21.7% | Model: 30.3% | Edge:  8.7% | Kelly:  2.45%
+    batter_rbis  | Brett Sullivan over 0.5 | +353 | Mkt: 21.4% | Model: 28.7% | Edge:  7.2% | Kelly:  2.11%
+    batter_total_bases | Hunter Goodman over 0.5 | -165 | Mkt: 59.8% | Model: 75.2% | Edge: 15.4% | Kelly:  8.60%
+    batter_total_bases | George Springer under 1.5 | -105 | Mkt: 51.2% | Model: 71.4% | Edge: 20.2% | Kelly: 10.36%
+    batter_total_bases | Vladimir Guerrero Jr. under 1.5 | -114 | Mkt: 51.0% | Model: 73.0% | Edge: 21.9% | Kelly: 10.53%
+    batter_total_bases | Ezequiel Tovar over 0.5 | -175 | Mkt: 60.9% | Model: 70.2% | Edge:  9.3% | Kelly:  4.51%
+    batter_total_bases | Brenton Doyle over 0.5 | -125 | Mkt: 52.8% | Model: 62.7% | Edge:  9.8% | Kelly:  4.01%
+    batter_total_bases | Ernie Clement over 1.5 | +107 | Mkt: 45.3% | Model: 57.0% | Edge: 11.7% | Kelly:  4.21%
+    batter_total_bases | Kazuma Okamoto under 1.5 | -140 | Mkt: 56.6% | Model: 79.1% | Edge: 22.4% | Kelly: 12.45%
+    batter_total_bases | Jordan Beck over 0.5 | -130 | Mkt: 53.5% | Model: 66.8% | Edge: 13.4% | Kelly:  5.93%
+    batter_total_bases | Andres Gimenez over 0.5 | -175 | Mkt: 60.9% | Model: 70.5% | Edge:  9.7% | Kelly:  4.73%
+    batter_total_bases | Kyle Karros over 0.5 | -119 | Mkt: 51.6% | Model: 62.1% | Edge: 10.5% | Kelly:  4.23%
+    batter_total_bases | Willi Castro under 0.5 | +115 | Mkt: 43.3% | Model: 57.9% | Edge: 14.6% | Kelly:  5.30%
+    batter_total_bases | Troy Johnston over 0.5 | -160 | Mkt: 58.9% | Model: 69.4% | Edge: 10.5% | Kelly:  5.10%
+    batter_total_bases | Brett Sullivan over 0.5 | -123 | Mkt: 52.6% | Model: 64.1% | Edge: 11.5% | Kelly:  4.98%
+    batter_total_bases | TJ Rumfield over 0.5 | -152 | Mkt: 58.1% | Model: 79.8% | Edge: 21.7% | Kelly: 12.29%
+    pitcher_earned_runs | Kyle Freeland under 2.5 | +114 | Mkt: 43.0% | Model: 85.3% | Edge: 42.4% | Kelly: 18.11%
+    pitcher_hits_allowed | Kevin Gausman over 4.5 | -130 | Mkt: 54.3% | Model: 77.5% | Edge: 23.2% | Kelly: 12.08%
+    pitcher_hits_allowed | Kyle Freeland under 5.5 | +125 | Mkt: 40.8% | Model: 80.8% | Edge: 40.0% | Kelly: 16.35%
+    batter_runs_scored | George Springer under 0.5 | +110 | Mkt: 46.0% | Model: 72.8% | Edge: 26.9% | Kelly: 12.03%
+    batter_runs_scored | Vladimir Guerrero Jr. under 0.5 | -110 | Mkt: 48.9% | Model: 64.0% | Edge: 15.1% | Kelly:  6.09%
+    batter_runs_scored | Alejandro Kirk under 0.5 | -130 | Mkt: 55.1% | Model: 63.1% | Edge:  8.0% | Kelly:  3.79%
+    batter_runs_scored | Kazuma Okamoto under 0.5 | -125 | Mkt: 52.8% | Model: 67.9% | Edge: 15.0% | Kelly:  6.94%
+    batter_runs_scored | Davis Schneider under 0.5 | -120 | Mkt: 52.9% | Model: 66.0% | Edge: 13.1% | Kelly:  6.30%
+    batter_runs_scored | Ernie Clement under 0.5 | -150 | Mkt: 58.4% | Model: 68.1% | Edge:  9.7% | Kelly:  5.05%
+    batter_runs_scored | Jesus Sanchez under 0.5 | -160 | Mkt: 58.3% | Model: 68.4% | Edge: 10.1% | Kelly:  4.49%
+    batter_runs_scored | Troy Johnston over 0.5 | +190 | Mkt: 31.0% | Model: 42.7% | Edge: 11.7% | Kelly:  3.13%
+    batter_runs_scored | Ezequiel Tovar over 0.5 | +200 | Mkt: 30.5% | Model: 39.0% | Edge:  8.5% | Kelly:  2.11%
+    batter_runs_scored | Jordan Beck over 0.5 | +205 | Mkt: 29.1% | Model: 39.4% | Edge: 10.4% | Kelly:  2.48%
+    batter_runs_scored | TJ Rumfield over 0.5 | +210 | Mkt: 30.1% | Model: 47.6% | Edge: 17.6% | Kelly:  5.67%
+    batter_runs_scored | Willi Castro under 0.5 | -250 | Mkt: 69.9% | Model: 79.1% | Edge:  9.2% | Kelly:  6.71%
+    batter_runs_scored | Brenton Doyle over 0.5 | +220 | Mkt: 27.6% | Model: 36.6% | Edge:  9.0% | Kelly:  1.95%
+    batter_runs_scored | Kyle Karros over 0.5 | +240 | Mkt: 25.7% | Model: 34.0% | Edge:  8.2% | Kelly:  1.62%
+    batter_runs_scored | Brett Sullivan over 0.5 | +260 | Mkt: 26.3% | Model: 36.8% | Edge: 10.5% | Kelly:  3.12%
+    batter_strikeouts | Davis Schneider under 0.5 | +165 | Mkt: 34.0% | Model: 47.6% | Edge: 13.7% | Kelly:  3.97%
+    batter_strikeouts | Ernie Clement under 0.5 | -325 | Mkt: 73.9% | Model: 87.6% | Edge: 13.7% | Kelly: 11.82%
+    batter_strikeouts | Myles Straw over 0.5 | +155 | Mkt: 35.2% | Model: 50.4% | Edge: 15.2% | Kelly:  4.62%
+    batter_strikeouts | Jordan Beck under 1.5 | -155 | Mkt: 57.4% | Model: 75.2% | Edge: 17.8% | Kelly:  9.16%
+    batter_strikeouts | Kazuma Okamoto over 0.5 | -175 | Mkt: 60.5% | Model: 67.0% | Edge:  6.5% | Kelly:  2.30%
+    batter_strikeouts | Ezequiel Tovar under 1.5 | -200 | Mkt: 63.8% | Model: 75.0% | Edge: 11.2% | Kelly:  6.22%
+    batter_strikeouts | Alejandro Kirk over 0.5 | +145 | Mkt: 36.6% | Model: 54.0% | Edge: 17.4% | Kelly:  5.58%
+    batter_strikeouts | Andres Gimenez under 0.5 | -140 | Mkt: 54.9% | Model: 77.3% | Edge: 22.4% | Kelly: 11.39%
+    batter_strikeouts | Willi Castro under 1.5 | -200 | Mkt: 63.8% | Model: 76.8% | Edge: 13.0% | Kelly:  7.60%
+    batter_strikeouts | Hunter Goodman under 1.5 | -190 | Mkt: 62.4% | Model: 77.5% | Edge: 15.2% | Kelly:  8.70%
+    batter_strikeouts | Vladimir Guerrero Jr. under 0.5 | -190 | Mkt: 62.2% | Model: 86.8% | Edge: 24.6% | Kelly: 15.43%
+    batter_strikeouts | Brett Sullivan over 0.5 | -140 | Mkt: 54.9% | Model: 66.3% | Edge: 11.3% | Kelly:  4.78%
+    batter_strikeouts | Brenton Doyle under 0.5 | +200 | Mkt: 29.3% | Model: 34.5% | Edge:  5.2% | Kelly:  0.44%
+    batter_hits  | Davis Schneider over 0.5 | -156 | Mkt: 60.1% | Model: 66.5% | Edge:  6.4% | Kelly:  3.56%
+    batter_rbis  | Jesus Sanchez under 0.5 | -236 | Mkt: 67.1% | Model: 72.9% | Edge:  5.8% | Kelly:  2.25%
+    pitcher_earned_runs | Kevin Gausman over 1.5 | -140 | Mkt: 56.5% | Model: 62.1% | Edge:  5.6% | Kelly:  2.25%
+    batter_runs_scored | Andres Gimenez under 0.5 | -190 | Mkt: 62.7% | Model: 68.3% | Edge:  5.6% | Kelly:  2.03%
+
+  CWS@MIA
+  ----------------------------------------
+    total        | under 7.5            | -105 | Mkt: 49.9% | Model: 56.8% | Edge:  6.9% | Kelly:  2.84%
+    team_total_away | away under 3.5       | -122 | Mkt: 52.8% | Model: 64.7% | Edge: 11.9% | Kelly:  5.42%
+    nrfi         | NRFI                 | -125 | Mkt: 54.0% | Model: 62.6% | Edge:  8.5% | Kelly:  3.94%
+    pitcher_outs | Shane Smith over 14.5 | -136 | Mkt: 55.4% | Model: 94.7% | Edge: 39.4% | Kelly: 21.88%
+    pitcher_outs | Sandy Alcantara over 17.5 | -165 | Mkt: 60.1% | Model: 99.9% | Edge: 39.8% | Kelly: 24.93%
+    pitcher_strikeouts | Shane Smith over 4.5 | +110 | Mkt: 45.5% | Model: 63.8% | Edge: 18.3% | Kelly:  7.70%
+    batter_hits  | Colson Montgomery under 0.5 | +145 | Mkt: 39.5% | Model: 69.2% | Edge: 29.7% | Kelly: 12.00%
+    batter_hits  | Xavier Edwards over 1.5 | +199 | Mkt: 29.6% | Model: 47.2% | Edge: 17.6% | Kelly:  5.16%
+    batter_hits  | Andrew Benintendi under 0.5 | +150 | Mkt: 37.2% | Model: 56.0% | Edge: 18.8% | Kelly:  6.67%
+    batter_hits  | Reese McGuire under 0.5 | +105 | Mkt: 45.5% | Model: 60.7% | Edge: 15.1% | Kelly:  5.80%
+    batter_hits  | Otto Lopez under 0.5 | +190 | Mkt: 31.8% | Model: 36.9% | Edge:  5.1% | Kelly:  0.92%
+    batter_hits  | Miguel Vargas under 0.5 | +113 | Mkt: 44.6% | Model: 68.6% | Edge: 24.0% | Kelly: 10.22%
+    batter_hits  | Graham Pauley over 0.5 | -116 | Mkt: 51.3% | Model: 60.0% | Edge:  8.7% | Kelly:  3.38%
+    batter_hits  | Jakob Marsee under 0.5 | +155 | Mkt: 35.9% | Model: 61.3% | Edge: 25.3% | Kelly:  9.07%
+    batter_hits  | Liam Hicks over 0.5  | -160 | Mkt: 59.7% | Model: 65.0% | Edge:  5.4% | Kelly:  2.27%
+    batter_hits  | Chase Meidroth under 0.5 | +180 | Mkt: 34.4% | Model: 55.2% | Edge: 20.8% | Kelly:  7.58%
+    batter_hits  | Munetaka Murakami under 0.5 | +142 | Mkt: 38.2% | Model: 74.9% | Edge: 36.7% | Kelly: 14.31%
+    batter_hits  | Everson Pereira under 0.5 | -105 | Mkt: 48.8% | Model: 58.6% | Edge:  9.8% | Kelly:  3.78%
+    batter_hits  | Tristan Peters under 0.5 | +120 | Mkt: 44.9% | Model: 59.6% | Edge: 14.7% | Kelly:  6.48%
+    batter_hits  | Luisangel Acuna under 0.5 | +123 | Mkt: 43.1% | Model: 61.3% | Edge: 18.1% | Kelly:  7.45%
+    batter_hits_runs_rbis | Xavier Edwards over 1.5 | -126 | Mkt: 54.1% | Model: 62.5% | Edge:  8.3% | Kelly:  3.79%
+    batter_hits_runs_rbis | Chase Meidroth under 1.5 | -115 | Mkt: 50.6% | Model: 81.9% | Edge: 31.4% | Kelly: 15.29%
+    batter_hits_runs_rbis | Miguel Vargas under 1.5 | -160 | Mkt: 59.4% | Model: 89.3% | Edge: 29.8% | Kelly: 18.02%
+    batter_hits_runs_rbis | Colson Montgomery under 1.5 | -119 | Mkt: 52.8% | Model: 90.0% | Edge: 37.2% | Kelly: 19.55%
+    batter_hits_runs_rbis | Munetaka Murakami under 1.5 | -128 | Mkt: 54.3% | Model: 92.0% | Edge: 37.7% | Kelly: 20.45%
+    batter_hits_runs_rbis | Otto Lopez under 1.5 | +105 | Mkt: 47.6% | Model: 59.6% | Edge: 11.9% | Kelly:  5.26%
+    batter_hits_runs_rbis | Jakob Marsee under 1.5 | +110 | Mkt: 47.0% | Model: 71.5% | Edge: 24.5% | Kelly: 11.42%
+    batter_hits_runs_rbis | Andrew Benintendi under 1.5 | -130 | Mkt: 53.8% | Model: 84.4% | Edge: 30.6% | Kelly: 16.03%
+    batter_hits_runs_rbis | Luisangel Acuna under 1.5 | -170 | Mkt: 60.0% | Model: 85.9% | Edge: 25.9% | Kelly: 15.50%
+    batter_hits_runs_rbis | Tristan Peters under 0.5 | +123 | Mkt: 41.8% | Model: 56.5% | Edge: 14.7% | Kelly:  5.29%
+    batter_hits_runs_rbis | Reese McGuire under 0.5 | +132 | Mkt: 41.4% | Model: 58.2% | Edge: 16.8% | Kelly:  6.63%
+    batter_hits_runs_rbis | Graham Pauley over 0.5 | -155 | Mkt: 58.0% | Model: 64.5% | Edge:  6.5% | Kelly:  2.37%
+    batter_hits_runs_rbis | Everson Pereira under 0.5 | +130 | Mkt: 40.9% | Model: 56.4% | Edge: 15.4% | Kelly:  5.70%
+    batter_rbis  | Colson Montgomery under 0.5 | -202 | Mkt: 65.8% | Model: 94.0% | Edge: 28.2% | Kelly: 20.47%
+    batter_rbis  | Munetaka Murakami under 0.5 | -235 | Mkt: 67.5% | Model: 94.6% | Edge: 27.2% | Kelly: 20.49%
+    batter_rbis  | Andrew Benintendi under 0.5 | -235 | Mkt: 67.5% | Model: 93.8% | Edge: 26.3% | Kelly: 19.79%
+    batter_rbis  | Otto Lopez under 0.5 | -225 | Mkt: 67.3% | Model: 81.1% | Edge: 13.8% | Kelly:  9.68%
+    batter_rbis  | Xavier Edwards under 0.5 | -275 | Mkt: 71.5% | Model: 77.2% | Edge:  5.7% | Kelly:  3.58%
+    batter_rbis  | Jakob Marsee under 0.5 | -300 | Mkt: 72.7% | Model: 84.3% | Edge: 11.6% | Kelly:  9.28%
+    batter_rbis  | Miguel Vargas under 0.5 | -336 | Mkt: 75.0% | Model: 94.6% | Edge: 19.6% | Kelly: 19.11%
+    batter_rbis  | Chase Meidroth under 0.5 | -385 | Mkt: 77.1% | Model: 92.7% | Edge: 15.6% | Kelly: 16.12%
+    batter_rbis  | Tristan Peters under 0.5 | -400 | Mkt: 77.8% | Model: 94.7% | Edge: 16.9% | Kelly: 18.32%
+    batter_rbis  | Everson Pereira under 0.5 | -414 | Mkt: 78.6% | Model: 93.9% | Edge: 15.3% | Kelly: 17.14%
+    batter_rbis  | Luisangel Acuna under 0.5 | -425 | Mkt: 78.9% | Model: 93.1% | Edge: 14.2% | Kelly: 15.92%
+    batter_rbis  | Reese McGuire under 0.5 | -400 | Mkt: 78.0% | Model: 92.5% | Edge: 14.5% | Kelly: 15.68%
+    batter_total_bases | Everson Pereira under 0.5 | -109 | Mkt: 49.3% | Model: 58.6% | Edge:  9.3% | Kelly:  3.37%
+    batter_total_bases | Andrew Benintendi under 0.5 | +143 | Mkt: 37.5% | Model: 56.0% | Edge: 18.5% | Kelly:  6.31%
+    batter_total_bases | Xavier Edwards over 1.5 | +135 | Mkt: 39.5% | Model: 51.7% | Edge: 12.2% | Kelly:  3.96%
+    batter_total_bases | Otto Lopez under 1.5 | -165 | Mkt: 60.9% | Model: 68.6% | Edge:  7.8% | Kelly:  4.23%
+    batter_total_bases | Colson Montgomery under 1.5 | -156 | Mkt: 59.8% | Model: 95.5% | Edge: 35.6% | Kelly: 22.11%
+    batter_total_bases | Chase Meidroth under 1.5 | -185 | Mkt: 62.7% | Model: 88.0% | Edge: 25.3% | Kelly: 16.45%
+    batter_total_bases | Jakob Marsee under 1.5 | -170 | Mkt: 60.6% | Model: 71.8% | Edge: 11.3% | Kelly:  5.99%
+    batter_total_bases | Connor Norby over 0.5 | -165 | Mkt: 59.6% | Model: 64.7% | Edge:  5.1% | Kelly:  1.62%
+    batter_total_bases | Graham Pauley over 0.5 | -118 | Mkt: 51.5% | Model: 60.0% | Edge:  8.5% | Kelly:  3.18%
+    batter_total_bases | Luisangel Acuna under 0.5 | +113 | Mkt: 44.2% | Model: 61.3% | Edge: 17.1% | Kelly:  6.75%
+    batter_total_bases | Miguel Vargas under 0.5 | +110 | Mkt: 45.0% | Model: 68.6% | Edge: 23.7% | Kelly: 10.03%
+    batter_total_bases | Tristan Peters under 0.5 | +110 | Mkt: 46.0% | Model: 59.6% | Edge: 13.6% | Kelly:  5.72%
+    batter_total_bases | Liam Hicks over 0.5  | -160 | Mkt: 59.2% | Model: 65.0% | Edge:  5.9% | Kelly:  2.27%
+    batter_total_bases | Munetaka Murakami under 0.5 | +137 | Mkt: 38.7% | Model: 74.9% | Edge: 36.3% | Kelly: 14.15%
+    batter_total_bases | Heriberto Hernandez over 0.5 | -141 | Mkt: 55.7% | Model: 62.2% | Edge:  6.5% | Kelly:  2.22%
+    batter_total_bases | Reese McGuire under 0.5 | +100 | Mkt: 46.2% | Model: 60.7% | Edge: 14.4% | Kelly:  5.33%
+    pitcher_earned_runs | Sandy Alcantara under 2.5 | -180 | Mkt: 61.7% | Model: 97.1% | Edge: 35.4% | Kelly: 22.94%
+    pitcher_hits_allowed | Shane Smith over 4.5 | -107 | Mkt: 48.1% | Model: 75.7% | Edge: 27.6% | Kelly: 12.40%
+    pitcher_hits_allowed | Sandy Alcantara under 4.5 | +107 | Mkt: 44.8% | Model: 69.0% | Edge: 24.2% | Kelly: 10.00%
+    batter_runs_scored | Jakob Marsee under 0.5 | -135 | Mkt: 54.5% | Model: 75.2% | Edge: 20.7% | Kelly: 10.41%
+    batter_runs_scored | Munetaka Murakami under 0.5 | -150 | Mkt: 57.0% | Model: 92.5% | Edge: 35.5% | Kelly: 20.31%
+    batter_runs_scored | Xavier Edwards under 0.5 | -150 | Mkt: 58.0% | Model: 63.4% | Edge:  5.5% | Kelly:  2.13%
+    batter_runs_scored | Chase Meidroth under 0.5 | -168 | Mkt: 59.9% | Model: 91.4% | Edge: 31.5% | Kelly: 19.24%
+    batter_runs_scored | Colson Montgomery under 0.5 | -170 | Mkt: 62.3% | Model: 93.8% | Edge: 31.5% | Kelly: 20.82%
+    batter_runs_scored | Otto Lopez under 0.5 | -185 | Mkt: 62.4% | Model: 74.7% | Edge: 12.3% | Kelly:  6.99%
+    batter_runs_scored | Andrew Benintendi under 0.5 | -200 | Mkt: 65.1% | Model: 93.8% | Edge: 28.8% | Kelly: 20.38%
+    batter_runs_scored | Miguel Vargas under 0.5 | -239 | Mkt: 68.9% | Model: 93.0% | Edge: 24.0% | Kelly: 19.05%
+    batter_runs_scored | Luisangel Acuna under 0.5 | -245 | Mkt: 69.2% | Model: 92.9% | Edge: 23.6% | Kelly: 18.86%
+    batter_runs_scored | Everson Pereira under 0.5 | -268 | Mkt: 70.8% | Model: 90.4% | Edge: 19.6% | Kelly: 16.18%
+    batter_runs_scored | Reese McGuire under 0.5 | -270 | Mkt: 70.9% | Model: 90.9% | Edge: 20.0% | Kelly: 16.58%
+    batter_runs_scored | Tristan Peters under 0.5 | -275 | Mkt: 71.1% | Model: 90.7% | Edge: 19.6% | Kelly: 16.26%
+    batter_strikeouts | Miguel Vargas under 0.5 | +135 | Mkt: 38.4% | Model: 45.6% | Edge:  7.2% | Kelly:  1.34%
+    batter_strikeouts | Liam Hicks over 0.5  | +100 | Mkt: 46.1% | Model: 65.1% | Edge: 19.0% | Kelly:  7.57%
+    batter_strikeouts | Munetaka Murakami under 1.5 | -210 | Mkt: 64.8% | Model: 82.4% | Edge: 17.6% | Kelly: 11.38%
+    batter_strikeouts | Luisangel Acuna under 0.5 | -110 | Mkt: 48.9% | Model: 53.9% | Edge:  5.0% | Kelly:  0.80%
+    batter_strikeouts | Colson Montgomery under 1.5 | -220 | Mkt: 65.7% | Model: 81.4% | Edge: 15.7% | Kelly: 10.15%
+    batter_strikeouts | Everson Pereira under 1.5 | -200 | Mkt: 63.4% | Model: 88.9% | Edge: 25.5% | Kelly: 16.68%
+    batter_strikeouts | Xavier Edwards under 0.5 | -130 | Mkt: 52.8% | Model: 67.7% | Edge: 14.9% | Kelly:  6.43%
+    batter_strikeouts | Owen Caissie under 1.5 | -275 | Mkt: 70.7% | Model: 78.4% | Edge:  7.7% | Kelly:  4.77%
+    batter_strikeouts | Tristan Peters under 0.5 | +180 | Mkt: 31.5% | Model: 49.8% | Edge: 18.4% | Kelly:  5.49%
+    batter_strikeouts | Reese McGuire under 0.5 | +110 | Mkt: 43.6% | Model: 51.9% | Edge:  8.3% | Kelly:  2.03%
+    batter_strikeouts | Javier Sanoja over 0.5 | +165 | Mkt: 34.0% | Model: 59.3% | Edge: 25.3% | Kelly:  8.64%
+
+  OAK@ATL
+  ----------------------------------------
+    run_line     | home -1.5            | +100 | Mkt: 48.8% | Model: 57.0% | Edge:  8.2% | Kelly:  3.48%
+    team_total_home | home over 4.5        | -104 | Mkt: 48.9% | Model: 56.0% | Edge:  7.0% | Kelly:  2.54%
+    nrfi         | NRFI                 | -120 | Mkt: 53.5% | Model: 60.1% | Edge:  6.6% | Kelly:  3.08%
+    first_3_total | over 2.5             | +105 | Mkt: 45.8% | Model: 55.9% | Edge: 10.1% | Kelly:  3.48%
+    pitcher_outs | Chris Sale over 18.5 | +136 | Mkt: 39.5% | Model: 99.3% | Edge: 59.8% | Kelly: 24.69%
+    pitcher_outs | Luis Severino over 15.5 | +100 | Mkt: 48.2% | Model: 88.9% | Edge: 40.7% | Kelly: 19.47%
+    pitcher_strikeouts | Chris Sale under 8.5 | -132 | Mkt: 55.3% | Model: 86.9% | Edge: 31.6% | Kelly: 17.39%
+    pitcher_strikeouts | Luis Severino under 3.5 | +125 | Mkt: 42.1% | Model: 79.6% | Edge: 37.4% | Kelly: 15.81%
+    batter_total_bases | Ronald Acuna Jr. under 1.5 | -120 | Mkt: 53.5% | Model: 86.6% | Edge: 33.1% | Kelly: 17.63%
+    batter_total_bases | Austin Riley under 1.5 | -159 | Mkt: 58.7% | Model: 96.7% | Edge: 38.0% | Kelly: 22.89%
+    batter_total_bases | Ozzie Albies under 1.5 | -200 | Mkt: 64.3% | Model: 90.0% | Edge: 25.7% | Kelly: 17.52%
+    batter_total_bases | Michael Harris II under 1.5 | -169 | Mkt: 60.0% | Model: 70.6% | Edge: 10.7% | Kelly:  5.25%
+    batter_total_bases | Matt Olson under 1.5 | -143 | Mkt: 57.8% | Model: 72.9% | Edge: 15.1% | Kelly:  8.53%
+    batter_total_bases | Shea Langeliers under 1.5 | -173 | Mkt: 61.2% | Model: 84.1% | Edge: 22.9% | Kelly: 14.14%
+    batter_total_bases | Jacob Wilson under 1.5 | -135 | Mkt: 55.6% | Model: 94.6% | Edge: 39.1% | Kelly: 21.84%
+    batter_total_bases | Darell Hernaiz under 0.5 | +110 | Mkt: 45.0% | Model: 66.6% | Edge: 21.7% | Kelly:  9.08%
+    batter_total_bases | Denzel Clarke under 0.5 | -124 | Mkt: 53.3% | Model: 67.3% | Edge: 13.9% | Kelly:  6.67%
+    batter_total_bases | Drake Baldwin under 1.5 | -150 | Mkt: 57.2% | Model: 85.6% | Edge: 28.4% | Kelly: 16.01%
+    batter_total_bases | Mauricio Dubon under 0.5 | +120 | Mkt: 42.6% | Model: 54.2% | Edge: 11.6% | Kelly:  4.02%
+    batter_total_bases | Mike Yastrzemski under 1.5 | -185 | Mkt: 63.1% | Model: 69.3% | Edge:  6.2% | Kelly:  3.14%
+    batter_total_bases | Dominic Smith under 0.5 | +115 | Mkt: 43.3% | Model: 54.7% | Edge: 11.4% | Kelly:  3.81%
+    batter_total_bases | Tyler Soderstrom under 0.5 | +110 | Mkt: 45.0% | Model: 75.5% | Edge: 30.5% | Kelly: 13.29%
+    batter_total_bases | Andy Ibanez under 1.5 | -200 | Mkt: 63.9% | Model: 87.3% | Edge: 23.4% | Kelly: 15.50%
+    batter_total_bases | Brent Rooker under 0.5 | +129 | Mkt: 40.4% | Model: 69.4% | Edge: 29.0% | Kelly: 11.42%
+    batter_total_bases | Austin Wynns under 0.5 | -108 | Mkt: 49.2% | Model: 64.7% | Edge: 15.5% | Kelly:  6.67%
+    batter_hits  | Matt Olson under 0.5 | +170 | Mkt: 34.3% | Model: 58.6% | Edge: 24.4% | Kelly:  8.58%
+    batter_hits  | Austin Riley under 0.5 | +175 | Mkt: 33.9% | Model: 73.8% | Edge: 40.0% | Kelly: 14.72%
+    batter_hits  | Ozzie Albies under 0.5 | +145 | Mkt: 38.8% | Model: 64.8% | Edge: 26.0% | Kelly: 10.13%
+    batter_hits  | Ronald Acuna Jr. under 1.5 | -244 | Mkt: 68.3% | Model: 97.2% | Edge: 28.8% | Kelly: 22.58%
+    batter_hits  | Michael Harris II under 0.5 | +185 | Mkt: 32.6% | Model: 53.8% | Edge: 21.2% | Kelly:  7.19%
+    batter_hits  | Shea Langeliers under 0.5 | +140 | Mkt: 38.4% | Model: 62.5% | Edge: 24.0% | Kelly:  8.91%
+    batter_hits  | Tyler Soderstrom under 0.5 | +110 | Mkt: 45.0% | Model: 75.5% | Edge: 30.5% | Kelly: 13.29%
+    batter_hits  | Brent Rooker under 0.5 | +130 | Mkt: 40.3% | Model: 69.4% | Edge: 29.1% | Kelly: 11.47%
+    batter_hits  | Jacob Wilson under 1.5 | -209 | Mkt: 66.2% | Model: 97.6% | Edge: 31.4% | Kelly: 23.16%
+    batter_hits  | Denzel Clarke under 0.5 | -109 | Mkt: 51.7% | Model: 67.3% | Edge: 15.6% | Kelly:  7.89%
+    batter_hits  | Darell Hernaiz under 0.5 | +110 | Mkt: 47.0% | Model: 66.6% | Edge: 19.6% | Kelly:  9.08%
+    batter_hits  | Drake Baldwin under 0.5 | +200 | Mkt: 30.5% | Model: 72.1% | Edge: 41.6% | Kelly: 14.54%
+    batter_hits  | Dominic Smith under 0.5 | +123 | Mkt: 41.7% | Model: 54.7% | Edge: 12.9% | Kelly:  4.45%
+    batter_hits  | Mike Yastrzemski under 0.5 | +140 | Mkt: 39.1% | Model: 53.7% | Edge: 14.6% | Kelly:  5.15%
+    batter_hits  | Austin Wynns under 0.5 | +105 | Mkt: 47.6% | Model: 64.7% | Edge: 17.1% | Kelly:  7.79%
+    batter_hits  | Mauricio Dubon under 0.5 | +120 | Mkt: 42.5% | Model: 54.2% | Edge: 11.7% | Kelly:  4.02%
+    batter_hits  | Andy Ibanez under 0.5 | +145 | Mkt: 37.6% | Model: 57.3% | Edge: 19.7% | Kelly:  6.98%
+    batter_hits_runs_rbis | Jacob Wilson under 1.5 | +105 | Mkt: 46.5% | Model: 92.9% | Edge: 46.3% | Kelly: 21.52%
+    batter_hits_runs_rbis | Brent Rooker under 1.5 | -140 | Mkt: 56.5% | Model: 92.4% | Edge: 36.0% | Kelly: 20.45%
+    batter_hits_runs_rbis | Shea Langeliers under 1.5 | -130 | Mkt: 54.8% | Model: 81.6% | Edge: 26.8% | Kelly: 14.41%
+    batter_hits_runs_rbis | Ronald Acuna Jr. under 1.5 | +114 | Mkt: 44.0% | Model: 87.0% | Edge: 43.0% | Kelly: 18.91%
+    batter_hits_runs_rbis | Matt Olson under 1.5 | +101 | Mkt: 47.0% | Model: 79.4% | Edge: 32.4% | Kelly: 14.77%
+    batter_hits_runs_rbis | Drake Baldwin under 1.5 | +106 | Mkt: 45.4% | Model: 80.4% | Edge: 34.9% | Kelly: 15.46%
+    batter_hits_runs_rbis | Ozzie Albies under 1.5 | -118 | Mkt: 52.1% | Model: 79.4% | Edge: 27.3% | Kelly: 13.79%
+    batter_hits_runs_rbis | Michael Harris II under 1.5 | -109 | Mkt: 49.3% | Model: 70.1% | Edge: 20.8% | Kelly:  9.39%
+    batter_hits_runs_rbis | Austin Riley under 1.5 | -107 | Mkt: 49.6% | Model: 87.8% | Edge: 38.1% | Kelly: 18.67%
+    batter_hits_runs_rbis | Mike Yastrzemski under 1.5 | -125 | Mkt: 54.6% | Model: 70.4% | Edge: 15.9% | Kelly:  8.37%
+    batter_hits_runs_rbis | Andy Ibanez under 1.5 | -148 | Mkt: 58.2% | Model: 83.7% | Edge: 25.5% | Kelly: 14.88%
+    batter_hits_runs_rbis | Dominic Smith under 1.5 | -152 | Mkt: 57.6% | Model: 71.1% | Edge: 13.4% | Kelly:  6.77%
+    batter_hits_runs_rbis | Mauricio Dubon under 1.5 | -165 | Mkt: 59.7% | Model: 72.0% | Edge: 12.4% | Kelly:  6.46%
+    batter_hits_runs_rbis | Tyler Soderstrom under 1.5 | -155 | Mkt: 59.3% | Model: 93.2% | Edge: 34.0% | Kelly: 20.69%
+    batter_hits_runs_rbis | Austin Wynns under 0.5 | +123 | Mkt: 43.6% | Model: 62.5% | Edge: 18.9% | Kelly:  7.99%
+    batter_hits_runs_rbis | Denzel Clarke under 0.5 | +111 | Mkt: 44.9% | Model: 64.4% | Edge: 19.5% | Kelly:  8.06%
+    batter_hits_runs_rbis | Darell Hernaiz under 0.5 | +135 | Mkt: 41.9% | Model: 64.2% | Edge: 22.3% | Kelly:  9.41%
+    pitcher_earned_runs | Chris Sale under 1.5 | +102 | Mkt: 45.9% | Model: 97.8% | Edge: 51.9% | Kelly: 23.90%
+    pitcher_earned_runs | Luis Severino under 2.5 | -110 | Mkt: 49.4% | Model: 92.9% | Edge: 43.5% | Kelly: 21.29%
+    pitcher_hits_allowed | Chris Sale under 4.5 | +115 | Mkt: 43.5% | Model: 92.9% | Edge: 49.5% | Kelly: 21.70%
+    pitcher_hits_allowed | Luis Severino under 5.5 | -135 | Mkt: 54.1% | Model: 98.7% | Edge: 44.6% | Kelly: 24.25%
+    batter_rbis  | Matt Olson under 0.5 | -185 | Mkt: 62.4% | Model: 88.2% | Edge: 25.8% | Kelly: 16.59%
+    batter_rbis  | Austin Riley under 0.5 | -190 | Mkt: 63.0% | Model: 92.8% | Edge: 29.8% | Kelly: 19.81%
+    batter_rbis  | Ronald Acuna Jr. under 0.5 | -225 | Mkt: 67.2% | Model: 89.4% | Edge: 22.2% | Kelly: 16.37%
+    batter_rbis  | Drake Baldwin under 0.5 | -225 | Mkt: 66.7% | Model: 81.2% | Edge: 14.5% | Kelly:  9.73%
+    batter_rbis  | Michael Harris II under 0.5 | -220 | Mkt: 66.9% | Model: 84.1% | Edge: 17.1% | Kelly: 12.26%
+    batter_rbis  | Mike Yastrzemski under 0.5 | -225 | Mkt: 68.0% | Model: 86.1% | Edge: 18.1% | Kelly: 13.72%
+    batter_rbis  | Dominic Smith under 0.5 | -301 | Mkt: 72.2% | Model: 81.9% | Edge:  9.6% | Kelly:  6.81%
+    batter_rbis  | Shea Langeliers under 0.5 | -302 | Mkt: 72.3% | Model: 85.4% | Edge: 13.1% | Kelly: 10.37%
+    batter_rbis  | Brent Rooker under 0.5 | -275 | Mkt: 71.4% | Model: 97.2% | Edge: 25.8% | Kelly: 22.38%
+    batter_rbis  | Ozzie Albies under 0.5 | -250 | Mkt: 70.4% | Model: 83.7% | Edge: 13.4% | Kelly: 10.77%
+    batter_rbis  | Andy Ibanez under 0.5 | -334 | Mkt: 74.9% | Model: 93.5% | Edge: 18.6% | Kelly: 17.92%
+    batter_rbis  | Mauricio Dubon under 0.5 | -325 | Mkt: 74.8% | Model: 80.7% | Edge:  5.8% | Kelly:  4.45%
+    batter_rbis  | Jacob Wilson under 0.5 | -325 | Mkt: 75.2% | Model: 95.1% | Edge: 20.0% | Kelly: 19.84%
+    batter_rbis  | Austin Wynns under 0.5 | -438 | Mkt: 80.0% | Model: 96.7% | Edge: 16.7% | Kelly: 20.54%
+    batter_rbis  | Tyler Soderstrom under 0.5 | -425 | Mkt: 79.2% | Model: 98.0% | Edge: 18.9% | Kelly: 22.40%
+    batter_rbis  | Denzel Clarke under 0.5 | -498 | Mkt: 81.8% | Model: 94.9% | Edge: 13.1% | Kelly: 17.44%
+    batter_rbis  | Darell Hernaiz under 0.5 | -500 | Mkt: 81.8% | Model: 95.7% | Edge: 14.0% | Kelly: 18.61%
+    batter_runs_scored | Ronald Acuna Jr. under 0.5 | +100 | Mkt: 47.7% | Model: 85.2% | Edge: 37.5% | Kelly: 17.59%
+    batter_runs_scored | Matt Olson under 0.5 | -120 | Mkt: 52.3% | Model: 89.0% | Edge: 36.6% | Kelly: 18.93%
+    batter_runs_scored | Drake Baldwin under 0.5 | -125 | Mkt: 52.8% | Model: 75.8% | Edge: 23.0% | Kelly: 11.41%
+    batter_runs_scored | Austin Riley under 0.5 | -150 | Mkt: 57.0% | Model: 86.9% | Edge: 29.9% | Kelly: 16.83%
+    batter_runs_scored | Michael Harris II under 0.5 | -165 | Mkt: 60.3% | Model: 74.6% | Edge: 14.2% | Kelly:  8.16%
+    batter_runs_scored | Mike Yastrzemski under 0.5 | -155 | Mkt: 58.4% | Model: 75.1% | Edge: 16.8% | Kelly:  9.15%
+    batter_runs_scored | Ozzie Albies under 0.5 | -175 | Mkt: 60.9% | Model: 82.7% | Edge: 21.8% | Kelly: 13.09%
+    batter_runs_scored | Jacob Wilson under 0.5 | -185 | Mkt: 62.0% | Model: 96.5% | Edge: 34.5% | Kelly: 22.49%
+    batter_runs_scored | Dominic Smith under 0.5 | -210 | Mkt: 64.8% | Model: 77.1% | Edge: 12.3% | Kelly:  7.27%
+    batter_runs_scored | Andy Ibanez under 0.5 | -210 | Mkt: 66.3% | Model: 89.8% | Edge: 23.5% | Kelly: 17.08%
+    batter_runs_scored | Shea Langeliers under 0.5 | -215 | Mkt: 65.4% | Model: 85.8% | Edge: 20.4% | Kelly: 13.82%
+    batter_runs_scored | Brent Rooker under 0.5 | -225 | Mkt: 66.6% | Model: 97.3% | Edge: 30.6% | Kelly: 22.77%
+    batter_runs_scored | Mauricio Dubon under 0.5 | -240 | Mkt: 68.0% | Model: 80.3% | Edge: 12.3% | Kelly:  8.24%
+    batter_runs_scored | Austin Wynns under 0.5 | -280 | Mkt: 72.8% | Model: 91.7% | Edge: 18.9% | Kelly: 17.11%
+    batter_runs_scored | Denzel Clarke under 0.5 | -280 | Mkt: 72.8% | Model: 93.3% | Edge: 20.5% | Kelly: 18.60%
+    batter_runs_scored | Tyler Soderstrom under 0.5 | -300 | Mkt: 73.0% | Model: 94.7% | Edge: 21.8% | Kelly: 19.72%
+    batter_runs_scored | Darell Hernaiz under 0.5 | -325 | Mkt: 74.3% | Model: 92.8% | Edge: 18.6% | Kelly: 17.37%
+    batter_strikeouts | Austin Riley under 0.5 | +175 | Mkt: 32.5% | Model: 62.7% | Edge: 30.1% | Kelly: 10.33%
+    batter_strikeouts | Denzel Clarke under 1.5 | -130 | Mkt: 53.4% | Model: 86.1% | Edge: 32.8% | Kelly: 17.03%
+    batter_strikeouts | Mauricio Dubon over 0.5 | +145 | Mkt: 36.6% | Model: 46.0% | Edge:  9.4% | Kelly:  2.17%
+    batter_strikeouts | Andy Ibanez under 0.5 | +200 | Mkt: 29.3% | Model: 37.9% | Edge:  8.6% | Kelly:  1.71%
+    batter_strikeouts | Ozzie Albies under 0.5 | -185 | Mkt: 61.6% | Model: 100.0% | Edge: 38.4% | Kelly: 25.00%
+    batter_strikeouts | Mike Yastrzemski under 0.5 | +105 | Mkt: 45.1% | Model: 51.4% | Edge:  6.4% | Kelly:  1.30%
+    batter_strikeouts | Tyler Soderstrom under 1.5 | -220 | Mkt: 65.7% | Model: 82.0% | Edge: 16.3% | Kelly: 10.60%
+    batter_strikeouts | Ronald Acuna Jr. under 0.5 | +140 | Mkt: 37.6% | Model: 51.5% | Edge: 13.9% | Kelly:  4.21%
+    batter_strikeouts | Matt Olson under 0.5 | +140 | Mkt: 37.6% | Model: 44.8% | Edge:  7.2% | Kelly:  1.34%
+    batter_strikeouts | Drake Baldwin under 0.5 | -140 | Mkt: 54.9% | Model: 77.9% | Edge: 23.0% | Kelly: 11.75%
+    batter_strikeouts | Jacob Wilson over 0.5 | +105 | Mkt: 45.1% | Model: 53.7% | Edge:  8.7% | Kelly:  2.41%
+    batter_strikeouts | Austin Wynns under 1.5 | -225 | Mkt: 66.3% | Model: 85.5% | Edge: 19.2% | Kelly: 13.20%
+
+  NYM@STL
+  ----------------------------------------
+    team_total_home | home under 3.5       | -139 | Mkt: 56.5% | Model: 64.7% | Edge:  8.3% | Kelly:  3.92%
+    team_total_away | away under 4.5       | -125 | Mkt: 53.1% | Model: 62.9% | Edge:  9.8% | Kelly:  4.12%
+    first_3_total | over 2.5             | +102 | Mkt: 46.4% | Model: 56.4% | Edge: 10.1% | Kelly:  3.43%
+    pitcher_outs | Matthew Liberatore over 15.5 | +120 | Mkt: 42.7% | Model: 77.3% | Edge: 34.6% | Kelly: 14.59%
+    pitcher_outs | Freddy Peralta over 15.5 | +100 | Mkt: 46.6% | Model: 98.7% | Edge: 52.0% | Kelly: 24.33%
+    pitcher_strikeouts | Matthew Liberatore under 3.5 | +120 | Mkt: 44.9% | Model: 94.4% | Edge: 49.4% | Kelly: 22.41%
+    pitcher_strikeouts | Freddy Peralta under 6.5 | -139 | Mkt: 56.4% | Model: 88.2% | Edge: 31.9% | Kelly: 17.97%
+    batter_hits  | Mark Vientos over 0.5 | -165 | Mkt: 60.2% | Model: 70.6% | Edge: 10.4% | Kelly:  5.54%
+    batter_hits  | Ivan Herrera under 0.5 | +155 | Mkt: 36.4% | Model: 63.9% | Edge: 27.5% | Kelly: 10.15%
+    batter_hits  | Francisco Lindor under 1.5 | -260 | Mkt: 70.2% | Model: 96.0% | Edge: 25.8% | Kelly: 21.37%
+    batter_hits  | Nolan Gorman over 0.5 | +105 | Mkt: 47.6% | Model: 57.5% | Edge:  9.9% | Kelly:  4.25%
+    batter_hits  | Masyn Winn under 0.5 | +126 | Mkt: 40.8% | Model: 70.0% | Edge: 29.2% | Kelly: 11.54%
+    batter_hits  | Francisco Alvarez over 0.5 | -155 | Mkt: 59.7% | Model: 65.9% | Edge:  6.2% | Kelly:  3.28%
+    batter_hits  | Alec Burleson over 0.5 | -200 | Mkt: 64.8% | Model: 70.3% | Edge:  5.5% | Kelly:  2.72%
+    batter_hits  | Pedro Pages over 0.5 | +100 | Mkt: 48.9% | Model: 55.5% | Edge:  6.6% | Kelly:  2.73%
+    batter_hits  | Tyrone Taylor over 0.5 | -150 | Mkt: 58.5% | Model: 65.3% | Edge:  6.8% | Kelly:  3.33%
+    batter_hits  | Juan Soto over 0.5   | -190 | Mkt: 64.1% | Model: 79.1% | Edge: 15.0% | Kelly:  9.85%
+    batter_hits  | Jorge Polanco under 0.5 | +170 | Mkt: 34.4% | Model: 54.4% | Edge: 20.0% | Kelly:  6.88%
+    batter_hits  | Marcus Semien under 0.5 | +160 | Mkt: 38.1% | Model: 76.7% | Edge: 38.6% | Kelly: 15.52%
+    batter_hits  | Victor Scott II over 0.5 | -105 | Mkt: 48.3% | Model: 53.5% | Edge:  5.2% | Kelly:  1.16%
+    batter_hits  | Bo Bichette under 1.5 | -219 | Mkt: 66.1% | Model: 95.0% | Edge: 28.9% | Kelly: 21.01%
+    batter_hits_runs_rbis | Masyn Winn under 1.5 | -155 | Mkt: 57.9% | Model: 83.2% | Edge: 25.3% | Kelly: 14.31%
+    batter_hits_runs_rbis | Francisco Lindor under 1.5 | +111 | Mkt: 43.9% | Model: 79.8% | Edge: 35.9% | Kelly: 15.41%
+    batter_hits_runs_rbis | Bo Bichette under 1.5 | +120 | Mkt: 42.8% | Model: 84.0% | Edge: 41.2% | Kelly: 17.65%
+    batter_hits_runs_rbis | Jorge Polanco under 1.5 | -108 | Mkt: 49.8% | Model: 70.2% | Edge: 20.4% | Kelly:  9.50%
+    batter_hits_runs_rbis | Marcus Semien under 1.5 | -115 | Mkt: 51.8% | Model: 86.8% | Edge: 35.0% | Kelly: 17.92%
+    batter_hits_runs_rbis | Ivan Herrera under 1.5 | -130 | Mkt: 53.4% | Model: 81.2% | Edge: 27.8% | Kelly: 14.19%
+    batter_hits_runs_rbis | Tyrone Taylor over 0.5 | -185 | Mkt: 62.0% | Model: 68.9% | Edge:  6.9% | Kelly:  2.84%
+    batter_rbis  | Masyn Winn under 0.5 | -295 | Mkt: 72.5% | Model: 90.1% | Edge: 17.6% | Kelly: 15.22%
+    batter_rbis  | Jorge Polanco under 0.5 | -229 | Mkt: 66.4% | Model: 87.0% | Edge: 20.6% | Kelly: 14.32%
+    batter_rbis  | Bo Bichette under 0.5 | -190 | Mkt: 64.3% | Model: 87.5% | Edge: 23.2% | Kelly: 15.97%
+    batter_rbis  | Francisco Lindor under 0.5 | -235 | Mkt: 67.2% | Model: 88.5% | Edge: 21.3% | Kelly: 15.40%
+    batter_rbis  | Juan Soto under 0.5  | -235 | Mkt: 67.5% | Model: 79.3% | Edge: 11.8% | Kelly:  7.63%
+    batter_rbis  | Alec Burleson over 0.5 | +188 | Mkt: 31.1% | Model: 37.5% | Edge:  6.5% | Kelly:  1.08%
+    batter_rbis  | Marcus Semien under 0.5 | -275 | Mkt: 70.7% | Model: 88.3% | Edge: 17.6% | Kelly: 14.05%
+    batter_rbis  | Ivan Herrera under 0.5 | -325 | Mkt: 73.8% | Model: 92.1% | Edge: 18.3% | Kelly: 16.63%
+    batter_rbis  | JJ Wetherholt over 0.5 | +275 | Mkt: 22.8% | Model: 30.1% | Edge:  7.3% | Kelly:  1.16%
+    batter_rbis  | Victor Scott II over 0.5 | +360 | Mkt: 17.9% | Model: 23.5% | Edge:  5.6% | Kelly:  0.55%
+    batter_total_bases | Masyn Winn under 0.5 | +125 | Mkt: 41.2% | Model: 70.0% | Edge: 28.8% | Kelly: 11.49%
+    batter_total_bases | Francisco Lindor under 1.5 | -135 | Mkt: 56.1% | Model: 88.0% | Edge: 31.9% | Kelly: 17.96%
+    batter_total_bases | Alec Burleson over 1.5 | +141 | Mkt: 39.0% | Model: 49.9% | Edge: 10.9% | Kelly:  3.61%
+    batter_total_bases | Nolan Gorman over 0.5 | -108 | Mkt: 49.2% | Model: 57.5% | Edge:  8.3% | Kelly:  2.89%
+    batter_total_bases | Pedro Pages over 0.5 | +100 | Mkt: 48.1% | Model: 55.5% | Edge:  7.3% | Kelly:  2.73%
+    batter_total_bases | Victor Scott II over 0.5 | -105 | Mkt: 48.0% | Model: 53.5% | Edge:  5.5% | Kelly:  1.16%
+    batter_total_bases | Jorge Polanco under 1.5 | -170 | Mkt: 60.8% | Model: 85.8% | Edge: 24.9% | Kelly: 15.39%
+    batter_total_bases | Bo Bichette under 1.5 | -132 | Mkt: 54.4% | Model: 95.0% | Edge: 40.6% | Kelly: 22.10%
+    batter_total_bases | Tyrone Taylor over 0.5 | -147 | Mkt: 56.7% | Model: 65.3% | Edge:  8.6% | Kelly:  3.58%
+    batter_total_bases | Francisco Alvarez over 0.5 | -140 | Mkt: 57.4% | Model: 65.9% | Edge:  8.5% | Kelly:  4.55%
+    batter_total_bases | Ivan Herrera under 0.5 | +139 | Mkt: 38.3% | Model: 63.9% | Edge: 25.6% | Kelly:  9.48%
+    batter_total_bases | Marcus Semien under 0.5 | +140 | Mkt: 39.5% | Model: 76.7% | Edge: 37.1% | Kelly: 15.00%
+    pitcher_earned_runs | Matthew Liberatore under 2.5 | -170 | Mkt: 60.1% | Model: 83.0% | Edge: 22.9% | Kelly: 13.50%
+    pitcher_hits_allowed | Freddy Peralta over 4.5 | +125 | Mkt: 42.1% | Model: 52.1% | Edge: 10.0% | Kelly:  3.46%
+    pitcher_hits_allowed | Matthew Liberatore under 4.5 | +115 | Mkt: 42.8% | Model: 51.3% | Edge:  8.6% | Kelly:  2.26%
+    batter_runs_scored | Francisco Lindor under 0.5 | -115 | Mkt: 50.6% | Model: 73.0% | Edge: 22.4% | Kelly: 10.49%
+    batter_runs_scored | Juan Soto under 0.5  | -120 | Mkt: 51.7% | Model: 75.6% | Edge: 23.9% | Kelly: 11.59%
+    batter_runs_scored | Luis Robert Jr. under 0.5 | -150 | Mkt: 58.0% | Model: 64.2% | Edge:  6.2% | Kelly:  2.62%
+    batter_runs_scored | Bo Bichette under 0.5 | -160 | Mkt: 58.8% | Model: 90.4% | Edge: 31.6% | Kelly: 18.78%
+    batter_runs_scored | Jorge Polanco under 0.5 | -165 | Mkt: 59.2% | Model: 70.4% | Edge: 11.2% | Kelly:  5.42%
+    batter_runs_scored | Ivan Herrera under 0.5 | -170 | Mkt: 60.1% | Model: 85.1% | Edge: 25.0% | Kelly: 14.94%
+    batter_runs_scored | Marcus Semien under 0.5 | -180 | Mkt: 62.0% | Model: 87.1% | Edge: 25.1% | Kelly: 15.96%
+    batter_runs_scored | Alec Burleson over 0.5 | +165 | Mkt: 35.9% | Model: 42.6% | Edge:  6.8% | Kelly:  1.97%
+    batter_runs_scored | Tyrone Taylor under 0.5 | -200 | Mkt: 64.1% | Model: 70.3% | Edge:  6.2% | Kelly:  2.76%
+    batter_runs_scored | Mark Vientos under 0.5 | -185 | Mkt: 63.1% | Model: 68.5% | Edge:  5.4% | Kelly:  2.57%
+    batter_runs_scored | Masyn Winn under 0.5 | -250 | Mkt: 68.8% | Model: 88.6% | Edge: 19.8% | Kelly: 15.02%
+    batter_runs_scored | Thomas Saggese over 0.5 | +230 | Mkt: 27.0% | Model: 32.8% | Edge:  5.8% | Kelly:  0.89%
+    batter_runs_scored | Nathan Church over 0.5 | +235 | Mkt: 25.9% | Model: 31.3% | Edge:  5.4% | Kelly:  0.52%
+    batter_strikeouts | Masyn Winn under 0.5 | +130 | Mkt: 39.6% | Model: 50.6% | Edge: 11.0% | Kelly:  3.13%
+    batter_strikeouts | JJ Wetherholt under 0.5 | +115 | Mkt: 42.6% | Model: 57.6% | Edge: 15.0% | Kelly:  5.19%
+    batter_strikeouts | Nolan Gorman under 1.5 | -160 | Mkt: 58.3% | Model: 77.1% | Edge: 18.8% | Kelly: 10.14%
+    batter_strikeouts | Juan Soto under 0.5  | +105 | Mkt: 45.1% | Model: 65.4% | Edge: 20.3% | Kelly:  8.09%
+    batter_strikeouts | Pedro Pages under 0.5 | +190 | Mkt: 29.8% | Model: 39.1% | Edge:  9.3% | Kelly:  1.76%
+    batter_strikeouts | Alec Burleson under 0.5 | -135 | Mkt: 53.9% | Model: 81.2% | Edge: 27.4% | Kelly: 13.97%
+    batter_strikeouts | Mark Vientos under 0.5 | +150 | Mkt: 35.6% | Model: 54.7% | Edge: 19.1% | Kelly:  6.11%
+    batter_strikeouts | Luis Robert Jr. under 0.5 | +140 | Mkt: 37.6% | Model: 54.6% | Edge: 17.0% | Kelly:  5.56%
+    batter_strikeouts | Nathan Church over 0.5 | -125 | Mkt: 52.2% | Model: 62.6% | Edge: 10.3% | Kelly:  3.95%
+    batter_strikeouts | Francisco Lindor under 0.5 | -110 | Mkt: 48.9% | Model: 71.8% | Edge: 23.0% | Kelly: 10.22%
+    batter_strikeouts | Francisco Alvarez under 0.5 | +115 | Mkt: 42.6% | Model: 51.8% | Edge:  9.2% | Kelly:  2.45%
+    batter_strikeouts | Thomas Saggese under 1.5 | -235 | Mkt: 67.5% | Model: 78.1% | Edge: 10.6% | Kelly:  6.66%
+    batter_total_bases | Ivan Herrera under 1.5 | -216 | Mkt: 65.7% | Model: 74.2% | Edge:  8.5% | Kelly:  4.62%
+    batter_total_bases | Juan Soto over 1.5   | +132 | Mkt: 39.8% | Model: 44.9% | Edge:  5.2% | Kelly:  0.81%
+
+  BOS@HOU
+  ----------------------------------------
+    run_line     | away -1.5            | +126 | Mkt: 42.9% | Model: 52.7% | Edge:  9.9% | Kelly:  3.80%
+    team_total_away | away over 3.5        | -130 | Mkt: 54.3% | Model: 73.5% | Edge: 19.2% | Kelly:  9.76%
+    first_3_total | over 1.5             | -144 | Mkt: 55.7% | Model: 78.6% | Edge: 22.9% | Kelly: 11.95%
+    pitcher_outs | Mike Burrows over 15.5 | -114 | Mkt: 51.2% | Model: 74.9% | Edge: 23.7% | Kelly: 11.55%
+    pitcher_outs | Garrett Crochet over 17.5 | -170 | Mkt: 61.6% | Model: 96.7% | Edge: 35.1% | Kelly: 22.77%
+    pitcher_strikeouts | Garrett Crochet under 7.5 | -132 | Mkt: 57.1% | Model: 88.0% | Edge: 30.8% | Kelly: 18.02%
+    pitcher_strikeouts | Mike Burrows under 5.5 | -105 | Mkt: 50.6% | Model: 72.6% | Edge: 21.9% | Kelly: 10.94%
+    batter_hits  | Willson Contreras under 0.5 | +145 | Mkt: 39.5% | Model: 70.7% | Edge: 31.2% | Kelly: 12.62%
+    batter_hits  | Carlos Correa under 0.5 | +140 | Mkt: 40.8% | Model: 55.8% | Edge: 15.0% | Kelly:  6.05%
+    batter_hits  | Jose Altuve under 0.5 | +156 | Mkt: 35.5% | Model: 63.5% | Edge: 28.0% | Kelly: 10.03%
+    batter_hits  | Christian Vazquez under 0.5 | -118 | Mkt: 50.9% | Model: 67.8% | Edge: 16.9% | Kelly:  7.46%
+    batter_hits  | Trevor Story under 0.5 | +150 | Mkt: 36.9% | Model: 49.9% | Edge: 13.0% | Kelly:  4.13%
+    batter_hits  | Jake Meyers under 0.5 | +110 | Mkt: 45.0% | Model: 64.4% | Edge: 19.5% | Kelly:  8.03%
+    batter_hits  | Ceddanne Rafaela over 0.5 | -145 | Mkt: 57.5% | Model: 70.6% | Edge: 13.1% | Kelly:  6.97%
+    batter_hits  | Yordan Alvarez under 0.5 | +160 | Mkt: 35.5% | Model: 57.2% | Edge: 21.7% | Kelly:  7.62%
+    batter_hits  | Jarren Duran over 0.5 | -210 | Mkt: 65.8% | Model: 74.6% | Edge:  8.8% | Kelly:  5.33%
+    batter_hits  | Cam Smith under 0.5  | -103 | Mkt: 48.0% | Model: 78.8% | Edge: 30.7% | Kelly: 14.22%
+    batter_hits  | Isaac Paredes under 0.5 | +125 | Mkt: 43.9% | Model: 66.8% | Edge: 22.9% | Kelly: 10.08%
+    batter_hits  | Wilyer Abreu over 0.5 | -183 | Mkt: 62.0% | Model: 87.9% | Edge: 25.9% | Kelly: 16.44%
+    batter_hits  | Christian Walker under 0.5 | +105 | Mkt: 46.0% | Model: 51.0% | Edge:  5.0% | Kelly:  1.10%
+    batter_hits  | Brice Matthews under 0.5 | -154 | Mkt: 58.8% | Model: 66.5% | Edge:  7.8% | Kelly:  3.74%
+    batter_hits  | Caleb Durbin over 0.5 | -165 | Mkt: 59.8% | Model: 71.5% | Edge: 11.7% | Kelly:  6.12%
+    batter_hits  | Masataka Yoshida over 0.5 | -190 | Mkt: 63.2% | Model: 74.6% | Edge: 11.4% | Kelly:  6.57%
+    batter_hits  | Connor Wong over 0.5 | -109 | Mkt: 49.3% | Model: 66.6% | Edge: 17.3% | Kelly:  7.56%
+    batter_hits_runs_rbis | Jarren Duran over 1.5 | -105 | Mkt: 51.8% | Model: 57.8% | Edge:  6.0% | Kelly:  3.37%
+    batter_hits_runs_rbis | Willson Contreras under 1.5 | -120 | Mkt: 51.7% | Model: 79.8% | Edge: 28.1% | Kelly: 13.87%
+    batter_hits_runs_rbis | Wilyer Abreu over 1.5 | +102 | Mkt: 47.6% | Model: 77.4% | Edge: 29.8% | Kelly: 13.83%
+    batter_hits_runs_rbis | Jose Altuve under 1.5 | -120 | Mkt: 53.0% | Model: 78.7% | Edge: 25.7% | Kelly: 13.30%
+    batter_hits_runs_rbis | Yordan Alvarez under 1.5 | -110 | Mkt: 52.4% | Model: 73.0% | Edge: 20.6% | Kelly: 10.80%
+    batter_hits_runs_rbis | Trevor Story under 1.5 | -110 | Mkt: 51.0% | Model: 62.3% | Edge: 11.4% | Kelly:  5.23%
+    batter_hits_runs_rbis | Masataka Yoshida over 1.5 | +106 | Mkt: 48.1% | Model: 56.9% | Edge:  8.8% | Kelly:  4.05%
+    batter_hits_runs_rbis | Caleb Durbin over 1.5 | +123 | Mkt: 42.2% | Model: 55.8% | Edge: 13.6% | Kelly:  4.98%
+    batter_hits_runs_rbis | Carlos Correa under 1.5 | -145 | Mkt: 58.0% | Model: 76.3% | Edge: 18.4% | Kelly: 10.48%
+    batter_hits_runs_rbis | Ceddanne Rafaela over 1.5 | +140 | Mkt: 39.9% | Model: 54.5% | Edge: 14.6% | Kelly:  5.52%
+    batter_hits_runs_rbis | Jake Meyers under 1.5 | -180 | Mkt: 61.7% | Model: 82.7% | Edge: 21.1% | Kelly: 12.89%
+    batter_hits_runs_rbis | Isaac Paredes under 0.5 | +127 | Mkt: 40.8% | Model: 61.9% | Edge: 21.1% | Kelly:  7.98%
+    batter_hits_runs_rbis | Christian Walker under 0.5 | +127 | Mkt: 40.9% | Model: 47.4% | Edge:  6.5% | Kelly:  1.50%
+    batter_hits_runs_rbis | Cam Smith under 0.5  | +125 | Mkt: 41.3% | Model: 71.3% | Edge: 30.0% | Kelly: 12.07%
+    batter_hits_runs_rbis | Christian Vazquez under 0.5 | +104 | Mkt: 45.6% | Model: 63.6% | Edge: 17.9% | Kelly:  7.15%
+    batter_hits_runs_rbis | Connor Wong over 0.5 | -135 | Mkt: 54.6% | Model: 70.8% | Edge: 16.2% | Kelly:  7.85%
+    batter_hits_runs_rbis | Brice Matthews under 0.5 | -134 | Mkt: 54.6% | Model: 62.6% | Edge:  8.0% | Kelly:  3.12%
+    batter_rbis  | Cam Smith under 0.5  | -400 | Mkt: 77.9% | Model: 89.5% | Edge: 11.5% | Kelly: 11.85%
+    batter_rbis  | Willson Contreras under 0.5 | -221 | Mkt: 66.7% | Model: 92.8% | Edge: 26.2% | Kelly: 19.25%
+    batter_rbis  | Wilyer Abreu over 0.5 | +179 | Mkt: 33.2% | Model: 57.4% | Edge: 24.2% | Kelly:  8.41%
+    batter_rbis  | Masataka Yoshida over 0.5 | +205 | Mkt: 28.3% | Model: 33.7% | Edge:  5.4% | Kelly:  0.33%
+    batter_rbis  | Jarren Duran over 0.5 | +214 | Mkt: 28.7% | Model: 35.3% | Edge:  6.6% | Kelly:  1.28%
+    batter_rbis  | Yordan Alvarez under 0.5 | -333 | Mkt: 74.2% | Model: 82.8% | Edge:  8.5% | Kelly:  6.36%
+    batter_rbis  | Carlos Correa under 0.5 | -275 | Mkt: 72.2% | Model: 86.6% | Edge: 14.5% | Kelly: 12.47%
+    batter_rbis  | Christian Walker under 0.5 | -295 | Mkt: 73.1% | Model: 82.5% | Edge:  9.3% | Kelly:  7.68%
+    batter_rbis  | Ceddanne Rafaela over 0.5 | +243 | Mkt: 26.8% | Model: 35.1% | Edge:  8.3% | Kelly:  2.09%
+    batter_rbis  | Jose Altuve under 0.5 | -350 | Mkt: 75.5% | Model: 91.2% | Edge: 15.7% | Kelly: 15.10%
+    batter_rbis  | Caleb Durbin over 0.5 | +253 | Mkt: 26.5% | Model: 36.3% | Edge:  9.8% | Kelly:  2.77%
+    batter_rbis  | Jake Meyers under 0.5 | -400 | Mkt: 77.8% | Model: 88.4% | Edge: 10.7% | Kelly: 10.55%
+    batter_rbis  | Isaac Paredes under 0.5 | -295 | Mkt: 74.4% | Model: 85.9% | Edge: 11.5% | Kelly: 11.10%
+    batter_rbis  | Connor Wong over 0.5 | +288 | Mkt: 21.4% | Model: 33.3% | Edge: 11.9% | Kelly:  2.52%
+    batter_rbis  | Brice Matthews under 0.5 | -467 | Mkt: 80.3% | Model: 89.9% | Edge:  9.6% | Kelly: 10.62%
+    batter_rbis  | Christian Vazquez under 0.5 | -500 | Mkt: 81.2% | Model: 91.9% | Edge: 10.7% | Kelly: 12.88%
+    batter_total_bases | Christian Walker under 0.5 | +105 | Mkt: 46.0% | Model: 51.0% | Edge:  5.0% | Kelly:  1.10%
+    batter_total_bases | Jose Altuve under 1.5 | -190 | Mkt: 63.0% | Model: 83.5% | Edge: 20.4% | Kelly: 13.01%
+    batter_total_bases | Jake Meyers under 0.5 | +103 | Mkt: 46.0% | Model: 64.4% | Edge: 18.5% | Kelly:  7.48%
+    batter_total_bases | Jarren Duran over 1.5 | +122 | Mkt: 42.3% | Model: 52.2% | Edge:  9.9% | Kelly:  3.27%
+    batter_total_bases | Ceddanne Rafaela over 0.5 | -156 | Mkt: 58.5% | Model: 70.6% | Edge: 12.1% | Kelly:  6.16%
+    batter_total_bases | Carlos Correa under 0.5 | +144 | Mkt: 37.7% | Model: 55.8% | Edge: 18.1% | Kelly:  6.27%
+    batter_total_bases | Yordan Alvarez under 1.5 | -164 | Mkt: 59.8% | Model: 71.6% | Edge: 11.8% | Kelly:  6.24%
+    batter_total_bases | Isaac Paredes under 0.5 | +125 | Mkt: 41.5% | Model: 66.8% | Edge: 25.3% | Kelly: 10.08%
+    batter_total_bases | Wilyer Abreu over 1.5 | +132 | Mkt: 40.2% | Model: 78.0% | Edge: 37.9% | Kelly: 15.35%
+    batter_total_bases | Cam Smith under 0.5  | -104 | Mkt: 48.2% | Model: 78.8% | Edge: 30.6% | Kelly: 14.17%
+    batter_total_bases | Caleb Durbin over 0.5 | -165 | Mkt: 59.4% | Model: 71.5% | Edge: 12.1% | Kelly:  6.12%
+    batter_total_bases | Willson Contreras under 1.5 | -170 | Mkt: 60.6% | Model: 96.2% | Edge: 35.6% | Kelly: 22.43%
+    batter_total_bases | Masataka Yoshida over 1.5 | +149 | Mkt: 37.0% | Model: 51.3% | Edge: 14.3% | Kelly:  4.66%
+    batter_total_bases | Connor Wong over 0.5 | -106 | Mkt: 48.2% | Model: 66.6% | Edge: 18.4% | Kelly:  7.81%
+    batter_total_bases | Christian Vazquez under 0.5 | -118 | Mkt: 50.9% | Model: 67.8% | Edge: 16.9% | Kelly:  7.46%
+    batter_total_bases | Brice Matthews under 0.5 | -155 | Mkt: 57.6% | Model: 66.5% | Edge:  8.9% | Kelly:  3.66%
+    pitcher_earned_runs | Garrett Crochet under 1.5 | +114 | Mkt: 43.6% | Model: 83.4% | Edge: 39.9% | Kelly: 17.23%
+    pitcher_earned_runs | Mike Burrows over 2.5 | +130 | Mkt: 40.1% | Model: 54.8% | Edge: 14.7% | Kelly:  5.02%
+    pitcher_hits_allowed | Garrett Crochet under 4.5 | -120 | Mkt: 51.1% | Model: 88.0% | Edge: 36.9% | Kelly: 18.40%
+    pitcher_hits_allowed | Mike Burrows over 4.5 | -110 | Mkt: 48.9% | Model: 80.4% | Edge: 31.5% | Kelly: 14.70%
+    batter_runs_scored | Willson Contreras under 0.5 | -145 | Mkt: 57.0% | Model: 70.6% | Edge: 13.6% | Kelly:  7.02%
+    batter_runs_scored | Wilyer Abreu over 0.5 | +130 | Mkt: 40.8% | Model: 66.5% | Edge: 25.8% | Kelly: 10.18%
+    batter_runs_scored | Trevor Story under 0.5 | -165 | Mkt: 59.7% | Model: 68.2% | Edge:  8.6% | Kelly:  3.95%
+    batter_runs_scored | Jose Altuve under 0.5 | -160 | Mkt: 59.7% | Model: 73.2% | Edge: 13.6% | Kelly:  7.61%
+    batter_runs_scored | Yordan Alvarez under 0.5 | -180 | Mkt: 61.3% | Model: 73.8% | Edge: 12.5% | Kelly:  6.65%
+    batter_runs_scored | Masataka Yoshida over 0.5 | +150 | Mkt: 36.2% | Model: 46.0% | Edge:  9.8% | Kelly:  2.52%
+    batter_runs_scored | Caleb Durbin over 0.5 | +175 | Mkt: 33.1% | Model: 46.7% | Edge: 13.6% | Kelly:  4.06%
+    batter_runs_scored | Carlos Correa under 0.5 | -235 | Mkt: 67.7% | Model: 84.0% | Edge: 16.2% | Kelly: 11.58%
+    batter_runs_scored | Ceddanne Rafaela over 0.5 | +180 | Mkt: 32.3% | Model: 44.2% | Edge: 11.9% | Kelly:  3.29%
+    batter_runs_scored | Christian Walker under 0.5 | -250 | Mkt: 69.0% | Model: 85.4% | Edge: 16.4% | Kelly: 12.26%
+    batter_runs_scored | Isaac Paredes under 0.5 | -210 | Mkt: 67.3% | Model: 87.8% | Edge: 20.5% | Kelly: 15.56%
+    batter_runs_scored | Connor Wong over 0.5 | +200 | Mkt: 29.3% | Model: 38.7% | Edge:  9.4% | Kelly:  2.03%
+    batter_runs_scored | Cam Smith under 0.5  | -275 | Mkt: 71.1% | Model: 88.6% | Edge: 17.5% | Kelly: 14.31%
+    batter_runs_scored | Jake Meyers under 0.5 | -290 | Mkt: 72.5% | Model: 89.1% | Edge: 16.6% | Kelly: 14.41%
+    batter_runs_scored | Christian Vazquez under 0.5 | -310 | Mkt: 74.0% | Model: 86.8% | Edge: 12.8% | Kelly: 11.51%
+    batter_runs_scored | Brice Matthews under 0.5 | -325 | Mkt: 74.1% | Model: 88.5% | Edge: 14.4% | Kelly: 12.83%
+    batter_strikeouts | Trevor Story under 1.5 | -125 | Mkt: 52.2% | Model: 63.1% | Edge: 10.8% | Kelly:  4.22%
+    batter_strikeouts | Isaac Paredes under 0.5 | +155 | Mkt: 35.2% | Model: 41.5% | Edge:  6.3% | Kelly:  0.95%
+    batter_strikeouts | Cam Smith under 1.5  | -160 | Mkt: 58.3% | Model: 86.5% | Edge: 28.1% | Kelly: 16.20%
+    batter_strikeouts | Caleb Durbin over 0.5 | +105 | Mkt: 45.1% | Model: 63.1% | Edge: 18.1% | Kelly:  6.99%
+    batter_strikeouts | Carlos Correa under 0.5 | +170 | Mkt: 32.8% | Model: 61.7% | Edge: 28.9% | Kelly:  9.81%
+    batter_strikeouts | Willson Contreras under 1.5 | -200 | Mkt: 63.8% | Model: 83.0% | Edge: 19.2% | Kelly: 12.26%
+    batter_strikeouts | Christian Walker under 1.5 | -165 | Mkt: 59.2% | Model: 89.4% | Edge: 30.2% | Kelly: 17.97%
+    batter_strikeouts | Jarren Duran under 1.5 | -210 | Mkt: 64.8% | Model: 73.1% | Edge:  8.3% | Kelly:  4.12%
+    batter_strikeouts | Wilyer Abreu under 1.5 | -275 | Mkt: 70.5% | Model: 93.1% | Edge: 22.6% | Kelly: 18.49%
+    batter_strikeouts | Jose Altuve under 1.5 | -250 | Mkt: 68.5% | Model: 86.4% | Edge: 17.8% | Kelly: 13.08%
+    batter_strikeouts | Brice Matthews under 1.5 | +100 | Mkt: 46.1% | Model: 78.8% | Edge: 32.7% | Kelly: 14.40%
+    batter_total_bases | Willson Contreras under 0.5 | +128 | Mkt: 40.9% | Model: 70.0% | Edge: 29.1% | Kelly: 11.65%
+
+  TB@MIL
+  ----------------------------------------
+    run_line     | home -1.5            | +158 | Mkt: 37.6% | Model: 44.1% | Edge:  6.5% | Kelly:  2.19%
+    team_total_home | home over 3.5        | -115 | Mkt: 50.9% | Model: 56.6% | Edge:  5.7% | Kelly:  1.70%
+    team_total_away | away under 3.5       | -143 | Mkt: 56.8% | Model: 64.7% | Edge:  7.9% | Kelly:  3.57%
+    first_5_rl   | away +0.5            | -125 | Mkt: 53.8% | Model: 61.4% | Edge:  7.6% | Kelly:  3.28%
+    first_3_total | over 1.5             | -152 | Mkt: 57.0% | Model: 73.5% | Edge: 16.5% | Kelly:  8.33%
+    first_3_rl   | away +0.5            | -160 | Mkt: 59.9% | Model: 65.8% | Edge:  5.9% | Kelly:  2.78%
+    pitcher_outs | Jacob Misiorowski over 15.5 | +115 | Mkt: 44.0% | Model: 85.3% | Edge: 41.3% | Kelly: 18.13%
+    pitcher_outs | Drew Rasmussen over 15.5 | +140 | Mkt: 39.4% | Model: 99.9% | Edge: 60.5% | Kelly: 24.97%
+    pitcher_strikeouts | Jacob Misiorowski over 6.5 | +107 | Mkt: 47.5% | Model: 56.2% | Edge:  8.7% | Kelly:  3.80%
+    pitcher_strikeouts | Drew Rasmussen under 4.5 | -114 | Mkt: 51.0% | Model: 95.6% | Edge: 44.5% | Kelly: 22.63%
+    batter_hits  | Jake Fraley under 0.5 | +100 | Mkt: 48.4% | Model: 59.4% | Edge: 11.0% | Kelly:  4.71%
+    batter_hits  | Cedric Mullins under 0.5 | -110 | Mkt: 50.0% | Model: 56.1% | Edge:  6.1% | Kelly:  1.97%
+    batter_hits  | Christian Yelich under 0.5 | +140 | Mkt: 38.7% | Model: 45.3% | Edge:  6.5% | Kelly:  1.54%
+    batter_hits  | Junior Caminero under 0.5 | +136 | Mkt: 38.9% | Model: 67.9% | Edge: 29.0% | Kelly: 11.09%
+    batter_hits  | Chandler Simpson under 0.5 | +145 | Mkt: 38.3% | Model: 55.9% | Edge: 17.5% | Kelly:  6.36%
+    batter_hits  | William Contreras under 0.5 | +200 | Mkt: 32.7% | Model: 66.4% | Edge: 33.7% | Kelly: 12.40%
+    batter_hits  | Yandy Diaz under 1.5 | -227 | Mkt: 66.8% | Model: 76.7% | Edge:  9.9% | Kelly:  5.97%
+    batter_hits  | Sal Frelick under 0.5 | +136 | Mkt: 39.1% | Model: 72.9% | Edge: 33.9% | Kelly: 13.25%
+    batter_hits  | Jonathan Aranda under 0.5 | +115 | Mkt: 43.9% | Model: 53.3% | Edge:  9.4% | Kelly:  3.16%
+    batter_hits  | Brice Turang under 0.5 | +160 | Mkt: 36.8% | Model: 43.3% | Edge:  6.5% | Kelly:  1.95%
+    batter_hits  | Ben Williamson under 0.5 | +110 | Mkt: 45.5% | Model: 58.3% | Edge: 12.8% | Kelly:  5.08%
+    batter_hits  | Nick Fortes under 0.5 | +110 | Mkt: 44.5% | Model: 54.2% | Edge:  9.7% | Kelly:  3.14%
+    batter_hits_runs_rbis | David Hamilton under 0.5 | +121 | Mkt: 42.9% | Model: 49.5% | Edge:  6.7% | Kelly:  1.96%
+    batter_hits_runs_rbis | Yandy Diaz under 1.5 | -109 | Mkt: 49.3% | Model: 56.0% | Edge:  6.7% | Kelly:  2.03%
+    batter_hits_runs_rbis | Chandler Simpson under 1.5 | -160 | Mkt: 60.1% | Model: 70.6% | Edge: 10.5% | Kelly:  5.89%
+    batter_hits_runs_rbis | Jonathan Aranda under 1.5 | -160 | Mkt: 59.2% | Model: 64.2% | Edge:  5.1% | Kelly:  1.75%
+    batter_hits_runs_rbis | Brice Turang under 1.5 | -118 | Mkt: 52.6% | Model: 71.3% | Edge: 18.7% | Kelly:  9.35%
+    batter_hits_runs_rbis | William Contreras under 1.5 | -106 | Mkt: 50.1% | Model: 75.2% | Edge: 25.0% | Kelly: 12.21%
+    batter_hits_runs_rbis | Christian Yelich under 1.5 | -135 | Mkt: 54.8% | Model: 66.9% | Edge: 12.1% | Kelly:  5.55%
+    batter_hits_runs_rbis | Junior Caminero under 1.5 | -135 | Mkt: 54.5% | Model: 82.3% | Edge: 27.9% | Kelly: 14.62%
+    batter_hits_runs_rbis | Sal Frelick under 1.5 | -148 | Mkt: 57.8% | Model: 80.2% | Edge: 22.4% | Kelly: 12.70%
+    batter_hits_runs_rbis | Joey Ortiz under 0.5 | +134 | Mkt: 40.8% | Model: 47.6% | Edge:  6.8% | Kelly:  2.14%
+    batter_hits_runs_rbis | Nick Fortes under 0.5 | +130 | Mkt: 40.3% | Model: 48.7% | Edge:  8.3% | Kelly:  2.30%
+    batter_hits_runs_rbis | Ben Williamson under 0.5 | +135 | Mkt: 40.0% | Model: 52.1% | Edge: 12.2% | Kelly:  4.17%
+    batter_hits_runs_rbis | Garrett Mitchell under 1.5 | -190 | Mkt: 62.7% | Model: 68.7% | Edge:  5.9% | Kelly:  2.28%
+    batter_hits_runs_rbis | Cedric Mullins under 0.5 | +114 | Mkt: 45.0% | Model: 50.8% | Edge:  5.7% | Kelly:  1.89%
+    batter_hits_runs_rbis | Jake Fraley under 0.5 | +111 | Mkt: 45.9% | Model: 54.5% | Edge:  8.6% | Kelly:  3.38%
+    batter_hits_runs_rbis | Blake Perkins under 0.5 | +125 | Mkt: 41.3% | Model: 49.0% | Edge:  7.8% | Kelly:  2.07%
+    batter_rbis  | Garrett Mitchell under 0.5 | -300 | Mkt: 73.6% | Model: 80.6% | Edge:  7.0% | Kelly:  5.58%
+    batter_rbis  | Junior Caminero under 0.5 | -220 | Mkt: 66.7% | Model: 92.3% | Edge: 25.6% | Kelly: 18.82%
+    batter_rbis  | William Contreras under 0.5 | -250 | Mkt: 69.0% | Model: 76.7% | Edge:  7.7% | Kelly:  4.63%
+    batter_rbis  | Christian Yelich under 0.5 | -289 | Mkt: 71.5% | Model: 78.8% | Edge:  7.3% | Kelly:  4.36%
+    batter_rbis  | Jake Bauers under 0.5 | -250 | Mkt: 70.0% | Model: 79.0% | Edge:  8.9% | Kelly:  6.61%
+    batter_rbis  | Brice Turang under 0.5 | -325 | Mkt: 74.3% | Model: 92.2% | Edge: 17.9% | Kelly: 16.71%
+    batter_rbis  | David Hamilton under 0.5 | -365 | Mkt: 76.2% | Model: 83.7% | Edge:  7.5% | Kelly:  6.10%
+    batter_rbis  | Sal Frelick under 0.5 | -325 | Mkt: 74.7% | Model: 81.5% | Edge:  6.9% | Kelly:  5.37%
+    batter_rbis  | Joey Ortiz under 0.5 | -325 | Mkt: 75.2% | Model: 84.1% | Edge:  8.9% | Kelly:  8.09%
+    batter_rbis  | Blake Perkins under 0.5 | -375 | Mkt: 76.5% | Model: 82.8% | Edge:  6.3% | Kelly:  4.58%
+    batter_total_bases | Chandler Simpson under 0.5 | +130 | Mkt: 40.2% | Model: 55.9% | Edge: 15.7% | Kelly:  5.49%
+    batter_total_bases | Brice Turang under 1.5 | -193 | Mkt: 63.3% | Model: 75.0% | Edge: 11.7% | Kelly:  6.70%
+    batter_total_bases | Yandy Diaz under 1.5 | -158 | Mkt: 58.5% | Model: 67.6% | Edge:  9.0% | Kelly:  4.08%
+    batter_total_bases | Christian Yelich under 1.5 | -224 | Mkt: 66.6% | Model: 72.6% | Edge:  6.0% | Kelly:  2.79%
+    batter_total_bases | William Contreras under 1.5 | -160 | Mkt: 59.8% | Model: 76.3% | Edge: 16.5% | Kelly:  9.57%
+    batter_total_bases | Jake Fraley under 0.5 | +105 | Mkt: 47.6% | Model: 59.4% | Edge: 11.8% | Kelly:  5.19%
+    batter_total_bases | Nick Fortes under 0.5 | +105 | Mkt: 45.6% | Model: 54.2% | Edge:  8.6% | Kelly:  2.65%
+    batter_total_bases | Ben Williamson under 0.5 | +109 | Mkt: 44.9% | Model: 58.3% | Edge: 13.4% | Kelly:  4.99%
+    batter_total_bases | Sal Frelick under 0.5 | +130 | Mkt: 40.0% | Model: 72.9% | Edge: 32.9% | Kelly: 13.02%
+    batter_total_bases | Jonathan Aranda under 0.5 | +115 | Mkt: 43.5% | Model: 53.3% | Edge:  9.8% | Kelly:  3.16%
+    batter_total_bases | Junior Caminero under 0.5 | +135 | Mkt: 39.4% | Model: 67.9% | Edge: 28.6% | Kelly: 11.05%
+    pitcher_earned_runs | Drew Rasmussen under 1.5 | +120 | Mkt: 42.5% | Model: 64.6% | Edge: 22.1% | Kelly:  8.78%
+    pitcher_earned_runs | Jacob Misiorowski under 1.5 | -120 | Mkt: 51.1% | Model: 75.1% | Edge: 24.0% | Kelly: 11.32%
+    pitcher_hits_allowed | Jacob Misiorowski under 3.5 | -110 | Mkt: 49.8% | Model: 92.1% | Edge: 42.3% | Kelly: 20.85%
+    pitcher_hits_allowed | Drew Rasmussen under 4.5 | -154 | Mkt: 57.4% | Model: 62.8% | Edge:  5.4% | Kelly:  1.37%
+    batter_runs_scored | William Contreras under 0.5 | -160 | Mkt: 58.3% | Model: 76.5% | Edge: 18.1% | Kelly:  9.71%
+    batter_runs_scored | Brice Turang under 0.5 | -160 | Mkt: 58.8% | Model: 82.9% | Edge: 24.1% | Kelly: 13.91%
+    batter_runs_scored | Yandy Diaz under 0.5 | -170 | Mkt: 60.1% | Model: 66.0% | Edge:  5.9% | Kelly:  2.04%
+    batter_runs_scored | Junior Caminero under 0.5 | -180 | Mkt: 62.0% | Model: 77.2% | Edge: 15.2% | Kelly:  9.06%
+    batter_runs_scored | Christian Yelich under 0.5 | -190 | Mkt: 62.7% | Model: 74.9% | Edge: 12.2% | Kelly:  6.83%
+    batter_runs_scored | Garrett Mitchell under 0.5 | -220 | Mkt: 66.0% | Model: 76.1% | Edge: 10.1% | Kelly:  5.91%
+    batter_runs_scored | Sal Frelick under 0.5 | -230 | Mkt: 68.2% | Model: 80.7% | Edge: 12.5% | Kelly:  9.06%
+    batter_runs_scored | Cedric Mullins under 0.5 | -230 | Mkt: 67.2% | Model: 73.3% | Edge:  6.1% | Kelly:  2.99%
+    batter_runs_scored | Jake Bauers under 0.5 | -200 | Mkt: 65.1% | Model: 75.7% | Edge: 10.6% | Kelly:  6.78%
+    batter_runs_scored | David Hamilton under 0.5 | -240 | Mkt: 68.0% | Model: 77.4% | Edge:  9.3% | Kelly:  5.76%
+    batter_runs_scored | Joey Ortiz under 0.5 | -250 | Mkt: 69.3% | Model: 77.1% | Edge:  7.8% | Kelly:  4.93%
+    batter_runs_scored | Jake Fraley under 0.5 | -235 | Mkt: 69.2% | Model: 75.4% | Edge:  6.2% | Kelly:  4.36%
+    batter_runs_scored | Blake Perkins under 0.5 | -275 | Mkt: 70.5% | Model: 76.8% | Edge:  6.4% | Kelly:  3.28%
+    batter_strikeouts | Sal Frelick under 0.5 | -130 | Mkt: 52.8% | Model: 81.3% | Edge: 28.6% | Kelly: 14.27%
+    batter_strikeouts | Joey Ortiz under 0.5 | -125 | Mkt: 52.2% | Model: 60.4% | Edge:  8.2% | Kelly:  2.73%
+    batter_strikeouts | Garrett Mitchell under 1.5 | -160 | Mkt: 58.3% | Model: 93.3% | Edge: 35.0% | Kelly: 20.67%
+    batter_strikeouts | William Contreras under 0.5 | +130 | Mkt: 39.6% | Model: 69.1% | Edge: 29.5% | Kelly: 11.32%
+    batter_strikeouts | Junior Caminero under 1.5 | -250 | Mkt: 68.8% | Model: 79.2% | Edge: 10.4% | Kelly:  6.78%
+    batter_strikeouts | Chandler Simpson over 0.5 | -110 | Mkt: 48.9% | Model: 74.1% | Edge: 25.2% | Kelly: 11.41%
+    batter_strikeouts | Jake Bauers under 1.5 | -275 | Mkt: 70.5% | Model: 93.2% | Edge: 22.7% | Kelly: 18.62%
+    batter_strikeouts | Jonathan Aranda under 1.5 | -125 | Mkt: 52.2% | Model: 73.0% | Edge: 20.7% | Kelly:  9.79%
+    batter_strikeouts | Richie Palacios over 0.5 | -165 | Mkt: 59.2% | Model: 73.0% | Edge: 13.8% | Kelly:  7.10%
+    batter_strikeouts | Brice Turang under 0.5 | +165 | Mkt: 33.7% | Model: 59.9% | Edge: 26.2% | Kelly:  8.88%
+    batter_strikeouts | Jake Fraley over 1.5 | +140 | Mkt: 37.6% | Model: 43.3% | Edge:  5.7% | Kelly:  0.70%
+    batter_strikeouts | Nick Fortes over 0.5 | -190 | Mkt: 62.4% | Model: 76.4% | Edge: 14.1% | Kelly:  7.90%
+    batter_strikeouts | Blake Perkins under 1.5 | -275 | Mkt: 70.7% | Model: 95.8% | Edge: 25.1% | Kelly: 21.06%
+    batter_strikeouts | Ben Williamson over 0.5 | -250 | Mkt: 68.5% | Model: 74.4% | Edge:  5.8% | Kelly:  2.56%
+    batter_strikeouts | David Hamilton under 0.5 | +145 | Mkt: 36.6% | Model: 66.8% | Edge: 30.3% | Kelly: 10.99%
+    batter_hits  | Joey Ortiz under 0.5 | +106 | Mkt: 45.4% | Model: 51.5% | Edge:  6.0% | Kelly:  1.42%
+    batter_total_bases | Richie Palacios under 0.5 | -125 | Mkt: 54.6% | Model: 59.6% | Edge:  5.0% | Kelly:  2.27%
+    batter_total_bases | Joey Ortiz under 0.5 | +105 | Mkt: 46.3% | Model: 51.5% | Edge:  5.1% | Kelly:  1.31%
+
+  Status: Pending
+============================================================
+

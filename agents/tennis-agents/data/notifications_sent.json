@@ -1,0 +1,48 @@
+{
+  "2026-04-20": [
+    "C. Garin vs N. Jarry|game_handicap|player_b 2.5",
+    "Z. Svajda vs R. Sakamoto|game_handicap|player_a 1.5"
+  ],
+  "2026-04-23": [
+    "A. Parks vs A. Li|total_games|under 22.5",
+    "A. Sabalenka vs P. Stearns|moneyline|player_b",
+    "B. Bencic vs P. Marcinko|moneyline|player_b",
+    "C. Ugo Carabelli vs G. Monfils|moneyline|player_b",
+    "D. Altmaier vs J. M. Cerundolo|moneyline|player_a",
+    "I. Swiatek vs D. Snigur|moneyline|player_b",
+    "M. Landaluce vs A. Walton|moneyline|player_b",
+    "M. Trungelliti vs D. Merida Aguilar|game_handicap|player_a 1.5",
+    "M. Trungelliti vs D. Merida Aguilar|total_games|under 22.5",
+    "P. Kypson vs S. Tsitsipas|moneyline|player_b",
+    "Xin. Wang vs L. Samson|moneyline|player_b",
+    "Y. Hanfmann vs M. Giron|moneyline|player_b",
+    "Y. Starodubtseva vs J. Cristian|game_handicap|player_b 2.5",
+    "Y. Starodubtseva vs J. Cristian|total_games|over 21.5"
+  ],
+  "2026-04-24": [
+    "J. Fonseca vs M. Cilic|moneyline|player_b",
+    "Y. Putintseva vs M. Kostyuk|game_handicap|player_b -4.5"
+  ],
+  "2026-04-25": [
+    "B. Bencic vs D. Shnaider|moneyline|player_a",
+    "B. Nakashima vs A. Blockx|moneyline|player_a",
+    "F. Cerundolo vs Y. Hanfmann|moneyline|player_b",
+    "H. Baptiste vs J. Paolini|moneyline|player_a",
+    "J. M. Cerundolo vs L. Darderi|moneyline|player_a",
+    "L. Tien vs D. Vallejo|moneyline|player_a",
+    "U. Humbert vs T. Atmane|moneyline|player_a"
+  ],
+  "2026-04-26": [
+    "K. Siniakova vs C. McNally|moneyline|player_a",
+    "L. Noskova vs L. Samsonova|moneyline|player_a",
+    "S. Cirstea vs C. Gauff|moneyline|player_a",
+    "T. Griekspoor vs L. Musetti|moneyline|player_a"
+  ],
+  "2026-04-27": [
+    "A. Davidovich Fokina vs C. Ruud|moneyline|player_a"
+  ],
+  "2026-04-28": [
+    "A. Sabalenka vs H. Baptiste|total_games|over 17.5",
+    "A. Sabalenka vs H. Baptiste|total_games|under 19.5"
+  ]
+}

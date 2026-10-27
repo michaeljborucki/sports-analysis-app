@@ -1,0 +1,26 @@
+{
+  "discord": {
+    "enabled": true,
+    "webhook_url": "${DISCORD_WEBHOOK_URL}"
+  },
+  "discord_grades": {
+    "enabled": true,
+    "webhook_url": "${DISCORD_GRADES_WEBHOOK_URL}"
+  },
+  "discord_summary": {
+    "enabled": true,
+    "webhook_url": "${DISCORD_SUMMARY_WEBHOOK_URL}"
+  },
+  "discord_season": {
+    "enabled": true,
+    "webhook_url": "${DISCORD_SEASON_WEBHOOK_URL}"
+  },
+  "bet_types": [
+    "moneyline",
+    "run_line",
+    "total",
+    "nrfi"
+  ],
+  "min_edge_pct": 0.0,
+  "min_kelly_pct": 0.0
+}

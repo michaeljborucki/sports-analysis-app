@@ -1,0 +1,86 @@
+{
+  "date": "2026-06-04",
+  "generated_at": "2026-06-04T13:34:56",
+  "total_picks": 5,
+  "games": [
+    {
+      "game": "SD@PHI",
+      "game_time_et": "1:05 PM ET",
+      "picks": [
+        {
+          "bet_type": "first_5_rl",
+          "side": "home -1.5",
+          "odds": 109,
+          "market_prob": 0.4557,
+          "model_prob": 0.5366,
+          "edge": 0.0809,
+          "kelly_pct": 0.0279,
+          "be_odds": -110,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "CLE@NYY",
+      "game_time_et": "1:35 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": 102,
+          "market_prob": 0.4798,
+          "model_prob": 0.5641,
+          "edge": 0.0843,
+          "kelly_pct": 0.0342,
+          "be_odds": -120,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "SF@MIL",
+      "game_time_et": "2:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "first_5_rl",
+          "side": "away +0.5",
+          "odds": 110,
+          "market_prob": 0.4566,
+          "model_prob": 0.5493,
+          "edge": 0.0927,
+          "kelly_pct": 0.0349,
+          "be_odds": -115,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "BAL@BOS",
+      "game_time_et": "1:35 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 4.5",
+          "odds": 116,
+          "market_prob": 0.4482,
+          "model_prob": 0.5641,
+          "edge": 0.1159,
+          "kelly_pct": 0.0471,
+          "be_odds": -120,
+          "result": null
+        },
+        {
+          "bet_type": "moneyline",
+          "side": "home",
+          "odds": -112,
+          "market_prob": 0.5252,
+          "model_prob": 0.5669,
+          "edge": 0.0417,
+          "kelly_pct": 0.0205,
+          "be_odds": -125,
+          "result": null
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "label": "2026-04-22",
+  "generated_at": "2026-04-22T16:23:30",
+  "total_picks": 3,
+  "total_matches": 2,
+  "record": {
+    "wins": 0,
+    "losses": 0,
+    "pushes": 0,
+    "settled": 0,
+    "pending": 3,
+    "profit_units": 0.0
+  },
+  "picks": [
+    {
+      "date": "2026-04-22",
+      "start_time": "2026-04-22 18:30",
+      "game": "Z. Bergs vs M. Cilic",
+      "player_a": "Z. Bergs",
+      "player_b": "M. Cilic",
+      "bet_type": "moneyline",
+      "side": "Z. Bergs",
+      "side_raw": "player_a",
+      "odds": -110,
+      "sim_prob": 0.5467,
+      "market_prob": 0.495139,
+      "edge": 0.0516,
+      "kelly_pct": 0.0084,
+      "result": null,
+      "profit": null
+    },
+    {
+      "date": "2026-04-22",
+      "start_time": "2026-04-22 17:30",
+      "game": "M. Frech vs K. Siniakova",
+      "player_a": "M. Frech",
+      "player_b": "K. Siniakova",
+      "bet_type": "game_handicap",
+      "side": "M. Frech 2.5",
+      "side_raw": "player_a 2.5",
+      "odds": -114,
+      "sim_prob": 0.5867,
+      "market_prob": 0.5,
+      "edge": 0.0867,
+      "kelly_pct": 0.0101,
+      "result": null,
+      "profit": null
+    },
+    {
+      "date": "2026-04-22",
+      "start_time": "2026-04-22 17:30",
+      "game": "M. Frech vs K. Siniakova",
+      "player_a": "M. Frech",
+      "player_b": "K. Siniakova",
+      "bet_type": "total_games",
+      "side": "over 21.5",
+      "side_raw": "over 21.5",
+      "odds": -106,
+      "sim_prob": 0.5633,
+      "market_prob": 0.4819,
+      "edge": 0.0814,
+      "kelly_pct": 0.0088,
+      "result": null,
+      "profit": null
+    }
+  ]
+}

@@ -1,0 +1,214 @@
+{
+  "date": "2026-05-29",
+  "generated_at": "2026-05-29T18:39:29",
+  "total_picks": 15,
+  "games": [
+    {
+      "game": "BOS@CLE",
+      "game_time_et": "7:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": 109,
+          "market_prob": 0.4661,
+          "model_prob": 0.5714,
+          "edge": 0.1053,
+          "kelly_pct": 0.0445,
+          "be_odds": -125,
+          "result": null
+        },
+        {
+          "bet_type": "moneyline",
+          "side": "home",
+          "odds": -118,
+          "market_prob": 0.5454,
+          "model_prob": 0.5758,
+          "edge": 0.0304,
+          "kelly_pct": 0.0188,
+          "be_odds": -130,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "TOR@BAL",
+      "game_time_et": "7:05 PM ET",
+      "picks": [
+        {
+          "bet_type": "first_5_rl",
+          "side": "away +0.5",
+          "odds": -130,
+          "market_prob": 0.5508,
+          "model_prob": 0.6154,
+          "edge": 0.0646,
+          "kelly_pct": 0.0289,
+          "be_odds": -155,
+          "result": null
+        },
+        {
+          "bet_type": "moneyline",
+          "side": "away",
+          "odds": 108,
+          "market_prob": 0.4838,
+          "model_prob": 0.5186,
+          "edge": 0.0348,
+          "kelly_pct": 0.0182,
+          "be_odds": -100,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "CHC@STL",
+      "game_time_et": "7:15 PM ET",
+      "picks": [
+        {
+          "bet_type": "first_5_rl",
+          "side": "home +0.5",
+          "odds": -130,
+          "market_prob": 0.5508,
+          "model_prob": 0.6244,
+          "edge": 0.0736,
+          "kelly_pct": 0.034,
+          "be_odds": -160,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "KC@TEX",
+      "game_time_et": "8:05 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": -102,
+          "market_prob": 0.4963,
+          "model_prob": 0.5714,
+          "edge": 0.0751,
+          "kelly_pct": 0.0336,
+          "be_odds": -125,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "MIN@PIT",
+      "game_time_et": "6:45 PM ET",
+      "picks": [
+        {
+          "bet_type": "first_5_rl",
+          "side": "away +0.5",
+          "odds": -120,
+          "market_prob": 0.5316,
+          "model_prob": 0.7097,
+          "edge": 0.15,
+          "kelly_pct": 0.0749,
+          "be_odds": -235,
+          "result": null
+        },
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": 106,
+          "market_prob": 0.4696,
+          "model_prob": 0.5641,
+          "edge": 0.0945,
+          "kelly_pct": 0.0382,
+          "be_odds": -120,
+          "result": null
+        },
+        {
+          "bet_type": "run_line",
+          "side": "home -1.5",
+          "odds": 166,
+          "market_prob": 0.3752,
+          "model_prob": 0.4414,
+          "edge": 0.0662,
+          "kelly_pct": 0.0262,
+          "be_odds": 120,
+          "result": null
+        },
+        {
+          "bet_type": "nrfi",
+          "side": "NRFI",
+          "odds": -115,
+          "market_prob": 0.5238,
+          "model_prob": 0.5844,
+          "edge": 0.0606,
+          "kelly_pct": 0.0266,
+          "be_odds": -135,
+          "result": null
+        },
+        {
+          "bet_type": "total",
+          "side": "under 8.0",
+          "odds": 100,
+          "market_prob": 0.488,
+          "model_prob": 0.5476,
+          "edge": 0.0596,
+          "kelly_pct": 0.0238,
+          "be_odds": -115,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "MIA@NYM",
+      "game_time_et": "7:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": -102,
+          "market_prob": 0.4904,
+          "model_prob": 0.5641,
+          "edge": 0.0737,
+          "kelly_pct": 0.0299,
+          "be_odds": -120,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "MIL@HOU",
+      "game_time_et": "8:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "first_5_rl",
+          "side": "home +0.5",
+          "odds": -128,
+          "market_prob": 0.5487,
+          "model_prob": 0.6142,
+          "edge": 0.0655,
+          "kelly_pct": 0.0301,
+          "be_odds": -150,
+          "result": null
+        },
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 4.5",
+          "odds": -114,
+          "market_prob": 0.5166,
+          "model_prob": 0.5682,
+          "edge": 0.0516,
+          "kelly_pct": 0.019,
+          "be_odds": -125,
+          "result": null
+        },
+        {
+          "bet_type": "moneyline",
+          "side": "home",
+          "odds": 126,
+          "market_prob": 0.4356,
+          "model_prob": 0.4695,
+          "edge": 0.0339,
+          "kelly_pct": 0.0121,
+          "be_odds": 105,
+          "result": null
+        }
+      ]
+    }
+  ]
+}

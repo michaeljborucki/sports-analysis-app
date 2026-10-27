@@ -1,0 +1,1219 @@
+date,game,bet_type,side,odds,sim_prob,edge,kelly_pct,confidence,market,player,result,profit,projected,market_prob
+2026-03-18,BAL@TOR,moneyline,away,124,0.53,0.1021,0.0377,,,,W,1.24,,
+2026-03-18,CHC@ARI,run_line,away 8.5,118,0.64,0.2067,0.0837,,,,W,1.18,,
+2026-03-18,CHC@ARI,total,under 21.5,-110,0.6167,0.1219,0.0488,,,,L,-1.0,,
+2026-03-18,KC@TEX,total,under 11.5,-116,0.58,0.0716,0.0232,,,,L,-1.0,,
+2026-03-19,NYM@HOU,total,over 7.0,-105,0.5602,0.071,0.0246,,,,W,0.95,,
+2026-03-22,BKN@SAC,q1_ml,home Q1 ML,-110,0.548,0.0581,0.0127,medium,game,,L,-1.0,,
+2026-03-22,BKN@SAC,q1_total,under 56.5,-105,0.549,0.0693,0.0189,medium,game,,L,-1.0,,
+2026-03-22,BKN@SAC,player_points,over 18.5,-105,0.55,0.0703,0.0194,medium,prop,Maxime Raynaud,W,0.95,,
+2026-03-22,BKN@SAC,player_points,over 15.5,-130,0.615,0.0844,0.0286,medium,prop,Danny Wolf,L,-1.0,,
+2026-03-22,BKN@SAC,player_points,over 14.5,-125,0.65,0.1297,0.0531,medium,prop,DeMar DeRozan,L,-1.0,,
+2026-03-22,BKN@SAC,player_points,over 12.5,-125,0.6,0.0797,0.025,medium,prop,Malik Monk,W,0.8,,
+2026-03-22,BKN@SAC,player_points,over 10.5,-105,0.55,0.0703,0.0194,medium,prop,Josh Minott,L,-1.0,,
+2026-03-22,BKN@SAC,player_points,over 9.5,-120,0.57,0.0599,0.0135,medium,prop,Ben Saraf,W,0.83,,
+2026-03-22,BKN@SAC,player_rebounds,over 2.5,105,0.555,0.0958,0.0328,medium,prop,DeMar DeRozan,L,-1.0,,
+2026-03-22,BKN@SAC,player_rebounds,over 2.5,-145,0.655,0.0962,0.0387,medium,prop,Ochai Agbaji,L,-1.0,,
+2026-03-22,BKN@SAC,player_assists,over 3.5,-110,0.55,0.0601,0.0138,medium,prop,Malik Monk,W,0.91,,
+2026-03-22,BKN@SAC,player_threes,under 2.5,-175,0.6699999999999999,0.0707,0.0231,medium,prop,Danny Wolf,W,0.57,,
+2026-03-22,BKN@SAC,player_threes,under 2.5,-210,0.72,0.0821,0.033,medium,prop,Nique Clifford,W,0.48,,
+2026-03-22,BKN@SAC,player_threes,under 1.5,110,0.52,0.0706,0.0209,medium,prop,Josh Minott,W,1.1,,
+2026-03-22,BKN@SAC,player_pra,over 24.5,-110,0.625,0.1351,0.0531,medium,prop,Danny Wolf,L,-1.0,,
+2026-03-22,BKN@SAC,player_pra,over 22.5,-105,0.58,0.1003,0.0348,medium,prop,DeMar DeRozan,L,-1.0,,
+2026-03-22,MIN@BOS,q2_total,over 53.5,-110,0.5795,0.0896,0.0293,medium,game,,W,0.91,,
+2026-03-22,MIN@BOS,q4_total,under 55.5,-105,0.6145,0.1348,0.0524,medium,game,,W,0.95,,
+2026-03-22,MIN@BOS,team_total_away,away under 105.5,-110,0.5648,0.0648,0.0215,medium,game,,W,0.91,,
+2026-03-22,MIN@BOS,player_points,over 25.5,-113,0.58,0.079,0.0263,medium,prop,Jaylen Brown,W,0.88,,
+2026-03-22,MIN@BOS,player_points,over 22.5,-113,0.67,0.17,0.0743,medium,prop,Jayson Tatum,L,-1.0,,
+2026-03-22,MIN@BOS,player_points,under 15.5,-114,0.605,0.1029,0.0387,medium,prop,Payton Pritchard,W,0.88,,
+2026-03-22,MIN@BOS,player_points,under 9.5,-121,0.645,0.1295,0.0539,medium,prop,Neemias Queta,W,0.83,,
+2026-03-22,MIN@BOS,player_points,under 7.5,-116,0.61,0.1038,0.0394,medium,prop,Luka Garza,W,0.86,,
+2026-03-22,MIN@BOS,player_rebounds,over 7.5,-112,0.58,0.0851,0.0274,medium,prop,Jayson Tatum,W,0.89,,
+2026-03-22,MIN@BOS,player_rebounds,over 11.5,-107,0.565,0.0812,0.0249,medium,prop,Rudy Gobert,W,0.93,,
+2026-03-22,MIN@BOS,player_rebounds,under 8.5,-134,0.635,0.0987,0.0365,medium,prop,Neemias Queta,L,-1.0,,
+2026-03-22,MIN@BOS,player_rebounds,under 4.5,-116,0.5549999999999999,0.0519,0.0097,medium,prop,Luka Garza,L,-1.0,,
+2026-03-22,MIN@BOS,player_assists,under 5.5,-155,0.645,0.0751,0.0237,medium,prop,Jaylen Brown,W,0.65,,
+2026-03-22,MIN@BOS,player_assists,under 4.5,-124,0.5800000000000001,0.0617,0.0148,medium,prop,Julius Randle,W,0.81,,
+2026-03-22,MIN@BOS,player_assists,under 5.5,-153,0.625,0.0586,0.0128,medium,prop,Payton Pritchard,W,0.65,,
+2026-03-22,MIN@BOS,player_assists,under 2.5,-114,0.55,0.051,0.0092,medium,prop,Jaden McDaniels,L,-1.0,,
+2026-03-22,MIN@BOS,player_threes,over 1.5,-102,0.61,0.1373,0.053,medium,prop,Jaylen Brown,W,0.98,,
+2026-03-22,MIN@BOS,player_threes,over 1.5,117,0.49,0.0582,0.0135,medium,prop,Julius Randle,L,-1.0,,
+2026-03-22,MIN@BOS,player_threes,under 1.5,130,0.61,0.2026,0.0775,medium,prop,Ayo Dosunmu,L,-1.0,,
+2026-03-22,MIN@BOS,player_threes,over 1.5,-130,0.595,0.0656,0.0171,medium,prop,Naz Reid,L,-1.0,,
+2026-03-22,MIN@BOS,player_threes,over 2.5,139,0.455,0.0626,0.0157,medium,prop,Sam Hauser,L,-1.0,,
+2026-03-22,MIN@BOS,player_pra,over 34.5,-112,0.685,0.1901,0.083,medium,prop,Jayson Tatum,L,-1.0,,
+2026-03-22,MIN@BOS,player_pra,under 25.5,-119,0.56,0.0508,0.0091,medium,prop,Ayo Dosunmu,L,-1.0,,
+2026-03-22,MIN@BOS,player_pra,under 24.5,-112,0.6699999999999999,0.1761,0.0751,medium,prop,Payton Pritchard,W,0.89,,
+2026-03-22,MIN@BOS,player_pra,under 22.5,-121,0.6,0.0878,0.029,medium,prop,Jaden McDaniels,L,-1.0,,
+2026-03-22,POR@DEN,team_total_home,home under 134.5,-120,0.5762,0.0661,0.0169,medium,game,,W,0.83,,
+2026-03-22,POR@DEN,team_total_away,away under 123.5,-110,0.6406,0.1507,0.0613,medium,game,,W,0.91,,
+2026-03-22,POR@DEN,player_points,over 28.5,-110,0.58,0.0901,0.0295,medium,prop,Nikola Jokic,L,-1.0,,
+2026-03-22,POR@DEN,player_points,over 18.5,-140,0.61,0.0594,0.016,medium,prop,Cameron Johnson,W,0.71,,
+2026-03-22,POR@DEN,player_points,under 11.5,105,0.5349999999999999,0.0758,0.023,medium,prop,Christian Braun,L,-1.0,,
+2026-03-22,POR@DEN,player_points,over 11.5,100,0.535,0.0656,0.0175,medium,prop,Aaron Gordon,W,1.0,,
+2026-03-22,POR@DEN,player_rebounds,over 3.5,124,0.5,0.0796,0.0242,medium,prop,Jamal Murray,L,-1.0,,
+2026-03-22,POR@DEN,player_rebounds,over 16.5,-125,0.62,0.0997,0.0362,medium,prop,Nikola Jokic,L,-1.0,,
+2026-03-22,POR@DEN,player_rebounds,under 12.5,-130,0.585,0.0544,0.0114,medium,prop,Donovan Clingan,L,-1.0,,
+2026-03-22,POR@DEN,player_rebounds,over 2.5,120,0.505,0.0765,0.0231,medium,prop,Christian Braun,W,1.2,,
+2026-03-22,POR@DEN,player_rebounds,over 4.5,105,0.53,0.0708,0.0206,medium,prop,Aaron Gordon,L,-1.0,,
+2026-03-22,POR@DEN,player_assists,over 13.5,-120,0.57,0.0599,0.0135,medium,prop,Nikola Jokic,W,0.83,,
+2026-03-22,POR@DEN,player_assists,over 2.5,-175,0.68,0.0807,0.03,medium,prop,Cameron Johnson,W,0.57,,
+2026-03-22,POR@DEN,player_assists,over 2.5,-135,0.595,0.0542,0.012,medium,prop,Scoot Henderson,L,-1.0,,
+2026-03-22,POR@DEN,player_assists,over 4.5,-130,0.6,0.0694,0.02,medium,prop,Jrue Holiday,L,-1.0,,
+2026-03-22,POR@DEN,player_assists,over 2.5,-215,0.695,0.051,0.0098,medium,prop,Aaron Gordon,W,0.47,,
+2026-03-22,POR@DEN,player_threes,under 1.5,160,0.64,0.2779,0.1037,medium,prop,Nikola Jokic,L,-1.0,,
+2026-03-22,POR@DEN,player_threes,under 4.5,-135,0.645,0.1042,0.0414,medium,prop,Donovan Clingan,W,0.74,,
+2026-03-22,POR@DEN,player_threes,under 1.5,130,0.47,0.0594,0.0156,medium,prop,Scoot Henderson,W,1.3,,
+2026-03-22,POR@DEN,player_pra,over 38.5,-105,0.545,0.0653,0.0168,medium,prop,Jamal Murray,L,-1.0,,
+2026-03-22,POR@DEN,player_pra,over 59.5,-105,0.58,0.1003,0.0348,medium,prop,Nikola Jokic,L,-1.0,,
+2026-03-22,POR@DEN,player_pra,over 25.5,-120,0.61,0.0999,0.0355,medium,prop,Cameron Johnson,L,-1.0,,
+2026-03-22,POR@DEN,player_pra,over 22.5,100,0.53,0.0606,0.015,medium,prop,Scoot Henderson,L,-1.0,,
+2026-03-22,TOR@PHX,team_total_home,home over 108.5,-102,0.5412,0.0586,0.0183,medium,game,,L,-1.0,,
+2026-03-22,TOR@PHX,team_total_away,away under 111.5,-108,0.5964,0.1008,0.0401,medium,game,,W,0.93,,
+2026-03-22,TOR@PHX,player_points,over 26.5,-105,0.595,0.1126,0.0425,medium,prop,Devin Booker,L,-1.0,,
+2026-03-22,TOR@PHX,player_points,over 8.5,108,0.51,0.0559,0.0141,medium,prop,Oso Ighodaro,L,-1.0,,
+2026-03-22,TOR@PHX,player_points,over 6.5,-101,0.525,0.051,0.0113,medium,prop,Ja'Kobe Walter,W,0.99,,
+2026-03-22,TOR@PHX,player_rebounds,over 7.5,108,0.525,0.0754,0.0213,medium,prop,Scottie Barnes,L,-1.0,,
+2026-03-22,TOR@PHX,player_rebounds,over 4.5,109,0.505,0.0566,0.0127,medium,prop,Royce O'Neale,L,-1.0,,
+2026-03-22,TOR@PHX,player_assists,over 5.5,113,0.515,0.076,0.0215,medium,prop,Devin Booker,W,1.13,,
+2026-03-22,TOR@PHX,player_assists,over 3.5,124,0.485,0.0669,0.0174,medium,prop,Jalen Green,W,1.24,,
+2026-03-22,TOR@PHX,player_assists,over 3.5,113,0.505,0.0654,0.0167,medium,prop,R.J. Barrett,L,-1.0,,
+2026-03-22,TOR@PHX,player_assists,over 3.5,132,0.5,0.0962,0.0303,medium,prop,Oso Ighodaro,L,-1.0,,
+2026-03-22,TOR@PHX,player_threes,over 2.5,117,0.53,0.0988,0.0321,medium,prop,Devin Booker,W,1.17,,
+2026-03-22,TOR@PHX,player_threes,over 1.5,-105,0.545,0.0662,0.0168,medium,prop,Brandon Ingram,L,-1.0,,
+2026-03-22,TOR@PHX,player_threes,over 2.5,130,0.46,0.0526,0.0112,medium,prop,Royce O'Neale,L,-1.0,,
+2026-03-22,TOR@PHX,player_pra,over 35.5,-114,0.58,0.081,0.0253,medium,prop,Devin Booker,L,-1.0,,
+2026-03-22,TOR@PHX,player_pra,over 30.5,-107,0.54,0.0562,0.012,medium,prop,Brandon Ingram,L,-1.0,,
+2026-03-22,TOR@PHX,player_pra,over 29.5,-110,0.56,0.0701,0.019,medium,prop,Scottie Barnes,L,-1.0,,
+2026-03-22,WAS@NYK,total,under 228.5,-110,0.5608,0.0608,0.0194,high,game,,L,-1.0,,
+2026-03-22,WAS@NYK,q1_spread,away Q1 6.5,-108,1.0,0.5043,0.25,medium,game,,W,0.93,,
+2026-03-22,WAS@NYK,q1_total,under 58.5,100,0.7637,0.2854,0.1318,medium,game,,L,-1.0,,
+2026-03-22,WAS@NYK,q2_total,under 58.5,-110,0.5465,0.0566,0.0119,medium,game,,L,-1.0,,
+2026-03-22,WAS@NYK,team_total_away,away under 102.5,-108,0.6384,0.1427,0.062,medium,game,,L,-1.0,,
+2026-03-22,WAS@NYK,player_points,over 24.5,-114,0.61,0.1079,0.0413,medium,prop,Jalen Brunson,L,-1.0,,
+2026-03-22,WAS@NYK,player_points,over 20.5,-117,0.59,0.0817,0.0276,medium,prop,Karl-Anthony Towns,W,0.85,,
+2026-03-22,WAS@NYK,player_points,under 7.5,-124,0.595,0.0732,0.0232,medium,prop,Mohamed Diawara,L,-1.0,,
+2026-03-22,WAS@NYK,player_points,over 5.5,-136,0.635,0.091,0.0347,medium,prop,Mitchell Robinson,W,0.74,,
+2026-03-22,WAS@NYK,player_rebounds,over 3.5,110,0.515,0.0691,0.0185,medium,prop,Jalen Brunson,L,-1.0,,
+2026-03-22,WAS@NYK,player_rebounds,under 3.5,120,0.565,0.139,0.0506,medium,prop,Will Riley,W,1.2,,
+2026-03-22,WAS@NYK,player_rebounds,under 3.5,121,0.54,0.1163,0.0399,medium,prop,Carlton Carrington,W,1.21,,
+2026-03-22,WAS@NYK,player_rebounds,over 7.5,-120,0.6,0.0888,0.03,medium,prop,Josh Hart,L,-1.0,,
+2026-03-22,WAS@NYK,player_rebounds,under 4.5,-117,0.565,0.0599,0.014,medium,prop,Jamir Watkins,L,-1.0,,
+2026-03-22,WAS@NYK,player_rebounds,under 2.5,100,0.6,0.1314,0.05,medium,prop,Mohamed Diawara,W,1.0,,
+2026-03-22,WAS@NYK,player_rebounds,over 8.5,-110,0.585,0.0951,0.0321,medium,prop,Mitchell Robinson,W,0.91,,
+2026-03-22,WAS@NYK,player_assists,over 6.5,-130,0.65,0.1206,0.0488,medium,prop,Jalen Brunson,L,-1.0,,
+2026-03-22,WAS@NYK,player_assists,under 2.5,125,0.52,0.1035,0.034,medium,prop,Bilal Coulibaly,W,1.25,,
+2026-03-22,WAS@NYK,player_threes,over 2.5,114,0.57,0.1322,0.0482,medium,prop,Jalen Brunson,L,-1.0,,
+2026-03-22,WAS@NYK,player_threes,over 2.5,139,0.445,0.0526,0.0114,medium,prop,OG Anunoby,L,-1.0,,
+2026-03-22,WAS@NYK,player_threes,over 2.5,126,0.475,0.0601,0.0146,medium,prop,Jaden Hardy,W,1.26,,
+2026-03-22,WAS@NYK,player_threes,over 2.5,115,0.53,0.094,0.0303,medium,prop,Carlton Carrington,L,-1.0,,
+2026-03-22,WAS@NYK,player_pra,over 35.5,-106,0.63,0.1483,0.0595,medium,prop,Jalen Brunson,L,-1.0,,
+2026-03-22,WAS@NYK,player_pra,under 24.5,-104,0.565,0.0882,0.0282,medium,prop,OG Anunoby,W,0.96,,
+2026-03-22,WAS@NYK,player_pra,over 25.5,-105,0.55,0.0703,0.0194,medium,prop,Josh Hart,W,0.95,,
+2026-03-23,BKN@POR,q1_spread,home Q1 -5.5,100,0.5419,0.0636,0.0209,medium,game,,L,-1.0,,
+2026-03-23,BKN@POR,q2_total,under 56.5,-115,0.626,0.126,0.049,medium,game,,W,0.87,,
+2026-03-23,BKN@POR,team_total_away,away under 101.5,-112,0.597,0.0927,0.0364,medium,game,,W,0.89,,
+2026-03-23,BKN@POR,player_rebounds,over 3.5,109,0.5,0.0523,0.0103,medium,prop,Jerami Grant,L,-1.0,,
+2026-03-23,BKN@POR,player_rebounds,over 12.5,-111,0.56,0.0681,0.0179,medium,prop,Donovan Clingan,W,0.9,,
+2026-03-23,BKN@POR,player_rebounds,over 6.5,-111,0.575,0.0821,0.0258,medium,prop,Nicolas Claxton,L,-1.0,,
+2026-03-23,BKN@POR,player_assists,over 6.5,-108,0.56,0.0742,0.0212,medium,prop,Deni Avdija,L,-1.0,,
+2026-03-23,BKN@POR,player_assists,over 3.5,-162,0.645,0.0654,0.0175,medium,prop,Nolan Traore,W,0.62,,
+2026-03-23,BKN@POR,player_threes,over 1.5,-185,0.66,0.0509,0.0077,medium,prop,Deni Avdija,L,-1.0,,
+2026-03-23,BKN@POR,player_threes,over 2.5,119,0.535,0.1073,0.036,medium,prop,Jerami Grant,L,-1.0,,
+2026-03-23,BKN@POR,player_threes,over 2.5,137,0.465,0.0697,0.0186,medium,prop,Jrue Holiday,L,-1.0,,
+2026-03-23,BKN@POR,player_threes,over 1.5,156,0.465,0.0982,0.0305,medium,prop,Nolan Traore,L,-1.0,,
+2026-03-23,BKN@POR,q1_total,under 56.5,-108,0.6825,0.1868,0.0849,medium,game,,L,-1.0,,
+2026-03-23,BKN@POR,player_points,under 25.5,-124,0.6,0.0782,0.026,medium,prop,Deni Avdija,W,0.81,,
+2026-03-23,BKN@POR,player_rebounds,under 3.5,-144,0.62,0.0677,0.0182,medium,prop,Jerami Grant,W,0.69,,
+2026-03-23,BKN@POR,player_rebounds,under 4.5,-156,0.63,0.0595,0.0132,medium,prop,Jrue Holiday,L,-1.0,,
+2026-03-23,BKN@POR,player_rebounds,over 4.5,-152,0.63,0.0654,0.0169,medium,prop,Toumani Camara,L,-1.0,,
+2026-03-23,BKN@POR,player_assists,under 6.5,-121,0.575,0.0628,0.0152,medium,prop,Deni Avdija,W,0.83,,
+2026-03-23,BKN@POR,player_assists,over 5.5,-133,0.6,0.0657,0.017,medium,prop,Jrue Holiday,L,-1.0,,
+2026-03-23,BKN@POR,player_assists,under 4.5,-155,0.64,0.0712,0.0205,medium,prop,Nolan Traore,L,-1.0,,
+2026-03-23,BKN@POR,player_threes,under 1.5,-177,0.7050000000000001,0.1058,0.0457,medium,prop,Donovan Clingan,W,0.56,,
+2026-03-23,BKN@POR,player_threes,under 1.5,-207,0.7150000000000001,0.0818,0.0313,medium,prop,Nolan Traore,W,0.48,,
+2026-03-23,BKN@POR,player_threes,under 1.5,-203,0.73,0.1011,0.0455,medium,prop,Drake Powell,P,0.0,,
+2026-03-23,BKN@POR,player_pra,under 38.5,-107,0.575,0.0912,0.0301,medium,prop,Deni Avdija,W,0.93,,
+2026-03-23,GSW@DAL,q1_total,under 55.5,-102,0.6597,0.1771,0.0782,medium,game,,L,-1.0,,
+2026-03-23,GSW@DAL,player_threes,over 1.5,149,0.53,0.1533,0.0537,medium,prop,Will Richard,W,1.49,,
+2026-03-23,GSW@DAL,q1_total,under 56.5,-115,0.6075,0.0967,0.039,medium,game,,L,-1.0,,
+2026-03-23,GSW@DAL,player_points,under 16.5,-111,0.56,0.0642,0.0179,medium,prop,Naji Marshall,W,0.9,,
+2026-03-23,GSW@DAL,player_points,over 16.5,-112,0.56,0.0621,0.0168,medium,prop,Kristaps Porzingis,W,0.89,,
+2026-03-23,GSW@DAL,player_points,under 13.5,-110,0.5633,0.0695,0.0207,medium,prop,Gui Santos,L,-1.0,,
+2026-03-23,GSW@DAL,player_points,over 10.5,-129,0.5833,0.0523,0.0115,medium,prop,Klay Thompson,W,0.78,,
+2026-03-23,GSW@DAL,player_points,under 9.5,100,0.5700000000000001,0.0981,0.035,medium,prop,Gary Payton II,L,-1.0,,
+2026-03-23,GSW@DAL,player_points,under 9.5,-120,0.5700000000000001,0.0554,0.0135,medium,prop,Draymond Green,L,-1.0,,
+2026-03-23,GSW@DAL,player_points,under 8.5,-119,0.6267,0.1153,0.0456,medium,prop,Will Richard,L,-1.0,,
+2026-03-23,GSW@DAL,player_rebounds,under 4.5,119,0.5166999999999999,0.089,0.0277,medium,prop,Naji Marshall,L,-1.0,,
+2026-03-23,GSW@DAL,player_rebounds,over 4.5,-147,0.66,0.1021,0.0401,medium,prop,Kristaps Porzingis,W,0.68,,
+2026-03-23,GSW@DAL,player_rebounds,over 7.5,113,0.49,0.0504,0.0097,medium,prop,P.J. Washington,L,-1.0,,
+2026-03-23,GSW@DAL,player_rebounds,under 5.5,100,0.5333,0.0647,0.0167,medium,prop,Gui Santos,L,-1.0,,
+2026-03-23,GSW@DAL,player_rebounds,under 2.5,134,0.4967,0.0959,0.0303,medium,prop,Max Christie,W,1.34,,
+2026-03-23,GSW@DAL,player_rebounds,over 8.5,-114,0.55,0.051,0.0092,medium,prop,Daniel Gafford,L,-1.0,,
+2026-03-23,GSW@DAL,player_rebounds,under 3.5,-126,0.6167,0.0955,0.0335,medium,prop,Will Richard,W,0.79,,
+2026-03-23,GSW@DAL,player_assists,under 3.5,126,0.5,0.0857,0.0258,medium,prop,Naji Marshall,L,-1.0,,
+2026-03-23,GSW@DAL,player_assists,under 2.5,-116,0.5567,0.0547,0.0106,medium,prop,De'Anthony Melton,L,-1.0,,
+2026-03-23,GSW@DAL,player_assists,over 5.5,-128,0.5767,0.0514,0.0087,medium,prop,Draymond Green,W,0.78,,
+2026-03-23,GSW@DAL,player_assists,under 1.5,-101,0.5967,0.1261,0.0474,medium,prop,Will Richard,W,0.99,,
+2026-03-23,GSW@DAL,player_threes,under 1.5,-120,0.5732999999999999,0.0632,0.0153,medium,prop,Gui Santos,W,0.83,,
+2026-03-23,GSW@DAL,player_threes,over 2.5,-106,0.5333,0.0516,0.0097,medium,prop,Klay Thompson,W,0.94,,
+2026-03-23,GSW@DAL,player_threes,under 1.5,-102,0.5267,0.054,0.011,medium,prop,Draymond Green,W,0.98,,
+2026-03-23,GSW@DAL,player_threes,under 1.5,-206,0.6867,0.0548,0.0103,medium,prop,Will Richard,L,-1.0,,
+2026-03-23,GSW@DAL,player_pra,under 26.5,-126,0.63,0.1088,0.041,medium,prop,Naji Marshall,L,-1.0,,
+2026-03-23,GSW@DAL,player_pra,over 23.5,-119,0.58,0.0719,0.02,medium,prop,Kristaps Porzingis,W,0.84,,
+2026-03-23,GSW@DAL,player_pra,under 22.5,-125,0.6133,0.093,0.0325,medium,prop,De'Anthony Melton,W,0.8,,
+2026-03-23,GSW@DAL,player_pra,under 23.5,-123,0.6,0.0838,0.027,medium,prop,Gui Santos,L,-1.0,,
+2026-03-23,GSW@DAL,player_pra,under 17.5,-116,0.5932999999999999,0.0902,0.0304,medium,prop,Gary Payton II,L,-1.0,,
+2026-03-23,GSW@DAL,player_pra,under 13.5,-106,0.64,0.1583,0.0646,medium,prop,Will Richard,W,0.94,,
+2026-03-23,HOU@CHI,team_total_home,home under 110.5,-110,0.5613,0.0613,0.0197,medium,game,,L,-1.0,,
+2026-03-23,HOU@CHI,player_rebounds,over 8.5,-106,0.595,0.1133,0.0414,medium,prop,Alperen Sengun,W,0.94,,
+2026-03-23,HOU@CHI,player_rebounds,under 7.5,-104,0.5349999999999999,0.0574,0.0129,medium,prop,Amen Thompson,W,0.96,,
+2026-03-23,HOU@CHI,player_rebounds,over 7.5,-132,0.585,0.0527,0.0093,medium,prop,Josh Giddey,L,-1.0,,
+2026-03-23,HOU@CHI,player_rebounds,over 6.5,-144,0.61,0.0577,0.0121,medium,prop,Jabari Smith Jr,L,-1.0,,
+2026-03-23,HOU@CHI,player_rebounds,over 6.5,114,0.54,0.1022,0.0341,medium,prop,Tari Eason,L,-1.0,,
+2026-03-23,HOU@CHI,player_assists,under 5.5,-102,0.5349999999999999,0.0623,0.0152,medium,prop,Alperen Sengun,L,-1.0,,
+2026-03-23,HOU@CHI,player_assists,under 5.5,-151,0.625,0.061,0.0147,medium,prop,Amen Thompson,W,0.66,,
+2026-03-23,HOU@CHI,player_assists,over 1.5,105,0.515,0.0588,0.0133,medium,prop,Matas Buzelis,L,-1.0,,
+2026-03-23,HOU@CHI,player_assists,under 4.5,107,0.6,0.1477,0.0566,medium,prop,Reed Sheppard,L,-1.0,,
+2026-03-23,HOU@CHI,player_assists,under 3.5,-106,0.5700000000000001,0.0883,0.0285,medium,prop,Rob Dillingham,W,0.94,,
+2026-03-23,HOU@CHI,player_threes,under 2.5,111,0.495,0.051,0.01,medium,prop,Matas Buzelis,L,-1.0,,
+2026-03-23,HOU@CHI,player_threes,under 1.5,133,0.62,0.2182,0.0836,medium,prop,Josh Giddey,L,-1.0,,
+2026-03-23,HOU@CHI,player_threes,under 0.5,115,0.675,0.2396,0.0981,medium,prop,Tre Jones,W,1.15,,
+2026-03-23,HOU@CHI,player_threes,under 0.5,164,0.53,0.1744,0.0609,medium,prop,Rob Dillingham,L,-1.0,,
+2026-03-23,HOU@CHI,player_pra,under 32.5,-120,0.565,0.0549,0.0107,medium,prop,Amen Thompson,W,0.83,,
+2026-03-23,HOU@CHI,player_pra,under 20.5,-110,0.5700000000000001,0.0792,0.0243,medium,prop,Tre Jones,L,-1.0,,
+2026-03-23,HOU@CHI,player_pra,under 14.5,-101,0.605,0.1344,0.0515,medium,prop,Rob Dillingham,W,0.99,,
+2026-03-23,HOU@CHI,q1_ml,home Q1 ML,145,0.4338,0.043,0.0108,medium,game,,W,1.45,,
+2026-03-23,HOU@CHI,q1_total,under 56.5,-115,0.6435,0.1327,0.0584,medium,game,,L,-1.0,,
+2026-03-23,HOU@CHI,q2_total,over 54.5,-120,0.663,0.1529,0.0646,medium,game,,L,-1.0,,
+2026-03-23,HOU@CHI,team_total_away,away under 119.5,-115,0.5978,0.087,0.0338,medium,game,,L,-1.0,,
+2026-03-23,HOU@CHI,player_points,over 25.5,-113,0.65,0.15,0.0636,medium,prop,Kevin Durant,W,0.88,,
+2026-03-23,HOU@CHI,player_points,over 20.5,-107,0.55,0.0634,0.0171,medium,prop,Alperen Sengun,W,0.93,,
+2026-03-23,HOU@CHI,player_points,under 15.5,-106,0.54,0.0555,0.0131,medium,prop,Reed Sheppard,W,0.94,,
+2026-03-23,HOU@CHI,player_rebounds,over 4.5,-154,0.7,0.1318,0.0595,medium,prop,Kevin Durant,W,0.65,,
+2026-03-23,HOU@CHI,player_rebounds,under 2.5,-112,0.5549999999999999,0.0601,0.0141,medium,prop,Tre Jones,L,-1.0,,
+2026-03-23,HOU@CHI,player_assists,over 4.5,102,0.54,0.0763,0.0222,medium,prop,Kevin Durant,W,1.02,,
+2026-03-23,HOU@CHI,player_assists,under 1.5,-123,0.575,0.0588,0.0131,medium,prop,Matas Buzelis,W,0.81,,
+2026-03-23,HOU@CHI,player_assists,under 1.5,122,0.525,0.103,0.0339,medium,prop,Jabari Smith Jr,W,1.22,,
+2026-03-23,HOU@CHI,player_assists,under 1.5,-109,0.56,0.0722,0.0201,medium,prop,Tari Eason,W,0.92,,
+2026-03-23,HOU@CHI,player_threes,over 2.5,115,0.525,0.0896,0.028,medium,prop,Kevin Durant,W,1.15,,
+2026-03-23,HOU@CHI,player_threes,over 2.5,143,0.44,0.0542,0.0121,medium,prop,Jabari Smith Jr,L,-1.0,,
+2026-03-23,HOU@CHI,player_threes,under 1.5,-133,0.6,0.0657,0.017,medium,prop,Jalen Smith,L,-1.0,,
+2026-03-23,HOU@CHI,player_pra,over 35.5,-107,0.685,0.2012,0.087,medium,prop,Kevin Durant,W,0.93,,
+2026-03-23,HOU@CHI,player_pra,over 35.5,-113,0.57,0.074,0.021,medium,prop,Alperen Sengun,W,0.88,,
+2026-03-23,HOU@CHI,player_pra,under 36.5,-121,0.5700000000000001,0.0578,0.0124,medium,prop,Josh Giddey,W,0.83,,
+2026-03-23,HOU@CHI,player_pra,under 24.5,-118,0.56,0.0539,0.0102,medium,prop,Reed Sheppard,W,0.85,,
+2026-03-23,HOU@CHI,player_pra,under 18.5,-119,0.5700000000000001,0.0619,0.0146,medium,prop,Tari Eason,W,0.84,,
+2026-03-23,IND@ORL,player_points,over 24.5,-106,0.57,0.0846,0.0285,medium,prop,Paolo Banchero,W,0.94,,
+2026-03-23,IND@ORL,player_points,under 11.5,-127,0.5900000000000001,0.0632,0.0173,medium,prop,Tristan da Silva,L,-1.0,,
+2026-03-23,IND@ORL,player_points,over 7.5,100,0.535,0.0639,0.0175,medium,prop,Moe Wagner,L,-1.0,,
+2026-03-23,IND@ORL,player_rebounds,under 3.5,115,0.5349999999999999,0.099,0.0327,medium,prop,Jalen Suggs,P,0.0,,
+2026-03-23,IND@ORL,player_assists,under 4.5,-103,0.53,0.0553,0.0115,medium,prop,Desmond Bane,L,-1.0,,
+2026-03-23,IND@ORL,player_assists,under 6.5,109,0.515,0.0673,0.0175,medium,prop,Andrew Nembhard,L,-1.0,,
+2026-03-23,IND@ORL,player_assists,under 2.5,120,0.525,0.099,0.0323,medium,prop,Jarace Walker,W,1.2,,
+2026-03-23,IND@ORL,player_assists,under 5.5,105,0.515,0.0581,0.0133,medium,prop,Jalen Suggs,P,0.0,,
+2026-03-23,IND@ORL,player_threes,under 1.5,109,0.515,0.0673,0.0175,medium,prop,Andrew Nembhard,W,1.09,,
+2026-03-23,IND@ORL,player_threes,under 1.5,-103,0.55,0.0753,0.0216,medium,prop,Tristan da Silva,L,-1.0,,
+2026-03-23,IND@ORL,player_threes,under 1.5,139,0.485,0.0926,0.0286,medium,prop,Jevon Carter,W,1.39,,
+2026-03-23,IND@ORL,player_pra,over 38.5,-109,0.58,0.0922,0.0306,medium,prop,Paolo Banchero,W,0.92,,
+2026-03-23,IND@ORL,player_pra,over 29.5,-117,0.57,0.0649,0.0167,medium,prop,Pascal Siakam,W,0.85,,
+2026-03-23,IND@ORL,player_pra,under 25.5,-107,0.5449999999999999,0.0612,0.0146,medium,prop,Andrew Nembhard,L,-1.0,,
+2026-03-23,IND@ORL,total,under 231.5,-110,0.5652,0.0652,0.0217,medium,game,,L,-1.0,,
+2026-03-23,IND@ORL,q1_spread,away Q1 4.5,-115,1.0,0.4892,0.25,medium,game,,W,0.87,,
+2026-03-23,IND@ORL,q1_total,under 57.5,-115,0.6307,0.1199,0.0515,medium,game,,L,-1.0,,
+2026-03-23,IND@ORL,q2_total,over 55.5,-125,0.62,0.0997,0.0362,medium,game,,W,0.8,,
+2026-03-23,IND@ORL,team_total_home,home under 122.5,-112,0.5687,0.0643,0.0214,medium,game,,L,-1.0,,
+2026-03-23,IND@ORL,team_total_away,away under 108.5,-110,0.6039,0.1039,0.042,medium,game,,L,-1.0,,
+2026-03-23,IND@ORL,player_points,over 25.5,-110,0.58,0.0862,0.0295,medium,prop,Paolo Banchero,W,0.91,,
+2026-03-23,IND@ORL,player_points,over 21.5,-125,0.6,0.0761,0.025,medium,prop,Desmond Bane,L,-1.0,,
+2026-03-23,IND@ORL,player_points,over 20.5,-108,0.55,0.0604,0.016,medium,prop,Pascal Siakam,W,0.93,,
+2026-03-23,IND@ORL,player_points,over 11.5,-125,0.58,0.0561,0.0138,medium,prop,Wendell Carter Jr,W,0.8,,
+2026-03-23,IND@ORL,player_rebounds,over 8.5,-133,0.63,0.0957,0.0345,medium,prop,Paolo Banchero,L,-1.0,,
+2026-03-23,IND@ORL,player_rebounds,over 4.5,121,0.52,0.0963,0.0308,medium,prop,Desmond Bane,W,1.21,,
+2026-03-23,IND@ORL,player_assists,over 5.5,-143,0.66,0.1084,0.0435,medium,prop,Paolo Banchero,W,0.7,,
+2026-03-23,IND@ORL,player_assists,over 4.5,-141,0.63,0.0823,0.0271,medium,prop,Desmond Bane,W,0.71,,
+2026-03-23,IND@ORL,player_assists,over 6.5,-132,0.62,0.0877,0.0296,medium,prop,Andrew Nembhard,W,0.76,,
+2026-03-23,IND@ORL,player_assists,over 2.5,-170,0.65,0.0595,0.0138,medium,prop,Jarace Walker,L,-1.0,,
+2026-03-23,IND@ORL,player_threes,over 1.5,142,0.47,0.0828,0.0242,medium,prop,Paolo Banchero,W,1.42,,
+2026-03-23,IND@ORL,player_threes,over 1.5,-184,0.68,0.0724,0.0228,medium,prop,Desmond Bane,L,-1.0,,
+2026-03-23,IND@ORL,player_threes,over 1.5,171,0.41,0.0635,0.0163,medium,prop,Pascal Siakam,W,1.71,,
+2026-03-23,IND@ORL,player_threes,under 1.5,118,0.5,0.0705,0.0191,medium,prop,Jarace Walker,L,-1.0,,
+2026-03-23,IND@ORL,player_pra,over 40.5,-118,0.61,0.1039,0.0374,medium,prop,Paolo Banchero,W,0.85,,
+2026-03-23,IND@ORL,player_pra,over 31.5,-111,0.59,0.0981,0.0337,medium,prop,Desmond Bane,L,-1.0,,
+2026-03-23,IND@ORL,player_pra,over 26.5,-104,0.55,0.0724,0.0205,medium,prop,Andrew Nembhard,W,0.96,,
+2026-03-23,IND@ORL,player_pra,over 22.5,-105,0.53,0.0503,0.0091,medium,prop,Wendell Carter Jr,W,0.95,,
+2026-03-23,LAL@DET,q1_ml,home Q1 ML,-102,0.5258,0.0432,0.0105,medium,game,,L,-1.0,,
+2026-03-23,LAL@DET,player_points,over 32.5,-114,0.6,0.0979,0.036,medium,prop,Luka Doncic,L,-1.0,,
+2026-03-23,LAL@DET,player_points,over 12.5,100,0.525,0.0531,0.0125,medium,prop,Duncan Robinson,L,-1.0,,
+2026-03-23,LAL@DET,player_points,under 9.5,-101,0.54,0.066,0.0188,medium,prop,Ausar Thompson,W,0.99,,
+2026-03-23,LAL@DET,player_rebounds,over 10.5,-128,0.605,0.0797,0.0249,medium,prop,Jalen Duren,W,0.78,,
+2026-03-23,LAL@DET,player_rebounds,over 5.5,116,0.495,0.0608,0.0149,medium,prop,Ausar Thompson,L,-1.0,,
+2026-03-23,LAL@DET,player_rebounds,over 2.5,105,0.515,0.0581,0.0133,medium,prop,Marcus Smart,P,0.0,,
+2026-03-23,LAL@DET,player_threes,over 2.5,132,0.46,0.0562,0.0127,medium,prop,Austin Reaves,L,-1.0,,
+2026-03-23,LAL@DET,q1_total,under 58.5,-112,0.5891,0.0848,0.0323,medium,game,,W,0.89,,
+2026-03-23,LAL@DET,q2_total,under 57.5,-125,0.611,0.0907,0.0312,medium,game,,L,-1.0,,
+2026-03-23,LAL@DET,team_total_home,home over 112.5,-112,0.5626,0.0583,0.0182,medium,game,,L,-1.0,,
+2026-03-23,LAL@DET,team_total_away,away under 113.5,-108,0.5856,0.0899,0.0345,medium,game,,W,0.93,,
+2026-03-23,LAL@DET,player_points,over 33.5,-104,0.61,0.1288,0.0511,medium,prop,Luka Doncic,L,-1.0,,
+2026-03-23,LAL@DET,player_points,under 21.5,-103,0.565,0.0868,0.0293,medium,prop,Jalen Duren,W,0.97,,
+2026-03-23,LAL@DET,player_points,over 18.5,-123,0.625,0.1041,0.0409,medium,prop,LeBron James,L,-1.0,,
+2026-03-23,LAL@DET,player_points,over 9.5,-126,0.615,0.089,0.0325,medium,prop,Deandre Ayton,W,0.79,,
+2026-03-23,LAL@DET,player_points,over 8.5,-107,0.555,0.0675,0.0197,medium,prop,Kevin Huerter,L,-1.0,,
+2026-03-23,LAL@DET,player_rebounds,over 7.5,-109,0.565,0.0772,0.0227,medium,prop,Luka Doncic,L,-1.0,,
+2026-03-23,LAL@DET,player_rebounds,over 5.5,104,0.54,0.0811,0.0244,medium,prop,LeBron James,W,1.04,,
+2026-03-23,LAL@DET,player_rebounds,over 5.5,112,0.505,0.0629,0.0158,medium,prop,Tobias Harris,W,1.12,,
+2026-03-23,LAL@DET,player_rebounds,under 4.5,115,0.525,0.089,0.028,medium,prop,Ausar Thompson,L,-1.0,,
+2026-03-23,LAL@DET,player_rebounds,over 7.5,-119,0.575,0.0658,0.0173,medium,prop,Deandre Ayton,W,0.84,,
+2026-03-23,LAL@DET,player_rebounds,over 2.5,140,0.505,0.1145,0.0379,medium,prop,Caris LeVert,W,1.4,,
+2026-03-23,LAL@DET,player_assists,over 7.5,-115,0.555,0.054,0.0108,medium,prop,Luka Doncic,L,-1.0,,
+2026-03-23,LAL@DET,player_assists,under 1.5,-104,0.5800000000000001,0.1024,0.0358,medium,prop,Jalen Duren,L,-1.0,,
+2026-03-23,LAL@DET,player_assists,over 5.5,-145,0.61,0.0559,0.0111,medium,prop,LeBron James,W,0.69,,
+2026-03-23,LAL@DET,player_assists,under 6.5,111,0.5700000000000001,0.126,0.0457,medium,prop,Daniss Jenkins,L,-1.0,,
+2026-03-23,LAL@DET,player_assists,under 2.5,120,0.5449999999999999,0.1196,0.0415,medium,prop,Ausar Thompson,L,-1.0,,
+2026-03-23,LAL@DET,player_assists,over 3.5,113,0.495,0.0554,0.012,medium,prop,Caris LeVert,W,1.13,,
+2026-03-23,LAL@DET,player_threes,over 1.5,132,0.53,0.1262,0.0435,medium,prop,LeBron James,L,-1.0,,
+2026-03-23,LAL@DET,player_threes,over 2.5,-122,0.58,0.0658,0.0169,medium,prop,Duncan Robinson,W,0.82,,
+2026-03-23,LAL@DET,player_threes,over 1.5,169,0.465,0.1159,0.0371,medium,prop,Caris LeVert,L,-1.0,,
+2026-03-23,LAL@DET,player_threes,over 1.5,159,0.585,0.2227,0.081,medium,prop,Kevin Huerter,L,-1.0,,
+2026-03-23,LAL@DET,player_pra,over 48.5,-116,0.575,0.0719,0.0205,medium,prop,Luka Doncic,L,-1.0,,
+2026-03-23,LAL@DET,player_pra,under 34.5,-118,0.5700000000000001,0.0629,0.0157,medium,prop,Jalen Duren,W,0.85,,
+2026-03-23,LAL@DET,player_pra,over 30.5,-114,0.62,0.121,0.0467,medium,prop,LeBron James,W,0.88,,
+2026-03-23,LAL@DET,player_pra,under 24.5,-103,0.5900000000000001,0.1144,0.0419,medium,prop,Daniss Jenkins,L,-1.0,,
+2026-03-23,LAL@DET,player_pra,over 14.5,-101,0.56,0.0894,0.0289,medium,prop,Caris LeVert,W,0.99,,
+2026-03-23,MEM@ATL,player_points,over 22.5,-116,0.6,0.0927,0.034,medium,prop,Jalen Johnson,P,0.0,,
+2026-03-23,MEM@ATL,player_points,over 20.5,-105,0.6,0.1167,0.045,medium,prop,C.J. McCollum,L,-1.0,,
+2026-03-23,MEM@ATL,player_points,over 16.5,-106,0.56,0.0746,0.0234,medium,prop,G.G. Jackson,W,0.94,,
+2026-03-23,MEM@ATL,player_rebounds,over 10.5,102,0.535,0.0713,0.0198,medium,prop,Jalen Johnson,P,0.0,,
+2026-03-23,MEM@ATL,player_rebounds,over 5.5,-127,0.575,0.0518,0.0088,medium,prop,Jonathan Kuminga,L,-1.0,,
+2026-03-23,MEM@ATL,player_rebounds,under 2.5,112,0.6,0.1585,0.0607,medium,prop,Walter Clayton Jr.,W,1.12,,
+2026-03-23,MEM@ATL,player_assists,over 4.5,111,0.5,0.056,0.0124,medium,prop,C.J. McCollum,W,1.11,,
+2026-03-23,MEM@ATL,player_assists,under 3.5,122,0.495,0.073,0.0203,medium,prop,Nickeil Alexander-Walker,L,-1.0,,
+2026-03-23,MEM@ATL,player_threes,under 2.5,-107,0.5349999999999999,0.0503,0.0094,medium,prop,Ty Jerome,L,-1.0,,
+2026-03-23,MEM@ATL,player_threes,over 2.5,101,0.57,0.1043,0.0361,medium,prop,C.J. McCollum,W,1.01,,
+2026-03-23,MEM@ATL,player_threes,under 1.5,105,0.5800000000000001,0.1238,0.045,medium,prop,Onyeka Okongwu,W,1.05,,
+2026-03-23,MEM@ATL,player_threes,under 1.5,132,0.49,0.0862,0.0259,medium,prop,Jaylen Wells,W,1.32,,
+2026-03-23,MEM@ATL,player_pra,over 41.5,-122,0.575,0.0608,0.0141,medium,prop,Jalen Johnson,P,0.0,,
+2026-03-23,MEM@ATL,player_pra,over 28.5,-109,0.545,0.0572,0.0123,medium,prop,C.J. McCollum,L,-1.0,,
+2026-03-23,MEM@ATL,q1_total,under 62.5,-105,0.6533,0.1641,0.0723,medium,game,,W,0.95,,
+2026-03-23,MEM@ATL,team_total_home,home under 127.5,-102,0.5616,0.0789,0.0286,medium,game,,L,-1.0,,
+2026-03-23,MIL@LAC,total,under 221.5,-105,0.5433,0.0541,0.0159,medium,game,,L,-1.0,,
+2026-03-23,MIL@LAC,q3_total,over 55.5,-110,0.575,0.0851,0.0269,medium,game,,W,0.91,,
+2026-03-23,MIL@LAC,team_total_home,home under 118.5,-118,0.5917,0.0743,0.0275,medium,game,,L,-1.0,,
+2026-03-23,MIL@LAC,player_points,over 28.5,-105,0.585,0.1017,0.0373,medium,prop,Kawhi Leonard,L,-1.0,,
+2026-03-23,MIL@LAC,player_points,under 18.5,-117,0.615,0.1067,0.0411,medium,prop,Ryan Rollins,W,0.85,,
+2026-03-23,MIL@LAC,player_points,over 14.5,-104,0.54,0.0588,0.0154,medium,prop,John Collins,L,-1.0,,
+2026-03-23,MIL@LAC,player_points,under 12.5,-110,0.5549999999999999,0.0602,0.0164,medium,prop,Derrick Jones,W,0.91,,
+2026-03-23,MIL@LAC,player_points,over 11.5,-113,0.55,0.05,0.0104,medium,prop,Kyle Kuzma,P,0.0,,
+2026-03-23,MIL@LAC,player_points,under 11.5,-114,0.605,0.1029,0.0387,medium,prop,Jordan Miller,W,0.88,,
+2026-03-23,MIL@LAC,player_points,under 11.5,-124,0.575,0.0532,0.012,medium,prop,Ousmane Dieng,W,0.81,,
+2026-03-23,MIL@LAC,player_points,over 11.5,100,0.57,0.0989,0.035,medium,prop,Myles Turner,L,-1.0,,
+2026-03-23,MIL@LAC,player_points,over 6.5,101,0.52,0.0502,0.0112,medium,prop,Taurean Prince,L,-1.0,,
+2026-03-23,MIL@LAC,player_rebounds,under 2.5,112,0.5700000000000001,0.1285,0.0465,medium,prop,Darius Garland,W,1.12,,
+2026-03-23,MIL@LAC,player_rebounds,under 4.5,-106,0.54,0.0592,0.0131,medium,prop,Ryan Rollins,W,0.94,,
+2026-03-23,MIL@LAC,player_rebounds,over 2.5,120,0.52,0.0946,0.03,medium,prop,Taurean Prince,W,1.2,,
+2026-03-23,MIL@LAC,player_assists,under 6.5,-110,0.595,0.1042,0.0374,medium,prop,Ryan Rollins,L,-1.0,,
+2026-03-23,MIL@LAC,player_assists,under 2.5,129,0.52,0.1105,0.037,medium,prop,Ousmane Dieng,L,-1.0,,
+2026-03-23,MIL@LAC,player_threes,under 2.5,-161,0.655,0.077,0.0249,medium,prop,Ryan Rollins,W,0.62,,
+2026-03-23,MIL@LAC,player_threes,over 1.5,153,0.435,0.0639,0.0164,medium,prop,John Collins,L,-1.0,,
+2026-03-23,MIL@LAC,player_threes,under 1.5,-140,0.61,0.063,0.016,medium,prop,Derrick Jones,W,0.71,,
+2026-03-23,MIL@LAC,player_threes,under 1.5,103,0.5900000000000001,0.1284,0.048,medium,prop,Ousmane Dieng,W,1.03,,
+2026-03-23,MIL@LAC,player_pra,over 39.5,-124,0.57,0.0517,0.0092,medium,prop,Kawhi Leonard,L,-1.0,,
+2026-03-23,MIL@LAC,player_pra,under 29.5,-106,0.65,0.1692,0.0698,medium,prop,Ryan Rollins,W,0.94,,
+2026-03-23,MIL@LAC,player_pra,over 17.5,-126,0.58,0.0588,0.0127,medium,prop,Kyle Kuzma,P,0.0,,
+2026-03-23,MIL@LAC,q1_spread,home Q1 -4.5,-102,0.5369,0.0543,0.0161,medium,game,,L,-1.0,,
+2026-03-23,MIL@LAC,q1_total,under 57.5,-110,0.7993,0.2993,0.1446,medium,game,,W,0.91,,
+2026-03-23,MIL@LAC,q2_total,over 56.5,-120,0.5895,0.0794,0.0242,medium,game,,W,0.83,,
+2026-03-23,MIL@LAC,team_total_away,away under 103.5,-108,0.5483,0.0527,0.0151,medium,game,,W,0.93,,
+2026-03-23,MIL@LAC,player_points,under 9.5,-106,0.54,0.0546,0.0131,medium,prop,Brook Lopez,L,-1.0,,
+2026-03-23,MIL@LAC,player_assists,over 2.5,104,0.51,0.0511,0.0097,medium,prop,Kyle Kuzma,P,0.0,,
+2026-03-23,MIL@LAC,player_threes,over 0.5,-238,0.72,0.0589,0.0134,medium,prop,Kyle Kuzma,P,0.0,,
+2026-03-23,MIL@LAC,player_threes,over 1.5,111,0.54,0.096,0.0314,medium,prop,Brook Lopez,W,1.11,,
+2026-03-23,MIL@LAC,player_pra,under 17.5,-105,0.53,0.0512,0.0091,medium,prop,Kyle Kuzma,P,0.0,,
+2026-03-23,MIL@LAC,player_pra,under 19.5,-112,0.55,0.0561,0.0115,medium,prop,Ousmane Dieng,W,0.89,,
+2026-03-23,OKC@PHI,q1_total,under 54.5,-105,0.6901,0.201,0.0912,medium,game,,L,-1.0,,
+2026-03-23,OKC@PHI,player_points,over 29.5,-111,0.585,0.0892,0.0311,medium,prop,Shai Gilgeous-Alexander,L,-1.0,,
+2026-03-23,OKC@PHI,player_points,under 17.5,-114,0.5549999999999999,0.0529,0.0119,medium,prop,VJ Edgecombe,L,-1.0,,
+2026-03-23,OKC@PHI,player_points,under 9.5,-105,0.5900000000000001,0.1067,0.0399,medium,prop,Trendon Watford,L,-1.0,,
+2026-03-23,OKC@PHI,player_points,under 7.5,-102,0.56,0.0839,0.0278,medium,prop,Cason Wallace,W,0.98,,
+2026-03-23,OKC@PHI,player_points,under 6.5,-138,0.63,0.0821,0.0299,medium,prop,Adem Bona,W,0.72,,
+2026-03-23,OKC@PHI,player_rebounds,over 3.5,115,0.5,0.0646,0.0163,medium,prop,Jalen Williams,W,1.15,,
+2026-03-23,OKC@PHI,player_rebounds,under 2.5,106,0.5549999999999999,0.1008,0.0338,medium,prop,Justin Edwards,W,1.06,,
+2026-03-23,OKC@PHI,player_rebounds,under 2.5,-103,0.5700000000000001,0.0953,0.0318,medium,prop,Cason Wallace,W,0.97,,
+2026-03-23,OKC@PHI,player_assists,under 3.5,111,0.51,0.066,0.0171,medium,prop,Quentin Grimes,P,0.0,,
+2026-03-23,OKC@PHI,player_assists,over 1.5,113,0.53,0.0904,0.0285,medium,prop,Chet Holmgren,W,1.13,,
+2026-03-23,OKC@PHI,player_assists,under 3.5,100,0.52,0.0523,0.01,medium,prop,Isaiah Hartenstein,L,-1.0,,
+2026-03-23,OKC@PHI,player_threes,over 1.5,100,0.53,0.0623,0.015,medium,prop,Shai Gilgeous-Alexander,L,-1.0,,
+2026-03-23,OKC@PHI,player_threes,under 1.5,128,0.5549999999999999,0.1444,0.0518,medium,prop,VJ Edgecombe,L,-1.0,,
+2026-03-23,OKC@PHI,player_threes,over 1.5,153,0.485,0.1139,0.0371,medium,prop,Chet Holmgren,W,1.53,,
+2026-03-23,OKC@PHI,player_threes,under 1.5,102,0.515,0.0513,0.0099,medium,prop,Justin Edwards,L,-1.0,,
+2026-03-23,OKC@PHI,player_threes,over 1.5,173,0.395,0.0511,0.0113,medium,prop,Cason Wallace,L,-1.0,,
+2026-03-23,OKC@PHI,player_pra,over 39.5,-126,0.62,0.0988,0.0353,medium,prop,Shai Gilgeous-Alexander,L,-1.0,,
+2026-03-23,OKC@PHI,player_pra,under 27.5,-113,0.55,0.054,0.0104,medium,prop,Quentin Grimes,P,0.0,,
+2026-03-23,OKC@PHI,player_pra,under 27.5,-116,0.575,0.0719,0.0205,medium,prop,VJ Edgecombe,L,-1.0,,
+2026-03-23,OKC@PHI,player_pra,over 25.5,-116,0.59,0.088,0.0286,medium,prop,Chet Holmgren,W,0.86,,
+2026-03-23,OKC@PHI,player_pra,over 21.5,-122,0.585,0.0708,0.0197,medium,prop,Jalen Williams,W,0.82,,
+2026-03-23,OKC@PHI,player_pra,under 17.5,-112,0.61,0.1161,0.0433,medium,prop,Trendon Watford,L,-1.0,,
+2026-03-23,OKC@PHI,player_pra,under 13.5,-131,0.62,0.0886,0.0306,medium,prop,Cason Wallace,W,0.76,,
+2026-03-23,OKC@PHI,q1_spread,away Q1 -5.5,-102,0.5471,0.0645,0.0213,medium,game,,W,0.98,,
+2026-03-23,SAS@MIA,q1_total,under 61.5,-102,0.7839,0.3013,0.1409,medium,game,,L,-1.0,,
+2026-03-23,SAS@MIA,q2_total,over 61.5,-105,0.5595,0.0798,0.0243,medium,game,,W,0.95,,
+2026-03-23,SAS@MIA,q3_total,over 60.5,-110,0.6195,0.1296,0.0503,medium,game,,L,-1.0,,
+2026-03-23,SAS@MIA,q4_total,over 56.5,-115,0.5775,0.0775,0.0229,medium,game,,W,0.87,,
+2026-03-23,SAS@MIA,q1_total,under 63.5,-115,0.7014,0.1905,0.0895,medium,game,,L,-1.0,,
+2026-03-23,SAS@MIA,team_total_home,home under 119.5,-108,0.5508,0.0551,0.0164,medium,game,,W,0.93,,
+2026-03-23,SAS@MIA,player_points,over 26.5,-105,0.545,0.0626,0.0168,medium,prop,Victor Wembanyama,L,-1.0,,
+2026-03-23,SAS@MIA,player_points,under 21.5,-105,0.54,0.0576,0.0143,medium,prop,Bam Adebayo,W,0.95,,
+2026-03-23,SAS@MIA,player_points,over 18.5,-101,0.525,0.051,0.0113,medium,prop,De'Aaron Fox,L,-1.0,,
+2026-03-23,SAS@MIA,player_points,under 16.5,-114,0.5549999999999999,0.0529,0.0119,medium,prop,Stephon Castle,L,-1.0,,
+2026-03-23,SAS@MIA,player_points,under 12.5,-109,0.5549999999999999,0.0633,0.0175,medium,prop,Andrew Wiggins,W,0.92,,
+2026-03-23,SAS@MIA,player_points,under 10.5,-110,0.575,0.0812,0.0269,medium,prop,Julian Champagnie,W,0.91,,
+2026-03-23,SAS@MIA,player_points,under 10.5,-128,0.61,0.0811,0.0277,medium,prop,Dylan Harper,L,-1.0,,
+2026-03-23,SAS@MIA,player_points,under 10.5,-129,0.64,0.109,0.0439,medium,prop,Pelle Larsson,W,0.78,,
+2026-03-23,SAS@MIA,player_points,under 8.5,-113,0.575,0.075,0.0237,medium,prop,Davion Mitchell,W,0.88,,
+2026-03-23,SAS@MIA,player_rebounds,over 12.5,-113,0.555,0.059,0.0131,medium,prop,Victor Wembanyama,W,0.88,,
+2026-03-23,SAS@MIA,player_rebounds,under 3.5,-120,0.565,0.0549,0.0107,medium,prop,De'Aaron Fox,W,0.83,,
+2026-03-23,SAS@MIA,player_rebounds,under 3.5,121,0.5,0.0763,0.0217,medium,prop,Devin Vassell,W,1.21,,
+2026-03-23,SAS@MIA,player_rebounds,under 4.5,-110,0.54,0.0501,0.0085,medium,prop,Keldon Johnson,L,-1.0,,
+2026-03-23,SAS@MIA,player_rebounds,under 3.5,-146,0.61,0.054,0.0101,medium,prop,Dylan Harper,L,-1.0,,
+2026-03-23,SAS@MIA,player_rebounds,under 3.5,-103,0.5900000000000001,0.1144,0.0419,medium,prop,Pelle Larsson,W,0.97,,
+2026-03-23,SAS@MIA,player_assists,under 7.5,103,0.5700000000000001,0.1091,0.0381,medium,prop,Stephon Castle,W,1.03,,
+2026-03-23,SAS@MIA,player_assists,under 2.5,-107,0.595,0.1121,0.0404,medium,prop,Devin Vassell,L,-1.0,,
+2026-03-23,SAS@MIA,player_assists,under 4.5,-138,0.595,0.0519,0.009,medium,prop,Jaime Jaquez Jr,L,-1.0,,
+2026-03-23,SAS@MIA,player_assists,under 1.5,-101,0.5549999999999999,0.0844,0.0264,medium,prop,Julian Champagnie,W,0.99,,
+2026-03-23,SAS@MIA,player_assists,under 2.5,127,0.635,0.2223,0.0869,medium,prop,Pelle Larsson,L,-1.0,,
+2026-03-23,SAS@MIA,player_assists,under 5.5,104,0.54,0.0811,0.0244,medium,prop,Davion Mitchell,W,1.04,,
+2026-03-23,SAS@MIA,player_threes,over 2.5,120,0.49,0.0646,0.0163,medium,prop,Victor Wembanyama,L,-1.0,,
+2026-03-23,SAS@MIA,player_threes,under 1.5,130,0.7150000000000001,0.3076,0.124,medium,prop,Bam Adebayo,L,-1.0,,
+2026-03-23,SAS@MIA,player_threes,over 2.5,-119,0.56,0.0508,0.0091,medium,prop,Tyler Herro,L,-1.0,,
+2026-03-23,SAS@MIA,player_threes,under 1.5,100,0.55,0.0823,0.025,medium,prop,Andrew Wiggins,W,1.0,,
+2026-03-23,SAS@MIA,player_threes,under 2.5,-142,0.615,0.0653,0.0171,medium,prop,Julian Champagnie,W,0.7,,
+2026-03-23,SAS@MIA,player_threes,under 0.5,128,0.635,0.2239,0.0874,medium,prop,Dylan Harper,L,-1.0,,
+2026-03-23,SAS@MIA,player_threes,under 0.5,136,0.7150000000000001,0.3177,0.1263,medium,prop,Pelle Larsson,W,1.36,,
+2026-03-23,SAS@MIA,player_pra,under 30.5,-125,0.61,0.0897,0.0306,medium,prop,Stephon Castle,L,-1.0,,
+2026-03-23,SAS@MIA,player_pra,under 19.5,-113,0.5900000000000001,0.094,0.0317,medium,prop,Andrew Wiggins,W,0.88,,
+2026-03-23,SAS@MIA,player_pra,under 19.5,-104,0.5449999999999999,0.0674,0.018,medium,prop,Jaime Jaquez Jr,W,0.96,,
+2026-03-23,SAS@MIA,player_pra,under 17.5,-104,0.605,0.1282,0.0486,medium,prop,Julian Champagnie,W,0.96,,
+2026-03-23,SAS@MIA,player_pra,under 17.5,-111,0.635,0.1431,0.0575,medium,prop,Dylan Harper,L,-1.0,,
+2026-03-23,SAS@MIA,player_pra,under 17.5,-127,0.6699999999999999,0.1468,0.0627,medium,prop,Pelle Larsson,W,0.79,,
+2026-03-23,SAS@MIA,player_pra,under 17.5,-129,0.615,0.0877,0.0296,medium,prop,Davion Mitchell,W,0.78,,
+2026-03-23,TOR@UTA,q1_ml,home Q1 ML,185,0.3885,0.0521,0.0145,medium,game,,L,-1.0,,
+2026-03-23,TOR@UTA,player_points,over 21.5,-114,0.555,0.0529,0.0119,medium,prop,Brandon Ingram,L,-1.0,,
+2026-03-23,TOR@UTA,player_points,under 20.5,-111,0.55,0.0531,0.0126,medium,prop,Brice Sensabaugh,L,-1.0,,
+2026-03-23,TOR@UTA,player_points,over 17.5,-124,0.625,0.1032,0.04,medium,prop,Scottie Barnes,W,0.81,,
+2026-03-23,TOR@UTA,player_rebounds,under 3.5,-129,0.615,0.0877,0.0296,medium,prop,Brice Sensabaugh,L,-1.0,,
+2026-03-23,TOR@UTA,player_rebounds,over 7.5,-122,0.645,0.1308,0.053,medium,prop,Scottie Barnes,L,-1.0,,
+2026-03-23,TOR@UTA,player_rebounds,over 4.5,-124,0.575,0.0567,0.012,medium,prop,Ace Bailey,W,0.81,,
+2026-03-23,TOR@UTA,player_rebounds,over 8.5,103,0.525,0.0641,0.0159,medium,prop,Kyle Filipowski,L,-1.0,,
+2026-03-23,TOR@UTA,player_rebounds,under 3.5,125,0.5449999999999999,0.1285,0.0452,medium,prop,Cody Williams,W,1.25,,
+2026-03-23,TOR@UTA,player_assists,over 3.5,-141,0.6,0.0523,0.009,medium,prop,Brandon Ingram,L,-1.0,,
+2026-03-23,TOR@UTA,player_assists,over 5.5,107,0.52,0.0685,0.0179,medium,prop,Scottie Barnes,W,1.07,,
+2026-03-23,TOR@UTA,player_assists,over 6.5,114,0.53,0.0922,0.0294,medium,prop,Immanuel Quickley,P,0.0,,
+2026-03-23,TOR@UTA,player_assists,under 2.5,128,0.495,0.0839,0.0251,medium,prop,Kyle Filipowski,L,-1.0,,
+2026-03-23,TOR@UTA,player_assists,under 2.5,132,0.485,0.0812,0.0237,medium,prop,Cody Williams,W,1.32,,
+2026-03-23,TOR@UTA,player_threes,over 1.5,-142,0.63,0.0815,0.0261,medium,prop,Brandon Ingram,L,-1.0,,
+2026-03-23,TOR@UTA,player_threes,under 2.5,110,0.505,0.0591,0.0138,medium,prop,Brice Sensabaugh,W,1.1,,
+2026-03-23,TOR@UTA,player_pra,over 31.5,-110,0.615,0.1251,0.0479,medium,prop,Brandon Ingram,L,-1.0,,
+2026-03-23,TOR@UTA,player_pra,under 26.5,-115,0.645,0.145,0.0592,medium,prop,Brice Sensabaugh,L,-1.0,,
+2026-03-23,TOR@UTA,player_pra,over 31.5,-108,0.66,0.1742,0.0732,medium,prop,Scottie Barnes,W,0.93,,
+2026-03-23,TOR@UTA,player_pra,under 20.5,-113,0.645,0.1481,0.061,medium,prop,Cody Williams,W,0.88,,
+2026-03-23,TOR@UTA,total,under 231.5,-115,0.5646,0.0538,0.016,medium,game,,L,-1.0,,
+2026-03-23,TOR@UTA,q1_total,under 56.5,-102,0.5849,0.1022,0.0403,medium,game,,W,0.98,,
+2026-03-23,TOR@UTA,q2_total,under 56.5,-120,0.6525,0.1424,0.0589,medium,game,,L,-1.0,,
+2026-03-23,TOR@UTA,team_total_away,away under 122.5,-112,0.7003,0.196,0.0912,medium,game,,L,-1.0,,
+2026-03-24,DEN@PHX,q2_total,over 55.5,-120,0.823,0.3129,0.1527,medium,game,,W,0.83,,
+2026-03-24,DEN@PHX,q1_total,under 57.5,-108,0.6978,0.2021,0.0928,medium,game,,L,-1.0,,
+2026-03-24,NOP@NYK,team_total_home,home under 120.5,-115,0.5726,0.0618,0.0203,medium,game,,L,-1.0,,
+2026-03-24,NOP@NYK,q1_total,under 60.5,-120,0.6659,0.1441,0.0662,medium,game,,L,-1.0,,
+2026-03-24,NOP@NYK,q2_total,under 58.5,-120,0.646,0.1359,0.0553,medium,game,,W,0.83,,
+2026-03-24,NOP@NYK,team_total_away,away under 110.5,-112,0.5745,0.0702,0.0245,medium,game,,L,-1.0,,
+2026-03-24,NOP@NYK,player_points,over 21.5,-102,0.54,0.0639,0.0177,medium,prop,Karl-Anthony Towns,L,-1.0,,
+2026-03-24,NOP@NYK,player_points,over 20.5,-102,0.565,0.088,0.0303,medium,prop,Zion Williamson,W,0.98,,
+2026-03-24,NOP@NYK,player_points,under 11.5,-105,0.55,0.0667,0.0194,medium,prop,Josh Hart,W,0.95,,
+2026-03-24,NOP@NYK,player_rebounds,under 4.5,113,0.505,0.0654,0.0167,medium,prop,Dejounte Murray,L,-1.0,,
+2026-03-24,NOP@NYK,player_rebounds,under 3.5,105,0.5449999999999999,0.0881,0.0279,medium,prop,Mikal Bridges,W,1.05,,
+2026-03-24,NOP@NYK,player_rebounds,over 4.5,116,0.51,0.0764,0.0219,medium,prop,Derik Queen,W,1.16,,
+2026-03-24,NOP@NYK,player_assists,over 6.5,-146,0.64,0.084,0.0286,medium,prop,Jalen Brunson,W,0.68,,
+2026-03-24,NOP@NYK,player_assists,over 5.5,-145,0.605,0.0509,0.0081,medium,prop,Dejounte Murray,W,0.69,,
+2026-03-24,NOP@NYK,player_threes,over 1.5,146,0.49,0.1084,0.0352,medium,prop,Jose Alvarado,L,-1.0,,
+2026-03-24,NOP@NYK,player_pra,over 28.5,-123,0.6,0.0838,0.027,medium,prop,Zion Williamson,L,-1.0,,
+2026-03-24,ORL@CLE,spread,home -10.5,-115,0.6138,0.103,0.0424,medium,game,,L,-1.0,,
+2026-03-24,ORL@CLE,q1_spread,home Q1 -3.5,-110,0.5806,0.0806,0.0298,medium,game,,L,-1.0,,
+2026-03-24,SAC@CHA,q1_spread,home Q1 -5.5,-110,0.5503,0.0503,0.0139,medium,game,,W,0.91,,
+2026-03-24,SAC@CHA,q1_total,under 59.5,-112,0.5791,0.0748,0.027,medium,game,,W,0.89,,
+2026-03-24,SAC@CHA,q1_total,under 60.5,-105,0.565,0.0758,0.0271,medium,game,,W,0.95,,
+2026-03-24,SAC@CHA,q2_total,under 59.5,-115,0.6695,0.1695,0.0723,medium,game,,L,-1.0,,
+2026-03-24,SAC@CHA,team_total_home,home under 125.5,-105,0.5631,0.074,0.0261,medium,game,,L,-1.0,,
+2026-03-24,SAC@CHA,player_points,over 21.5,-103,0.565,0.0868,0.0293,medium,prop,LaMelo Ball,L,-1.0,,
+2026-03-24,SAC@CHA,player_points,under 6.5,-107,0.54,0.0534,0.012,medium,prop,Ryan Kalkbrenner,W,0.93,,
+2026-03-24,SAC@CHA,player_rebounds,over 4.5,-105,0.535,0.0553,0.0117,medium,prop,LaMelo Ball,W,0.95,,
+2026-03-24,SAC@CHA,player_rebounds,under 9.5,-143,0.625,0.0734,0.0222,medium,prop,Maxime Raynaud,W,0.7,,
+2026-03-24,SAC@CHA,player_rebounds,over 5.5,102,0.54,0.0771,0.0222,medium,prop,Miles Bridges,W,1.02,,
+2026-03-24,SAC@CHA,player_rebounds,under 10.5,-142,0.62,0.0703,0.0201,medium,prop,Moussa Diabate,L,-1.0,,
+2026-03-24,SAC@CHA,player_assists,over 6.5,-136,0.64,0.1009,0.0376,medium,prop,LaMelo Ball,W,0.74,,
+2026-03-24,SAC@CHA,player_assists,under 2.5,121,0.485,0.0613,0.0149,medium,prop,Kon Knueppel,L,-1.0,,
+2026-03-24,SAC@CHA,player_threes,under 1.5,-104,0.5900000000000001,0.1132,0.0409,medium,prop,Miles Bridges,W,0.96,,
+2026-03-24,SAC@CHA,player_threes,under 2.5,-122,0.575,0.0608,0.0141,medium,prop,Doug McDermott,W,0.82,,
+2026-03-24,SAC@CHA,player_pra,over 32.5,-120,0.63,0.1188,0.0465,medium,prop,LaMelo Ball,W,0.83,,
+2026-03-24,SAC@CHA,player_pra,under 25.5,-106,0.55,0.0683,0.0182,medium,prop,Kon Knueppel,W,0.94,,
+2026-03-24,SAC@CHA,player_pra,under 25.5,-107,0.5349999999999999,0.0503,0.0094,medium,prop,Malik Monk,W,0.93,,
+2026-03-24,SAC@CHA,player_pra,under 24.5,-106,0.54,0.0583,0.0131,medium,prop,Devin Carter,W,0.94,,
+2026-03-24,NOP@NYK,q1_spread,away Q1 2.5,-108,1.0,0.5043,0.25,medium,game,,L,-1.0,,
+2026-03-24,NOP@NYK,q1_total,under 59.5,-102,0.7426,0.2599,0.12,medium,game,,L,-1.0,,
+2026-03-24,NOP@NYK,player_points,over 25.5,-102,0.5733,0.0972,0.0345,medium,prop,Jalen Brunson,W,0.98,,
+2026-03-24,NOP@NYK,player_points,over 20.5,-110,0.5867,0.0929,0.033,medium,prop,Karl-Anthony Towns,W,0.91,,
+2026-03-24,NOP@NYK,player_points,under 17.5,-104,0.56,0.0797,0.0256,medium,prop,Saddiq Bey,L,-1.0,,
+2026-03-24,NOP@NYK,player_points,over 13.5,-103,0.5433,0.0651,0.0182,medium,prop,Mikal Bridges,W,0.97,,
+2026-03-24,NOP@NYK,player_points,over 12.5,-121,0.5767,0.0612,0.0161,medium,prop,Josh Hart,L,-1.0,,
+2026-03-24,NOP@NYK,player_points,under 8.5,-128,0.6599999999999999,0.1311,0.0562,medium,prop,Jeremiah Fears,L,-1.0,,
+2026-03-24,NOP@NYK,player_points,under 6.5,-108,0.5433,0.0537,0.0125,medium,prop,Derik Queen,W,0.93,,
+2026-03-24,NOP@NYK,player_rebounds,over 7.5,-120,0.5967,0.0855,0.0282,medium,prop,Josh Hart,W,0.83,,
+2026-03-24,NOP@NYK,player_assists,over 7.5,112,0.5467,0.1052,0.0355,medium,prop,Jalen Brunson,L,-1.0,,
+2026-03-24,NOP@NYK,player_assists,over 2.5,-132,0.5833,0.051,0.0083,medium,prop,Karl-Anthony Towns,L,-1.0,,
+2026-03-24,NOP@NYK,player_assists,under 3.5,-102,0.53,0.0573,0.0126,medium,prop,Trey Murphy III,W,0.98,,
+2026-03-24,NOP@NYK,player_assists,over 5.5,116,0.53,0.0964,0.0312,medium,prop,Josh Hart,L,-1.0,,
+2026-03-24,NOP@NYK,player_assists,over 1.5,-121,0.5767,0.0645,0.0161,medium,prop,Jordan Clarkson,W,0.83,,
+2026-03-24,NOP@NYK,player_assists,under 1.5,138,0.6433,0.2494,0.0962,medium,prop,Derik Queen,L,-1.0,,
+2026-03-24,NOP@NYK,player_threes,over 1.5,105,0.5767,0.1198,0.0434,medium,prop,Karl-Anthony Towns,W,1.05,,
+2026-03-24,NOP@NYK,player_threes,under 1.5,117,0.52,0.0882,0.0274,medium,prop,Dejounte Murray,W,1.17,,
+2026-03-24,NOP@NYK,player_threes,under 1.5,-105,0.5367,0.0579,0.0126,medium,prop,Mikal Bridges,L,-1.0,,
+2026-03-24,NOP@NYK,player_threes,over 1.5,139,0.45,0.0576,0.0136,medium,prop,Jordan Clarkson,L,-1.0,,
+2026-03-24,NOP@NYK,player_threes,under 1.5,-128,0.5900000000000001,0.0647,0.0163,medium,prop,Herb Jones,W,0.78,,
+2026-03-24,NOP@NYK,player_pra,over 35.5,-118,0.61,0.1029,0.0374,medium,prop,Jalen Brunson,W,0.85,,
+2026-03-24,NOP@NYK,player_pra,under 29.5,-117,0.5932999999999999,0.0893,0.0294,medium,prop,Trey Murphy III,W,0.85,,
+2026-03-24,NOP@NYK,player_pra,under 26.5,-119,0.6067,0.0975,0.0347,medium,prop,Saddiq Bey,W,0.84,,
+2026-03-24,NOP@NYK,player_pra,over 27.5,-120,0.5667,0.0566,0.0117,medium,prop,Dejounte Murray,L,-1.0,,
+2026-03-24,NOP@NYK,player_pra,over 25.5,-124,0.61,0.0917,0.0316,medium,prop,Josh Hart,L,-1.0,,
+2026-03-24,NOP@NYK,player_pra,under 14.5,-109,0.54,0.0522,0.0097,medium,prop,Herb Jones,L,-1.0,,
+2026-03-24,NOP@NYK,player_pra,under 13.5,-127,0.6599999999999999,0.1356,0.057,medium,prop,Derik Queen,W,0.79,,
+2026-03-24,ORL@CLE,total,under 229.5,-105,0.555,0.0658,0.022,medium,game,,L,-1.0,,
+2026-03-24,ORL@CLE,q1_spread,away Q1 3.5,-108,1.0,0.5043,0.25,medium,game,,W,0.93,,
+2026-03-24,ORL@CLE,q1_total,under 59.5,-112,0.705,0.2007,0.0936,medium,game,,L,-1.0,,
+2026-03-24,ORL@CLE,q2_total,under 59.5,-125,0.628,0.1077,0.0408,medium,game,,L,-1.0,,
+2026-03-24,ORL@CLE,q3_total,over 56.5,-115,0.6395,0.1395,0.0562,medium,game,,W,0.87,,
+2026-03-24,ORL@CLE,team_total_away,away under 109.5,-115,0.653,0.1422,0.0635,medium,game,,L,-1.0,,
+2026-03-24,ORL@CLE,player_points,over 28.5,-106,0.54,0.0546,0.0131,medium,prop,Donovan Mitchell,W,0.94,,
+2026-03-24,ORL@CLE,player_points,under 11.5,-106,0.56,0.0746,0.0234,medium,prop,Sam Merrill,L,-1.0,,
+2026-03-24,ORL@CLE,player_points,under 11.5,-112,0.5549999999999999,0.0571,0.0141,medium,prop,Tristan da Silva,L,-1.0,,
+2026-03-24,ORL@CLE,player_rebounds,under 7.5,110,0.5549999999999999,0.1091,0.0376,medium,prop,Paolo Banchero,W,1.1,,
+2026-03-24,ORL@CLE,player_rebounds,under 3.5,119,0.54,0.1123,0.0384,medium,prop,Desmond Bane,L,-1.0,,
+2026-03-24,ORL@CLE,player_rebounds,under 3.5,-165,0.65,0.0665,0.0181,medium,prop,Sam Merrill,L,-1.0,,
+2026-03-24,ORL@CLE,player_rebounds,under 4.5,-104,0.55,0.0732,0.0205,medium,prop,Max Strus,W,0.96,,
+2026-03-24,ORL@CLE,player_assists,under 1.5,137,0.5900000000000001,0.1942,0.0727,medium,prop,Sam Merrill,W,1.37,,
+2026-03-24,ORL@CLE,player_assists,under 1.5,136,0.54,0.1432,0.0505,medium,prop,Tristan da Silva,L,-1.0,,
+2026-03-24,ORL@CLE,player_assists,over 2.5,130,0.48,0.0726,0.02,medium,prop,Wendell Carter Jr,L,-1.0,,
+2026-03-24,ORL@CLE,player_threes,over 2.5,-163,0.645,0.0648,0.0166,medium,prop,Donovan Mitchell,W,0.61,,
+2026-03-24,ORL@CLE,player_threes,over 1.5,-184,0.67,0.0624,0.0157,medium,prop,Desmond Bane,L,-1.0,,
+2026-03-24,ORL@CLE,player_threes,under 1.5,120,0.525,0.099,0.0323,medium,prop,Tristan da Silva,L,-1.0,,
+2026-03-24,ORL@CLE,player_pra,under 38.5,-107,0.575,0.0912,0.0301,medium,prop,Paolo Banchero,L,-1.0,,
+2026-03-24,ORL@CLE,player_pra,under 17.5,-126,0.625,0.1026,0.0381,medium,prop,Sam Merrill,L,-1.0,,
+2026-03-24,ORL@CLE,player_pra,under 18.5,-120,0.615,0.1049,0.0382,medium,prop,Tristan da Silva,L,-1.0,,
+2026-03-24,ORL@CLE,player_pra,under 15.5,-113,0.56,0.0631,0.0157,medium,prop,Max Strus,L,-1.0,,
+2026-03-24,DEN@PHX,q1_total,under 56.5,-105,0.6083,0.1191,0.0493,medium,game,,L,-1.0,,
+2026-03-25,LAL@IND,q1_spread,away Q1 -3.5,-105,0.5548,0.0548,0.0218,medium,game,,W,0.95,126-112,
+2026-03-25,LAL@IND,q1_total,under 62.5,-112,0.8169,0.3169,0.153,medium,game,,L,-1.0,56.1619,
+2026-03-25,LAL@IND,q2_total,over 60.5,-115,0.5685,0.0685,0.0181,medium,game,,W,0.87,61.87,
+2026-03-25,LAL@IND,team_total_home,home under 113.5,-115,0.5666,0.0666,0.017,medium,game,,L,-1.0,112.169,
+2026-03-25,LAL@IND,team_total_away,away over 124.5,-110,0.5732,0.0732,0.026,medium,game,,L,-1.0,125.9643,
+2026-03-25,LAL@IND,player_rebounds,over 5.5,-137,0.56,0.06,0.0,medium,prop,LeBron James,W,0.73,6.0,
+2026-03-25,LAL@IND,player_assists,over 7.5,-146,0.56,0.06,0.0,medium,prop,Luka Doncic,L,-1.0,8.0,
+2026-03-25,LAL@IND,player_assists,over 4.5,-150,0.56,0.06,0.0,medium,prop,T.J. McConnell,L,-1.0,5.0,
+2026-03-25,LAL@IND,player_threes,under 4.5,-130,0.5539999999999999,0.054,0.0,medium,prop,Luka Doncic,W,0.77,4.2,
+2026-03-25,LAL@IND,player_threes,under 2.5,-177,0.5539999999999999,0.054,0.0,medium,prop,Austin Reaves,W,0.56,2.2,
+2026-03-25,LAL@IND,player_threes,under 1.5,-195,0.572,0.072,0.0,medium,prop,Pascal Siakam,W,0.51,1.1,
+2026-03-25,LAL@IND,player_threes,under 1.5,-143,0.554,0.054,0.0,medium,prop,Andrew Nembhard,L,-1.0,1.2,
+2026-03-25,LAL@IND,player_threes,under 1.5,112,0.554,0.054,0.0389,medium,prop,Jarace Walker,L,-1.0,1.2,
+2026-03-25,LAL@IND,player_threes,under 1.5,-126,0.59,0.09,0.0184,medium,prop,Jay Huff,L,-1.0,1.0,
+2026-03-25,LAL@IND,player_threes,under 1.5,-180,0.572,0.072,0.0,medium,prop,Obi Toppin,W,0.56,1.1,
+2026-03-25,LAL@IND,player_threes,under 1.5,-170,0.554,0.054,0.0,medium,prop,Rui Hachimura,P,0.0,1.2,
+2026-03-25,LAL@IND,player_pra,over 31.5,-122,0.5559999999999999,0.056,0.0036,medium,prop,LeBron James,W,0.82,32.9,
+2026-03-25,CHI@PHI,q2_total,over 57.5,-120,0.629,0.129,0.0459,medium,game,,W,0.83,60.08,
+2026-03-25,CHI@PHI,player_points,over 22.5,-119,0.7160000000000001,0.216,0.0945,medium,prop,Joel Embiid,W,0.84,26.1,
+2026-03-25,CHI@PHI,player_points,over 20.5,-112,0.5839999999999999,0.084,0.0295,medium,prop,VJ Edgecombe,W,0.89,21.9,
+2026-03-25,CHI@PHI,player_points,under 18.5,-121,0.56,0.06,0.0069,medium,prop,Josh Giddey,L,-1.0,17.5,
+2026-03-25,CHI@PHI,player_points,under 17.5,-116,0.5539999999999999,0.054,0.0092,medium,prop,Quentin Grimes,W,0.86,16.6,
+2026-03-25,CHI@PHI,player_points,over 16.5,-106,0.686,0.186,0.0883,medium,prop,Paul George,W,0.94,19.6,
+2026-03-25,CHI@PHI,player_points,over 14.5,-122,0.572,0.072,0.0125,medium,prop,Collin Sexton,W,0.82,15.7,
+2026-03-25,CHI@PHI,player_points,under 9.5,-124,0.554,0.054,0.0003,medium,prop,Leonard Miller,L,-1.0,8.6,
+2026-03-25,CHI@PHI,player_rebounds,over 5.5,-133,0.56,0.06,0.0,medium,prop,Matas Buzelis,W,0.75,6.0,
+2026-03-25,CHI@PHI,player_assists,over 3.5,-142,0.5840000000000001,0.084,0.0,medium,prop,Joel Embiid,W,0.7,4.2,
+2026-03-25,CHI@PHI,player_threes,over 1.5,-179,0.554,0.054,0.0,medium,prop,Quentin Grimes,L,-1.0,1.8,
+2026-03-25,CHI@PHI,player_threes,over 1.5,-143,0.554,0.054,0.0,medium,prop,Collin Sexton,L,-1.0,1.8,
+2026-03-25,CHI@PHI,player_pra,over 33.5,-113,0.7,0.2,0.0902,medium,prop,Joel Embiid,W,0.88,38.5,
+2026-03-25,CHI@PHI,player_pra,over 26.5,-107,0.6440000000000001,0.144,0.0658,medium,prop,Paul George,W,0.93,30.1,
+2026-03-25,OKC@BOS,q1_total,under 53.5,-108,0.62,0.12,0.0524,medium,game,,W,0.93,51.1,
+2026-03-25,OKC@BOS,q2_total,over 53.5,-115,0.6905,0.1905,0.0837,medium,game,,L,-1.0,57.31,
+2026-03-25,MIA@CLE,q2_total,over 61.5,-120,0.5615,0.0615,0.0088,medium,game,,W,0.83,62.73,
+2026-03-25,SAS@MEM,spread,away -17.5,-105,0.56,0.06,0.0245,high,game,,W,0.95,125-106,
+2026-03-25,SAS@MEM,q1_spread,away Q1 -5.5,-115,0.5588,0.0588,0.0129,medium,game,,W,0.87,125-106,
+2026-03-25,SAS@MEM,team_total_home,home under 107.5,-118,0.5969,0.0969,0.0303,medium,game,,W,0.85,105.5625,
+2026-03-25,SAS@MEM,player_points,under 13.5,-123,0.554,0.054,0.0014,medium,prop,Cedric Coward,W,0.81,12.6,
+2026-03-25,SAS@MEM,player_rebounds,under 5.5,-158,0.56,0.06,0.0,medium,prop,G.G. Jackson,L,-1.0,5.0,
+2026-03-25,SAS@MEM,player_threes,under 1.5,-114,0.554,0.054,0.0114,medium,prop,G.G. Jackson,L,-1.0,1.2,
+2026-03-25,SAS@MEM,player_threes,under 1.5,-180,0.554,0.054,0.0,medium,prop,Keldon Johnson,W,0.56,1.2,
+2026-03-25,SAS@MEM,player_threes,under 2.5,-141,0.572,0.072,0.0,medium,prop,Devin Vassell,L,-1.0,2.1,
+2026-03-25,SAS@MEM,player_threes,under 1.5,-114,0.554,0.054,0.0114,medium,prop,Cam Spencer,W,0.88,1.2,
+2026-03-25,SAS@MEM,player_pra,under 20.5,-123,0.5559999999999999,0.056,0.0025,medium,prop,Devin Vassell,L,-1.0,19.1,
+2026-03-25,SAS@MEM,player_pra,under 20.5,-112,0.552,0.052,0.0126,medium,prop,Cedric Coward,W,0.89,19.2,
+2026-03-25,SAS@MEM,player_pra,under 17.5,-122,0.5640000000000001,0.064,0.008,medium,prop,Walter Clayton Jr.,L,-1.0,15.9,
+2026-03-25,WAS@UTA,q1_ml,home Q1 ML,-155,0.576,0.076,0.0,medium,game,,L,-1.0,117-123,
+2026-03-25,WAS@UTA,q1_total,under 61.5,-105,0.7984,0.2984,0.1467,medium,game,,W,0.95,55.5325,
+2026-03-25,WAS@UTA,player_points,under 12.5,-106,0.5780000000000001,0.078,0.0327,medium,prop,Tristan Vukcevic,P,0.0,11.2,
+2026-03-25,WAS@UTA,player_rebounds,over 5.5,-148,0.56,0.06,0.0,medium,prop,Ace Bailey,L,-1.0,6.0,
+2026-03-25,WAS@UTA,player_rebounds,over 4.5,-141,0.56,0.06,0.0,medium,prop,Bilal Coulibaly,L,-1.0,5.0,
+2026-03-25,WAS@UTA,player_rebounds,over 4.5,-143,0.56,0.06,0.0,medium,prop,Tristan Vukcevic,P,0.0,5.0,
+2026-03-25,WAS@UTA,player_rebounds,over 4.5,-146,0.56,0.06,0.0,medium,prop,John Konchar,W,0.68,5.0,
+2026-03-25,WAS@UTA,player_assists,over 2.5,-150,0.56,0.06,0.0,medium,prop,Will Riley,W,0.67,3.0,
+2026-03-25,WAS@UTA,player_assists,under 6.5,-149,0.56,0.06,0.0,medium,prop,Carlton Carrington,W,0.67,6.0,
+2026-03-25,WAS@UTA,player_threes,over 1.5,-126,0.572,0.072,0.0082,medium,prop,Will Riley,L,-1.0,1.9,
+2026-03-25,WAS@UTA,player_threes,under 1.5,-159,0.572,0.072,0.0,medium,prop,Bilal Coulibaly,W,0.63,1.1,
+2026-03-25,WAS@UTA,player_threes,under 2.5,-168,0.5539999999999999,0.054,0.0,medium,prop,Carlton Carrington,W,0.6,2.2,
+2026-03-25,WAS@UTA,player_threes,under 1.5,-144,0.554,0.054,0.0,medium,prop,Tristan Vukcevic,P,0.0,1.2,
+2026-03-25,HOU@MIN,q2_total,over 54.5,-110,0.7455,0.2455,0.1164,medium,game,,L,-1.0,59.41,
+2026-03-25,HOU@MIN,player_points,over 18.5,-122,0.56,0.06,0.0058,medium,prop,Alperen Sengun,W,0.82,19.5,
+2026-03-25,HOU@MIN,player_points,under 17.5,-126,0.56,0.06,0.0014,medium,prop,Amen Thompson,W,0.79,16.5,
+2026-03-25,HOU@MIN,player_points,under 16.5,100,0.59,0.09,0.045,medium,prop,Ayo Dosunmu,P,0.0,15.0,
+2026-03-25,HOU@MIN,player_points,under 15.5,-116,0.56,0.06,0.0124,medium,prop,Reed Sheppard,W,0.86,14.5,
+2026-03-25,HOU@MIN,player_rebounds,over 4.5,-157,0.62,0.12,0.0059,medium,prop,Kevin Durant,L,-1.0,5.5,
+2026-03-25,HOU@MIN,player_rebounds,under 9.5,-129,0.5960000000000001,0.096,0.0187,medium,prop,Alperen Sengun,W,0.78,8.7,
+2026-03-25,HOU@MIN,player_rebounds,under 4.5,-151,0.62,0.12,0.0115,medium,prop,Ayo Dosunmu,P,0.0,3.5,
+2026-03-25,HOU@MIN,player_assists,under 4.5,102,0.5840000000000001,0.084,0.044,medium,prop,Ayo Dosunmu,P,0.0,3.8,
+2026-03-25,HOU@MIN,player_assists,under 2.5,-164,0.596,0.096,0.0,medium,prop,Naz Reid,W,0.61,1.7,
+2026-03-25,HOU@MIN,player_pra,under 26.5,-120,0.6559999999999999,0.156,0.0608,medium,prop,Ayo Dosunmu,P,0.0,22.6,
+2026-03-25,HOU@MIN,player_pra,under 23.5,-108,0.56,0.06,0.0212,medium,prop,Reed Sheppard,W,0.93,22.0,
+2026-03-25,HOU@MIN,player_pra,under 20.5,-107,0.5640000000000001,0.064,0.0244,medium,prop,Naz Reid,L,-1.0,18.9,
+2026-03-25,DAL@DEN,q1_total,under 63.5,-118,0.788,0.288,0.1344,medium,game,,L,-1.0,57.7405,
+2026-03-25,DAL@DEN,player_points,over 22.5,-124,0.5539999999999999,0.054,0.0003,medium,prop,Jamal Murray,W,0.81,23.4,
+2026-03-25,DAL@DEN,player_points,under 22.5,-117,0.62,0.12,0.0439,medium,prop,Cooper Flagg,L,-1.0,20.5,
+2026-03-25,DAL@DEN,player_points,under 10.5,-129,0.566,0.066,0.0015,medium,prop,Peyton Watson,L,-1.0,9.4,
+2026-03-25,DAL@DEN,player_threes,under 1.5,-237,0.572,0.072,0.0,medium,prop,Cooper Flagg,W,0.42,1.1,
+2026-03-25,DAL@DEN,player_pra,under 35.5,-116,0.6440000000000001,0.144,0.0578,medium,prop,Cooper Flagg,L,-1.0,31.9,
+2026-03-25,DAL@DEN,player_pra,under 26.5,-116,0.588,0.088,0.0275,medium,prop,Naji Marshall,L,-1.0,24.3,
+2026-03-25,BKN@GSW,q1_total,under 56.5,-115,0.6323,0.1323,0.0524,medium,game,,W,0.87,53.8548,
+2026-03-25,BKN@GSW,team_total_home,home over 114.5,-115,0.5974,0.0974,0.0336,medium,game,,W,0.87,116.4476,
+2026-03-25,TOR@LAC,total,under 226.5,-105,0.5665750000000003,0.0666,0.0279,medium,game,,W,0.95,225.1685,
+2026-03-25,TOR@LAC,q1_total,under 55.5,-120,0.6729,0.1729,0.0701,medium,game,,L,-1.0,52.0415,
+2026-03-25,TOR@LAC,q2_total,over 55.5,-105,0.7175,0.2175,0.1052,medium,game,,L,-1.0,59.85,
+2026-03-25,ATL@DET,q1_ml,home Q1 ML,-115,0.5405,0.0405,0.003,medium,game,,L,-1.0,113-116,
+2026-03-25,ATL@DET,q1_total,under 58.5,-102,0.6143,0.1143,0.0553,medium,game,,L,-1.0,56.2132,
+2026-03-25,CHI@PHI,total,under 240.5,-112,0.6158450000000002,0.1158,0.0464,medium,game,,L,-1.0,238.1831,
+2026-03-25,CHI@PHI,q1_ml,home Q1 ML,-142,0.5905,0.0905,0.0022,medium,game,,W,0.7,116-122,
+2026-03-25,CHI@PHI,team_total_home,home under 123.5,-115,0.5565,0.0565,0.0117,medium,game,,L,-1.0,122.369,
+2026-03-25,CHI@PHI,player_points,over 23.5,-112,0.7160000000000001,0.216,0.0995,medium,prop,Joel Embiid,W,0.89,27.1,
+2026-03-25,CHI@PHI,player_points,over 18.5,-112,0.5539999999999999,0.054,0.0136,medium,prop,Josh Giddey,W,0.89,19.4,
+2026-03-25,CHI@PHI,player_points,over 17.5,-110,0.5960000000000001,0.096,0.0379,medium,prop,Paul George,W,0.91,19.1,
+2026-03-25,CHI@PHI,player_rebounds,over 6.5,-127,0.7639999999999999,0.264,0.1161,medium,prop,Joel Embiid,L,-1.0,8.7,
+2026-03-25,CHI@PHI,player_rebounds,over 4.5,-143,0.56,0.06,0.0,medium,prop,Paul George,W,0.7,5.0,
+2026-03-25,CHI@PHI,player_rebounds,over 3.5,-143,0.56,0.06,0.0,medium,prop,Quentin Grimes,W,0.7,4.0,
+2026-03-25,CHI@PHI,player_assists,over 4.5,-126,0.56,0.06,0.0014,medium,prop,Paul George,L,-1.0,5.0,
+2026-03-25,CHI@PHI,player_assists,over 4.5,-146,0.56,0.06,0.0,medium,prop,Tre Jones,W,0.68,5.0,
+2026-03-25,CHI@PHI,player_threes,under 1.5,-166,0.554,0.054,0.0,medium,prop,Joel Embiid,L,-1.0,1.2,
+2026-03-25,CHI@PHI,player_threes,under 2.5,-181,0.59,0.09,0.0,medium,prop,VJ Edgecombe,L,-1.0,2.0,
+2026-03-25,CHI@PHI,player_threes,under 2.5,124,0.572,0.072,0.0567,medium,prop,Matas Buzelis,L,-1.0,2.1,
+2026-03-25,CHI@PHI,player_threes,under 2.5,-178,0.572,0.072,0.0,medium,prop,Josh Giddey,L,-1.0,2.1,
+2026-03-25,CHI@PHI,player_threes,under 1.5,-134,0.554,0.054,0.0,medium,prop,Collin Sexton,W,0.75,1.2,
+2026-03-25,CHI@PHI,player_threes,under 1.5,-101,0.554,0.054,0.0259,medium,prop,Jalen Smith,W,0.99,1.2,
+2026-03-25,CHI@PHI,player_pra,over 34.5,-109,0.7040000000000001,0.204,0.0953,medium,prop,Joel Embiid,W,0.92,39.6,
+2026-03-25,CHI@PHI,player_pra,over 37.5,-112,0.56,0.06,0.0168,medium,prop,Josh Giddey,W,0.89,39.0,
+2026-03-25,CHI@PHI,player_pra,over 27.5,-107,0.5640000000000001,0.064,0.0244,medium,prop,Paul George,W,0.93,29.1,
+2026-03-25,MIA@CLE,spread,away 2.5,-110,0.6,0.1,0.04,medium,game,,W,0.91,119-119,
+2026-03-25,MIA@CLE,total,under 242.5,-105,0.7054150000000007,0.2054,0.099,medium,game,,W,0.95,238.3917,
+2026-03-25,MIA@CLE,q1_total,under 62.5,-115,0.9618,0.4618,0.2295,medium,game,,W,0.87,53.2633,
+2026-03-25,MIA@CLE,q2_total,over 62.5,-115,0.5975,0.0975,0.0336,medium,game,,L,-1.0,64.45,
+2026-03-25,MIA@CLE,team_total_home,home under 122.5,-110,0.6717,0.1717,0.0776,medium,game,,W,0.91,119.0667,
+2026-03-25,MIA@CLE,team_total_away,away under 120.5,-112,0.5568,0.0568,0.0151,medium,game,,W,0.89,119.3633,
+2026-03-25,SAS@MEM,moneyline,away,-1650,0.869,0.369,0.0,medium,game,,W,0.06,122-106,
+2026-03-25,SAS@MEM,total,under 233.5,-115,0.7008650000000003,0.2009,0.0892,medium,game,,W,0.87,229.4827,
+2026-03-25,SAS@MEM,q1_total,under 60.5,-112,0.693,0.193,0.0873,medium,game,,W,0.89,56.6405,
+2026-03-25,SAS@MEM,q2_total,under 59.5,-120,0.603,0.103,0.0316,medium,game,,W,0.83,57.44,
+2026-03-25,SAS@MEM,team_total_away,away under 125.5,-105,0.6317,0.1317,0.0612,medium,game,,W,0.95,122.8667,
+2026-03-25,SAS@MEM,player_points,over 26.5,-116,0.5780000000000001,0.078,0.0221,medium,prop,Victor Wembanyama,L,-1.0,27.8,
+2026-03-25,SAS@MEM,player_rebounds,over 12.5,105,0.56,0.06,0.0352,medium,prop,Victor Wembanyama,W,1.05,13.0,
+2026-03-25,SAS@MEM,player_rebounds,over 4.5,-159,0.56,0.06,0.0,medium,prop,G.G. Jackson,W,0.63,5.0,
+2026-03-25,SAS@MEM,player_rebounds,under 4.5,-152,0.56,0.06,0.0,medium,prop,Dylan Harper,L,-1.0,4.0,
+2026-03-25,SAS@MEM,player_assists,under 7.5,109,0.56,0.06,0.0391,medium,prop,Stephon Castle,L,-1.0,7.0,
+2026-03-25,SAS@MEM,player_assists,under 5.5,-149,0.56,0.06,0.0,medium,prop,Dylan Harper,L,-1.0,5.0,
+2026-03-25,SAS@MEM,player_threes,under 2.5,-150,0.572,0.072,0.0,medium,prop,Victor Wembanyama,W,0.67,2.1,
+2026-03-25,SAS@MEM,player_threes,under 1.5,-212,0.572,0.072,0.0,medium,prop,Stephon Castle,W,0.47,1.1,
+2026-03-25,SAS@MEM,player_threes,under 1.5,-240,0.572,0.072,0.0,medium,prop,Dylan Harper,L,-1.0,1.1,
+2026-03-25,SAS@MEM,player_threes,under 1.5,-145,0.554,0.054,0.0,medium,prop,Cedric Coward,L,-1.0,1.2,
+2026-03-25,SAS@MEM,player_threes,under 1.5,-164,0.572,0.072,0.0,medium,prop,Olivier-Maxence Prosper,L,-1.0,1.1,
+2026-03-25,SAS@MEM,player_threes,under 2.5,-142,0.5539999999999999,0.054,0.0,medium,prop,Julian Champagnie,L,-1.0,2.2,
+2026-03-25,SAS@MEM,player_threes,under 1.5,-127,0.554,0.054,0.0,medium,prop,Taylor Hendricks,W,0.79,1.2,
+2026-03-25,SAS@MEM,player_threes,under 1.5,-131,0.554,0.054,0.0,medium,prop,Walter Clayton Jr.,L,-1.0,1.2,
+2026-03-25,SAS@MEM,player_threes,under 1.5,-124,0.554,0.054,0.0003,medium,prop,Harrison Barnes,L,-1.0,1.2,
+2026-03-25,SAS@MEM,player_pra,over 42.5,-112,0.56,0.06,0.0168,medium,prop,Victor Wembanyama,L,-1.0,44.0,
+2026-03-25,SAS@MEM,player_pra,under 30.5,-107,0.552,0.052,0.0182,medium,prop,Stephon Castle,W,0.93,29.2,
+2026-03-25,SAS@MEM,player_pra,under 18.5,-116,0.56,0.06,0.0124,medium,prop,Julian Champagnie,L,-1.0,17.0,
+2026-03-25,WAS@UTA,q1_spread,away Q1 1.5,-115,1.0,0.5,0.25,medium,game,,W,0.87,119-120,
+2026-03-25,WAS@UTA,q1_total,under 62.5,-115,0.8814,0.3814,0.1862,medium,game,,W,0.87,54.8719,
+2026-03-25,WAS@UTA,q2_total,over 60.5,-125,0.6415,0.1415,0.0483,medium,game,,W,0.8,63.33,
+2026-03-25,WAS@UTA,team_total_home,home under 121.5,-108,0.5661,0.0661,0.0244,medium,game,,W,0.93,120.1781,
+2026-03-25,WAS@UTA,team_total_away,away over 117.5,-110,0.5502,0.0502,0.0138,medium,game,,L,-1.0,118.5031,
+2026-03-25,WAS@UTA,player_points,over 25.5,-120,0.56,0.06,0.008,medium,prop,Ace Bailey,L,-1.0,26.5,
+2026-03-25,WAS@UTA,player_rebounds,over 4.5,-136,0.56,0.06,0.0,medium,prop,Cody Williams,L,-1.0,5.0,
+2026-03-25,WAS@UTA,player_threes,under 1.5,-124,0.554,0.054,0.0003,medium,prop,Jamir Watkins,W,0.81,1.2,
+2026-03-25,HOU@MIN,spread,home 1.5,-105,0.6,0.1,0.045,medium,game,,W,0.95,110-111,
+2026-03-25,HOU@MIN,q1_total,under 54.5,-108,0.6649,0.1649,0.0757,medium,game,,W,0.93,51.2029,
+2026-03-25,HOU@MIN,q2_total,over 53.5,-115,0.753,0.253,0.1172,medium,game,,L,-1.0,58.56,
+2026-03-25,HOU@MIN,team_total_away,away under 112.5,-112,0.6093,0.1093,0.0429,medium,game,,W,0.89,110.3147,
+2026-03-25,HOU@MIN,player_points,over 21.5,-112,0.5539999999999999,0.054,0.0136,medium,prop,Julius Randle,W,0.89,22.4,
+2026-03-25,HOU@MIN,player_points,under 15.5,-110,0.602,0.102,0.0411,medium,prop,Jaden McDaniels,L,-1.0,13.8,
+2026-03-25,HOU@MIN,player_rebounds,over 6.5,104,0.62,0.12,0.0636,medium,prop,Julius Randle,L,-1.0,7.5,
+2026-03-25,HOU@MIN,player_threes,under 1.5,-164,0.554,0.054,0.0,medium,prop,Jaden McDaniels,L,-1.0,1.2,
+2026-03-25,HOU@MIN,player_threes,under 2.5,-131,0.5539999999999999,0.054,0.0,medium,prop,Bones Hyland,W,0.76,2.2,
+2026-03-25,HOU@MIN,player_pra,over 32.5,-120,0.5680000000000001,0.068,0.0124,medium,prop,Julius Randle,W,0.83,34.2,
+2026-03-25,HOU@MIN,player_pra,under 24.5,-125,0.552,0.052,0.0,medium,prop,Reed Sheppard,W,0.8,23.2,
+2026-03-25,HOU@MIN,player_pra,under 22.5,-110,0.596,0.096,0.0379,medium,prop,Jaden McDaniels,L,-1.0,20.1,
+2026-03-25,DAL@DEN,total,under 244.5,-105,0.6150199999999998,0.115,0.0527,medium,game,,L,-1.0,242.1996,
+2026-03-25,DAL@DEN,q1_ml,home Q1 ML,-218,0.6874,0.1874,0.0015,medium,game,,W,0.46,114-128,
+2026-03-25,DAL@DEN,q1_spread,home Q1 -3.5,-112,0.5617,0.0617,0.0177,medium,game,,L,-1.0,114-128,
+2026-03-25,DAL@DEN,team_total_away,away under 116.5,-115,0.6101,0.1101,0.0404,medium,game,,L,-1.0,114.2976,
+2026-03-25,DAL@DEN,player_points,over 28.5,-109,0.5960000000000001,0.096,0.0389,medium,prop,Nikola Jokic,L,-1.0,30.1,
+2026-03-25,DAL@DEN,player_points,under 21.5,-116,0.6260000000000001,0.126,0.0481,medium,prop,Cooper Flagg,L,-1.0,19.4,
+2026-03-25,DAL@DEN,player_points,under 16.5,-115,0.5780000000000001,0.078,0.0232,medium,prop,Naji Marshall,L,-1.0,15.2,
+2026-03-25,DAL@DEN,player_points,under 12.5,-120,0.5780000000000001,0.078,0.0179,medium,prop,Christian Braun,W,0.83,11.2,
+2026-03-25,DAL@DEN,player_points,under 11.5,-108,0.572,0.072,0.0274,medium,prop,Max Christie,W,0.93,10.3,
+2026-03-25,DAL@DEN,player_points,under 11.5,-112,0.572,0.072,0.0232,medium,prop,Peyton Watson,L,-1.0,10.3,
+2026-03-25,DAL@DEN,player_rebounds,over 12.5,-114,0.572,0.072,0.021,medium,prop,Nikola Jokic,W,0.88,13.1,
+2026-03-25,DAL@DEN,player_rebounds,over 5.5,-124,0.5840000000000001,0.084,0.017,medium,prop,Aaron Gordon,P,0.0,6.2,
+2026-03-25,DAL@DEN,player_assists,under 6.5,-138,0.62,0.12,0.0239,medium,prop,Cooper Flagg,L,-1.0,5.5,
+2026-03-25,DAL@DEN,player_threes,under 1.5,-102,0.572,0.072,0.0338,medium,prop,Nikola Jokic,W,0.98,1.1,
+2026-03-25,DAL@DEN,player_threes,over 0.5,-237,0.572,0.072,0.0,medium,prop,Cooper Flagg,W,0.42,0.9,
+2026-03-25,DAL@DEN,player_threes,under 1.5,-116,0.554,0.054,0.0092,medium,prop,Aaron Gordon,P,0.0,1.2,
+2026-03-25,DAL@DEN,player_threes,under 1.5,-208,0.608,0.108,0.0,medium,prop,Christian Braun,W,0.48,0.9,
+2026-03-25,DAL@DEN,player_threes,under 2.5,-163,0.6619999999999999,0.162,0.0278,medium,prop,Max Christie,L,-1.0,1.6,
+2026-03-25,DAL@DEN,player_pra,over 51.5,-117,0.6,0.1,0.033,medium,prop,Nikola Jokic,W,0.85,54.0,
+2026-03-25,DAL@DEN,player_pra,under 34.5,-110,0.62,0.12,0.0505,medium,prop,Cooper Flagg,L,-1.0,31.5,
+2026-03-25,DAL@DEN,player_pra,under 25.5,-116,0.596,0.096,0.0319,medium,prop,Naji Marshall,L,-1.0,23.1,
+2026-03-25,DAL@DEN,player_pra,under 20.5,-121,0.6040000000000001,0.104,0.0312,medium,prop,Christian Braun,W,0.83,17.9,
+2026-03-25,DAL@DEN,player_pra,under 16.5,-103,0.56,0.06,0.0267,medium,prop,Peyton Watson,L,-1.0,15.0,
+2026-03-25,BKN@GSW,moneyline,home,-625,0.8308,0.3308,0.0,medium,game,,W,0.16,100-117,
+2026-03-25,BKN@GSW,q1_ml,home Q1 ML,-218,0.6842,0.1842,0.0,medium,game,,L,-1.0,100-117,
+2026-03-25,BKN@GSW,q1_spread,home Q1 -3.5,-105,0.5566,0.0566,0.0227,medium,game,,L,-1.0,100-117,
+2026-03-25,BKN@GSW,q1_total,under 55.5,-102,0.6041,0.1041,0.05,medium,game,,W,0.98,53.4184,
+2026-03-25,BKN@GSW,team_total_home,home over 115.5,-108,0.5603,0.0603,0.0213,medium,game,,W,0.93,116.7053,
+2026-03-25,BKN@GSW,team_total_away,away under 101.5,-102,0.5754,0.0754,0.0356,medium,game,,L,-1.0,99.9921,
+2026-03-25,BKN@GSW,player_points,over 17.5,-127,0.602,0.102,0.0241,medium,prop,Kristaps Porzingis,L,-1.0,19.2,
+2026-03-25,BKN@GSW,player_points,under 14.5,-110,0.554,0.054,0.0158,medium,prop,Brandin Podziemski,L,-1.0,13.6,
+2026-03-25,BKN@GSW,player_points,under 14.5,-119,0.602,0.102,0.0321,medium,prop,De'Anthony Melton,W,0.84,12.8,
+2026-03-25,BKN@GSW,player_points,under 13.5,-103,0.65,0.15,0.0724,medium,prop,Gui Santos,L,-1.0,11.0,
+2026-03-25,BKN@GSW,player_points,under 12.5,-105,0.566,0.066,0.0276,medium,prop,Josh Minott,W,0.95,11.4,
+2026-03-25,BKN@GSW,player_points,under 10.5,101,0.56,0.06,0.0311,medium,prop,Gary Payton II,W,1.01,9.5,
+2026-03-25,BKN@GSW,player_points,under 10.5,-126,0.6679999999999999,0.168,0.0624,medium,prop,Ben Saraf,L,-1.0,7.7,
+2026-03-25,BKN@GSW,player_points,under 9.5,-120,0.5780000000000001,0.078,0.0179,medium,prop,Jalen Wilson,L,-1.0,8.2,
+2026-03-25,BKN@GSW,player_points,under 8.5,-118,0.578,0.078,0.02,medium,prop,Will Richard,W,0.85,7.2,
+2026-03-25,BKN@GSW,player_points,under 7.5,-116,0.5720000000000001,0.072,0.0189,medium,prop,Drake Powell,L,-1.0,6.3,
+2026-03-25,BKN@GSW,player_rebounds,over 5.5,-111,0.6080000000000001,0.108,0.0432,medium,prop,Kristaps Porzingis,L,-1.0,6.4,
+2026-03-25,BKN@GSW,player_rebounds,under 5.5,113,0.56,0.06,0.0427,medium,prop,Gui Santos,W,1.13,5.0,
+2026-03-25,BKN@GSW,player_rebounds,over 5.5,-145,0.74,0.24,0.0907,medium,prop,Nicolas Claxton,L,-1.0,7.5,
+2026-03-25,BKN@GSW,player_rebounds,under 3.5,-161,0.5720000000000001,0.072,0.0,medium,prop,Will Richard,W,0.62,2.9,
+2026-03-25,BKN@GSW,player_rebounds,over 5.5,-134,0.62,0.12,0.0277,medium,prop,Draymond Green,L,-1.0,6.5,
+2026-03-25,BKN@GSW,player_assists,under 3.5,-116,0.5840000000000001,0.084,0.0254,medium,prop,Gui Santos,W,0.86,2.8,
+2026-03-25,BKN@GSW,player_assists,under 4.5,-132,0.608,0.108,0.0226,medium,prop,Ben Saraf,L,-1.0,3.6,
+2026-03-25,BKN@GSW,player_threes,over 1.5,-147,0.572,0.072,0.0,medium,prop,Kristaps Porzingis,L,-1.0,1.9,
+2026-03-25,BKN@GSW,player_threes,under 1.5,-144,0.608,0.108,0.0109,medium,prop,Gui Santos,L,-1.0,0.9,
+2026-03-25,BKN@GSW,player_threes,under 1.5,116,0.554,0.054,0.0424,medium,prop,Josh Minott,L,-1.0,1.2,
+2026-03-25,BKN@GSW,player_threes,under 1.5,-127,0.554,0.054,0.0,medium,prop,Ziaire Williams,W,0.79,1.2,
+2026-03-25,BKN@GSW,player_threes,under 1.5,-151,0.572,0.072,0.0,medium,prop,Jalen Wilson,W,0.66,1.1,
+2026-03-25,BKN@GSW,player_threes,under 1.5,-208,0.608,0.108,0.0,medium,prop,Will Richard,W,0.48,0.9,
+2026-03-25,BKN@GSW,player_threes,under 1.5,-145,0.608,0.108,0.0099,medium,prop,Draymond Green,W,0.69,0.9,
+2026-03-25,BKN@GSW,player_pra,over 26.5,-108,0.576,0.076,0.0295,medium,prop,Kristaps Porzingis,L,-1.0,28.4,
+2026-03-25,BKN@GSW,player_pra,under 25.5,-106,0.5559999999999999,0.056,0.0214,medium,prop,Brandin Podziemski,L,-1.0,24.1,
+2026-03-25,BKN@GSW,player_pra,under 20.5,-107,0.5640000000000001,0.064,0.0244,medium,prop,De'Anthony Melton,L,-1.0,18.9,
+2026-03-25,BKN@GSW,player_pra,under 23.5,-111,0.688,0.188,0.0854,medium,prop,Gui Santos,L,-1.0,18.8,
+2026-03-25,BKN@GSW,player_pra,under 18.5,-116,0.596,0.096,0.0319,medium,prop,Gary Payton II,L,-1.0,16.1,
+2026-03-25,BKN@GSW,player_pra,over 19.5,-115,0.568,0.068,0.0178,medium,prop,Nicolas Claxton,L,-1.0,21.2,
+2026-03-25,BKN@GSW,player_pra,under 17.5,-119,0.66,0.16,0.0639,medium,prop,Ben Saraf,L,-1.0,13.5,
+2026-03-25,MIL@POR,spread,home -12.5,-118,0.6,0.1,0.032,medium,game,,W,0.85,105-120,
+2026-03-25,MIL@POR,total,under 226.5,-115,0.5569749999999999,0.057,0.0119,medium,game,,L,-1.0,225.3605,
+2026-03-25,MIL@POR,q1_ml,home Q1 ML,-250,0.6889,0.1889,0.0,medium,game,,W,0.4,105-120,
+2026-03-25,MIL@POR,q1_total,under 58.5,-112,0.6221,0.1221,0.0497,medium,game,,L,-1.0,56.0579,
+2026-03-25,MIL@POR,q2_total,under 57.5,-120,0.575,0.075,0.0163,medium,game,,W,0.83,56.0,
+2026-03-25,TOR@LAC,q1_ml,home Q1 ML,-130,0.556,0.056,0.0,medium,game,,W,0.77,110-115,
+2026-03-25,TOR@LAC,team_total_away,away under 111.5,-112,0.565,0.065,0.0194,medium,game,,W,0.89,110.2,
+2026-03-25,TOR@LAC,player_points,over 17.5,-121,0.5539999999999999,0.054,0.0036,medium,prop,Scottie Barnes,L,-1.0,18.4,
+2026-03-25,TOR@LAC,player_points,under 11.5,-126,0.56,0.06,0.0014,medium,prop,Ja'Kobe Walter,W,0.79,10.5,
+2026-03-25,TOR@LAC,player_points,under 10.5,-124,0.5840000000000001,0.084,0.017,medium,prop,Derrick Jones,W,0.81,9.1,
+2026-03-25,TOR@LAC,player_rebounds,over 6.5,-126,0.56,0.06,0.0014,medium,prop,Scottie Barnes,W,0.79,7.0,
+2026-03-25,TOR@LAC,player_rebounds,over 7.5,-140,0.56,0.06,0.0,medium,prop,Jakob Poeltl,L,-1.0,8.0,
+2026-03-25,TOR@LAC,player_assists,over 6.5,-142,0.5840000000000001,0.084,0.0,medium,prop,Darius Garland,L,-1.0,7.2,
+2026-03-25,TOR@LAC,player_assists,under 6.5,109,0.56,0.06,0.0391,medium,prop,Jamal Shead,W,1.09,6.0,
+2026-03-25,TOR@LAC,player_threes,under 2.5,-188,0.608,0.108,0.0,medium,prop,Ja'Kobe Walter,W,0.53,1.9,
+2026-03-25,TOR@LAC,player_threes,under 1.5,-167,0.572,0.072,0.0,medium,prop,Jamal Shead,L,-1.0,1.1,
+2026-03-26,NYK@CHA,q1_total,under 57.5,-110,0.7693,0.2655,0.1289,medium,game,,L,-1.0,52.1143,0.5038
+2026-03-26,NYK@CHA,player_points,over 25.5,-119,0.59,0.1054,0.0255,medium,prop,Jalen Brunson,W,0.84,27.0,0.4846
+2026-03-26,NYK@CHA,player_points,over 19.5,-120,0.5780000000000001,0.0931,0.0179,medium,prop,Karl-Anthony Towns,L,-1.0,20.8,0.4849
+2026-03-26,NYK@CHA,player_points,over 13.5,-106,0.518,0.0676,0.0018,medium,prop,Mikal Bridges,W,0.94,13.8,0.4504
+2026-03-26,NYK@CHA,player_points,over 12.5,-125,0.53,0.056,0.0,medium,prop,Miles Bridges,W,0.8,13.0,0.474
+2026-03-26,NYK@CHA,player_rebounds,over 4.5,-107,0.524,0.0839,0.0037,medium,prop,LaMelo Ball,W,0.93,4.7,0.4401
+2026-03-26,NYK@CHA,player_assists,over 6.5,-139,0.5840000000000001,0.0549,0.0014,medium,prop,Jalen Brunson,W,0.72,7.2,0.5291
+2026-03-26,NYK@CHA,player_assists,over 6.5,-146,0.62,0.0795,0.0163,medium,prop,LaMelo Ball,L,-1.0,7.5,0.5405
+2026-03-26,NYK@CHA,player_threes,over 2.5,142,0.518,0.1341,0.0447,medium,prop,Jalen Brunson,L,-1.0,2.6,0.3839
+2026-03-26,NYK@CHA,player_threes,over 1.5,-103,0.518,0.0502,0.0054,medium,prop,Karl-Anthony Towns,L,-1.0,1.6,0.4678
+2026-03-26,NYK@CHA,player_threes,over 2.5,148,0.4639999999999999,0.0958,0.0255,medium,prop,OG Anunoby,W,1.48,2.3,0.3682
+2026-03-26,NYK@CHA,player_threes,over 1.5,165,0.428,0.0915,0.0203,medium,prop,Josh Hart,W,1.65,1.1,0.3365
+2026-03-26,NYK@CHA,player_pra,over 31.5,-123,0.5680000000000001,0.0719,0.0092,medium,prop,LaMelo Ball,W,0.81,33.2,0.4961
+2026-03-26,NYK@CHA,player_pra,over 33.5,-117,0.54,0.0512,0.0004,medium,prop,Karl-Anthony Towns,L,-1.0,34.5,0.4888
+2026-03-26,NYK@CHA,player_pra,under 26.5,-121,0.588,0.071,0.0224,medium,prop,Kon Knueppel,L,-1.0,24.3,0.517
+2026-03-26,NOP@DET,total,under 226.5,-108,0.6125,0.1123,0.0485,medium,game,,L,-1.0,224.25,0.5002
+2026-03-26,NOP@DET,q1_total,under 58.5,-112,0.6832,0.1762,0.0821,medium,game,,L,-1.0,54.8351,0.5071
+2026-03-26,NOP@DET,q3_total,over 56.5,-115,0.6,0.1087,0.035,medium,game,,W,0.87,58.5,0.4913
+2026-03-26,NOP@DET,q4_total,over 52.5,-125,0.575,0.0675,0.0109,medium,game,,W,0.8,54.0,0.5075
+2026-03-26,NOP@DET,team_total_home,home under 115.5,-118,0.5726,0.089,0.017,medium,game,,L,-1.0,114.0486,0.4836
+2026-03-26,NOP@DET,team_total_away,away under 111.5,-115,0.5603,0.0565,0.0137,medium,game,,W,0.87,110.2946,0.5037
+2026-03-26,NOP@DET,player_points,over 20.5,-109,0.56,0.0961,0.0201,medium,prop,Trey Murphy III,P,0.0,21.5,0.4639
+2026-03-26,NOP@DET,player_points,over 20.5,-109,0.6560000000000001,0.1659,0.0703,medium,prop,Zion Williamson,W,0.92,23.1,0.4901
+2026-03-26,NOP@DET,player_points,over 13.5,-128,0.548,0.0754,0.0,medium,prop,Tobias Harris,L,-1.0,14.3,0.4726
+2026-03-26,NOP@DET,player_points,under 9.5,-126,0.5780000000000001,0.0573,0.0116,medium,prop,Ron Holland,W,0.79,8.2,0.5207
+2026-03-26,NOP@DET,player_rebounds,over 11.5,-114,0.548,0.0738,0.0082,medium,prop,Jalen Duren,L,-1.0,11.9,0.4742
+2026-03-26,NOP@DET,player_rebounds,over 5.5,-118,0.596,0.0953,0.0298,medium,prop,Zion Williamson,W,0.85,6.3,0.5007
+2026-03-26,NOP@DET,player_rebounds,over 5.5,107,0.524,0.0995,0.0198,medium,prop,Saddiq Bey,L,-1.0,5.7,0.4245
+2026-03-26,NOP@DET,player_rebounds,over 5.5,-101,0.536,0.081,0.0169,medium,prop,Tobias Harris,W,0.99,5.8,0.4551
+2026-03-26,NOP@DET,player_rebounds,over 3.5,120,0.524,0.1151,0.0318,medium,prop,Herb Jones,L,-1.0,3.7,0.4089
+2026-03-26,NOP@DET,player_threes,over 2.5,124,0.4639999999999999,0.0571,0.0079,medium,prop,Saddiq Bey,W,1.24,2.3,0.4069
+2026-03-26,NOP@DET,player_threes,under 1.5,103,0.536,0.0768,0.0214,medium,prop,Daniss Jenkins,L,-1.0,1.3,0.4592
+2026-03-26,NOP@DET,player_pra,over 29.5,-108,0.6119999999999999,0.1348,0.0482,medium,prop,Zion Williamson,L,-1.0,32.3,0.4772
+2026-03-26,NOP@DET,player_pra,under 28.5,-118,0.6040000000000001,0.1051,0.0342,medium,prop,Daniss Jenkins,L,-1.0,25.9,0.4989
+2026-03-26,SAC@ORL,total,under 230.5,-110,0.7070149999999998,0.2077,0.0962,high,game,,L,-1.0,226.3597,0.4993
+2026-03-26,SAC@ORL,q1_total,under 59.5,-102,0.7662,0.2732,0.1319,medium,game,,L,-1.0,54.1762,0.493
+2026-03-26,SAC@ORL,team_total_home,home under 123.5,-110,0.5698,0.0529,0.0241,medium,game,,W,0.91,122.1048,0.5169
+2026-03-26,SAC@ORL,team_total_away,away under 106.5,-108,0.6027,0.0841,0.0434,medium,game,,L,-1.0,104.4452,0.5186
+2026-03-26,SAC@ORL,player_rebounds,over 4.5,123,0.464,0.0554,0.007,medium,prop,Tristan da Silva,L,-1.0,4.2,0.4086
+2026-03-26,SAC@ORL,player_assists,over 2.5,127,0.464,0.0529,0.0105,medium,prop,Tristan da Silva,L,-1.0,2.2,0.4111
+2026-03-26,SAC@ORL,player_threes,over 1.5,100,0.5,0.0604,0.0,medium,prop,Paolo Banchero,L,-1.0,1.5,0.4396
+2026-03-26,SAC@ORL,player_pra,under 39.5,-114,0.576,0.0743,0.0232,medium,prop,Paolo Banchero,L,-1.0,37.6,0.5017
+2026-03-27,LAC@IND,spread,away -8.5,-112,0.64,0.1382,0.0592,medium,game,,L,-1.0,125-113,0.5018
+2026-03-27,LAC@IND,q2_total,over 57.5,-115,0.593,0.093,0.0312,medium,game,,L,-1.0,59.36,0.5
+2026-03-27,LAC@IND,team_total_home,home under 114.5,-105,0.5655,0.0684,0.0273,medium,game,,W,0.95,113.1895,0.4971
+2026-03-27,LAC@IND,team_total_away,away over 123.5,-115,0.5761,0.0753,0.0221,medium,game,,W,0.87,125.0211,0.5007
+2026-03-27,LAC@IND,player_points,over 28.5,-124,0.5839999999999999,0.0948,0.017,medium,prop,Kawhi Leonard,L,-1.0,29.9,0.4892
+2026-03-27,LAC@IND,player_points,over 21.5,-116,0.5419999999999999,0.0888,0.0027,medium,prop,Pascal Siakam,L,-1.0,22.2,0.4532
+2026-03-27,LAC@IND,player_points,over 18.5,-119,0.536,0.0837,0.0,medium,prop,Bennedict Mathurin,L,-1.0,19.1,0.4523
+2026-03-27,LAC@IND,player_points,over 15.5,-118,0.536,0.089,0.0,medium,prop,Andrew Nembhard,L,-1.0,16.1,0.447
+2026-03-27,LAC@IND,player_points,over 8.5,-126,0.536,0.0666,0.0,medium,prop,Obi Toppin,W,0.79,9.1,0.4694
+2026-03-27,LAC@IND,player_rebounds,over 6.5,101,0.524,0.0589,0.0132,medium,prop,Kawhi Leonard,W,1.01,6.7,0.4651
+2026-03-27,LAC@IND,player_rebounds,over 6.5,111,0.5,0.0839,0.0124,medium,prop,Jarace Walker,L,-1.0,6.5,0.4161
+2026-03-27,LAC@IND,player_rebounds,over 5.5,110,0.524,0.1007,0.0228,medium,prop,John Collins,W,1.1,5.7,0.4233
+2026-03-27,LAC@IND,player_rebounds,over 4.5,101,0.524,0.0805,0.0132,medium,prop,Brook Lopez,W,1.01,4.7,0.4435
+2026-03-27,LAC@IND,player_rebounds,over 3.5,128,0.512,0.1044,0.0327,medium,prop,Kris Dunn,L,-1.0,3.6,0.4076
+2026-03-27,LAC@IND,player_threes,over 2.5,123,0.536,0.126,0.0397,medium,prop,Kawhi Leonard,L,-1.0,2.7,0.41
+2026-03-27,LAC@IND,player_threes,over 2.5,103,0.518,0.0582,0.0125,medium,prop,Darius Garland,W,1.03,2.6,0.4598
+2026-03-27,LAC@IND,player_threes,over 1.5,129,0.518,0.0974,0.0361,medium,prop,Bennedict Mathurin,L,-1.0,1.6,0.4206
+2026-03-27,LAC@IND,player_threes,under 1.5,105,0.536,0.0749,0.0235,medium,prop,Jay Huff,W,1.05,1.3,0.4611
+2026-03-27,LAC@IND,player_threes,over 1.5,130,0.464,0.0686,0.0129,medium,prop,Obi Toppin,W,1.3,1.3,0.3954
+2026-03-27,LAC@IND,player_threes,over 1.5,114,0.518,0.0676,0.0238,medium,prop,Brook Lopez,W,1.14,1.6,0.4504
+2026-03-27,LAC@IND,player_pra,over 39.5,-111,0.5519999999999999,0.0738,0.0137,medium,prop,Kawhi Leonard,W,0.9,40.8,0.4782
+2026-03-27,LAC@IND,player_pra,over 28.5,-126,0.552,0.0566,0.0,medium,prop,Darius Garland,W,0.79,29.8,0.4954
+2026-03-27,ATL@BOS,q1_total,under 57.5,-102,0.6176,0.1183,0.0569,medium,game,,W,0.98,55.1476,0.4993
+2026-03-27,MIA@CLE,total,under 243.5,-110,0.7680700000000003,0.2676,0.1282,medium,game,,L,-1.0,238.1386,0.5004
+2026-03-27,MIA@CLE,q1_total,under 62.5,-102,0.6991,0.1972,0.098,medium,game,,L,-1.0,58.5176,0.502
+2026-03-27,MIA@CLE,q2_total,under 61.5,-110,0.5865,0.0887,0.0329,medium,game,,W,0.91,59.77,0.4978
+2026-03-27,MIA@CLE,team_total_home,home under 124.5,-108,0.6224,0.1135,0.0536,medium,game,,L,-1.0,122.0529,0.5088
+2026-03-27,MIA@CLE,team_total_away,away under 118.5,-105,0.6118,0.1213,0.051,medium,game,,L,-1.0,116.2647,0.4904
+2026-03-27,HOU@MEM,spread,away -13.5,-110,0.6,0.1003,0.04,high,game,,L,-1.0,121-105,0.4997
+2026-03-27,HOU@MEM,total,under 227.5,-110,0.5949500000000001,0.0969,0.0374,high,game,,L,-1.0,225.601,0.498
+2026-03-27,HOU@MEM,q1_total,under 55.5,-102,0.6984,0.2027,0.0977,medium,game,,L,-1.0,51.5324,0.4957
+2026-03-27,HOU@MEM,q2_total,over 55.5,-110,0.7565,0.2564,0.1222,medium,game,,L,-1.0,60.63,0.5001
+2026-03-27,HOU@MEM,team_total_home,home under 106.5,-110,0.5689,0.0552,0.0237,medium,game,,L,-1.0,105.1216,0.5137
+2026-03-27,HOU@MEM,player_points,over 25.5,-115,0.5839999999999999,0.1263,0.0264,medium,prop,Kevin Durant,L,-1.0,26.9,0.4577
+2026-03-27,HOU@MEM,player_points,over 20.5,-124,0.5839999999999999,0.0894,0.017,medium,prop,Alperen Sengun,L,-1.0,21.9,0.4946
+2026-03-27,HOU@MEM,player_points,over 17.5,-117,0.536,0.0667,0.0,medium,prop,Amen Thompson,W,0.85,18.1,0.4693
+2026-03-27,HOU@MEM,player_points,over 15.5,-125,0.536,0.0727,0.0,medium,prop,G.G. Jackson,L,-1.0,16.1,0.4633
+2026-03-27,HOU@MEM,player_rebounds,over 9.5,-116,0.536,0.0722,0.0,medium,prop,Alperen Sengun,L,-1.0,9.8,0.4638
+2026-03-27,HOU@MEM,player_rebounds,over 7.5,108,0.536,0.1097,0.0266,medium,prop,Jabari Smith Jr,W,1.08,7.8,0.4263
+2026-03-27,HOU@MEM,player_rebounds,over 3.5,-112,0.536,0.0737,0.0041,medium,prop,Reed Sheppard,W,0.89,3.8,0.4623
+2026-03-27,HOU@MEM,player_rebounds,over 4.5,112,0.524,0.0967,0.0248,medium,prop,Olivier-Maxence Prosper,W,1.12,4.7,0.4273
+2026-03-27,HOU@MEM,player_rebounds,over 5.5,102,0.536,0.1088,0.0203,medium,prop,Tari Eason,W,1.02,5.8,0.4272
+2026-03-27,HOU@MEM,player_assists,over 4.5,-119,0.548,0.0564,0.0025,medium,prop,Kevin Durant,W,0.84,4.9,0.4916
+2026-03-27,HOU@MEM,player_threes,over 2.5,128,0.536,0.1479,0.0434,medium,prop,Kevin Durant,W,1.28,2.7,0.3881
+2026-03-27,HOU@MEM,player_threes,over 1.5,113,0.536,0.0984,0.0314,medium,prop,G.G. Jackson,W,1.13,1.7,0.4376
+2026-03-27,HOU@MEM,player_threes,over 2.5,130,0.4639999999999999,0.0776,0.0129,medium,prop,Jabari Smith Jr,L,-1.0,2.3,0.3864
+2026-03-27,HOU@MEM,player_threes,over 1.5,147,0.446,0.081,0.0173,medium,prop,Tari Eason,L,-1.0,1.2,0.365
+2026-03-27,HOU@MEM,player_pra,over 35.5,-123,0.5840000000000001,0.086,0.0181,medium,prop,Kevin Durant,W,0.81,37.6,0.498
+2026-03-27,HOU@MEM,player_pra,under 20.5,-121,0.6120000000000001,0.0877,0.0356,medium,prop,Cedric Coward,W,0.83,17.7,0.5243
+2026-03-27,CHI@OKC,total,under 238.5,-105,0.6195999999999998,0.122,0.0551,high,game,,L,-1.0,236.108,0.4976
+2026-03-27,CHI@OKC,q1_spread,home Q1 -6.5,-102,0.5781,0.0739,0.0369,medium,game,,L,-1.0,108-128,0.5042
+2026-03-27,CHI@OKC,q1_total,under 58.5,-120,0.6825,0.1754,0.0754,medium,game,,L,-1.0,54.85,0.5071
+2026-03-27,CHI@OKC,q2_total,over 57.5,-115,0.7365,0.2273,0.1084,medium,game,,W,0.87,62.23,0.5092
+2026-03-27,CHI@OKC,team_total_home,home under 129.5,-105,0.5501,0.055,0.0194,medium,game,,L,-1.0,128.4976,0.4951
+2026-03-27,CHI@OKC,player_points,over 15.5,-114,0.5780000000000001,0.1183,0.0242,medium,prop,Jalen Williams,W,0.88,16.8,0.4597
+2026-03-27,CHI@OKC,player_points,over 13.5,-105,0.62,0.1693,0.0553,medium,prop,Collin Sexton,W,0.95,15.5,0.4507
+2026-03-27,CHI@OKC,player_points,over 9.5,-107,0.518,0.058,0.0006,medium,prop,Nick Richards,L,-1.0,9.8,0.46
+2026-03-27,CHI@OKC,player_rebounds,over 8.5,104,0.5,0.0708,0.0048,medium,prop,Chet Holmgren,P,0.0,8.5,0.4292
+2026-03-27,CHI@OKC,player_rebounds,over 3.5,-107,0.524,0.062,0.0037,medium,prop,Jalen Williams,W,0.93,3.7,0.462
+2026-03-27,CHI@OKC,player_rebounds,over 7.5,-103,0.524,0.0745,0.0084,medium,prop,Nick Richards,L,-1.0,7.7,0.4495
+2026-03-27,CHI@OKC,player_rebounds,over 8.5,105,0.512,0.0822,0.0118,medium,prop,Isaiah Hartenstein,W,1.05,8.6,0.4298
+2026-03-27,CHI@OKC,player_assists,over 6.5,107,0.56,0.1162,0.0372,medium,prop,Shai Gilgeous-Alexander,L,-1.0,7.0,0.4438
+2026-03-27,CHI@OKC,player_assists,over 2.5,107,0.512,0.0689,0.014,medium,prop,Collin Sexton,W,1.07,2.6,0.4431
+2026-03-27,CHI@OKC,player_assists,over 4.5,-115,0.536,0.0657,0.0006,medium,prop,Tre Jones,W,0.87,4.8,0.4703
+2026-03-27,CHI@OKC,player_assists,over 3.5,-101,0.512,0.0611,0.0048,medium,prop,Isaiah Hartenstein,L,-1.0,3.6,0.4509
+2026-03-27,CHI@OKC,player_threes,over 1.5,137,0.554,0.1711,0.0571,medium,prop,Chet Holmgren,P,0.0,1.8,0.3829
+2026-03-27,CHI@OKC,player_threes,under 2.5,-182,0.6799999999999999,0.1244,0.0244,medium,prop,Josh Giddey,W,0.55,1.5,0.5556
+2026-03-27,CHI@OKC,player_threes,over 1.5,124,0.536,0.1314,0.0404,medium,prop,Collin Sexton,W,1.24,1.7,0.4046
+2026-03-27,CHI@OKC,player_threes,under 0.5,152,0.554,0.1848,0.0651,medium,prop,Ajay Mitchell,L,-1.0,0.2,0.3692
+2026-03-27,CHI@OKC,player_threes,over 1.5,110,0.554,0.119,0.0371,medium,prop,Jared McCain,L,-1.0,1.8,0.435
+2026-03-27,CHI@OKC,player_pra,under 33.5,-110,0.6,0.0777,0.04,medium,prop,Josh Giddey,W,0.91,31.0,0.5223
+2026-03-27,CHI@OKC,player_pra,over 23.5,-107,0.5559999999999999,0.0695,0.0202,medium,prop,Jalen Williams,W,0.93,24.9,0.4865
+2026-03-27,NOP@TOR,spread,away 9.5,-112,0.6,0.0984,0.038,medium,game,,L,-1.0,109-116,0.5016
+2026-03-27,NOP@TOR,total,under 228.5,-115,0.69144,0.1877,0.0842,medium,game,,W,0.87,224.6712,0.5037
+2026-03-27,NOP@TOR,q1_total,under 58.5,-112,0.5775,0.0786,0.0261,medium,game,,W,0.89,56.95,0.4989
+2026-03-27,NOP@TOR,q2_total,under 59.5,-125,0.727,0.2157,0.0964,medium,game,,W,0.8,54.96,0.5113
+2026-03-27,NOP@TOR,team_total_home,home under 118.5,-105,0.6265,0.1316,0.0586,medium,game,,L,-1.0,115.9706,0.4949
+2026-03-27,NOP@TOR,player_points,over 21.5,-125,0.59,0.1059,0.0194,medium,prop,Brandon Ingram,L,-1.0,23.0,0.4841
+2026-03-27,NOP@TOR,player_points,over 21.5,-108,0.53,0.0686,0.0056,medium,prop,Zion Williamson,W,0.93,22.0,0.4614
+2026-03-27,NOP@TOR,player_points,over 18.5,-119,0.53,0.0713,0.0,medium,prop,Saddiq Bey,W,0.84,19.0,0.4587
+2026-03-27,NOP@TOR,player_rebounds,over 5.5,114,0.5,0.0971,0.0154,medium,prop,Brandon Ingram,W,1.14,5.5,0.4029
+2026-03-27,NOP@TOR,player_rebounds,over 5.5,107,0.536,0.1123,0.0256,medium,prop,Zion Williamson,W,1.07,5.8,0.4237
+2026-03-27,NOP@TOR,player_rebounds,over 7.5,-118,0.548,0.0535,0.0037,medium,prop,Jakob Poeltl,W,0.85,7.9,0.4945
+2026-03-27,NOP@TOR,player_rebounds,over 3.5,126,0.5,0.0769,0.0258,medium,prop,Herb Jones,L,-1.0,3.5,0.4231
+2026-03-27,NOP@TOR,player_rebounds,over 4.5,106,0.5,0.086,0.0071,medium,prop,Collin Murray-Boyles,L,-1.0,4.5,0.414
+2026-03-27,NOP@TOR,player_threes,under 1.5,102,0.536,0.0841,0.0203,medium,prop,Ja'Kobe Walter,L,-1.0,1.3,0.4519
+2026-03-27,NOP@TOR,player_pra,over 31.5,-108,0.54,0.0621,0.0108,medium,prop,Brandon Ingram,L,-1.0,32.5,0.4779
+2026-03-27,UTA@DEN,spread,home -18.5,-108,0.56,0.0618,0.0212,high,game,,L,-1.0,113-133,0.4982
+2026-03-27,UTA@DEN,total,under 248.5,-108,0.6619100000000003,0.1623,0.0742,high,game,,L,-1.0,245.2618,0.4996
+2026-03-27,UTA@DEN,q1_spread,home Q1 -5.5,-118,0.5626,0.0576,0.0116,medium,game,,W,0.85,113-133,0.505
+2026-03-27,UTA@DEN,q1_total,under 60.5,-105,0.7687,0.2745,0.1315,medium,game,,L,-1.0,55.1263,0.4942
+2026-03-27,UTA@DEN,q2_total,over 59.5,-115,0.8615,0.3591,0.1756,medium,game,,W,0.87,66.73,0.5024
+2026-03-27,UTA@DEN,team_total_home,home under 134.5,-115,0.5846,0.0851,0.0267,medium,game,,L,-1.0,132.8079,0.4995
+2026-03-27,UTA@DEN,team_total_away,away under 114.5,-115,0.5974,0.0784,0.0336,medium,game,,L,-1.0,112.5526,0.5189
+2026-03-27,WAS@GSW,total,under 232.5,-110,0.5812299999999994,0.0834,0.0301,high,game,,L,-1.0,230.8754,0.4979
+2026-03-27,WAS@GSW,q1_spread,home Q1 -4.5,-112,0.56,0.0592,0.0168,medium,game,,W,0.89,108-123,0.5008
+2026-03-27,WAS@GSW,q1_total,under 59.5,-105,0.6488,0.1539,0.07,medium,game,,L,-1.0,56.5238,0.4949
+2026-03-27,WAS@GSW,player_rebounds,over 5.5,-136,0.596,0.0801,0.0117,medium,prop,Kristaps Porzingis,W,0.74,6.3,0.5159
+2026-03-27,WAS@GSW,player_rebounds,under 4.5,105,0.524,0.0659,0.0177,medium,prop,Gary Payton II,L,-1.0,4.3,0.4581
+2026-03-27,WAS@GSW,player_rebounds,over 5.5,-155,0.6080000000000001,0.0761,0.0001,medium,prop,Draymond Green,L,-1.0,6.4,0.5319
+2026-03-27,WAS@GSW,player_threes,under 1.5,-104,0.518,0.0505,0.0042,medium,prop,Gui Santos,L,-1.0,1.4,0.4675
+2026-03-27,WAS@GSW,player_threes,under 1.5,114,0.536,0.1025,0.0323,medium,prop,Will Riley,L,-1.0,1.3,0.4335
+2026-03-27,WAS@GSW,player_threes,over 1.5,179,0.41,0.0822,0.0201,medium,prop,Bilal Coulibaly,W,1.79,1.0,0.3278
+2026-03-27,WAS@GSW,player_threes,under 1.5,-113,0.554,0.0709,0.0125,medium,prop,Carlton Carrington,L,-1.0,1.2,0.4831
+2026-03-27,WAS@GSW,player_threes,under 1.5,-120,0.59,0.0869,0.0245,medium,prop,Draymond Green,W,0.83,1.0,0.5031
+2026-03-27,WAS@GSW,player_pra,under 25.5,-105,0.5920000000000001,0.1055,0.0409,medium,prop,Gui Santos,L,-1.0,23.2,0.4865
+2026-03-27,DAL@POR,q1_total,under 61.5,-102,0.898,0.4072,0.1985,medium,game,,W,0.98,53.54,0.4908
+2026-03-27,DAL@POR,q2_total,over 60.5,-115,0.6885,0.1831,0.0826,medium,game,,L,-1.0,64.27,0.5054
+2026-03-27,DAL@POR,team_total_home,home under 125.5,-112,0.559,0.0668,0.0163,medium,game,,W,0.89,124.32,0.4922
+2026-03-27,DAL@POR,player_points,over 24.5,-114,0.56,0.1007,0.0146,medium,prop,Deni Avdija,L,-1.0,25.5,0.4593
+2026-03-27,DAL@POR,player_points,over 22.5,-116,0.53,0.0626,0.0,medium,prop,Cooper Flagg,W,0.86,23.0,0.4674
+2026-03-27,DAL@POR,player_points,over 17.5,-108,0.5239999999999999,0.0657,0.0025,medium,prop,Naji Marshall,W,0.93,17.9,0.4583
+2026-03-27,DAL@POR,player_points,over 4.5,108,0.512,0.0802,0.015,medium,prop,Dwight Powell,L,-1.0,4.7,0.4318
+2026-03-27,DAL@POR,player_rebounds,over 6.5,-115,0.56,0.075,0.0135,medium,prop,Deni Avdija,W,0.87,7.0,0.485
+2026-03-27,DAL@POR,player_rebounds,over 3.5,105,0.536,0.1147,0.0235,medium,prop,Jerami Grant,W,1.05,3.8,0.4213
+2026-03-27,DAL@POR,player_rebounds,over 4.5,-113,0.536,0.0735,0.0029,medium,prop,Naji Marshall,L,-1.0,4.8,0.4625
+2026-03-27,DAL@POR,player_rebounds,over 4.5,102,0.524,0.1005,0.0143,medium,prop,Jrue Holiday,L,-1.0,4.7,0.4235
+2026-03-27,DAL@POR,player_rebounds,over 4.5,-116,0.536,0.0532,0.0,medium,prop,Toumani Camara,W,0.86,4.8,0.4828
+2026-03-27,DAL@POR,player_rebounds,over 5.5,103,0.524,0.0702,0.0155,medium,prop,Marvin Bagley III,W,1.03,5.7,0.4538
+2026-03-27,DAL@POR,player_assists,over 6.5,-102,0.524,0.0726,0.0096,medium,prop,Deni Avdija,L,-1.0,6.7,0.4514
+2026-03-27,DAL@POR,player_assists,over 3.5,-116,0.536,0.0689,0.0,medium,prop,Naji Marshall,L,-1.0,3.8,0.4671
+2026-03-27,DAL@POR,player_assists,over 6.5,100,0.524,0.0651,0.012,medium,prop,Jrue Holiday,L,-1.0,6.7,0.4589
+2026-03-27,DAL@POR,player_threes,under 0.5,156,0.4459999999999999,0.0956,0.0227,medium,prop,Cooper Flagg,W,1.56,0.8,0.3504
+2026-03-27,DAL@POR,player_threes,under 0.5,133,0.4459999999999999,0.0543,0.0074,medium,prop,Naji Marshall,W,1.33,0.8,0.3917
+2026-03-27,DAL@POR,player_threes,over 1.5,160,0.482,0.1325,0.0396,medium,prop,Donovan Clingan,L,-1.0,1.4,0.3495
+2026-03-27,DAL@POR,player_threes,over 1.5,109,0.536,0.0881,0.0276,medium,prop,P.J. Washington,L,-1.0,1.7,0.4479
+2026-03-27,DAL@POR,player_threes,over 2.5,-101,0.5,0.0535,0.0,medium,prop,Toumani Camara,L,-1.0,2.5,0.4465
+2026-03-27,DAL@POR,player_threes,over 2.5,131,0.5,0.1052,0.0296,medium,prop,Max Christie,L,-1.0,2.5,0.3948
+2026-03-27,DAL@POR,player_pra,over 37.5,-120,0.5640000000000001,0.0634,0.0102,medium,prop,Deni Avdija,L,-1.0,39.1,0.5006
+2026-03-27,DAL@POR,player_pra,over 21.5,-124,0.5359999999999999,0.0529,0.0,medium,prop,Scoot Henderson,L,-1.0,22.4,0.4831
+2026-03-27,BKN@LAL,spread,home -16.5,-102,0.64,0.1477,0.0682,high,game,,W,0.98,101-121,0.4923
+2026-03-27,BKN@LAL,q1_spread,home Q1 -5.5,-105,0.5682,0.0687,0.0287,medium,game,,L,-1.0,101-121,0.4995
+2026-03-27,BKN@LAL,q1_total,under 57.5,-115,0.7382,0.2299,0.1093,medium,game,,L,-1.0,52.7368,0.5082
+2026-03-27,BKN@LAL,q2_total,over 56.5,-120,0.564,0.0526,0.0102,medium,game,,L,-1.0,57.78,0.5114
+2026-03-27,BKN@LAL,team_total_home,home over 119.5,-115,0.5543,0.0505,0.0105,medium,game,,W,0.87,120.5868,0.5039
+2026-03-27,BKN@LAL,team_total_away,away under 102.5,-112,0.5751,0.0704,0.0248,medium,game,,W,0.89,100.9974,0.5048
+2026-03-27,BKN@LAL,player_points,over 20.5,-124,0.602,0.1254,0.0271,medium,prop,LeBron James,L,-1.0,22.2,0.4766
+2026-03-27,BKN@LAL,player_points,over 11.5,-119,0.5780000000000001,0.0926,0.019,medium,prop,Deandre Ayton,L,-1.0,12.8,0.4854
+2026-03-27,BKN@LAL,player_points,over 5.5,-113,0.512,0.0604,0.0,medium,prop,Terance Mann,L,-1.0,5.7,0.4516
+2026-03-27,BKN@LAL,player_rebounds,over 7.5,-127,0.56,0.0711,0.0003,medium,prop,Luka Doncic,W,0.79,8.0,0.4889
+2026-03-27,BKN@LAL,player_rebounds,over 5.5,-154,0.5840000000000001,0.0641,0.0,medium,prop,LeBron James,W,0.65,6.2,0.5199
+2026-03-27,BKN@LAL,player_rebounds,over 7.5,-146,0.6080000000000001,0.0982,0.0089,medium,prop,Deandre Ayton,L,-1.0,8.4,0.5098
+2026-03-27,BKN@LAL,player_rebounds,over 3.5,111,0.524,0.1083,0.0238,medium,prop,Noah Clowney,L,-1.0,3.7,0.4157
+2026-03-27,BKN@LAL,player_rebounds,over 4.5,102,0.536,0.1117,0.0203,medium,prop,Jaxson Hayes,W,1.02,4.8,0.4243
+2026-03-27,BKN@LAL,player_assists,over 6.5,-125,0.572,0.0725,0.0092,medium,prop,LeBron James,W,0.8,7.1,0.4995
+2026-03-27,BKN@LAL,player_threes,over 1.5,166,0.464,0.109,0.0353,medium,prop,LeBron James,L,-1.0,1.3,0.355
+2026-03-27,BKN@LAL,player_threes,over 1.5,157,0.464,0.1178,0.0307,medium,prop,Nolan Traore,L,-1.0,1.3,0.3462
+2026-03-27,BKN@LAL,player_pra,under 33.5,-114,0.5920000000000001,0.0883,0.0317,medium,prop,Austin Reaves,L,-1.0,31.2,0.5037
+2026-03-27,BKN@LAL,player_pra,over 34.5,-107,0.54,0.0574,0.012,medium,prop,LeBron James,L,-1.0,35.5,0.4826
+2026-03-28,SAS@MIL,total,under 226.5,-110,0.5650999999999996,0.0698,0.0217,high,game,,W,0.91,225.198,0.4953
+2026-03-28,SAS@MIL,q1_total,under 58.5,-115,0.6601,0.1555,0.0673,medium,game,,L,-1.0,55.2973,0.5046
+2026-03-28,SAS@MIL,player_points,over 25.5,-108,0.5960000000000001,0.1255,0.0399,medium,prop,Victor Wembanyama,L,-1.0,27.1,0.4705
+2026-03-28,SAS@MIL,player_points,over 16.5,-116,0.5239999999999999,0.0605,0.0,medium,prop,Stephon Castle,W,0.86,16.9,0.4635
+2026-03-28,SAS@MIL,player_points,over 16.5,-102,0.5419999999999999,0.0683,0.0187,medium,prop,De'Aaron Fox,L,-1.0,17.2,0.4737
+2026-03-28,SAS@MIL,player_points,over 12.5,-116,0.554,0.0834,0.0092,medium,prop,Devin Vassell,W,0.86,13.4,0.4706
+2026-03-28,SAS@MIL,player_points,over 12.5,-101,0.518,0.0804,0.0078,medium,prop,Keldon Johnson,W,0.99,12.8,0.4376
+2026-03-28,SAS@MIL,player_points,over 7.5,-115,0.518,0.0525,0.0,medium,prop,Taurean Prince,L,-1.0,7.8,0.4655
+2026-03-28,SAS@MIL,player_rebounds,over 11.5,-110,0.548,0.0668,0.0127,medium,prop,Victor Wembanyama,W,0.91,11.9,0.4812
+2026-03-28,SAS@MIL,player_rebounds,over 4.5,108,0.524,0.0982,0.0208,medium,prop,Ryan Rollins,L,-1.0,4.7,0.4258
+2026-03-28,SAS@MIL,player_rebounds,over 3.5,106,0.524,0.0863,0.0187,medium,prop,De'Aaron Fox,L,-1.0,3.7,0.4377
+2026-03-28,SAS@MIL,player_rebounds,over 3.5,-123,0.536,0.0598,0.0,medium,prop,Kyle Kuzma,P,0.0,3.8,0.4762
+2026-03-28,SAS@MIL,player_rebounds,over 5.5,115,0.524,0.1057,0.0275,medium,prop,Julian Champagnie,L,-1.0,5.7,0.4183
+2026-03-28,SAS@MIL,player_rebounds,over 4.5,110,0.524,0.0982,0.0228,medium,prop,Myles Turner,W,1.1,4.7,0.4258
+2026-03-28,SAS@MIL,player_assists,over 2.5,126,0.464,0.0902,0.0097,medium,prop,Kyle Kuzma,P,0.0,2.2,0.3738
+2026-03-28,SAS@MIL,player_assists,over 4.5,112,0.524,0.0868,0.0248,medium,prop,Dylan Harper,L,-1.0,4.7,0.4372
+2026-03-28,SAS@MIL,player_threes,over 1.5,143,0.464,0.1057,0.0223,medium,prop,Stephon Castle,W,1.43,1.3,0.3583
+2026-03-28,SAS@MIL,player_threes,over 1.5,139,0.464,0.0978,0.0196,medium,prop,Kyle Kuzma,P,0.0,1.3,0.3662
+2026-03-28,SAS@MIL,player_threes,over 1.5,167,0.464,0.1279,0.0357,medium,prop,Dylan Harper,W,1.67,1.3,0.3361
+2026-03-28,SAS@MIL,player_threes,over 1.5,130,0.554,0.1633,0.0527,medium,prop,Keldon Johnson,W,1.3,1.8,0.3907
+2026-03-28,SAS@MIL,player_pra,over 40.5,-108,0.5559999999999999,0.0759,0.0191,medium,prop,Victor Wembanyama,W,0.93,41.9,0.4801
+2026-03-28,SAS@MIL,player_pra,over 25.5,-119,0.552,0.0728,0.0047,medium,prop,De'Aaron Fox,L,-1.0,26.8,0.4792
+2026-03-28,DET@MIN,q1_total,under 57.5,-110,0.6201,0.1266,0.0506,medium,game,,W,0.91,55.0974,0.4935
+2026-03-28,DET@MIN,q2_total,under 57.5,-115,0.63,0.1339,0.0511,medium,game,,W,0.87,54.9,0.4961
+2026-03-28,PHI@CHA,moneyline,away,190,0.3845,0.0638,0.0152,medium,game,,W,1.9,113-118,0.3207
+2026-03-28,PHI@CHA,spread,away 6.5,-115,0.56,0.0606,0.0135,medium,game,,W,0.87,113-118,0.4994
+2026-03-28,PHI@CHA,total,under 232.5,-108,0.5674250000000001,0.0709,0.025,medium,game,,W,0.93,231.1515,0.4965
+2026-03-28,PHI@CHA,q1_total,under 60.5,-118,0.6128,0.1042,0.039,medium,game,,L,-1.0,58.2438,0.5086
+2026-03-28,PHI@CHA,q2_total,under 59.5,-110,0.653,0.1621,0.0678,medium,game,,L,-1.0,56.44,0.4909
+2026-03-28,PHI@CHA,team_total_home,home under 119.5,-110,0.57,0.0593,0.0243,medium,game,,W,0.91,118.1,0.5107
+2026-03-28,PHI@CHA,player_points,over 27.5,-118,0.5960000000000001,0.1255,0.0298,medium,prop,Joel Embiid,W,0.85,29.1,0.4705
+2026-03-28,PHI@CHA,player_points,over 20.5,-106,0.56,0.1031,0.0234,medium,prop,LaMelo Ball,L,-1.0,21.5,0.4569
+2026-03-28,PHI@CHA,player_points,over 15.5,-104,0.5839999999999999,0.1225,0.0378,medium,prop,Paul George,W,0.96,16.9,0.4615
+2026-03-28,PHI@CHA,player_points,over 11.5,-103,0.512,0.0677,0.0024,medium,prop,Kelly Oubre Jr,L,-1.0,11.7,0.4443
+2026-03-28,PHI@CHA,player_rebounds,over 7.5,104,0.6439999999999999,0.2074,0.0754,medium,prop,Joel Embiid,L,-1.0,8.7,0.4366
+2026-03-28,PHI@CHA,player_rebounds,over 5.5,105,0.5,0.0569,0.006,medium,prop,Brandon Miller,W,1.05,5.5,0.4431
+2026-03-28,PHI@CHA,player_rebounds,over 5.5,116,0.524,0.0968,0.0284,medium,prop,Miles Bridges,W,1.16,5.7,0.4272
+2026-03-28,PHI@CHA,player_assists,over 4.5,121,0.512,0.0979,0.0272,medium,prop,Joel Embiid,L,-1.0,4.6,0.4141
+2026-03-28,PHI@CHA,player_threes,over 2.5,124,0.446,0.0567,0.0,medium,prop,Paul George,W,1.24,2.2,0.3893
+2026-03-28,PHI@CHA,player_pra,over 39.5,-117,0.62,0.1229,0.0439,medium,prop,Joel Embiid,L,-1.0,42.5,0.4971
+2026-03-28,PHI@CHA,player_pra,under 26.5,-105,0.596,0.107,0.043,medium,prop,Kon Knueppel,W,0.95,24.1,0.489
+2026-03-28,PHI@CHA,player_pra,over 24.5,-108,0.54,0.0658,0.0108,medium,prop,Paul George,W,0.93,25.5,0.4742
+2026-03-28,SAC@ATL,spread,away 14.5,-105,0.56,0.0616,0.0245,medium,game,,W,0.95,110-123,0.4984
+2026-03-28,SAC@ATL,total,under 236.5,-110,0.6550799999999996,0.1537,0.0689,medium,game,,W,0.91,233.3984,0.5014
+2026-03-28,SAC@ATL,q1_total,under 61.5,-108,0.7531,0.2592,0.1216,medium,game,,W,0.93,56.4378,0.4939
+2026-03-28,SAC@ATL,team_total_home,home under 126.5,-112,0.673,0.1736,0.0767,medium,game,,W,0.89,123.0405,0.4994
+2026-03-28,SAC@ATL,player_points,over 18.5,-102,0.518,0.0623,0.0066,medium,prop,C.J. McCollum,W,0.98,18.8,0.4557
+2026-03-28,SAC@ATL,player_points,over 17.5,-115,0.53,0.0524,0.0,medium,prop,DeMar DeRozan,W,0.87,18.0,0.4776
+2026-03-28,SAC@ATL,player_rebounds,over 2.5,-118,0.536,0.0644,0.0,medium,prop,DeMar DeRozan,W,0.85,2.8,0.4716
+2026-03-28,SAC@ATL,player_rebounds,under 9.5,-140,0.668,0.1577,0.0508,medium,prop,Maxime Raynaud,L,-1.0,8.1,0.5103
+2026-03-28,SAC@ATL,player_rebounds,under 6.5,-111,0.644,0.1435,0.0622,medium,prop,Dylan Cardwell,L,-1.0,5.3,0.5005
+2026-03-28,SAC@ATL,player_assists,under 3.5,-164,0.62,0.0833,0.0,medium,prop,Onyeka Okongwu,P,0.0,2.5,0.5367
+2026-03-28,SAC@ATL,player_threes,under 3.5,-171,0.6619999999999999,0.1494,0.021,medium,prop,Nickeil Alexander-Walker,L,-1.0,2.6,0.5126
+2026-03-28,SAC@ATL,player_threes,under 2.5,-124,0.59,0.0617,0.0204,medium,prop,Malik Monk,W,0.81,2.0,0.5283
+2026-03-28,SAC@ATL,player_threes,over 1.5,144,0.428,0.0617,0.0077,medium,prop,Nique Clifford,L,-1.0,1.1,0.3663
+2026-03-28,SAC@ATL,player_pra,under 41.5,-114,0.6,0.0878,0.036,medium,prop,Jalen Johnson,W,0.88,39.0,0.5122
+2026-03-28,SAC@ATL,player_pra,under 25.5,-112,0.588,0.0695,0.0316,medium,prop,Onyeka Okongwu,P,0.0,23.3,0.5185
+2026-03-28,SAC@ATL,player_pra,under 21.5,-119,0.6120000000000001,0.0894,0.0376,medium,prop,Devin Carter,W,0.84,18.7,0.5226
+2026-03-28,SAC@ATL,player_pra,under 24.5,-126,0.628,0.1228,0.0398,medium,prop,Dyson Daniels,P,0.0,21.3,0.5052
+2026-03-28,SAC@ATL,player_pra,under 18.5,-113,0.636,0.1163,0.0562,medium,prop,Nique Clifford,W,0.88,15.1,0.5197
+2026-03-28,CHI@MEM,total,under 245.5,-105,0.6534999999999996,0.1551,0.0724,medium,game,,L,-1.0,242.43,0.4984
+2026-03-28,CHI@MEM,q1_total,under 60.5,-115,0.5657,0.0672,0.0166,medium,game,,W,0.87,59.1857,0.4985
+2026-03-28,CHI@MEM,q2_total,over 59.5,-105,0.585,0.1016,0.0373,medium,game,,L,-1.0,61.2,0.4834
+2026-03-28,CHI@MEM,team_total_home,home under 121.5,-112,0.6189,0.1246,0.0481,medium,game,,L,-1.0,119.1214,0.4944
+2026-03-28,CHI@MEM,team_total_away,away under 124.5,-105,0.5592,0.0637,0.0241,medium,game,,W,0.95,123.3167,0.4954
+2026-03-28,UTA@PHX,spread,home -16.5,-115,0.6799999999999999,0.1736,0.078,high,game,,W,0.87,104-125,0.5064
+2026-03-28,UTA@PHX,total,under 231.5,-110,0.6469800000000007,0.1475,0.0647,high,game,,L,-1.0,228.5604,0.4995
+2026-03-28,UTA@PHX,q1_spread,home Q1 -5.5,-102,0.5849,0.0837,0.0404,medium,game,,W,0.98,104-125,0.5012
+2026-03-28,UTA@PHX,q1_total,under 56.5,-108,0.601,0.1003,0.0425,medium,game,,L,-1.0,54.48,0.5007
+2026-03-28,UTA@PHX,q2_total,over 55.5,-115,0.673,0.1662,0.0742,medium,game,,W,0.87,58.96,0.5068
+2026-03-28,UTA@PHX,team_total_away,away under 106.5,-110,0.627,0.1297,0.0542,medium,game,,L,-1.0,103.96,0.4973
+2026-03-28,UTA@PHX,player_points,over 25.5,-123,0.5839999999999999,0.0982,0.0181,medium,prop,Devin Booker,W,0.81,26.9,0.4858
+2026-03-28,UTA@PHX,player_points,over 8.5,-101,0.518,0.0689,0.0078,medium,prop,Jordan Goodwin,L,-1.0,8.8,0.4491
+2026-03-28,UTA@PHX,player_assists,over 3.5,124,0.488,0.0781,0.0188,medium,prop,Jalen Green,L,-1.0,3.4,0.4099
+2026-03-28,UTA@PHX,player_assists,over 3.5,114,0.488,0.0627,0.0097,medium,prop,Grayson Allen,L,-1.0,3.4,0.4253
+2026-03-28,UTA@PHX,player_threes,over 1.5,178,0.482,0.1574,0.0478,medium,prop,Kyle Filipowski,W,1.78,1.4,0.3246
+2026-03-28,UTA@PHX,player_threes,over 1.5,132,0.446,0.0618,0.0066,medium,prop,Jordan Goodwin,W,1.32,1.2,0.3842
+2026-03-28,UTA@PHX,player_pra,under 26.5,-119,0.5840000000000001,0.0702,0.0222,medium,prop,Brice Sensabaugh,L,-1.0,24.4,0.5138
+2026-03-28,UTA@PHX,player_pra,under 25.5,-118,0.568,0.0511,0.0146,medium,prop,Ace Bailey,W,0.85,23.8,0.5169
+2026-03-28,UTA@PHX,player_pra,under 21.5,-123,0.596,0.0807,0.0248,medium,prop,Cody Williams,W,0.81,19.1,0.5153
+2026-03-29,LAC@MIL,total,under 221.5,-115,0.6220150000000004,0.1152,0.0468,high,game,,L,-1.0,219.0597,0.5068
+2026-03-29,LAC@MIL,q1_spread,away Q1 -5.5,-102,0.5696,0.0677,0.0326,medium,game,,L,-1.0,118-101,0.5019
+2026-03-29,LAC@MIL,q2_total,over 52.5,-125,0.792,0.2822,0.133,medium,game,,L,-1.0,58.34,0.5098
+2026-03-29,LAC@MIL,player_points,over 27.5,-106,0.5419999999999999,0.0776,0.0141,medium,prop,Kawhi Leonard,L,-1.0,28.2,0.4644
+2026-03-29,LAC@MIL,player_points,over 17.5,-119,0.53,0.0538,0.0,medium,prop,Bennedict Mathurin,W,0.84,18.0,0.4762
+2026-03-29,LAC@MIL,player_points,over 12.5,100,0.5419999999999999,0.059,0.021,medium,prop,Kyle Kuzma,P,0.0,13.2,0.483
+2026-03-29,LAC@MIL,player_points,over 10.5,-108,0.518,0.0569,0.0,medium,prop,Myles Turner,L,-1.0,10.8,0.4611
+2026-03-29,LAC@MIL,player_points,over 5.5,-107,0.512,0.0639,0.0,medium,prop,Kris Dunn,W,0.93,5.7,0.4481
+2026-03-29,LAC@MIL,player_rebounds,over 2.5,-116,0.524,0.0538,0.0,medium,prop,Darius Garland,L,-1.0,2.7,0.4702
+2026-03-29,LAC@MIL,player_threes,over 2.5,-116,0.536,0.0641,0.0,medium,prop,Kawhi Leonard,W,0.86,2.7,0.4719
+2026-03-29,LAC@MIL,player_threes,over 1.5,144,0.446,0.0828,0.0153,medium,prop,Bennedict Mathurin,L,-1.0,1.2,0.3632
+2026-03-29,LAC@MIL,player_threes,under 1.5,101,0.536,0.0707,0.0192,medium,prop,Myles Turner,W,1.01,1.3,0.4653
+2026-03-29,LAC@MIL,player_threes,under 0.5,121,0.4639999999999999,0.0492,0.0053,medium,prop,John Collins,W,1.21,0.7,0.4148
+2026-03-29,LAC@MIL,player_threes,under 1.5,-121,0.554,0.045,0.0036,medium,prop,Brook Lopez,W,0.83,1.2,0.509
+2026-03-29,LAC@MIL,player_threes,under 0.5,159,0.518,0.1561,0.0537,medium,prop,Derrick Jones,L,-1.0,0.4,0.3619
+2026-03-29,LAC@MIL,player_pra,over 37.5,-124,0.5559999999999999,0.0794,0.0014,medium,prop,Kawhi Leonard,L,-1.0,38.9,0.4766
+2026-03-29,MIA@IND,spread,away -9.5,-112,0.64,0.1374,0.0592,medium,game,,L,-1.0,128-115,0.5026
+2026-03-29,MIA@IND,total,under 246.5,-110,0.6884349999999998,0.1892,0.0864,medium,game,,L,-1.0,242.7313,0.4993
+2026-03-29,MIA@IND,q2_total,under 62.5,-115,0.6315,0.136,0.0519,medium,game,,L,-1.0,59.87,0.4955
+2026-03-29,MIA@IND,player_points,over 22.5,-104,0.4939999999999999,0.0517,0.0,medium,prop,Pascal Siakam,W,0.96,22.4,0.4423
+2026-03-29,MIA@IND,player_points,under 12.5,-102,0.5780000000000001,0.0938,0.0369,medium,prop,Pelle Larsson,L,-1.0,11.2,0.4842
+2026-03-29,MIA@IND,player_points,under 9.5,-116,0.5419999999999999,0.0451,0.0027,medium,prop,Jay Huff,W,0.86,8.8,0.4969
+2026-03-29,MIA@IND,player_points,under 9.5,-118,0.5419999999999999,0.0492,0.0004,medium,prop,Kel'el Ware,W,0.85,8.8,0.4928
+2026-03-29,MIA@IND,player_points,under 9.5,-126,0.5419999999999999,0.0425,0.0,medium,prop,Davion Mitchell,L,-1.0,8.8,0.4995
+2026-03-29,MIA@IND,player_rebounds,over 10.5,-124,0.56,0.0449,0.0036,medium,prop,Bam Adebayo,W,0.81,11.0,0.5151
+2026-03-29,MIA@IND,player_rebounds,under 3.5,103,0.536,0.09,0.0214,medium,prop,Pelle Larsson,L,-1.0,3.2,0.446
+2026-03-29,MIA@IND,player_rebounds,over 4.5,106,0.476,0.0484,0.0,medium,prop,Jay Huff,W,1.06,4.3,0.4276
+2026-03-29,MIA@IND,player_assists,over 3.5,118,0.512,0.0926,0.0246,medium,prop,Bam Adebayo,L,-1.0,3.6,0.4194
+2026-03-29,MIA@IND,player_assists,under 3.5,-105,0.536,0.0622,0.0122,medium,prop,Pelle Larsson,W,0.95,3.2,0.4738
+2026-03-29,MIA@IND,player_assists,under 5.5,-111,0.536,0.0665,0.0053,medium,prop,Davion Mitchell,L,-1.0,5.2,0.4695
+2026-03-29,MIA@IND,player_threes,under 1.5,117,0.716,0.2671,0.1183,medium,prop,Bam Adebayo,W,1.17,0.3,0.4489
+2026-03-29,MIA@IND,player_threes,over 1.5,134,0.446,0.0611,0.0081,medium,prop,Pascal Siakam,W,1.34,1.2,0.3849
+2026-03-29,MIA@IND,player_threes,under 1.5,-107,0.536,0.0493,0.0099,medium,prop,Andrew Nembhard,L,-1.0,1.3,0.4867
+2026-03-29,MIA@IND,player_threes,under 1.5,-116,0.554,0.0508,0.0092,medium,prop,Andrew Wiggins,L,-1.0,1.2,0.5032
+2026-03-29,MIA@IND,player_threes,under 1.5,-134,0.644,0.1062,0.0418,medium,prop,Jay Huff,W,0.75,0.7,0.5378
+2026-03-29,MIA@IND,player_threes,over 1.5,151,0.428,0.0782,0.0123,medium,prop,Davion Mitchell,L,-1.0,1.1,0.3498
+2026-03-29,MIA@IND,player_pra,under 23.5,-118,0.596,0.0854,0.0298,medium,prop,Jarace Walker,P,0.0,21.1,0.5106
+2026-03-29,MIA@IND,player_pra,under 20.5,-113,0.6159999999999999,0.0959,0.0455,medium,prop,Pelle Larsson,L,-1.0,17.6,0.5201
+2026-03-29,SAC@BKN,spread,home -1.5,-112,0.64,0.1383,0.0592,medium,game,,W,0.89,106-111,0.5017
+2026-03-29,SAC@BKN,total,under 218.5,-112,0.5986350000000001,0.0977,0.0373,medium,game,,W,0.89,216.5273,0.5009
+2026-03-29,SAC@BKN,team_total_away,away under 108.5,-105,0.6266,0.1501,0.0586,medium,game,,W,0.95,105.969,0.4765
+2026-03-29,SAC@BKN,player_points,over 15.5,-122,0.536,0.0759,0.0,medium,prop,Devin Carter,W,0.82,16.1,0.4601
+2026-03-29,SAC@BKN,player_rebounds,under 4.5,-104,0.524,0.0497,0.0072,medium,prop,Nique Clifford,L,-1.0,4.3,0.4743
+2026-03-29,SAC@BKN,player_assists,under 4.5,116,0.56,0.1333,0.0452,medium,prop,Nique Clifford,W,1.16,4.0,0.4267
+2026-03-29,SAC@BKN,player_assists,over 4.5,102,0.524,0.101,0.0143,medium,prop,Nolan Traore,W,1.02,4.7,0.423
+2026-03-29,SAC@BKN,player_threes,over 1.5,120,0.536,0.1471,0.0373,medium,prop,Devin Carter,W,1.2,1.7,0.3889
+2026-03-29,SAC@BKN,player_threes,over 1.5,147,0.446,0.0949,0.0173,medium,prop,Nolan Traore,W,1.47,1.2,0.3511
+2026-03-29,SAC@BKN,player_threes,over 1.5,116,0.446,0.0457,0.0,medium,prop,Noah Clowney,W,1.16,1.2,0.4003
+2026-03-29,BOS@CHA,moneyline,away,100,0.5489,0.0736,0.0244,medium,game,,W,1.0,107-105,0.4753
+2026-03-29,BOS@CHA,spread,away 1.5,-110,0.64,0.1398,0.061,medium,game,,W,0.91,107-105,0.5002
+2026-03-29,BOS@CHA,total,under 213.5,-105,0.6105450000000004,0.1089,0.0504,medium,game,,W,0.95,211.2891,0.5016
+2026-03-29,BOS@CHA,q3_total,over 53.5,-105,0.5755,0.0853,0.0324,medium,game,,L,-1.0,55.01,0.4902
+2026-03-29,BOS@CHA,player_points,over 19.5,-117,0.536,0.055,0.0,medium,prop,LaMelo Ball,L,-1.0,20.1,0.481
+2026-03-29,BOS@CHA,player_assists,over 6.5,-112,0.572,0.0876,0.0232,medium,prop,LaMelo Ball,L,-1.0,7.1,0.4844
+2026-03-29,BOS@CHA,player_threes,under 3.5,-173,0.626,0.0511,0.0,medium,prop,Derrick White,W,0.58,2.8,0.5749
+2026-03-29,BOS@CHA,player_threes,under 1.5,-108,0.536,0.0585,0.0087,medium,prop,Miles Bridges,W,0.93,1.3,0.4775
+2026-03-29,ORL@TOR,spread,away 2.5,-115,0.6,0.0986,0.035,medium,game,,L,-1.0,112-112,0.5014
+2026-03-29,ORL@TOR,total,under 226.5,-115,0.6172150000000002,0.1198,0.0442,medium,game,,W,0.87,224.1557,0.4975
+2026-03-29,ORL@TOR,q2_total,under 57.5,-120,0.6405,0.1421,0.0523,medium,game,,W,0.83,54.69,0.4984
+2026-03-29,ORL@TOR,player_points,over 24.5,-109,0.56,0.1007,0.0201,medium,prop,Paolo Banchero,L,-1.0,25.5,0.4593
+2026-03-29,ORL@TOR,player_points,over 18.5,-124,0.536,0.0538,0.0,medium,prop,Scottie Barnes,W,0.81,19.1,0.4822
+2026-03-29,ORL@TOR,player_rebounds,over 8.5,104,0.5,0.0551,0.0048,medium,prop,Jakob Poeltl,L,-1.0,8.5,0.4449
+2026-03-29,ORL@TOR,player_rebounds,over 3.5,115,0.464,0.0425,0.0,medium,prop,Ja'Kobe Walter,W,1.15,3.2,0.4215
+2026-03-29,ORL@TOR,player_assists,over 3.5,-114,0.536,0.0658,0.0018,medium,prop,Brandon Ingram,L,-1.0,3.8,0.4702
+2026-03-29,ORL@TOR,player_assists,over 2.5,146,0.464,0.0864,0.0242,medium,prop,Tristan da Silva,L,-1.0,2.2,0.3776
+2026-03-29,ORL@TOR,player_threes,under 1.5,100,0.518,0.0546,0.009,medium,prop,Brandon Ingram,W,1.0,1.4,0.4634
+2026-03-29,ORL@TOR,player_threes,under 1.5,-110,0.536,0.0454,0.0064,medium,prop,Tristan da Silva,W,0.91,1.3,0.4906
+2026-03-29,ORL@TOR,player_pra,over 37.5,-116,0.54,0.0661,0.0016,medium,prop,Paolo Banchero,L,-1.0,38.5,0.4739
+2026-03-29,WAS@POR,total,under 237.5,-110,0.6193550000000002,0.1158,0.0502,high,game,,W,0.91,235.1129,0.5036
+2026-03-29,WAS@POR,player_points,over 16.5,-120,0.5539999999999999,0.0699,0.0047,medium,prop,Donovan Clingan,L,-1.0,17.4,0.4841
+2026-03-29,WAS@POR,player_rebounds,over 4.5,102,0.464,0.0538,0.0,medium,prop,Tristan Vukcevic,L,-1.0,4.2,0.4102
+2026-03-29,WAS@POR,player_assists,over 4.5,115,0.524,0.1039,0.0275,medium,prop,Scoot Henderson,W,1.15,4.7,0.4201
+2026-03-29,WAS@POR,player_threes,over 1.5,164,0.392,0.0498,0.0053,medium,prop,Donovan Clingan,L,-1.0,0.9,0.3422
+2026-03-29,WAS@POR,player_threes,over 1.5,151,0.446,0.1079,0.0198,medium,prop,Bilal Coulibaly,L,-1.0,1.2,0.3381
+2026-03-29,WAS@POR,player_threes,under 1.5,106,0.518,0.0676,0.0158,medium,prop,Carlton Carrington,W,1.06,1.4,0.4504
+2026-03-29,HOU@NOP,spread,away -5.5,-120,0.6,0.1018,0.03,medium,game,,W,0.83,116-108,0.4982
+2026-03-29,HOU@NOP,q2_total,over 54.5,-115,0.696,0.2006,0.0866,medium,game,,W,0.87,58.42,0.4954
+2026-03-29,NYK@OKC,spread,home -8.5,-108,0.56,0.0639,0.0212,medium,game,,W,0.93,106-116,0.4961
+2026-03-29,NYK@OKC,team_total_away,away under 107.5,-108,0.5561,0.0592,0.0192,medium,game,,W,0.93,106.3786,0.4968
+2026-03-29,NYK@OKC,player_points,over 29.5,-114,0.59,0.14,0.0307,medium,prop,Shai Gilgeous-Alexander,W,0.88,31.0,0.45
+2026-03-29,NYK@OKC,player_points,over 23.5,-115,0.6139999999999999,0.1308,0.0425,medium,prop,Jalen Brunson,W,0.87,25.4,0.4832
+2026-03-29,NYK@OKC,player_points,over 16.5,-125,0.5839999999999999,0.1073,0.016,medium,prop,Jalen Williams,W,0.8,17.9,0.4767
+2026-03-29,NYK@OKC,player_points,over 16.5,-120,0.6439999999999999,0.1757,0.0542,medium,prop,Karl-Anthony Towns,L,-1.0,18.9,0.4683
+2026-03-29,NYK@OKC,player_points,over 12.5,-109,0.62,0.1562,0.0515,medium,prop,Mikal Bridges,W,0.92,14.5,0.4638
+2026-03-29,NYK@OKC,player_points,over 6.5,-108,0.602,0.1321,0.043,medium,prop,Luguentz Dort,W,0.93,8.2,0.4699
+2026-03-29,NYK@OKC,player_points,over 4.5,-113,0.518,0.0705,0.0,medium,prop,Mitchell Robinson,L,-1.0,4.8,0.4475
+2026-03-29,NYK@OKC,player_rebounds,over 10.5,-122,0.572,0.0922,0.0125,medium,prop,Karl-Anthony Towns,W,0.82,11.1,0.4798
+2026-03-29,NYK@OKC,player_rebounds,over 8.5,105,0.4760000000000001,0.0448,0.0,medium,prop,Chet Holmgren,W,1.05,8.3,0.4312
+2026-03-29,NYK@OKC,player_rebounds,over 3.5,118,0.524,0.0942,0.0301,medium,prop,Mikal Bridges,L,-1.0,3.7,0.4298
+2026-03-29,NYK@OKC,player_rebounds,over 2.5,-118,0.536,0.0697,0.0,medium,prop,Luguentz Dort,L,-1.0,2.8,0.4663
+2026-03-29,NYK@OKC,player_rebounds,over 7.5,-130,0.548,0.0622,0.0,medium,prop,Mitchell Robinson,L,-1.0,7.9,0.4858
+2026-03-29,NYK@OKC,player_threes,over 1.5,165,0.536,0.2014,0.0637,medium,prop,Karl-Anthony Towns,L,-1.0,1.7,0.3346
+2026-03-29,NYK@OKC,player_threes,over 2.5,108,0.482,0.0463,0.0006,medium,prop,OG Anunoby,L,-1.0,2.4,0.4357
+2026-03-29,NYK@OKC,player_threes,over 1.5,160,0.518,0.1727,0.0542,medium,prop,Chet Holmgren,L,-1.0,1.6,0.3453
+2026-03-29,NYK@OKC,player_threes,over 1.5,-119,0.554,0.0419,0.0058,medium,prop,Mikal Bridges,W,0.84,1.8,0.5121
+2026-03-29,NYK@OKC,player_threes,over 1.5,120,0.5,0.082,0.0208,medium,prop,Josh Hart,W,1.2,1.5,0.418
+2026-03-29,NYK@OKC,player_pra,over 40.5,-113,0.58,0.088,0.0263,medium,prop,Shai Gilgeous-Alexander,L,-1.0,42.5,0.492
+2026-03-29,NYK@OKC,player_pra,over 34.5,-113,0.54,0.0642,0.005,medium,prop,Jalen Brunson,W,0.88,35.5,0.4758
+2026-03-29,NYK@OKC,player_pra,over 29.5,-122,0.62,0.1266,0.0391,medium,prop,Karl-Anthony Towns,W,0.82,32.5,0.4934
+2026-03-29,NYK@OKC,player_pra,over 18.5,-125,0.6040000000000001,0.1218,0.0272,medium,prop,Mikal Bridges,L,-1.0,21.1,0.4823
+2026-03-29,GSW@DEN,total,under 239.5,-110,0.5739850000000004,0.0745,0.0263,medium,game,,W,0.91,238.0203,0.4995
+2026-03-29,GSW@DEN,q2_total,over 57.5,-125,0.675,0.1646,0.0672,medium,game,,L,-1.0,61.0,0.5104
+2026-03-30,PHI@MIA,spread,away -2.5,100,0.56,0.0605,0.03,medium,game,,L,-1.0,123-119,0.4995
+2026-03-30,BOS@ATL,spread,home -1.5,-110,0.6,0.0992,0.04,medium,game,,W,0.91,109-113,0.5008
+2026-03-30,BOS@ATL,team_total_away,away under 110.5,-105,0.6009,0.1033,0.0454,medium,game,,W,0.95,108.4824,0.4975
+2026-03-30,BOS@ATL,player_points,over 21.5,-121,0.53,0.0551,0.0,medium,prop,Jalen Johnson,L,-1.0,22.0,0.4749
+2026-03-30,BOS@ATL,player_rebounds,over 4.5,113,0.464,0.0628,0.0,medium,prop,Derrick White,W,1.13,4.2,0.4012
+2026-03-30,BOS@ATL,player_rebounds,over 3.5,129,0.452,0.0555,0.0068,medium,prop,C.J. McCollum,L,-1.0,3.1,0.3965
+2026-03-30,BOS@ATL,player_threes,over 1.5,105,0.536,0.0745,0.0235,medium,prop,Jaylen Brown,W,1.05,1.7,0.4615
+2026-03-30,BOS@ATL,player_threes,under 1.5,110,0.536,0.0752,0.0285,medium,prop,Onyeka Okongwu,L,-1.0,1.3,0.4608
+2026-03-30,BOS@ATL,player_pra,under 40.5,-122,0.6,0.0954,0.028,medium,prop,Jaylen Brown,L,-1.0,38.0,0.5046
+2026-03-30,BOS@ATL,player_pra,under 27.5,-119,0.576,0.0774,0.0179,medium,prop,Payton Pritchard,W,0.84,25.6,0.4986
+2026-03-30,PHX@MEM,spread,away -12.5,-110,0.64,0.1361,0.061,medium,game,,W,0.91,122-106,0.5039
+2026-03-30,PHX@MEM,q1_spread,away Q1 -3.5,-120,0.5618,0.0526,0.009,medium,game,,L,-1.0,122-106,0.5092
+2026-03-30,PHX@MEM,team_total_away,away over 121.5,-112,0.5234,0.0404,0.0,medium,game,,L,-1.0,121.9671,0.483
+2026-03-30,MIN@DAL,q2_total,over 57.5,-110,0.7405,0.2443,0.1138,medium,game,,L,-1.0,62.31,0.4962
+2026-03-30,MIN@DAL,q4_total,under 58.5,-110,0.5985,0.1097,0.0392,medium,game,,W,0.91,56.53,0.4888
+2026-03-30,MIN@DAL,player_points,over 28.5,-111,0.536,0.0665,0.0053,medium,prop,Anthony Edwards,L,-1.0,29.1,0.4695
+2026-03-30,MIN@DAL,player_points,over 22.5,-118,0.5239999999999999,0.0617,0.0,medium,prop,Cooper Flagg,L,-1.0,22.9,0.4623
+2026-03-30,MIN@DAL,player_points,over 14.5,-105,0.512,0.0553,0.0,medium,prop,Naz Reid,L,-1.0,14.7,0.4567
+2026-03-30,MIN@DAL,player_points,over 9.5,-111,0.518,0.058,0.0,medium,prop,Klay Thompson,L,-1.0,9.8,0.46
+2026-03-30,MIN@DAL,player_points,over 8.5,101,0.518,0.0815,0.0102,medium,prop,Khris Middleton,W,1.01,8.8,0.4365
+2026-03-30,MIN@DAL,player_rebounds,over 6.5,-120,0.548,0.0547,0.0014,medium,prop,Cooper Flagg,L,-1.0,6.9,0.4933
+2026-03-30,MIN@DAL,player_rebounds,over 6.5,-144,0.56,0.0526,0.0,medium,prop,Julius Randle,L,-1.0,7.0,0.5074
+2026-03-30,MIN@DAL,player_rebounds,over 4.5,101,0.524,0.095,0.0132,medium,prop,Naji Marshall,P,0.0,4.7,0.429
+2026-03-30,MIN@DAL,player_rebounds,over 3.5,-131,0.548,0.0505,0.0,medium,prop,Ayo Dosunmu,W,0.76,3.9,0.4975
+2026-03-30,MIN@DAL,player_rebounds,over 6.5,-118,0.536,0.0584,0.0,medium,prop,P.J. Washington,P,0.0,6.8,0.4776
+2026-03-30,MIN@DAL,player_rebounds,over 12.5,-102,0.5239999999999999,0.0736,0.0096,medium,prop,Rudy Gobert,L,-1.0,12.7,0.4504
+2026-03-30,MIN@DAL,player_rebounds,over 2.5,-117,0.536,0.0919,0.0,medium,prop,Brandon Williams,W,0.85,2.8,0.4441
+2026-03-30,MIN@DAL,player_rebounds,over 2.5,-109,0.524,0.1035,0.0013,medium,prop,Khris Middleton,W,0.92,2.7,0.4205
+2026-03-30,MIN@DAL,player_threes,over 3.5,132,0.482,0.0803,0.0224,medium,prop,Anthony Edwards,L,-1.0,3.4,0.4017
+2026-03-30,MIN@DAL,player_threes,under 0.5,156,0.4639999999999999,0.1097,0.0301,medium,prop,Cooper Flagg,W,1.56,0.7,0.3543
+2026-03-30,MIN@DAL,player_threes,over 1.5,144,0.446,0.0836,0.0153,medium,prop,Julius Randle,W,1.44,1.2,0.3624
+2026-03-30,MIN@DAL,player_threes,under 0.5,133,0.5,0.1148,0.031,medium,prop,Naji Marshall,P,0.0,0.5,0.3852
+2026-03-30,MIN@DAL,player_threes,over 1.5,126,0.446,0.0461,0.0016,medium,prop,P.J. Washington,P,0.0,1.2,0.3999
+2026-03-30,MIN@DAL,player_threes,over 0.5,109,0.5,0.0432,0.0103,medium,prop,Brandon Williams,W,1.09,0.5,0.4568
+2026-03-30,MIN@DAL,player_threes,over 2.5,137,0.4639999999999999,0.0733,0.0182,medium,prop,Klay Thompson,L,-1.0,2.3,0.3907
+2026-03-30,MIN@DAL,player_threes,under 0.5,112,0.482,0.0416,0.0049,medium,prop,Khris Middleton,L,-1.0,0.6,0.4404
+2026-03-30,CLE@UTA,spread,away -17.5,-108,0.64,0.1435,0.0628,high,game,,L,-1.0,130-109,0.4965
+2026-03-30,CLE@UTA,q1_spread,away Q1 -5.5,-108,0.5804,0.0838,0.0318,medium,game,,L,-1.0,130-109,0.4966
+2026-03-30,CLE@UTA,q2_total,over 59.5,-110,0.757,0.2482,0.1224,medium,game,,L,-1.0,64.64,0.5088
+2026-03-30,CLE@UTA,q3_total,under 64.5,-115,0.5595,0.0672,0.0132,medium,game,,L,-1.0,63.31,0.4923
+2026-03-30,CLE@UTA,q4_total,under 59.5,-105,0.553,0.0754,0.0209,medium,game,,W,0.95,58.44,0.4776
+2026-03-30,DET@OKC,spread,home -12.5,-110,0.72,0.2205,0.103,high,game,,L,-1.0,100-118,0.4995
+2026-03-30,DET@OKC,q1_spread,home Q1 -3.5,-115,0.5787,0.0695,0.0236,medium,game,,W,0.87,100-118,0.5092
+2026-03-30,DET@OKC,team_total_away,away under 102.5,-115,0.6518,0.1234,0.0629,medium,game,,L,-1.0,99.4636,0.5284
+2026-03-30,WAS@LAL,q3_total,over 58.5,-120,0.6155,0.1133,0.0385,medium,game,,W,0.83,60.81,0.5022
+2026-03-30,WAS@LAL,player_points,under 29.5,-113,0.842,0.2992,0.1659,medium,prop,Austin Reaves,W,0.88,23.8,0.5428
+2026-03-30,WAS@LAL,player_rebounds,over 8.5,-126,0.572,0.0752,0.0082,medium,prop,Deandre Ayton,L,-1.0,9.1,0.4968
+2026-03-30,WAS@LAL,player_pra,under 41.5,-110,0.808,0.2851,0.1492,medium,prop,Austin Reaves,W,0.91,33.8,0.5229
+2026-04-18,ATL@NYK,q3_total,over 47.5,-130,0.879,0.3559,0.1804,medium,game,,,,55.08,0.5231
+2026-04-18,ATL@NYK,player_points,under 31.5,-105,0.56,0.0777,0.0245,medium,prop,Jalen Brunson,,,30.5,0.4823
+2026-04-18,ATL@NYK,player_points,under 26.5,105,0.5780000000000001,0.0881,0.044,medium,prop,C.J. McCollum,,,25.2,0.4899
+2026-04-18,ATL@NYK,player_points,under 18.5,-105,0.59,0.0871,0.0399,medium,prop,OG Anunoby,,,17.0,0.5029
+2026-04-18,ATL@NYK,player_points,under 18.5,-105,0.728,0.22,0.1106,medium,prop,Onyeka Okongwu,,,14.7,0.508
+2026-04-18,ATL@NYK,player_points,over 17.5,-105,0.668,0.1689,0.0799,medium,prop,Karl-Anthony Towns,,,20.3,0.4991
+2026-04-18,ATL@NYK,player_points,over 13.5,-145,0.572,0.0768,0.0,medium,prop,Mikal Bridges,,,14.7,0.4952
+2026-04-18,ATL@NYK,player_points,under 12.5,-135,0.62,0.1102,0.0267,medium,prop,Nickeil Alexander-Walker,,,10.5,0.5098
+2026-04-18,ATL@NYK,player_points,over 8.5,-115,0.572,0.0928,0.0199,medium,prop,Jonathan Kuminga,,,9.7,0.4792
+2026-04-18,ATL@NYK,player_points,over 8.5,110,0.518,0.0729,0.0199,medium,prop,Josh Hart,,,8.8,0.4451
+2026-04-18,ATL@NYK,player_points,over 6.5,114,0.512,0.0581,0.021,medium,prop,Dyson Daniels,,,6.7,0.4539
+2026-04-18,ATL@NYK,player_points,over 4.5,-115,0.524,0.0561,0.0,medium,prop,Mitchell Robinson,,,4.9,0.4679
+2026-04-18,ATL@NYK,player_rebounds,under 7.5,-120,0.6559999999999999,0.1552,0.0608,medium,prop,OG Anunoby,,,6.2,0.5008
+2026-04-18,ATL@NYK,player_rebounds,under 9.5,-145,0.6319999999999999,0.1011,0.0246,medium,prop,Jalen Johnson,,,8.4,0.5309
+2026-04-18,ATL@NYK,player_rebounds,over 4.5,120,0.488,0.0745,0.0153,medium,prop,Jonathan Kuminga,,,4.4,0.4135
+2026-04-18,ATL@NYK,player_rebounds,under 8.5,105,0.5840000000000001,0.0965,0.0469,medium,prop,Josh Hart,,,7.8,0.4875
+2026-04-18,ATL@NYK,player_assists,under 3.5,114,0.536,0.1292,0.0323,medium,prop,Karl-Anthony Towns,,,3.2,0.4068
+2026-04-18,ATL@NYK,player_assists,under 4.5,110,0.536,0.1247,0.0285,medium,prop,Nickeil Alexander-Walker,,,4.2,0.4113
+2026-04-18,ATL@NYK,player_assists,under 8.5,-188,0.788,0.1658,0.0974,medium,prop,Dyson Daniels,,,6.1,0.6222
+2026-04-18,ATL@NYK,player_threes,under 3.5,120,0.572,0.1197,0.0538,medium,prop,Jalen Brunson,,,3.1,0.4523
+2026-04-18,ATL@NYK,player_threes,under 4.5,100,0.6799999999999999,0.2429,0.09,medium,prop,C.J. McCollum,,,3.5,0.4371
+2026-04-18,ATL@NYK,player_threes,under 2.5,-110,0.5539999999999999,0.0518,0.0158,medium,prop,OG Anunoby,,,2.2,0.5022
+2026-04-18,ATL@NYK,player_threes,under 3.5,-125,0.896,0.3616,0.1915,medium,prop,Onyeka Okongwu,,,1.3,0.5344
+2026-04-18,ATL@NYK,player_threes,under 2.5,-180,0.644,0.0423,0.0008,medium,prop,Jalen Johnson,,,1.7,0.6017
+2026-04-18,ATL@NYK,player_threes,over 1.5,190,0.572,0.258,0.0867,medium,prop,Karl-Anthony Towns,,,1.9,0.314
+2026-04-18,ATL@NYK,player_threes,over 1.5,150,0.536,0.1644,0.0567,medium,prop,Mikal Bridges,,,1.7,0.3716
+2026-04-18,ATL@NYK,player_threes,over 0.5,240,0.482,0.2192,0.0665,medium,prop,Josh Hart,,,0.4,0.2628
+2026-04-18,ATL@NYK,player_threes,over 0.5,420,0.482,0.3321,0.0897,medium,prop,Dyson Daniels,,,0.4,0.1499
+2026-04-18,ATL@NYK,player_threes,over 0.5,-105,0.518,0.0404,0.003,medium,prop,Miles McBride,,,0.6,0.4776
+2026-04-18,ATL@NYK,player_pra,under 44.5,-125,0.6,0.0966,0.025,medium,prop,Jalen Brunson,,,42.0,0.5034
+2026-04-18,ATL@NYK,player_pra,under 31.5,-110,0.5640000000000001,0.0774,0.0211,medium,prop,Jalen Johnson,,,29.9,0.4866
+2026-04-18,ATL@NYK,player_pra,over 30.5,-115,0.596,0.1066,0.0328,medium,prop,Karl-Anthony Towns,,,32.9,0.4894
+2026-04-18,ATL@NYK,player_pra,under 17.5,-105,0.544,0.0731,0.0163,medium,prop,Nickeil Alexander-Walker,,,16.4,0.4709
+2026-04-18,ATL@NYK,player_pra,under 20.5,-115,0.6159999999999999,0.1093,0.0436,medium,prop,Dyson Daniels,,,17.6,0.5067
+2026-04-18,HOU@LAL,q2_total,over 49.5,-125,0.709,0.2015,0.0863,medium,game,,,,53.68,0.5075
+2026-04-18,HOU@LAL,q4_total,under 52.5,-115,0.618,0.1233,0.0447,medium,game,,,,50.14,0.4947
+2026-04-18,HOU@LAL,player_points,over 21.5,-107,0.56,0.107,0.0223,medium,prop,Alperen Sengun,,,22.5,0.453
+2026-04-18,HOU@LAL,player_points,under 6.5,-117,0.578,0.0742,0.0211,medium,prop,Josh Okogie,,,5.2,0.5038
+2026-04-18,HOU@LAL,player_points,under 4.5,-112,0.542,0.0401,0.0073,medium,prop,Aaron Holiday,,,3.8,0.5019
+2026-04-18,HOU@LAL,player_rebounds,over 6.5,-142,0.572,0.0856,0.0,medium,prop,LeBron James,,,7.1,0.4864
+2026-04-18,HOU@LAL,player_rebounds,over 2.5,-131,0.548,0.0613,0.0,medium,prop,Reed Sheppard,,,2.9,0.4867
+2026-04-18,HOU@LAL,player_rebounds,over 3.5,-125,0.56,0.0759,0.0025,medium,prop,Rui Hachimura,,,4.0,0.4841
+2026-04-18,HOU@LAL,player_rebounds,over 7.5,-125,0.6080000000000001,0.1177,0.0295,medium,prop,Deandre Ayton,,,8.4,0.4903
+2026-04-18,HOU@LAL,player_rebounds,over 4.5,116,0.488,0.0614,0.0117,medium,prop,Jaxson Hayes,,,4.4,0.4266
+2026-04-18,HOU@LAL,player_rebounds,over 3.5,110,0.5,0.0659,0.0114,medium,prop,Jarred Vanderbilt,,,3.5,0.4341
+2026-04-18,HOU@LAL,player_assists,over 8.5,-128,0.56,0.0672,0.0,medium,prop,LeBron James,,,9.0,0.4928
+2026-04-18,HOU@LAL,player_assists,under 0.5,152,0.4639999999999999,0.1036,0.0278,medium,prop,Rui Hachimura,,,0.8,0.3604
+2026-04-18,HOU@LAL,player_assists,under 0.5,138,0.4519999999999999,0.0706,0.0137,medium,prop,Deandre Ayton,,,0.9,0.3814
+2026-04-18,HOU@LAL,player_threes,over 1.5,-137,0.59,0.0425,0.0071,medium,prop,LeBron James,,,2.0,0.5475
+2026-04-18,HOU@LAL,player_threes,over 0.5,130,0.464,0.0626,0.0129,medium,prop,Alperen Sengun,,,0.3,0.4014
+2026-04-18,HOU@LAL,player_threes,over 0.5,165,0.446,0.101,0.0276,medium,prop,Amen Thompson,,,0.2,0.345
+2026-04-18,HOU@LAL,player_threes,under 1.5,115,0.518,0.0895,0.0247,medium,prop,Rui Hachimura,,,1.4,0.4285
+2026-04-18,HOU@LAL,player_threes,over 2.5,141,0.536,0.152,0.0517,medium,prop,Luke Kennard,,,2.7,0.384
+2026-04-18,HOU@LAL,player_threes,under 0.5,130,0.518,0.1244,0.0368,medium,prop,Jake LaRavia,,,0.4,0.3936
+2026-04-18,HOU@LAL,player_threes,under 0.5,169,0.536,0.1983,0.0654,medium,prop,Josh Okogie,,,0.3,0.3377
+2026-04-18,HOU@LAL,player_threes,over 0.5,205,0.446,0.1515,0.044,medium,prop,Jarred Vanderbilt,,,0.2,0.2945

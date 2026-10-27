@@ -1,0 +1,4251 @@
+{
+  "822809:a9919b117b28638d": {
+    "starters_hash": "a9919b117b28638d",
+    "game_pk": 822809,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "TOR",
+          "reasoning": "Gausman demonstrates superior command (1 BB or fewer in 4 of last 5 starts) and pitch efficiency compared to P\u00e9rez, who has shown volatility (5 BB in two recent starts) and struggles to work deep. Time-through-order advantage strongly favors Toronto as Gausman maintains velocity and splitter effectiveness into the 6th inning, while P\u00e9rez's control deteriorates upon second exposure. F5 outlook is distinctly Blue Jays."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "TOR",
+          "reasoning": "Miami's lineup exhibits extreme contact issues (five regulars with K% >22%, including Caissie at 30.5%), which plays directly into Gausman's high-whiff profile. Toronto's lineup, while underperforming in power (Vlad Jr. .347 SLG due for positive regression), displays superior plate discipline and on-base skills. The platoon advantage is neutralized by Gausman's reverse splits history, while P\u00e9rez's wildness plays poorly against Toronto's patient top-half."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "TOR",
+          "reasoning": "Both bullpens enter fresh with no disclosed fatigue or availability concerns. However, Toronto's home-field advantage in leverage situations and slightly deeper relief corps provide marginal value if the starter exit occurs in a close game. The full-game delta from F5 to F9 slightly favors Toronto due to Miami's offensive impotence against quality relief pitching."
+        },
+        {
+          "role": "environment",
+          "game_winner": "TOR",
+          "reasoning": "Rogers Centre's 1.03 park factor is neutralized by calm wind conditions (0mph) that suppress fly ball carry. The 72\u00b0F temperature is optimal for batted ball distance, but the day game setting and lack of wind create a pitcher-friendly environment. Run suppression favors the team with the superior starter and better defensive positioning (TOR)."
+        },
+        {
+          "role": "market",
+          "game_winner": "TOR",
+          "reasoning": "Market prices TOR at 58.3% (-143), likely undervaluing the severity of Miami's offensive struggles against high-strikeout pitchers. Public money may be flowing to Miami due to P\u00e9rez's prospect pedigree and Toronto's recent offensive slumps, creating marginal value on Toronto. The -156 price on MIA +1.5 is prohibitive given the Blue Jays' ability to extend leads against weak middle relief."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "MIA",
+          "reasoning": "The obvious narrative is Gausman dominance and a comfortable TOR win. However, P\u00e9rez showed elite upside in his May 22 start (6.1 IP, 1 ER, 0 BB) and possesses frontline stuff when commanding his fastball. If he repeats that command profile, Miami can steal the F5 lead against a Toronto lineup that has shown minimal power (.358 SLG team-wide). The value lies in Miami F5 or RL if P\u00e9rez's A-show arrives."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.62,
+          "away_win_prob": 0.38,
+          "value_side": "home",
+          "edge": 0.037,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.42,
+          "value_side": "favorite_rl",
+          "edge": 0.02,
+          "confidence": "low"
+        },
+        "total": {
+          "projected_total": 6.8,
+          "over_prob": 0.44,
+          "under_prob": 0.56,
+          "value_side": "under",
+          "home_total_value": "over",
+          "away_total_value": "under",
+          "edge": 0.045,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.6,
+          "f1_home_lead_prob": 0.22,
+          "f1_away_lead_prob": 0.15,
+          "f1_tie_prob": 0.63,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "home",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.55,
+          "f3_away_win_prob": 0.22,
+          "f3_projected_total": 2.2,
+          "f3_home_lead_prob": 0.25,
+          "f3_away_lead_prob": 0.12,
+          "f3_tie_prob": 0.63,
+          "f3_ml_value": "home",
+          "f3_total_value": "under",
+          "f3_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.58,
+          "f5_away_win_prob": 0.22,
+          "f5_projected_total": 3.8,
+          "f5_home_lead_prob": 0.35,
+          "f5_away_lead_prob": 0.15,
+          "f5_tie_prob": 0.5,
+          "f5_ml_value": "home",
+          "f5_total_value": "under",
+          "f5_rl_value": "none",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "away": 2,
+          "home": 4
+        },
+        "key_factors": [
+          "MIA lineup's extreme strikeout vulnerability (5 starters >22 K%) against Gausman's high-whiff profile",
+          "P\u00e9rez's control volatility (4.0 BB/9 recent) creating baserunner variance against TOR's patient approach",
+          "Calm wind conditions (0mph) suppressing fly ball carry at Rogers Centre, favoring pitchers"
+        ]
+      }
+    },
+    "cached_at": "2026-05-27T16:16:37.338645+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "TOR",
+          "reasoning": "Gausman's recent form shows better command and consistency than P\u00e9rez. Gausman's last two starts were dominant (1 ER in 12.2 IP), while P\u00e9rez has been more erratic with walks. Both have adequate rest but Gausman's track record suggests better sustainability."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "TOR",
+          "reasoning": "Toronto has more proven MLB talent with Guerrero Jr. anchoring the lineup. Miami's offense features many young/unproven players with high strikeout rates (several above 22%). Toronto's lineup has better plate discipline overall."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "TOR",
+          "reasoning": "Both bullpens are fresh but Toronto typically has more established relievers. The game could shift in late innings if starters exit early, but Toronto projects to have more reliable depth."
+        },
+        {
+          "role": "environment",
+          "game_winner": "TOR",
+          "reasoning": "Rogers Centre with 1.03 park factor is neutral-to-slightly-favorable for offense. Day game, calm conditions favor neither side significantly. Home field advantage gives Toronto a marginal edge."
+        },
+        {
+          "role": "market",
+          "game_winner": "TOR",
+          "reasoning": "Market has Toronto at 58.3% implied probability. This seems fairly calibrated given the pitching matchup and lineup quality differential. No obvious inefficiencies stand out."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "MIA",
+          "reasoning": "P\u00e9rez showed ace-level stuff in his best start (6.1 IP, 1 ER). Miami's young hitters could break out against Gausman who had one poor outing recently (6 ER). Road dogs often provide value in even matchups."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.5994,
+          "away_win_prob": 0.4006,
+          "value_side": "none",
+          "edge": 0.02,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.4672,
+          "value_side": "underdog_rl",
+          "edge": 0.04,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 7.2793,
+          "over_prob": 0.4718,
+          "under_prob": 0.5282,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "under",
+          "edge": 0.04,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.5852,
+          "f1_home_lead_prob": 0.2267,
+          "f1_away_lead_prob": 0.2,
+          "f1_tie_prob": 0.6036,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.5013,
+          "f3_away_win_prob": 0.3181,
+          "f3_projected_total": 2.8524,
+          "f3_home_lead_prob": 0.4324,
+          "f3_away_lead_prob": 0.35,
+          "f3_tie_prob": 0.2932,
+          "f3_ml_value": "none",
+          "f3_total_value": "under",
+          "f3_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.5465,
+          "f5_away_win_prob": 0.3246,
+          "f5_projected_total": 4.273,
+          "f5_home_lead_prob": 0.4841,
+          "f5_away_lead_prob": 0.38,
+          "f5_tie_prob": 0.2124,
+          "f5_ml_value": "none",
+          "f5_total_value": "under",
+          "f5_rl_value": "away",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "home": 4.08,
+          "away": 2.95
+        },
+        "key_factors": [
+          "Gausman's recent dominance vs P\u00e9rez inconsistency",
+          "Toronto's superior lineup depth and plate discipline",
+          "Both bullpens fresh but slight edge to home team"
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 39,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 9,
+          "soft": 4,
+          "none": 0
+        },
+        "killed": [],
+        "challenger_verdicts": {
+          "run_line": {
+            "verdict": "approve",
+            "reasoning": "Underdog RL +1.5 at -156 with model showing 53.3% cover prob is mathematically consistent. Soft consensus but survived devig.",
+            "flaw_found": null
+          },
+          "total_under": {
+            "verdict": "approve",
+            "reasoning": "Strong 6/6 consensus on under. Two quality starters, both lineups middling. Rogers Centre park factor 1.03 is modest. Projected 7.28 vs 7.5 line is reasonable.",
+            "flaw_found": null
+          },
+          "team_total_away_under": {
+            "verdict": "approve",
+            "reasoning": "Strong 6/6 consensus. MIA lineup is weak (multiple sub-.220 hitters) facing Gausman who has been sharp recently. 2.95 projection well under 3.5.",
+            "flaw_found": null
+          },
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "Strong 5/6 consensus. Both pitchers have been generally effective; NRFI at -120 with 58.5% model prob is consistent.",
+            "flaw_found": null
+          },
+          "first_3_total_under": {
+            "verdict": "approve",
+            "reasoning": "Strong 6/6 consensus. F3 projection of 2.85 reasonable given starter quality on first pass.",
+            "flaw_found": null
+          },
+          "first_3_ml_home": {
+            "verdict": "approve",
+            "reasoning": "Strong 5/6 consensus. Gausman has been sharper recently than P\u00e9rez. Home F3 ML at -145 reasonable.",
+            "flaw_found": null
+          },
+          "first_5_ml_home": {
+            "verdict": "approve",
+            "reasoning": "Strong 6/6 consensus. Gausman's recent form (1 ER, 0 ER in last two starts) vs P\u00e9rez inconsistency supports home edge through 5.",
+            "flaw_found": null
+          },
+          "first_5_total_under": {
+            "verdict": "approve",
+            "reasoning": "Strong 6/6 consensus. Both starters performing well recently, F5 projection 4.27 supports under.",
+            "flaw_found": null
+          },
+          "first_5_rl_home": {
+            "verdict": "approve",
+            "reasoning": "Strong 5/6 consensus on home F5 RL. Consistent with home edge prediction through 5 innings.",
+            "flaw_found": null
+          },
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "team_total_away": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_1_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "claude": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "gemini": {
+            "runs": 3,
+            "weight_sum": 13.0
+          },
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "gpt4o": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "kimi": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "deepseek": {
+            "runs": 7,
+            "weight_sum": 13.2
+          }
+        },
+        "cost_usd": 0.691
+      },
+      "ensemble_runs": 1
+    }
+  },
+  "824432:eaac671ff7393960": {
+    "starters_hash": "eaac671ff7393960",
+    "game_pk": 824432,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "CLE",
+          "reasoning": "Extreme mismatch. Williams is a dominant starter (8 IP, 0 ER, 11 K last outing) with 5 days rest, projecting 6+ innings of high-leverage work. Poulin is clearly an opener on 2 days rest\u2014he hasn't exceeded 2.0 IP in any appearance and will force Washington into a bullpen game immediately. This drives massive F5 value to Cleveland as they face a depleted Washington pen by the 3rd inning while Williams works efficiently through two lineup turns."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "CLE",
+          "reasoning": "Both offenses are below-average (collective AVG ~.225), but Washington's lineup is heavily left-handed (7 of 9 batters) which could create platoon issues against Williams if he shows reverse splits, though his stuff profiles as neutral. Cleveland benefits from seeing Poulin's limited arsenal early, and Ramirez/DeLauter provide enough power to capitalize on the inevitable bullpen parade. Washington's power threats (Wood, Abrams) are neutralized by Williams' swing-and-miss capability."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "CLE",
+          "reasoning": "Washington's bullpen will be exposed early, likely needing 7+ innings of coverage with multiple middle-relievers facing high-leverage spots in the 3rd-5th innings. Cleveland's pen is fresh and will only need 2-3 innings at most, allowing them to deploy high-leverage arms if the game is close, or absorb low-leverage innings if Williams builds a substantial lead. The fatigue delta strongly favors Cleveland after the 5th inning."
+        },
+        {
+          "role": "environment",
+          "game_winner": "CLE",
+          "reasoning": "Progressive Field's 0.96 park factor suppresses run scoring slightly, particularly for left-handed power (relevant for Washington's lineup). The 72\u00b0F temperature and calm 0mph wind eliminate weather-related run inflation. Day game conditions slightly favor pitchers with better visibility. These factors slightly suppress Washington's already limited scoring upside against Williams."
+        },
+        {
+          "role": "market",
+          "game_winner": "CLE",
+          "reasoning": "The market prices Cleveland at -167 (62.9% implied), which fails to account for the structural advantage of a traditional starter vs. an opener/bullpen game. Comparable matchups with ace-quality arms facing bullpen games typically close -200 or higher. Public money likely recognizes Williams' quality but underweights Poulin's inability to provide length, creating value on Cleveland despite the juice."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "WSH",
+          "reasoning": "The obvious narrative is 'Cleveland easy win,' but Washington's lefty-heavy lineup could ambush Williams early if he has unreported reverse splits or command issues in day games. Poulin as an opener might be effective for his 1-2 inning max, and Washington could have a 'bulk' reliever prepared to stabilize the middle innings while Cleveland's offense has shown vulnerability (.210 team AVG). The +164 price offers value if the game becomes a bullpen coin-flip after the 5th, though the edge is thin."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.72,
+          "away_win_prob": 0.28,
+          "value_side": "home",
+          "edge": 0.091,
+          "confidence": "high"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.46,
+          "value_side": "favorite_rl",
+          "edge": 0.021,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 7.8,
+          "over_prob": 0.52,
+          "under_prob": 0.48,
+          "value_side": "over",
+          "home_total_value": "over",
+          "away_total_value": "under",
+          "edge": 0.03,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.48,
+          "f1_home_lead_prob": 0.38,
+          "f1_away_lead_prob": 0.12,
+          "f1_tie_prob": 0.5,
+          "nrfi_value": "none",
+          "f1_rl_value": "none",
+          "confidence": "low"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.52,
+          "f3_away_win_prob": 0.28,
+          "f3_projected_total": 2.8,
+          "f3_home_lead_prob": 0.52,
+          "f3_away_lead_prob": 0.28,
+          "f3_tie_prob": 0.2,
+          "f3_ml_value": "home",
+          "f3_total_value": "under",
+          "f3_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.58,
+          "f5_away_win_prob": 0.25,
+          "f5_projected_total": 3.8,
+          "f5_home_lead_prob": 0.58,
+          "f5_away_lead_prob": 0.25,
+          "f5_tie_prob": 0.17,
+          "f5_ml_value": "home",
+          "f5_total_value": "under",
+          "f5_rl_value": "none",
+          "confidence": "high"
+        },
+        "predicted_score": {
+          "away": 3,
+          "home": 5
+        },
+        "key_factors": [
+          "Washington using opener/bullpen game (Poulin on 2 days rest, max 2 IP)",
+          "Williams' durability allowing Cleveland to preserve bullpen",
+          "Progressive Field pitcher-neutral environment with calm wind"
+        ]
+      }
+    },
+    "cached_at": "2026-05-27T16:17:07.854457+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "CLE",
+          "reasoning": "Gavin Williams has shown strong form in his last 5 starts, averaging 7.1 IP, 1.4 ER, 8 K, and 0.6 BB per start. PJ Poulin's recent form is concerning with limited innings and inconsistent performances."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "CLE",
+          "reasoning": "CLE's lineup has a slightly higher overall OPS and more consistent power numbers compared to WSH. Jos\u00e9 Ram\u00edrez and Chase DeLauter are key factors in CLE's offensive potential."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "CLE",
+          "reasoning": "Both teams have fresh bullpens, but CLE's recent bullpen performances have been more reliable. However, the closers for both teams are TBD, introducing uncertainty."
+        },
+        {
+          "role": "environment",
+          "game_winner": "CLE",
+          "reasoning": "Progressive Field has a park factor of 0.96, which is slightly below average. The calm weather conditions should not significantly impact the game."
+        },
+        {
+          "role": "market",
+          "game_winner": "CLE",
+          "reasoning": "The market implies CLE has a 62.9% win probability. This aligns with the overall assessment of the teams' strengths and weaknesses."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "WSH",
+          "reasoning": "While CLE is favored, WSH's PJ Poulin has faced limited opposition recently. If he can string together a stronger performance, WSH could keep the game close. The market may be overestimating CLE's advantage."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.675,
+          "away_win_prob": 0.325,
+          "value_side": "none",
+          "edge": 0.0,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.4999,
+          "value_side": "none",
+          "edge": 0.0,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 7.243,
+          "over_prob": 0.4688,
+          "under_prob": 0.5312,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "under",
+          "edge": 0.04,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.5733,
+          "f1_home_lead_prob": 0.245,
+          "f1_away_lead_prob": 0.18,
+          "f1_tie_prob": 0.6052,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.5583,
+          "f3_away_win_prob": 0.2415,
+          "f3_projected_total": 2.8276,
+          "f3_home_lead_prob": 0.4717,
+          "f3_away_lead_prob": 0.23,
+          "f3_tie_prob": 0.3131,
+          "f3_ml_value": "home",
+          "f3_total_value": "under",
+          "f3_rl_value": "home",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.6247,
+          "f5_away_win_prob": 0.2309,
+          "f5_projected_total": 4.2449,
+          "f5_home_lead_prob": 0.5469,
+          "f5_away_lead_prob": 0.25,
+          "f5_tie_prob": 0.2381,
+          "f5_ml_value": "home",
+          "f5_total_value": "under",
+          "f5_rl_value": "home",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "home": 4.43,
+          "away": 2.81
+        },
+        "key_factors": [
+          "Gavin Williams' strong recent form",
+          "CLE's lineup strength",
+          "Park factor and weather conditions"
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 43,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 12,
+          "soft": 1,
+          "none": 0
+        },
+        "killed": [],
+        "challenger_verdicts": {
+          "total": {
+            "verdict": "approve",
+            "reasoning": "Under 7.5 has 6/6 model consensus with projected total 7.24. Both lineups are mediocre offenses with low SLG, and Williams has shown strong recent form. Park factor 0.96 supports under.",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "F5 under aligns with strong Williams pitching and weak WSH offense. 6/6 consensus.",
+            "flaw_found": null
+          },
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "CLE under 4.5 supported by Poulin being an opener/short outing pitcher (max 2 IP in last 5), but CLE lineup also has low SLG across the board. 5/6 consensus.",
+            "flaw_found": null
+          },
+          "team_total_away": {
+            "verdict": "approve",
+            "reasoning": "WSH under 3.5 supported by Williams' strong form and weak WSH bats. 6/6 consensus.",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "CLE F5 ML aligns with the pitching mismatch \u2014 Poulin appears to be an opener with very short outings, while Williams is a quality starter. Strong consensus.",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "Strong consensus and supported by pitching mismatch. F5 projected margin ~1.5 runs.",
+            "flaw_found": null
+          },
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "NRFI supported by Williams' quality and CLE leadoff Bazzana being mediocre. 5/6 consensus.",
+            "flaw_found": null
+          },
+          "first_1_rl": {
+            "verdict": "approve",
+            "reasoning": "Strong consensus. Reasonable given pitching matchup favors CLE early.",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "approve",
+            "reasoning": "Poulin is clearly an opener with sub-2 IP outings; bulk pitcher unknown. CLE has clear F3 advantage. Strong 6/6 consensus.",
+            "flaw_found": null
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "F3 under aligns with Williams' dominance and weak WSH offense. Strong consensus.",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "approve",
+            "reasoning": "Strong 6/6 consensus, supported by Poulin's opener role giving CLE early scoring chances against bulk arm.",
+            "flaw_found": null
+          },
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "run_line": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "claude": {
+            "runs": 7,
+            "weight_sum": 13.2
+          },
+          "gemini": {
+            "runs": 7,
+            "weight_sum": 13.2
+          },
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 13.8
+          },
+          "gpt4o": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "kimi": {
+            "runs": 7,
+            "weight_sum": 13.4
+          },
+          "deepseek": {
+            "runs": 7,
+            "weight_sum": 13.2
+          }
+        },
+        "cost_usd": 0.7356
+      },
+      "ensemble_runs": 1
+    }
+  },
+  "823783:fb59a42f0b909d83": {
+    "starters_hash": "fb59a42f0b909d83",
+    "game_pk": 823783,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "MIL",
+          "reasoning": "Dustin May provides STL with a stable 5-6 inning floor (6 days rest, 91-97 pitch counts recently), but Chad Patrick's usage pattern (1.0-4.0 IP outings, 0 ER in last 5) suggests an opener/bullpen-day approach for MIL. This creates a F5 advantage for STL as May faces the lineup 2x while MIL uses multiple arms, but MIL's fresh bullpen and home-field leverage give them the late-game edge. Patrick's lack of starter length forces early hooks, exposing middle innings."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "MIL",
+          "reasoning": "Both lineups are below-average, but MIL possesses superior plate discipline (Turang 13.2% BB%, Contreras 9.0% BB%) and speed to manufacture runs against May's ground-ball profile. STL's lineup features high strikeout rates (Gorman 25.5%, Walker 23.9%) and minimal power outside of Walker. American Family Field's 1.05 park factor slightly favors MIL's contact-oriented approach over STL's swing-and-miss profile."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "MIL",
+          "reasoning": "Both pens are fresh, but MIL benefits from Patrick's likely short outing being planned, allowing strategic deployment of bulk relievers. May's 5-6 inning expectation leaves 3-4 innings for STL's pen in a neutral park. MIL's home advantage and potential platoon splits in the late innings favor the Brewers' relief corps, particularly if the game remains close entering the 7th."
+        },
+        {
+          "role": "environment",
+          "game_winner": "neutral",
+          "reasoning": "72\u00b0F with calm winds (0mph) eliminates wind suppression factors, while the 1.05 park factor provides a slight offensive boost. Day game conditions typically favor hitters slightly, but both offenses rank in the bottom third in wOBA. The environment is neutral-to-slight-hitter favoring, but weak lineups suppress total run expectation to league average or slightly below."
+        },
+        {
+          "role": "market",
+          "game_winner": "STL",
+          "reasoning": "Public money likely flows to MIL (-139) at home with Patrick's 0.00 ERA in recent outings, creating inflation on the favorite. The market may not fully price Patrick's opener risk or May's stability. STL +146 offers value (implied 40.7% vs true prob ~45%). The total 8.0 is sharp but slight under value exists given two weak lineups and May's ground-ball tendencies."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "STL",
+          "reasoning": "The obvious narrative is 'MIL at home with unscored-upon pitcher vs weak STL lineup.' This ignores Patrick's 1-4 IP usage pattern indicating a bullpen game, which creates volatility. May is the only traditional starter in this matchup, giving STL a significant F5 pitching advantage. The contrarian play is STL F5 and full-game moneyline, betting on the known quantity (May) vs the uncertain MIL pitching plan."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.55,
+          "away_win_prob": 0.45,
+          "value_side": "away",
+          "edge": 0.043,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.36,
+          "value_side": "underdog_rl",
+          "edge": 0.052,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 7.6,
+          "over_prob": 0.45,
+          "under_prob": 0.55,
+          "value_side": "under",
+          "edge": 0.048,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.58,
+          "f1_home_lead_prob": 0.22,
+          "f1_away_lead_prob": 0.2,
+          "f1_tie_prob": 0.58,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.44,
+          "f3_away_win_prob": 0.38,
+          "f3_projected_total": 3.0,
+          "f3_home_lead_prob": 0.44,
+          "f3_away_lead_prob": 0.38,
+          "f3_tie_prob": 0.18,
+          "f3_ml_value": "none",
+          "f3_total_value": "under",
+          "f3_rl_value": "none",
+          "confidence": "low"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.47,
+          "f5_away_win_prob": 0.43,
+          "f5_projected_total": 4.2,
+          "f5_home_lead_prob": 0.47,
+          "f5_away_lead_prob": 0.43,
+          "f5_tie_prob": 0.1,
+          "f5_ml_value": "away",
+          "f5_total_value": "under",
+          "f5_rl_value": "none",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "away": 3,
+          "home": 4
+        },
+        "key_factors": [
+          "Chad Patrick's undefined role creating pitching uncertainty for MIL",
+          "Dustin May's workload advantage providing STL with F5 stability",
+          "Weak offensive profiles on both sides suppressing run scoring environment"
+        ]
+      }
+    },
+    "cached_at": "2026-05-27T16:16:55.110009+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "MIL",
+          "reasoning": "Chad Patrick has shown flashes of strong performance in limited innings, and while Dustin May has more consistent recent form, the difference in days rest (6 for May vs 5 for Patrick) isn't significant enough to overcome MIL's home advantage and lineup strength."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "MIL",
+          "reasoning": "MIL's lineup has a slight edge in overall hitting metrics and platoon advantages, particularly with Christian Yelich and Brice Turang on base. STL's lineup is more inconsistent, with key players like JJ Wetherholt and Masyn Winn struggling."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "STL",
+          "reasoning": "Both teams have fresh bullpens, but STL's has been more reliable in recent outings. If the game is close, STL's bullpen might have a slight edge in holding a lead or keeping the game within reach."
+        },
+        {
+          "role": "environment",
+          "game_winner": "MIL",
+          "reasoning": "American Family Field has a slight hitter-friendly park factor (1.05), which benefits MIL's already strong lineup. Calm weather conditions won't significantly impact the game."
+        },
+        {
+          "role": "market",
+          "game_winner": "MIL",
+          "reasoning": "The market implies MIL has a 58.3% chance of winning, which aligns with the analysts' assessments. There's no clear value on either side based on the given information."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "STL",
+          "reasoning": "The obvious narrative favors MIL due to their home field advantage and slightly stronger lineup. However, Dustin May has been more consistent than Chad Patrick in his recent starts, and STL's bullpen is fresh. If May can navigate the first few innings, STL could keep the game competitive."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.5615,
+          "away_win_prob": 0.4385,
+          "value_side": "none",
+          "edge": 0.0,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.4381,
+          "value_side": "none",
+          "edge": 0.0,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 7.9342,
+          "over_prob": 0.4925,
+          "under_prob": 0.5075,
+          "value_side": "over",
+          "home_total_value": "over",
+          "away_total_value": "under",
+          "edge": 0.02,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.5848,
+          "f1_home_lead_prob": 0.2119,
+          "f1_away_lead_prob": 0.18,
+          "f1_tie_prob": 0.6086,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "home",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.4521,
+          "f3_away_win_prob": 0.3885,
+          "f3_projected_total": 2.835,
+          "f3_home_lead_prob": 0.3586,
+          "f3_away_lead_prob": 0.25,
+          "f3_tie_prob": 0.335,
+          "f3_ml_value": "home",
+          "f3_total_value": "over",
+          "f3_rl_value": "home",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.4805,
+          "f5_away_win_prob": 0.4307,
+          "f5_projected_total": 4.3263,
+          "f5_home_lead_prob": 0.3838,
+          "f5_away_lead_prob": 0.28,
+          "f5_tie_prob": 0.2676,
+          "f5_ml_value": "home",
+          "f5_total_value": "over",
+          "f5_rl_value": "home",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "home": 4.16,
+          "away": 3.44
+        },
+        "key_factors": [
+          "MIL's lineup strength",
+          "Dustin May's recent consistency",
+          "Fresh bullpens for both teams"
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 43,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 4,
+          "soft": 9,
+          "none": 0
+        },
+        "killed": [],
+        "challenger_verdicts": {
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "6/6 model consensus on NRFI at -106, both lineups have modest top-of-order OBP, and Chad Patrick's recent outings show zero earned runs allowed. Strong consensus with no concrete flaw.",
+            "flaw_found": null
+          },
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "run_line": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "team_total_away": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_1_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "claude": {
+            "runs": 7,
+            "weight_sum": 13.0
+          },
+          "gemini": {
+            "runs": 7,
+            "weight_sum": 13.4
+          },
+          "gpt4o": {
+            "runs": 7,
+            "weight_sum": 13.4
+          },
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "kimi": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "deepseek": {
+            "runs": 7,
+            "weight_sum": 13.2
+          }
+        },
+        "cost_usd": 0.6991
+      },
+      "ensemble_runs": 1
+    }
+  },
+  "825003:6a35c386d60c9e44": {
+    "starters_hash": "6a35c386d60c9e44",
+    "game_pk": 825003,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "SEA",
+          "reasoning": "Logan Gilbert holds a significant advantage over Jeffrey Springs in terms of consistency and length. Gilbert's last five starts show three quality outings with only one blowup (7 ER), averaging over 6 IP per start with strong K/BB ratios. Springs has been volatile, failing to complete 6 innings in 3 of his last 5 starts and showing diminished stuff post-injury. This disparity is magnified in the F5 market, where Gilbert's durability and third-time-through reliability contrast with Springs' early fade. Both pitchers are on standard rest, eliminating fatigue concerns."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "SEA",
+          "reasoning": "Seattle's right-handed heavy lineup (Rodr\u00edguez, Arozarena, Naylor, Refsnyder, Robles, Pereda) draws a significant platoon advantage against the left-handed Springs. While both teams have been offensively challenged (collective AVG ~.230), SEA's power upside against LHP (.320+ xwOBA vs lefties projected) exceeds Oakland's muted attack against Gilbert's fastball/slider mix. Oakland's only significant power threat, Langeliers, is neutralized by the pitcher-friendly park, while SEA's righties can exploit Springs' command issues."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "none",
+          "reasoning": "Both bullpens are listed as 'fresh' with no reported fatigue or availability issues. Neither team has a named closer with recent usage concerns. Given that Gilbert is likely to pitch 6+ innings and Springs 5+, the bullpen usage will be moderate. With no discernible advantage in relief corps quality or availability, this factor is neutral for the full-game outcome, though it slightly favors SEA in F5 due to reduced reliance on middle relief."
+        },
+        {
+          "role": "environment",
+          "game_winner": "SEA",
+          "reasoning": "Oakland Coliseum's 0.95 park factor suppresses run scoring, particularly home runs to center field. The 72\u00b0F day game with calm winds (0mph) eliminates carry advantage for hitters, emphasizing pitcher contact management. These conditions favor Gilbert's fly-ball tendencies and limit Langeliers' power potential for Oakland. The day game start may slightly favor pitchers over hitters compared to night games, reinforcing the under angle."
+        },
+        {
+          "role": "market",
+          "game_winner": "SEA",
+          "reasoning": "The market prices SEA at -110 (52.9% implied), which underweights the platoon advantage and Gilbert's consistency edge. The public may be hesitant due to SEA's poor season batting averages (.230s), creating value on the favorite. The total of 9.0 is aggressive for this park and these offenses; the -109 juice on the under suggests market awareness, but the line hasn't moved down, offering value. F3 pricing (SEA -125) is sharper but still 1-2% light given the starter disparity."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "OAK",
+          "reasoning": "The obvious narrative is 'SEA stars wake up vs bad lefty,' but Springs' ERA is inflated by one bad start (4 ER in 6.1 IP isn't disastrous), and he could neutralize SEA's free-swinging top order (Julio 21.6% K%). If Gilbert repeats his 7 ER blowup from May 16, Oakland's patient lineup (Kurtz 15.4% BB%, Cortes 10.0% BB%) can exploit early control issues. The day game after a night game travel scenario (implied by 0-0 records) could flatten SEA's bats. Value exists on OAK +110 if Springs pitches to his 70th percentile."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.44,
+          "away_win_prob": 0.56,
+          "value_side": "away",
+          "edge": 0.031,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.43,
+          "value_side": "none",
+          "edge": 0.017,
+          "confidence": "low"
+        },
+        "total": {
+          "projected_total": 8.4,
+          "over_prob": 0.46,
+          "under_prob": 0.54,
+          "value_side": "under",
+          "home_total_value": "over",
+          "away_total_value": "over",
+          "edge": 0.05,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.48,
+          "f1_home_lead_prob": 0.2,
+          "f1_away_lead_prob": 0.27,
+          "f1_tie_prob": 0.53,
+          "nrfi_value": "none",
+          "f1_rl_value": "away",
+          "confidence": "low"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.28,
+          "f3_away_win_prob": 0.57,
+          "f3_projected_total": 3.1,
+          "f3_home_lead_prob": 0.24,
+          "f3_away_lead_prob": 0.41,
+          "f3_tie_prob": 0.35,
+          "f3_ml_value": "away",
+          "f3_total_value": "under",
+          "f3_rl_value": "away",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.3,
+          "f5_away_win_prob": 0.58,
+          "f5_projected_total": 4.6,
+          "f5_home_lead_prob": 0.26,
+          "f5_away_lead_prob": 0.44,
+          "f5_tie_prob": 0.3,
+          "f5_ml_value": "away",
+          "f5_total_value": "under",
+          "f5_rl_value": "away",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "away": 5,
+          "home": 4
+        },
+        "key_factors": [
+          "SEA right-handed lineup platoon advantage vs LHP Springs",
+          "Oakland Coliseum pitcher-friendly park factor (0.95)",
+          "Gilbert's superior consistency and length compared to Springs"
+        ]
+      }
+    },
+    "cached_at": "2026-05-27T18:03:30.360114+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "SEA",
+          "reasoning": "Logan Gilbert has shown flashes of dominance with two excellent starts (0 ER in 5.2 IP and 6.0 IP) in his last five. While he had one blow-up, his overall K/BB ratio in those good starts is impressive. He's coming off a strong outing and has better upside than Springs. Springs has been inconsistent, with two starts allowing 4 ER or more in his last five, and a lower K-rate. Gilbert's ability to go deep into games with efficiency gives Seattle an edge, particularly in the F5."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "SEA",
+          "reasoning": "Seattle's lineup, while not elite, has more proven talent at the top with Julio Rodriguez and Randy Arozarena. While their overall team AVG is low, their OBP and SLG are respectable. Oakland's lineup has some intriguing OBP talents like Nick Kurtz, but overall lacks power and consistency. They have several players with thin samples, suggesting less established offensive production. Seattle's top-end talent should be able to generate more offense against Springs."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "SEA",
+          "reasoning": "Both bullpens are listed as 'fresh,' which means neither team has a significant fatigue advantage. However, if Gilbert can pitch into the 6th or 7th, it shortens the game for the Seattle bullpen, which generally has a higher quality of arms than Oakland's. Oakland's bullpen has historically been a weakness, and while specific stats aren't provided, the general perception leans towards Seattle having the stronger relief corps to close out a tight game."
+        },
+        {
+          "role": "environment",
+          "game_winner": "OAK",
+          "reasoning": "Oakland Coliseum, with its 0.95 park factor, is a pitcher-friendly park, which generally favors teams with stronger pitching or can suppress a potent offense. The calm 0mph wind and 72\u00b0F temperature are neutral. The day game aspect could slightly favor hitters in terms of visibility, but the overall park factor will suppress offense. This slight suppression could benefit the underdog (OAK) by keeping the game tighter and reducing the advantage of Seattle's potentially stronger offense. A low-scoring game increases variance and gives the home team a better shot."
+        },
+        {
+          "role": "market",
+          "game_winner": "SEA",
+          "reasoning": "The market has Seattle as a slight favorite (-110) with an implied 52.9% win probability. This indicates the market sees these teams as relatively evenly matched, with a slight lean towards the Mariners. Given Gilbert's higher upside compared to Springs and Seattle's slightly better offensive talent, I believe the market might be slightly undervaluing Seattle, but not significantly enough to call it a strong value play. The total of 9.0 suggests the market expects a moderate-scoring game, which seems reasonable given the park factor and pitcher inconsistencies. The F3 ML also favoring Seattle suggests the market believes Seattle gets off to a quicker start."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "OAK",
+          "reasoning": "Everyone is quick to dismiss Oakland, but their lineup actually shows some decent OBP skills, particularly Nick Kurtz. Springs, while inconsistent, has shown he can limit damage in good outings. The biggest contrarian play here is the park factor and the total. A pitcher-friendly park and a total of 9.0 for two inconsistent offenses might be too high. If Springs pitches to his better side, and the Coliseum suppresses Seattle's bats, Oakland could easily win a low-scoring affair. The market has this as a near pick'em, and the 'safe' play is often Seattle, but Oakland at home with a fresh bullpen and a pitcher who can be effective offers value in a close game."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.4601,
+          "away_win_prob": 0.5399,
+          "value_side": "none",
+          "edge": 0.01,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.4204,
+          "value_side": "none",
+          "edge": 0.01,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 8.4069,
+          "over_prob": 0.4506,
+          "under_prob": 0.5494,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "none",
+          "edge": 0.04,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.5895,
+          "nrfi_value": "nrfi",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.3708,
+          "f3_away_win_prob": 0.4494,
+          "f3_projected_total": 2.9505,
+          "f3_home_lead_prob": 0.2942,
+          "f3_away_lead_prob": 0.3,
+          "f3_tie_prob": 0.3437,
+          "f3_ml_value": "none",
+          "f3_total_value": "under",
+          "f3_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.3981,
+          "f5_away_win_prob": 0.4853,
+          "f5_projected_total": 4.6614,
+          "f5_home_lead_prob": 0.3132,
+          "f5_away_lead_prob": 0.34,
+          "f5_tie_prob": 0.2943,
+          "f5_ml_value": "none",
+          "f5_total_value": "under",
+          "f5_rl_value": "none",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "home": 3.71,
+          "away": 4.15
+        },
+        "key_factors": [
+          "Logan Gilbert's recent strong performances and K upside",
+          "Oakland Coliseum's pitcher-friendly park factor",
+          "Inconsistent offenses for both teams, particularly Oakland's unproven bats",
+          "Jeffrey Springs' variability in recent starts"
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 35,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 9,
+          "soft": 3,
+          "none": 1
+        },
+        "killed": [],
+        "challenger_verdicts": {
+          "total_under_9.0": {
+            "verdict": "approve",
+            "reasoning": "Projected total 8.4 vs line 9.0, pitcher-friendly Coliseum park factor 0.95, both offenses below average. Strong 6/6 consensus.",
+            "flaw_found": null
+          },
+          "team_total_home_under_3.5": {
+            "verdict": "approve",
+            "reasoning": "OAK projected 3.71 runs vs Gilbert who has been solid recently. Park factor and offense profile support under. Strong consensus.",
+            "flaw_found": null
+          },
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "Both pitchers have shown ability to work through first inning cleanly; pitcher-friendly park supports NRFI at +104. Strong 6/6 consensus.",
+            "flaw_found": null
+          },
+          "first_3_total_under": {
+            "verdict": "approve",
+            "reasoning": "F3 projected 2.95, consistent with pitcher quality and park. Strong consensus.",
+            "flaw_found": null
+          },
+          "first_5_total_under": {
+            "verdict": "approve",
+            "reasoning": "F5 projected 4.66 in pitcher-friendly park with two competent starters. Strong consensus.",
+            "flaw_found": null
+          },
+          "first_3_ml_away": {
+            "verdict": "approve",
+            "reasoning": "Gilbert is the better pitcher and SEA has slightly better top-of-order; F3 ML at -125 has modest edge. Strong consensus.",
+            "flaw_found": null
+          },
+          "first_5_ml_away": {
+            "verdict": "approve",
+            "reasoning": "Gilbert recent form stronger than Springs (Springs 4 ER in last start, variable). Reasonable edge through 5 innings of starter matchup. Strong consensus.",
+            "flaw_found": null
+          },
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "run_line": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "team_total_away": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "gemini": {
+            "runs": 7,
+            "weight_sum": 13.8
+          },
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "claude": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "gpt4o": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "kimi": {
+            "runs": 3,
+            "weight_sum": 13.0
+          },
+          "deepseek": {
+            "runs": 3,
+            "weight_sum": 13.0
+          }
+        },
+        "cost_usd": 0.5873
+      },
+      "ensemble_runs": 1
+    }
+  },
+  "823295:9743caa44e8da0b2": {
+    "starters_hash": "9743caa44e8da0b2",
+    "game_pk": 823295,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "PHI",
+          "reasoning": "S\u00e1nchez enters with elite form: 0.47 ERA over last 38.2 IP with 43:6 K:BB and averaging 7.7 IP per start. His sinker/changeup mix generates weak contact and he improves through the order. Buehler shows decline: 4.50 ERA, averaging only 5.2 IP with declining velocity and 9 BB in 26 IP. Five days rest for both neutralizes any advantage there. S\u00e1nchez should dominate the first 18 batters while Buehler faces lineup stress in the 2nd/3rd time through."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "PHI",
+          "reasoning": "Both lineups are struggling (collective AVG < .230), but PHI has superior firepower with Schwarber and Harper showing power signs (combined 11% HR rate) against Buehler's hittable four-seamer. SD's Tatis (.316 SLG) and Machado (.189 AVG) are in severe slumps with no platoon advantage against the LHP S\u00e1nchez. PHI's lineup depth (Turner, Bohm) provides better sequence pressure. Day game conditions slightly favor seeing the ball better, helping the more patient PHI approach (8.4% BB vs SD 8.9% but PHI higher OPS)."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "PHI",
+          "reasoning": "Both pens are fresh, but usage patterns favor PHI significantly. S\u00e1nchez has completed 7+ innings in 4 of last 5 starts, likely limiting PHI pen to 2-3 outs. Buehler has failed to complete 6 innings in any of last 5 starts, forcing SD to bridge 3-4 innings against PHI's 3-4-5 hitters. PHI's bullpen depth and fresh arms provide better late-game security if the starter does exit."
+        },
+        {
+          "role": "environment",
+          "game_winner": "SD",
+          "reasoning": "Petco's 0.95 park factor suppresses run scoring by 5%, particularly harming LHB power (relevant for Schwarber/Harper). 72\u00b0F with calm wind is neutral, removing any carry advantage. Day game shadows could slightly hamper hitters early. The park's expansive outfield favors SD's contact-oriented approach over PHI's flyball-heavy lineup, potentially keeping SD in a game where they are out-pitched. Conditions strongly favor the under."
+        },
+        {
+          "role": "market",
+          "game_winner": "PHI",
+          "reasoning": "Market prices PHI at -128 (56.9%), underweighting the 30-run differential in recent starter form. S\u00e1nchez has allowed 2 ER total in May; Buehler has allowed 13. The true probability given this pitching disparity is closer to 62-63%. Public money is on PHI but not aggressively enough. NRFI at -125 (55.6%) is mispriced given S\u00e1nchez's first-inning dominance (0 ER last 5 first innings) and Buehler's early vulnerability. Value exists on PHI F5 and full game ML."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "SD",
+          "reasoning": "The obvious narrative is S\u00e1nchez as unstoppable and Buehler as broken. Regression suggests S\u00e1nchez cannot maintain a 0.47 ERA (career norms ~3.50). Buehler is a former Cy Young winner pitching at home in a pitcher-friendly park where his flyball rate plays better. SD's lineup has positive regression candidates (Tatis career .500 SLG, Machado .470) due for correction against a LHP. At +129, SD offers value if Buehler delivers a 6 IP/2 ER quality start and the offense wakes up."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.37,
+          "away_win_prob": 0.63,
+          "value_side": "away",
+          "edge": 0.06,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.47,
+          "value_side": "favorite_rl",
+          "edge": 0.04,
+          "confidence": "low"
+        },
+        "total": {
+          "projected_total": 5.8,
+          "over_prob": 0.42,
+          "under_prob": 0.58,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "over",
+          "edge": 0.07,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.62,
+          "f1_home_lead_prob": 0.18,
+          "f1_away_lead_prob": 0.28,
+          "f1_tie_prob": 0.54,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "away",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.28,
+          "f3_away_win_prob": 0.47,
+          "f3_projected_total": 2.1,
+          "f3_home_lead_prob": 0.2,
+          "f3_away_lead_prob": 0.35,
+          "f3_tie_prob": 0.45,
+          "f3_ml_value": "away",
+          "f3_total_value": "under",
+          "f3_rl_value": "away",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.22,
+          "f5_away_win_prob": 0.6,
+          "f5_projected_total": 3.0,
+          "f5_home_lead_prob": 0.15,
+          "f5_away_lead_prob": 0.4,
+          "f5_tie_prob": 0.45,
+          "f5_ml_value": "away",
+          "f5_total_value": "under",
+          "f5_rl_value": "away",
+          "confidence": "high"
+        },
+        "predicted_score": {
+          "away": 4,
+          "home": 2
+        },
+        "key_factors": [
+          "S\u00e1nchez dominant recent form (0.47 ERA last 5 starts) vs Buehler regression (4.50 ERA)",
+          "Petco Park run suppression (0.95 factor) favoring under",
+          "Buehler's inability to work deep exposing SD bullpen early"
+        ]
+      }
+    },
+    "cached_at": "2026-05-27T18:06:21.459295+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "PHI",
+          "reasoning": "Cristopher S\u00e1nchez has been lights out in his last five starts, showing elite control (low BB%) and high strikeout numbers. His recent performances suggest he can go deep into games efficiently. Walker Buehler, while a known name, has struggled with control and efficiency in his recent outings, particularly the high walk numbers in his most recent start. S\u00e1nchez's form gives the Phillies a significant F5 advantage."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "PHI",
+          "reasoning": "The Phillies lineup, despite some lower average numbers, features more power and higher OBP threats at the top (Schwarber, Harper) compared to the Padres. Against Buehler's recent struggles with walks, the Phillies' patience could pay off. The Padres lineup has several players with sub-.300 OBP and higher K% which will be challenged by S\u00e1nchez's command."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "PHI",
+          "reasoning": "Both bullpens are fresh, which theoretically levels the playing field. However, given S\u00e1nchez's ability to pitch deep into games, the Phillies' bullpen might face fewer high-leverage innings. If Buehler struggles early, the Padres' bullpen will be tested sooner, potentially leading to more opportunities for the Phillies' offense to extend their lead in the later innings. The Phillies generally have a deeper, more reliable bullpen."
+        },
+        {
+          "role": "environment",
+          "game_winner": "PHI",
+          "reasoning": "Petco Park is known as a pitcher's park (Park Factor: 0.95), which benefits pitchers who rely on groundballs and limiting home runs. The calm wind and moderate temperature should not significantly impact offense. This environment should favor the dominant control and lower HR/9 potential of Cristopher S\u00e1nchez over Buehler, who has shown some susceptibility to hard contact."
+        },
+        {
+          "role": "market",
+          "game_winner": "PHI",
+          "reasoning": "The market has the Phillies as slight favorites at -128, implying a 56.9% win probability. I believe this line slightly undervalues the current form of Cristopher S\u00e1nchez and overvalues Walker Buehler's name recognition given his recent struggles. The significant gap in recent performance between the two starters, particularly S\u00e1nchez's dominance, suggests the Phillies' true win probability is closer to 60%, offering a small edge on the moneyline. The F3 ML for PHI at -160 also reflects confidence in S\u00e1nchez early."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "SD",
+          "reasoning": "Everyone is piling on S\u00e1nchez's recent dominance, but it's important to remember that these are simulated stats for a future season (2026). While impressive, Buehler is also a high-pedigree pitcher who could easily turn it around, especially earlier in the season before fatigue sets in. The Padres' lineup, while struggling overall, has power potential with Tatis Jr. and Machado, who could break out at any time. The market is leaning heavily Phillies, and there's value in a bounce-back performance from Buehler and the Padres at home, especially given Petco's pitcher-friendly nature which could help mask some of Buehler's current inefficiencies."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.4046,
+          "away_win_prob": 0.5954,
+          "value_side": "away",
+          "edge": 0.031,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.4503,
+          "value_side": "none",
+          "edge": 0.0,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 6.4429,
+          "over_prob": 0.4339,
+          "under_prob": 0.5661,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "none",
+          "edge": 0.01,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.6092,
+          "f1_home_lead_prob": 0.17,
+          "f1_away_lead_prob": 0.24,
+          "f1_tie_prob": 0.5965,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.3148,
+          "f3_away_win_prob": 0.493,
+          "f3_projected_total": 2.3877,
+          "f3_home_lead_prob": 0.2698,
+          "f3_away_lead_prob": 0.3,
+          "f3_tie_prob": 0.3028,
+          "f3_ml_value": "away",
+          "f3_total_value": "under",
+          "f3_rl_value": "away",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.3418,
+          "f5_away_win_prob": 0.5467,
+          "f5_projected_total": 3.7944,
+          "f5_home_lead_prob": 0.2945,
+          "f5_away_lead_prob": 0.35,
+          "f5_tie_prob": 0.2228,
+          "f5_ml_value": "away",
+          "f5_total_value": "under",
+          "f5_rl_value": "away",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "home": 2.5,
+          "away": 4.0
+        },
+        "key_factors": [
+          "Cristopher S\u00e1nchez's elite recent form and efficiency",
+          "Walker Buehler's recent struggles with control and efficiency",
+          "Petco Park's pitcher-friendly environment",
+          "Phillies' lineup patience vs. Buehler's walks",
+          "Padres' lineup struggles against left-handed pitching (S\u00e1nchez)"
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 39,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 12,
+          "soft": 1,
+          "none": 0
+        },
+        "killed": [],
+        "challenger_verdicts": {
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "Strong 6/6 consensus on PHI away with S\u00e1nchez showing dominant recent form vs Buehler's struggles. Edge is modest but legitimate.",
+            "flaw_found": null
+          },
+          "total": {
+            "verdict": "approve",
+            "reasoning": "Petco park factor 0.95, calm wind, S\u00e1nchez excellent form, both lineups showing weak offensive numbers. Under 7 is well-supported.",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "Pitcher matchup strongly favors PHI through 5 innings given S\u00e1nchez's dominance vs Buehler's high walk/ER rates.",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "Consistent with full-game under thesis, pitcher-driven segment favors low scoring.",
+            "flaw_found": null
+          },
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "SD lineup struggles vs LHP, S\u00e1nchez elite form, Petco suppresses offense. Under 2.5 well-supported.",
+            "flaw_found": null
+          },
+          "team_total_away": {
+            "verdict": "approve",
+            "reasoning": "PHI lineup has been mediocre overall and Buehler despite struggles still gets outs; under 3.5 reasonable given Petco.",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "Consistent with strong pitcher edge for PHI in F5 segment.",
+            "flaw_found": null
+          },
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "Both starters typically clean in 1st inning, NRFI prob 0.61 vs implied ~0.56 is reasonable edge.",
+            "flaw_found": null
+          },
+          "first_1_rl": {
+            "verdict": "approve",
+            "reasoning": "Soft 5/6 consensus but aligns with pitcher-friendly first frame analysis.",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "approve",
+            "reasoning": "S\u00e1nchez's elite form vs Buehler's early-inning struggles supports PHI F3 ML.",
+            "flaw_found": null
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "Consistent with pitcher-driven low-scoring thesis.",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "approve",
+            "reasoning": "Aligns with broader PHI early-inning advantage from pitching matchup.",
+            "flaw_found": null
+          },
+          "run_line": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "gemini": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "claude": {
+            "runs": 7,
+            "weight_sum": 13.2
+          },
+          "gpt4o": {
+            "runs": 3,
+            "weight_sum": 13.0
+          },
+          "kimi": {
+            "runs": 7,
+            "weight_sum": 13.0
+          },
+          "deepseek": {
+            "runs": 7,
+            "weight_sum": 13.0
+          }
+        },
+        "cost_usd": 0.6274
+      },
+      "ensemble_runs": 1
+    }
+  },
+  "823217:0f0f8d561e482be1": {
+    "starters_hash": "0f0f8d561e482be1",
+    "game_pk": 823217,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "ARI",
+          "reasoning": "Soroka enters with superior recent form (1 ER last start vs McDonald's 7 ER disaster) and a ground-ball profile that plays well in Oracle Park. McDonald shows extreme volatility (alternating gems with blowups) and may face an early hook, taxing the SF pen. Time-through-order degradation favors Soroka in F5."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "ARI",
+          "reasoning": "Arizona's lineup features superior top-end talent (Carroll, Marte) with speed-power combinations and better plate discipline (Carroll 11.2% BB%) versus a Giants lineup struggling with low averages (.220-.260 range) and minimal power outside Schmitt. Platoon advantage neutral but Arizona's depth prevails."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "NEUTRAL",
+          "reasoning": "Both pens are fresh with no fatigue concerns. However, McDonald's recent 3.2 IP outing suggests SF may need 4+ innings from their pen today, creating a hidden advantage for Arizona if Soroka delivers his typical 6+ IP. Oracle Park suppresses both pens equally."
+        },
+        {
+          "role": "environment",
+          "game_winner": "UNDER",
+          "reasoning": "Oracle Park's 0.93 run factor significantly suppresses offense, particularly home runs. Calm 0mph wind eliminates carry assistance. Day game warmth (72\u00b0F) provides slight offensive boost but is outweighed by park dimensions and marine layer potential. Strong under environment."
+        },
+        {
+          "role": "market",
+          "game_winner": "ARI",
+          "reasoning": "Market prices this as a coin flip (ARI 51.8%) but undervalues the starting pitching gap. McDonald's recency bias after the 7 ER disaster creates value on Arizona, while NRFI -129 is overpriced given McDonald's first-inning volatility. Total 7.5 is fair but slight value to under given park."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "SF",
+          "reasoning": "The obvious narrative is 'McDonald is broken, Soroka is fixed.' Reality: McDonald threw a 7 IP/1 ER gem two starts ago and is due for positive regression. Soroka had an 8 ER disaster on 4/30 and is due for negative regression. Home field advantage at Oracle is historically undervalued in day games following night games."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.44,
+          "away_win_prob": 0.56,
+          "value_side": "away",
+          "edge": 0.042,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.42,
+          "value_side": "favorite_rl",
+          "edge": 0.025,
+          "confidence": "low"
+        },
+        "total": {
+          "projected_total": 7.0,
+          "over_prob": 0.45,
+          "under_prob": 0.55,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "over",
+          "edge": 0.05,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.54,
+          "f1_home_lead_prob": 0.18,
+          "f1_away_lead_prob": 0.28,
+          "f1_tie_prob": 0.54,
+          "nrfi_value": "yrfi",
+          "f1_rl_value": "away",
+          "confidence": "low"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.28,
+          "f3_away_win_prob": 0.42,
+          "f3_projected_total": 2.6,
+          "f3_home_lead_prob": 0.25,
+          "f3_away_lead_prob": 0.35,
+          "f3_tie_prob": 0.4,
+          "f3_ml_value": "away",
+          "f3_total_value": "under",
+          "f3_rl_value": "away",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.26,
+          "f5_away_win_prob": 0.54,
+          "f5_projected_total": 4.0,
+          "f5_home_lead_prob": 0.24,
+          "f5_away_lead_prob": 0.46,
+          "f5_tie_prob": 0.3,
+          "f5_ml_value": "away",
+          "f5_total_value": "under",
+          "f5_rl_value": "away",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "away": 4,
+          "home": 3
+        },
+        "key_factors": [
+          "Oracle Park pitcher-friendly 0.93 park factor suppresses total",
+          "McDonald's extreme volatility vs Soroka's recent stability creates SP advantage",
+          "Arizona superior lineup depth with Carroll/Marte power-speed combination",
+          "Both bullpens fresh but SF likely needed earlier due to McDonald's short leash potential"
+        ]
+      }
+    },
+    "cached_at": "2026-05-27T18:03:21.317438+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "ARI",
+          "reasoning": "Michael Soroka has shown more consistency in his last 5 starts compared to Trevor McDonald, who had a rough outing recently."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "ARI",
+          "reasoning": "ARI's lineup has a slight edge in terms of overall batting averages and power numbers against the SF starter."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "SF",
+          "reasoning": "Both teams have fresh bullpens, but SF's bullpen might have a slight edge due to home advantage and familiarity with the park."
+        },
+        {
+          "role": "environment",
+          "game_winner": "ARI",
+          "reasoning": "Oracle Park is a pitcher-friendly park, but the calm weather conditions might slightly favor the visiting team."
+        },
+        {
+          "role": "market",
+          "game_winner": "ARI",
+          "reasoning": "The market implies a close game, but ARI is slightly favored on the moneyline. There's potential value on ARI given their pitching and hitting edge."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "SF",
+          "reasoning": "While the stats favor ARI, SF has the home-field advantage and a potentially underrated bullpen. The market might be underestimating SF's chances."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.4725,
+          "away_win_prob": 0.5275,
+          "value_side": "away",
+          "edge": 0.03,
+          "confidence": "low"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.4265,
+          "value_side": "underdog_rl",
+          "edge": 0.05,
+          "confidence": "low"
+        },
+        "total": {
+          "projected_total": 7.1173,
+          "over_prob": 0.4478,
+          "under_prob": 0.5522,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "under",
+          "edge": 0.05,
+          "confidence": "low"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.6069,
+          "nrfi_value": "nrfi",
+          "confidence": "low"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.3726,
+          "f3_away_win_prob": 0.4319,
+          "f3_projected_total": 2.7087,
+          "f3_home_lead_prob": 0.3168,
+          "f3_away_lead_prob": 0.3,
+          "f3_tie_prob": 0.3125,
+          "f3_ml_value": "away",
+          "f3_total_value": "under",
+          "f3_rl_value": "none",
+          "confidence": "low"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.4153,
+          "f5_away_win_prob": 0.4859,
+          "f5_projected_total": 4.1855,
+          "f5_home_lead_prob": 0.3474,
+          "f5_away_lead_prob": 0.32,
+          "f5_tie_prob": 0.24,
+          "f5_ml_value": "away",
+          "f5_total_value": "under",
+          "f5_rl_value": "none",
+          "confidence": "low"
+        },
+        "predicted_score": {
+          "home": 2.97,
+          "away": 3.89
+        },
+        "key_factors": [
+          "Soroka's recent form",
+          "Oracle Park's pitcher-friendly environment",
+          "ARI's lineup strength"
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 36,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 10,
+          "soft": 2,
+          "none": 1
+        },
+        "killed": [],
+        "challenger_verdicts": {
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "ARI -109 with 52.75% model prob vs 51.83% market consensus is a small but defensible edge. Soroka's recent form (4 of last 5 quality starts) supports the lean. No concrete flaw.",
+            "flaw_found": null
+          },
+          "run_line": {
+            "verdict": "approve",
+            "reasoning": "SF +1.5 at -154 with strong consensus. Oracle Park suppresses runs, close-game environment favors underdog RL cover.",
+            "flaw_found": null
+          },
+          "total": {
+            "verdict": "approve",
+            "reasoning": "Under 7.5 at Oracle Park (0.93 PF), calm wind, two pitchers with mostly solid recent starts. Projected 7.1 vs line 7.5 is reasonable.",
+            "flaw_found": null
+          },
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "SF under 3.5 supported by Oracle Park, Soroka's recent form, and weak SF lineup OBPs.",
+            "flaw_found": null
+          },
+          "team_total_away": {
+            "verdict": "approve",
+            "reasoning": "ARI under 3.5 only soft consensus but McDonald had one bad start; otherwise solid. Oracle suppresses. Acceptable.",
+            "flaw_found": null
+          },
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "NRFI at -129 with 60.7% model prob is roughly fair-to-slight-edge; both pitchers tend to work clean early. Reasonable.",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "approve",
+            "reasoning": "ARI F3 ML at -110 with Soroka's strong early-inning recent form is defensible.",
+            "flaw_found": null
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "Under F3 total consistent with overall under lean and Oracle Park environment.",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "approve",
+            "reasoning": "Soft consensus but consistent with directional lean toward ARI early.",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "ARI F5 ML aligned with starter advantage given Soroka's recent quality vs McDonald's volatility.",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "F5 under consistent with overall under lean, Oracle Park, and both starters performing.",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "ARI F5 RL consistent with starter edge and game flow projection.",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "gemini": {
+            "runs": 7,
+            "weight_sum": 13.4
+          },
+          "claude": {
+            "runs": 7,
+            "weight_sum": 13.8
+          },
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 14.0
+          },
+          "gpt4o": {
+            "runs": 7,
+            "weight_sum": 13.8
+          },
+          "deepseek": {
+            "runs": 7,
+            "weight_sum": 13.4
+          }
+        },
+        "cost_usd": 0.6077
+      },
+      "ensemble_runs": 1
+    }
+  },
+  "824756:7cd7d05f2910bb9d": {
+    "starters_hash": "7cd7d05f2910bb9d",
+    "game_pk": 824756,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "ATL",
+          "reasoning": "Elder profiles as a heavy ground-ball pitcher (sinker/slider mix) which neutralizes Fenway's Green Monster effect by keeping the ball on the ground. His last five starts show elite command (9:1 K:BB in last start, 0 BB in two prior) and the ability to pitch into the 6th+ inning efficiently. Early, while possessing swing-and-miss stuff, has shown volatility with a 5 ER blowup in his last five outings and is a LHP prospect likely facing major-league lineups for the first time in a regular rotation spot. Elder's floor is significantly higher, giving Atlanta a 0.5-0.75 run advantage through five innings."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "ATL",
+          "reasoning": "Atlanta's lineup is heavily right-handed (6 of 9 batters) which creates a significant platoon advantage against the LHP Early. Despite collective batting averages below .240, the underlying power (Olson, Riley, Acu\u00f1a pedigree) and walk rates (9.7% for Olson, 10.9% for Acu\u00f1a) suggest positive regression is coming, especially against a pitcher who has not yet faced this caliber of lineup depth. Boston's lineup has similar struggles but lacks the same ceiling power threats, with only Contreras showing above-average HR% and multiple thin-sample bats (Gasper, Sogard) that must be regressed to league-average (87 wRC+), diluting their upside."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "ATL",
+          "reasoning": "Both bullpens are fresh with no recent usage concerns, but Atlanta's relief corps typically ranks in the top tier by depth metrics and high-leverage options. Boston's bullpen is serviceable but lacks the same shutdown certainty in the 8th/9th. In a game projected to be within 1-2 runs entering the late innings, Atlanta's ability to shorten the game with quality relief arms provides a marginal edge for the full game outcome, though this is less relevant for F5 markets."
+        },
+        {
+          "role": "environment",
+          "game_winner": "NEUTRAL",
+          "reasoning": "Fenway's 1.08 park factor and 310-foot left-field line traditionally favor offense, but the 0mph wind eliminates the jet stream effect that often carries balls out to right-center. The 72\u00b0F temperature is neutral for ball flight. The day game start typically suppresses scoring slightly compared to night games due to visibility factors for hitters. Combined with two ground-ball oriented starters, the environment plays closer to neutral than the 1.08 PF suggests, supporting a total near 8.0 but not significantly higher."
+        },
+        {
+          "role": "market",
+          "game_winner": "ATL",
+          "reasoning": "The moneyline is priced as a virtual pick'em (BOS -106 / ATL +104), implying 51.5/48.5 splits. The public typically overvalues home-field advantage for Boston, particularly in early season or high-profile matchups, yet the line has remained flat. This suggests sharp money is supporting Atlanta or the market recognizes Boston's pitching disadvantage. The NRFI market at -115 (53.5% implied) appears mispriced given both starters' first-inning tendencies (Elder: 0 ER in 4 of last 5 first innings; Early: 0 ER in 3 of last 5 first innings) and the cold start lineups."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "UNDER",
+          "reasoning": "The obvious narrative is 'Fenway = bandbox, take the over,' but this ignores the pitching styles. Elder generates ground balls at an elite rate (career 50%+ GB%), and Early has shown ground-ball tendencies in his good starts. With both lineups hitting below .240 collectively and multiple thin-sample bats being regressed toward league-average production (which is below the star-level expectations baked into the total), the under 8.0 at plus money (+103) offers value against a market assuming park-driven inflation. The contrarian play challenges the assumption that Early's prospect hype translates to immediate offensive suppression rather than volatility."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.48,
+          "away_win_prob": 0.52,
+          "value_side": "away",
+          "edge": 0.03,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.22,
+          "value_side": "none",
+          "edge": -0.12,
+          "confidence": "low"
+        },
+        "total": {
+          "projected_total": 7.8,
+          "over_prob": 0.47,
+          "under_prob": 0.53,
+          "value_side": "under",
+          "home_total_value": "over",
+          "away_total_value": "over",
+          "edge": 0.04,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.6,
+          "f1_home_lead_prob": 0.18,
+          "f1_away_lead_prob": 0.22,
+          "f1_tie_prob": 0.6,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.34,
+          "f3_away_win_prob": 0.36,
+          "f3_projected_total": 2.7,
+          "f3_home_lead_prob": 0.3,
+          "f3_away_lead_prob": 0.32,
+          "f3_tie_prob": 0.38,
+          "f3_ml_value": "away",
+          "f3_total_value": "under",
+          "f3_rl_value": "none",
+          "confidence": "low"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.45,
+          "f5_away_win_prob": 0.52,
+          "f5_projected_total": 4.4,
+          "f5_home_lead_prob": 0.28,
+          "f5_away_lead_prob": 0.35,
+          "f5_tie_prob": 0.37,
+          "f5_ml_value": "away",
+          "f5_total_value": "under",
+          "f5_rl_value": "none",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "away": 5,
+          "home": 4
+        },
+        "key_factors": [
+          "Elder's ground-ball rate neutralizing Fenway's dimensions",
+          "ATL right-handed lineup platoon advantage vs LHP Early",
+          "Multiple thin-sample hitters regressed to league-average production",
+          "Both bullpens fresh but ATL possessing superior high-leverage depth",
+          "Market overvaluing Boston home-field advantage in pricing"
+        ]
+      }
+    },
+    "cached_at": "2026-05-27T20:11:27.879859+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "BOS",
+          "reasoning": "Connelly Early has shown more consistency in his last 5 starts compared to Bryce Elder, with a more favorable matchup for BOS."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "ATL",
+          "reasoning": "ATL's lineup has a higher overall power potential, with Matt Olson and Austin Riley showing strong SLG numbers, though BOS's lineup is also competitive."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "BOS",
+          "reasoning": "Both teams have fresh bullpens, but BOS has a slight edge due to being at home and potentially having more familiarity with their bullpen usage."
+        },
+        {
+          "role": "environment",
+          "game_winner": "BOS",
+          "reasoning": "Fenway Park's park factor (1.08) slightly favors offense, but calm winds and moderate temperature should lead to a relatively normal scoring environment."
+        },
+        {
+          "role": "market",
+          "game_winner": "BOS",
+          "reasoning": "The market implies BOS has a 51.5% win probability, which is a reasonable starting point given the slight edge in the starting pitching matchup."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "ATL",
+          "reasoning": "The narrative favors BOS due to home field advantage and slightly better starting pitcher, but ATL's lineup has the potential to exploit BOS's pitching weaknesses."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.4958,
+          "away_win_prob": 0.5042,
+          "value_side": "home",
+          "edge": 0.015,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.3979,
+          "value_side": "favorite_rl",
+          "edge": 0.03,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 8.2269,
+          "over_prob": 0.5278,
+          "under_prob": 0.4722,
+          "value_side": "over",
+          "home_total_value": "over",
+          "away_total_value": "over",
+          "edge": 0.02,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.5823,
+          "f1_home_lead_prob": 0.2009,
+          "f1_away_lead_prob": 0.2,
+          "f1_tie_prob": 0.5909,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.413,
+          "f3_away_win_prob": 0.4293,
+          "f3_projected_total": 2.9435,
+          "f3_home_lead_prob": 0.3242,
+          "f3_away_lead_prob": 0.23,
+          "f3_tie_prob": 0.3263,
+          "f3_ml_value": "home",
+          "f3_total_value": "over",
+          "f3_rl_value": "home",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.4403,
+          "f5_away_win_prob": 0.4628,
+          "f5_projected_total": 4.5662,
+          "f5_home_lead_prob": 0.3541,
+          "f5_away_lead_prob": 0.25,
+          "f5_tie_prob": 0.2608,
+          "f5_ml_value": "home",
+          "f5_total_value": "over",
+          "f5_rl_value": "home",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "home": 3.9,
+          "away": 4.24
+        },
+        "key_factors": [
+          "Starting pitching matchup",
+          "Lineup power potential",
+          "Park factor and weather conditions"
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 43,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 10,
+          "soft": 3,
+          "none": 0
+        },
+        "killed": [],
+        "challenger_verdicts": {
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "Home edge is tiny (1.5pp) but ensemble shows strong consensus and passes worst-case devig. No concrete flaw identified.",
+            "flaw_found": null
+          },
+          "run_line": {
+            "verdict": "approve",
+            "reasoning": "Favorite RL with ~40% cover prob is consistent with the close projected score (3.9-4.24). Strong model agreement.",
+            "flaw_found": null
+          },
+          "total": {
+            "verdict": "approve",
+            "reasoning": "Projected 8.23 vs line 8.0 at Fenway (PF 1.08) with calm weather is reasonable. Soft consensus but passes filters.",
+            "flaw_found": null
+          },
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "BOS projected 3.9 vs O/U 3.5 supports over. Strong consensus.",
+            "flaw_found": null
+          },
+          "team_total_away": {
+            "verdict": "approve",
+            "reasoning": "ATL projected 4.24 vs O/U 3.5 supports over. Unanimous model agreement.",
+            "flaw_found": null
+          },
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "58% NRFI prob with both starters showing decent recent form is reasonable. Strong consensus.",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "approve",
+            "reasoning": "F3 away lead at slightly higher prob than home is consistent with overall away lean.",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "approve",
+            "reasoning": "Consistent with F3 ML lean and strong consensus.",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "F5 away win prob 46.3% vs home 44% aligns with overall away lean. Strong consensus.",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "Consistent with F5 ML lean. Strong consensus.",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "F5 projected 4.57 supports over at typical F5 lines. Soft but passes filters.",
+            "flaw_found": null
+          },
+          "first_1_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 14.0
+          },
+          "gemini": {
+            "runs": 7,
+            "weight_sum": 13.4
+          },
+          "claude": {
+            "runs": 7,
+            "weight_sum": 13.4
+          },
+          "gpt4o": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "kimi": {
+            "runs": 7,
+            "weight_sum": 13.2
+          },
+          "deepseek": {
+            "runs": 7,
+            "weight_sum": 13.4
+          }
+        },
+        "cost_usd": 0.7666
+      },
+      "ensemble_runs": 1
+    }
+  },
+  "823626:6d4130bc0a0125eb": {
+    "starters_hash": "6d4130bc0a0125eb",
+    "game_pk": 823626,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "CIN",
+          "reasoning": "Andrew Abbott operates as a traditional 5-6 inning starter with a 7-day rest advantage, showing consistent ability to limit damage (1 ER or less in 4 of last 5 starts). Huascar Brazob\u00e1n is clearly being used as an opener/bullpen arm (0.2-2.1 IP in last 5 appearances), forcing NYM to cover 7+ innings with their bullpen. This creates a massive F5 advantage for CIN (Abbott faces lineup 2x vs. NYM's bullpen carousel) and a full-game advantage due to workload distribution."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "CIN",
+          "reasoning": "CIN lineup shows superior recent production (.237 AVG/.326 OBP vs NYM's .225/.298) with better plate discipline (8-10% BB rates throughout lineup). While NYM has Juan Soto as an anchor, Bichette (.221 AVG) and Semien (.215 AVG) are significantly underperforming career norms. CIN benefits from facing a RHP opener (Brazob\u00e1n) followed by bullpen arms, while NYM faces a LHP (Abbott) that their right-heavy lineup should theoretically hit but hasn't shown evidence of waking up yet."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "CIN",
+          "reasoning": "Both pens are fresh, but NYM faces a structural disadvantage requiring 7+ innings of coverage after Brazob\u00e1n's expected 1-2 inning opener stint. CIN requires only 3-4 innings from their pen with Abbott's length. Even with fresh arms, the volume and match-up turnover favors CIN's ability to maintain leads late, while NYM's pen faces multiple high-leverage sequences."
+        },
+        {
+          "role": "environment",
+          "game_winner": "CIN",
+          "reasoning": "Citi Field's 0.96 park factor suppresses run scoring slightly, particularly benefiting Abbott's fly-ball tendencies. 72\u00b0F with calm winds creates neutral hitting conditions\u2014warm enough for bat speed but no wind carry. Day game start slightly favors offense historically, but the park factor and Abbott's control offset this. Environment slightly suppresses NYM's comeback potential."
+        },
+        {
+          "role": "market",
+          "game_winner": "CIN",
+          "reasoning": "Market prices NYM at -111 (52.5% implied), likely due to home-field bias and star recognition (Soto, Bichette, Semien names). Public money is flowing to the Mets, creating value on CIN at +108 (implied 48.1%). The pitching mismatch (starter vs. bullpen game) is underweighted. NRFI at -113 is also mispriced given Abbott's first-inning reliability. F3/F5 markets showing NYM favoritism (-118) are clear errors to exploit."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "NYM",
+          "reasoning": "The obvious narrative is 'CIN starter vs NYM bullpen game = easy CIN win.' But what if Abbott's lack of advanced metrics (N/A FIP/xFIP) hides regression? His 3 BB/9 and low K/9 in recent starts suggest contact-dependent success that Citi Field's defense might not support. Brazob\u00e1n has been scoreless in 5 straight appearances\u2014if he extends to 3 innings and NYM's offense wakes up against a non-elite LHP, the -111 price represents value on the home team. The market might know Abbott's true talent is replacement-level."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.45,
+          "away_win_prob": 0.55,
+          "value_side": "away",
+          "edge": 0.069,
+          "confidence": "high"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.35,
+          "value_side": "underdog_rl",
+          "edge": 0.05,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 7.4,
+          "over_prob": 0.45,
+          "under_prob": 0.55,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "over",
+          "edge": 0.05,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.62,
+          "f1_home_lead_prob": 0.18,
+          "f1_away_lead_prob": 0.2,
+          "f1_tie_prob": 0.62,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.25,
+          "f3_away_win_prob": 0.5,
+          "f3_projected_total": 3.1,
+          "f3_home_lead_prob": 0.18,
+          "f3_away_lead_prob": 0.35,
+          "f3_tie_prob": 0.47,
+          "f3_ml_value": "away",
+          "f3_total_value": "under",
+          "f3_rl_value": "away",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.27,
+          "f5_away_win_prob": 0.58,
+          "f5_projected_total": 4.2,
+          "f5_home_lead_prob": 0.17,
+          "f5_away_lead_prob": 0.41,
+          "f5_tie_prob": 0.42,
+          "f5_ml_value": "away",
+          "f5_total_value": "under",
+          "f5_rl_value": "away",
+          "confidence": "high"
+        },
+        "predicted_score": {
+          "away": 4,
+          "home": 3
+        },
+        "key_factors": [
+          "Starting pitching mismatch: Abbott traditional starter vs Brazob\u00e1n bullpen opener forcing 7+ IP from NYM pen",
+          "Citi Field 0.96 park factor suppressing run environment",
+          "NYM lineup underperformance: Bichette and Semien batting .221 and .215 respectively"
+        ]
+      }
+    },
+    "cached_at": "2026-05-27T20:03:31.613037+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "CIN",
+          "reasoning": "Andrew Abbott has shown more consistency in his last 5 starts compared to Huascar Brazob\u00e1n, who has been in a rehabilitation mode with very short outings."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "NYM",
+          "reasoning": "The NYM lineup has a more balanced attack with players like Juan Soto and Mark Vientos showing potential for power hitting. CIN's lineup is also strong but slightly less consistent."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "none",
+          "reasoning": "Both teams have fresh bullpens, so this factor is neutral. The outcome will depend more on the starting pitchers and lineups."
+        },
+        {
+          "role": "environment",
+          "game_winner": "none",
+          "reasoning": "Citi Field has a park factor of 0.96, which is slightly below average. The weather is calm with no wind, so this won't significantly impact the game."
+        },
+        {
+          "role": "market",
+          "game_winner": "NYM",
+          "reasoning": "The market implies NYM has a 52.5% chance of winning. This is a relatively close game according to the betting lines."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "CIN",
+          "reasoning": "While the market favors NYM, Abbott's recent form and rest advantage could be underweighted factors. CIN is a good contrarian play."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.4863,
+          "away_win_prob": 0.5137,
+          "value_side": "away",
+          "edge": 0.05,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.4097,
+          "value_side": "underdog_rl",
+          "edge": 0.08,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 7.576,
+          "over_prob": 0.4587,
+          "under_prob": 0.5413,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "under",
+          "edge": 0.04,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.5999,
+          "f1_home_lead_prob": 0.1955,
+          "f1_away_lead_prob": 0.2,
+          "f1_tie_prob": 0.5973,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.4062,
+          "f3_away_win_prob": 0.4477,
+          "f3_projected_total": 2.7297,
+          "f3_home_lead_prob": 0.3442,
+          "f3_away_lead_prob": 0.25,
+          "f3_tie_prob": 0.249,
+          "f3_ml_value": "home",
+          "f3_total_value": "under",
+          "f3_rl_value": "home",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.4193,
+          "f5_away_win_prob": 0.4852,
+          "f5_projected_total": 4.2805,
+          "f5_home_lead_prob": 0.3509,
+          "f5_away_lead_prob": 0.28,
+          "f5_tie_prob": 0.1977,
+          "f5_ml_value": "home",
+          "f5_total_value": "under",
+          "f5_rl_value": "home",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "home": 3.26,
+          "away": 3.85
+        },
+        "key_factors": [
+          "Andrew Abbott's recent form",
+          "Huascar Brazob\u00e1n's rehabilitation starts",
+          "Citi Field park factor",
+          "Both teams having fresh bullpens"
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 28,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 7,
+          "soft": 5,
+          "none": 1
+        },
+        "killed": [],
+        "challenger_verdicts": {
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "Away CIN ML at +108 with model at 51.4% vs market 47.5%. Brazoban is clearly an opener/bullpen game (max 2.1 IP in last 5), which favors the away side. Strong consensus 5/6.",
+            "flaw_found": null
+          },
+          "run_line": {
+            "verdict": "approve",
+            "reasoning": "Underdog RL (CIN +1.5) is reasonable in a projected low-scoring close game. Strong consensus.",
+            "flaw_found": null
+          },
+          "total": {
+            "verdict": "approve",
+            "reasoning": "Under 8.0 with projected 7.58 in a pitcher-friendly park (0.96 factor), calm weather, and both bullpens fresh. Strong consensus 5/6.",
+            "flaw_found": null
+          },
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "NYM under 3.5 with projection of 3.26. NYM lineup shows poor OBPs across the board (Bichette .293, Vientos .288, Semien .286). Reasonable.",
+            "flaw_found": null
+          },
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "Brazoban as opener with low pitch counts and Abbott historically strong early. NRFI at -113 with model 60% is defensible.",
+            "flaw_found": null
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "F3 under with projection 2.73 is consistent with low-scoring environment and first pass through order.",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "F5 under with projection 4.28 consistent with the full-game under thesis.",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_1_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "claude": {
+            "runs": 3,
+            "weight_sum": 13.0
+          },
+          "gpt4o": {
+            "runs": 3,
+            "weight_sum": 13.0
+          },
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 14.0
+          },
+          "kimi": {
+            "runs": 7,
+            "weight_sum": 13.2
+          },
+          "deepseek": {
+            "runs": 7,
+            "weight_sum": 13.2
+          }
+        },
+        "cost_usd": 0.4603
+      },
+      "ensemble_runs": 1
+    }
+  },
+  "823376:ca297cd72fa4f9e9": {
+    "starters_hash": "ca297cd72fa4f9e9",
+    "game_pk": 823376,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "PIT",
+          "reasoning": "Chandler displays elite swing-and-miss upside (11 K/0 ER in last start) despite command volatility (6 BB outing prior). Taillon is in clear degradation phase with 12 ER over last 9 IP and declining velocity metrics. First-time-through advantage favors Chandler's stuff over Taillon's contact management, which has failed him recently. Counter-case: Taillon's veteran savvy could allow him to adjust his pitch mix to survive five innings, and Chandler's walk rate (4.0 BB/9 trend) could create a big inning for the Cubs."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "CHC",
+          "reasoning": "While both offenses rank in the bottom quartile, the Cubs possess superior plate discipline (Busch 12.1% BB, Happ 12.6% BB) that can exploit Chandler's wildness. The Pirates' lineup relies heavily on Oneil Cruz (29.3% K%) and Marcell Ozuna (.200 AVG), creating high volatility. Platoon advantage favors Chicago against the right-handed Chandler (3 LHB in top 5). Counter-case: Cubs' collective .214 AVG suggests hard contact regression, and PNC Park's spacious alleys neutralize their marginal power advantage."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "none",
+          "reasoning": "Both bullpens are fully rested with no reported fatigue or closer availability issues. With both starters capable of reaching the 5th-6th inning and no tactical advantage to either relief corps, the end-game is a coin flip. Counter-case: If Chandler's pitch count escalates due to walks early, the Pirates may need to tax their bullpen earlier, creating a volume disadvantage in late innings."
+        },
+        {
+          "role": "environment",
+          "game_winner": "PIT",
+          "reasoning": "PNC Park's 0.96 run factor suppresses extra-base hits, particularly benefiting Chandler's flyball tendencies. Calm wind (0mph) eliminates carry advantage for either side, while 72\u00b0F temps provide neutral game conditions. Day game shadows at PNC historically favor pitchers early. Counter-case: Day games can reduce pitch grip compared to night games, potentially exacerbating Chandler's existing command issues and leading to higher walks."
+        },
+        {
+          "role": "market",
+          "game_winner": "PIT",
+          "reasoning": "The market prices PIT at 53.2% implied probability, underweighting Taillon's recent collapse (6.75 ERA last 5 starts) and Chandler's strikeout ceiling. The -114 price assumes Taillon regression that hasn't materialized. Value exists on the home side as the public likely overreacts to the Cubs' veteran names (Bregman, Swanson) despite poor surface stats. Counter-case: Sharp money may be waiting for confirmation on Chandler's command, and the line could drift toward CHC if late money recognizes Taillon's track record."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "CHC",
+          "reasoning": "The obvious narrative is 'Chandler is the future, Taillon is washed.' This ignores that Chandler has walked 17 batters in his last 20 innings and faces a patient Cubs lineup that can grind his pitch count up. Taillon is due for positive regression (BABIP likely inflated), and the Cubs' .210 team AVG has significant upside variance. The +113 offers value on the veteran righty bouncing back against a free-swinging Pirates lineup (Cruz, Ozuna). Counter-case: Chandler's 11-strikeout performance represents his true talent level, and Taillon's stuff is genuinely diminished, making the Cubs a trap bet."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.55,
+          "away_win_prob": 0.45,
+          "value_side": "home",
+          "edge": 0.02,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.4,
+          "value_side": "favorite_rl",
+          "edge": 0.03,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 8.0,
+          "over_prob": 0.45,
+          "under_prob": 0.55,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "under",
+          "edge": 0.09,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.58,
+          "f1_home_lead_prob": 0.23,
+          "f1_away_lead_prob": 0.19,
+          "f1_tie_prob": 0.58,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "low"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.5,
+          "f3_away_win_prob": 0.42,
+          "f3_projected_total": 3.6,
+          "f3_home_lead_prob": 0.3,
+          "f3_away_lead_prob": 0.24,
+          "f3_tie_prob": 0.08,
+          "f3_ml_value": "none",
+          "f3_total_value": "under",
+          "f3_rl_value": "none",
+          "confidence": "low"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.53,
+          "f5_away_win_prob": 0.37,
+          "f5_projected_total": 4.6,
+          "f5_home_lead_prob": 0.35,
+          "f5_away_lead_prob": 0.25,
+          "f5_tie_prob": 0.1,
+          "f5_ml_value": "home",
+          "f5_total_value": "none",
+          "f5_rl_value": "none",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "away": 4,
+          "home": 5
+        },
+        "key_factors": [
+          "Taillon's recent volatility (12 ER in last 9 IP) vs Chandler's high-variance profile (11 K potential, 4.0 BB/9)",
+          "Both lineups showing extreme offensive struggles (collective AVG < .230, K% > 22%)",
+          "PNC Park's 0.96 run factor suppressing scoring in a matchup already leaning pitcher-friendly"
+        ]
+      }
+    },
+    "cached_at": "2026-05-27T21:32:36.886663+00:00"
+  },
+  "824270:eb8f1a92b1491516": {
+    "starters_hash": "eb8f1a92b1491516",
+    "game_pk": 824270,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "DET",
+          "reasoning": "Casey Mize enters with elite recent form (0.75 ERA, 0 BB over last 12.2 IP) and superior command, while Jos\u00e9 Soriano shows extreme volatility (6 BB, 6 ER meltdown two starts ago). Mize's ability to work deep with low pitch counts provides a significant F5 advantage, whereas Soriano carries a 40% blow-up risk that threatens the Angels' early stability."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "DET",
+          "reasoning": "While both lineups are below average, Detroit shows superior plate discipline (McGonigle 11.3% BB, Greene 10.9% BB) and contact ability against a wild starter. The Angels' lineup features high strikeout rates (Neto 26.9%, Soler 26.8%) that play poorly against Mize's command, and Trout's early-season struggles (.207 AVG) limit LAA's ceiling."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "DET",
+          "reasoning": "Both bullpens are fresh, but the determinant is starter length. Mize's efficiency (95 pitches over 6.2 IP in last start) suggests he will hand a lead to the pen in the 7th or later, while Soriano's inefficiency (6 BB game, 103 pitches in under 7 IP) risks early exposure of the Angels' middle relief. Detroit has the advantage in bullpen preservation."
+        },
+        {
+          "role": "environment",
+          "game_winner": "DET",
+          "reasoning": "Comerica Park's 0.96 run factor suppresses scoring, particularly benefiting pitchers with control like Mize who generate weak contact. The 72\u00b0F calm conditions are neutral, slightly favoring the pitcher with better stuff (Mize) over the erratic Soriano, as wind won't aid fly balls leaving the park."
+        },
+        {
+          "role": "market",
+          "game_winner": "DET",
+          "reasoning": "The pick'em pricing (-104 DET) undervalues the significant gap in current starter form. Public money likely flows toward the Angels due to Trout/Soler name recognition, creating value on Detroit. The market has not fully adjusted for Mize's recent dominance (sub-1.00 ERA last two starts) versus Soriano's WHIP volatility."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "LAA",
+          "reasoning": "The obvious narrative is Mize dominance, but Soriano has shown 7+ inning, 1-run gems this season and possesses elite stuff that could shut down Detroit's young, aggressive lineup. If Soriano finds the zone early, LAA's power bats (Soler, Adell) could exploit Mize's pitch-to-contact approach in a low-scoring upset."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.58,
+          "away_win_prob": 0.42,
+          "value_side": "home",
+          "edge": 0.073,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.41,
+          "value_side": "favorite_rl",
+          "edge": 0.065,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 6.5,
+          "over_prob": 0.4,
+          "under_prob": 0.6,
+          "value_side": "under",
+          "home_total_value": "over",
+          "away_total_value": "under",
+          "edge": 0.095,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.65,
+          "f1_home_lead_prob": 0.26,
+          "f1_away_lead_prob": 0.2,
+          "f1_tie_prob": 0.54,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "home",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.54,
+          "f3_away_win_prob": 0.4,
+          "f3_projected_total": 2.3,
+          "f3_home_lead_prob": 0.3,
+          "f3_away_lead_prob": 0.22,
+          "f3_tie_prob": 0.48,
+          "f3_ml_value": "home",
+          "f3_total_value": "under",
+          "f3_rl_value": "home",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.56,
+          "f5_away_win_prob": 0.38,
+          "f5_projected_total": 3.8,
+          "f5_home_lead_prob": 0.35,
+          "f5_away_lead_prob": 0.25,
+          "f5_tie_prob": 0.4,
+          "f5_ml_value": "home",
+          "f5_total_value": "under",
+          "f5_rl_value": "home",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "away": 3,
+          "home": 4
+        },
+        "key_factors": [
+          "Mize's elite recent form and zero-walk control",
+          "Soriano's high volatility and blow-up risk",
+          "Comerica Park's pitcher-friendly 0.96 run factor"
+        ]
+      }
+    },
+    "cached_at": "2026-05-27T21:46:55.493217+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "DET",
+          "reasoning": "Mize shows superior command with 0 BB in his last quality start and better recent consistency. Soriano's 6 BB outing on 5/16 and general volatility give Mize the edge in F5 innings."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "LAA",
+          "reasoning": "Angels have more proven MLB talent with Trout and better overall offensive numbers. Detroit's lineup has several thin-sample players and lower overall production metrics."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "DET",
+          "reasoning": "Both bullpens fresh, but home field advantage in late innings typically provides 2-3% edge. Game likely decided by starters given both teams' offensive limitations."
+        },
+        {
+          "role": "environment",
+          "game_winner": "neutral",
+          "reasoning": "Perfect conditions with no wind and mild temperature. Comerica's 0.96 park factor slightly suppresses offense but minimal impact on game outcome."
+        },
+        {
+          "role": "market",
+          "game_winner": "LAA",
+          "reasoning": "Market has this as pure coin flip at -104/+104. Angels getting slight plus money despite having Trout suggests potential value on the road dog."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "DET",
+          "reasoning": "Everyone sees Trout and assumes Angels are better, but Detroit's home field and Mize's recent form being overlooked. Both offenses are poor - pitching and home field matter more."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.5226,
+          "away_win_prob": 0.4774,
+          "value_side": "none",
+          "edge": 0.01,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.4153,
+          "value_side": "underdog_rl",
+          "edge": 0.06,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 7.1946,
+          "over_prob": 0.4622,
+          "under_prob": 0.5378,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "under",
+          "edge": 0.05,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.6139,
+          "nrfi_value": "nrfi",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.4412,
+          "f3_away_win_prob": 0.4125,
+          "f3_projected_total": 2.6422,
+          "f3_home_lead_prob": 0.3285,
+          "f3_away_lead_prob": 0.42,
+          "f3_tie_prob": 0.3655,
+          "f3_ml_value": "none",
+          "f3_total_value": "under",
+          "f3_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.505,
+          "f5_away_win_prob": 0.4246,
+          "f5_projected_total": 4.1621,
+          "f5_home_lead_prob": 0.3937,
+          "f5_away_lead_prob": 0.38,
+          "f5_tie_prob": 0.2784,
+          "f5_ml_value": "home",
+          "f5_total_value": "under",
+          "f5_rl_value": "none",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "home": 3.92,
+          "away": 3.13
+        },
+        "key_factors": [
+          "Mize command advantage over Soriano volatility",
+          "Both offenses below league average",
+          "Comerica Park slight pitcher-friendly environment"
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 39,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 9,
+          "soft": 3,
+          "none": 1
+        },
+        "killed": [],
+        "challenger_verdicts": {
+          "run_line": {
+            "verdict": "approve",
+            "reasoning": "Underdog RL at +174 with model showing 58.5% cover probability for underdog side. Both offenses are weak and game projects close, supporting underdog +1.5 value. Strong 5/6 model consensus.",
+            "flaw_found": null
+          },
+          "total": {
+            "verdict": "approve",
+            "reasoning": "Under 7.5 with projected total 7.19 in pitcher-friendly Comerica (0.96 PF). Both offenses below league average. Strong consensus 5/6.",
+            "flaw_found": null
+          },
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "6/6 unanimous consensus on NRFI. Both pitchers showing solid recent form with weak top-of-order hitters (Neto .214, Keith .250). Reasonable call.",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "Home F5 ML supported by Mize's strong recent command (0 BB in last two starts) vs Soriano's volatility (6 BB game on 5/16). 5/6 consensus.",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "F5 under aligns with full game under and pitcher-friendly park. Strong consensus.",
+            "flaw_found": null
+          },
+          "team_total_away": {
+            "verdict": "approve",
+            "reasoning": "LAA projected 3.13 runs vs 3.5 line, facing Mize who has shown excellent command. LAA offense weak across the board. Strong consensus.",
+            "flaw_found": null
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "F3 under 2.64 projected runs aligns with both starters' recent strong outings and weak top-of-order production.",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "approve",
+            "reasoning": "F3 RL away supported by tight projected F3 game (small lead probabilities, high tie prob 36.5%). Strong consensus 5/6.",
+            "flaw_found": null
+          },
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "gemini": {
+            "runs": 7,
+            "weight_sum": 13.2
+          },
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "claude": {
+            "runs": 7,
+            "weight_sum": 14.0
+          },
+          "gpt4o": {
+            "runs": 3,
+            "weight_sum": 13.0
+          },
+          "kimi": {
+            "runs": 7,
+            "weight_sum": 13.4
+          },
+          "deepseek": {
+            "runs": 7,
+            "weight_sum": 13.2
+          }
+        },
+        "cost_usd": 0.6021
+      },
+      "ensemble_runs": 1
+    }
+  },
+  "824836:5f3887b4440a1ee2": {
+    "starters_hash": "5f3887b4440a1ee2",
+    "game_pk": 824836,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "TB",
+          "reasoning": "Steven Matz provides a significant stability advantage over Trey Gibson, who enters with zero available game logs suggesting a spot start or MLB debut. Matz, on 7 days rest, has shown in his last five outings the ability to deliver quality starts (6-7 IP, 1-2 ER) despite occasional blowups. Gibson's lack of scouting data puts Baltimore at an information disadvantage, and Camden Yards' hitter-friendly dimensions (1.05 PF) amplify the risk of an unknown starter facing an MLB lineup for the first time. Matz's left-handedness also neutralizes some of Baltimore's power righties who are currently slumping."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "TB",
+          "reasoning": "While Baltimore possesses premium talent (Henderson, Rutschman, Alonso), the current statistical profile shows severe lineup-wide struggles: collective AVG around .210-.220 and elevated K-rates (Mayo 25.9%, Henderson 25.4%). Tampa Bay's lineup demonstrates superior plate discipline with Aranda (11.0% BB), Caminero (10.7% BB), and Diaz (8.2% BB) setting the table. Against an unknown right-handed starter (Gibson), Tampa's patient approach should force early pitch counts and exploit command issues typical of debuting pitchers."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "TB",
+          "reasoning": "Both bullpens are fresh with no reported fatigue, creating a neutral late-game environment. However, the critical divergence lies in starter length. Matz has the capacity to provide 6+ innings, whereas Gibson, facing major league hitters for the first time in an unknown capacity, is likely on a short leash (4-5 IP max). This forces Baltimore to utilize middle relievers earlier, creating a volume disadvantage in high-leverage innings and increasing the probability of a bullpen implosion that favors Tampa Bay's contact-oriented lineup."
+        },
+        {
+          "role": "environment",
+          "game_winner": "BAL",
+          "reasoning": "Camden Yards' 1.05 park factor and calm 0mph wind at 72\u00b0F create slightly favorable conditions for run scoring, particularly for fly-ball hitters. The day game visibility typically benefits hitters' pitch recognition. These conditions slightly favor Baltimore's power-dependent lineup waking up from their slump more than they help Tampa Bay, though the effect is marginal given the pitching matchup uncertainty."
+        },
+        {
+          "role": "market",
+          "game_winner": "TB",
+          "reasoning": "The market has priced this as a pure pick'em (BAL 100/TB -101), implying 50/50 win probability. Public money is likely flowing to Baltimore due to name recognition (Henderson, Rutschman, Alonso) and home-field advantage, creating a slight overlay on Tampa Bay. The total at 9.0 with slight juice to the over (-108) suggests the market anticipates Gibson's inexperience leading to runs, but may be undervaluing Matz's ability to suppress Baltimore's currently anemic offense. Value exists on Tampa Bay ML and Under 9.0."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "BAL",
+          "reasoning": "The obvious narrative is 'unknown pitcher Gibson gets shelled.' However, debuting pitchers often benefit from scouting report scarcity and heightened adrenaline, sometimes delivering 5-6 scoreless innings. Simultaneously, the market consensus on Tampa Bay ignores Matz's volatility (3.0 IP, 4 ER start on 4/21) and Baltimore's elite talent regression\u2014Alonso, Henderson, and Rutschman cannot maintain sub-.220 batting averages. If Gibson is a hidden gem with plus stuff or if Baltimore's power wakes up against Matz's hittable fastball, the contrarian play is Baltimore by 2+ runs or the Over."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.46,
+          "away_win_prob": 0.54,
+          "value_side": "away",
+          "edge": 0.035,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.3,
+          "value_side": "underdog_rl",
+          "edge": 0.02,
+          "confidence": "low"
+        },
+        "total": {
+          "projected_total": 8.8,
+          "over_prob": 0.48,
+          "under_prob": 0.52,
+          "value_side": "under",
+          "home_total_value": "over",
+          "away_total_value": "under",
+          "edge": 0.03,
+          "confidence": "low"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.46,
+          "f1_home_lead_prob": 0.3,
+          "f1_away_lead_prob": 0.28,
+          "f1_tie_prob": 0.42,
+          "nrfi_value": "none",
+          "f1_rl_value": "none",
+          "confidence": "low"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.36,
+          "f3_away_win_prob": 0.39,
+          "f3_projected_total": 3.4,
+          "f3_home_lead_prob": 0.36,
+          "f3_away_lead_prob": 0.39,
+          "f3_tie_prob": 0.25,
+          "f3_ml_value": "away",
+          "f3_total_value": "under",
+          "f3_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.34,
+          "f5_away_win_prob": 0.38,
+          "f5_projected_total": 5.1,
+          "f5_home_lead_prob": 0.34,
+          "f5_away_lead_prob": 0.38,
+          "f5_tie_prob": 0.28,
+          "f5_ml_value": "away",
+          "f5_total_value": "under",
+          "f5_rl_value": "none",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "away": 5,
+          "home": 4
+        },
+        "key_factors": [
+          "Gibson's lack of MLB data creates high variance favoring TB's veteran lineup",
+          "Baltimore's lineup-wide batting slump despite premium talent suppressing run expectancy",
+          "Camden Yards park factor and calm weather slightly offset by both teams' high strikeout rates"
+        ]
+      }
+    },
+    "cached_at": "2026-05-27T21:54:24.783194+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "TB",
+          "reasoning": "Matz is the only starter with any usable recent workload, and his last five outings suggest roughly serviceable mid-rotation form with enough length to cover 4-6 innings. Gibson is far more uncertain with no recent logs, which increases Baltimore's variance and weakens confidence in their early-game outlook. Matz is not dominant and can lose the zone, so the counter-case is that Baltimore's right-handed power punishes him early if his command backs up."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "TB",
+          "reasoning": "Neither lineup is in great form by the provided rates, but Tampa Bay shows a slightly cleaner on-base profile through the top/middle with Caminero, Aranda, and Yandy Diaz, while Baltimore's lineup has more name value than current production. Orioles do have right-handed thump and can exploit a lefty if Matz leaves balls over the plate. Counter-case: Baltimore's lineup is more capable of a fast correction because Henderson, Rutschman, Alonso, and O'Neill all have latent power well above these current slash lines."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "TB",
+          "reasoning": "Both pens are listed fresh, so there is no major fatigue edge. In a neutral bullpen setup, the side with the more reliable starter gets a slight full-game boost because it can better script leverage innings. Counter-case: if Gibson is only asked for a short bridge and Baltimore leans into favorable bullpen matchups quickly, the full-game edge versus the F5 edge narrows substantially."
+        },
+        {
+          "role": "environment",
+          "game_winner": "BAL",
+          "reasoning": "Camden Yards with a 1.05 park factor and 72 degrees in calm conditions is mildly hitter-friendly but not extreme. Neutral wind lowers weather uncertainty. A modestly positive run environment slightly helps the home team because of last at-bat leverage and can punish an imperfect starter like Matz. Counter-case: calm air also keeps conditions from becoming truly over-friendly, so environment alone should not justify a big move from the near-pick'em market."
+        },
+        {
+          "role": "market",
+          "game_winner": "TB",
+          "reasoning": "The market is essentially saying coin flip, with a tiny lean to Tampa. Given the information asymmetry around Gibson and the presence of an identifiable starter on the Tampa side, the prior should stay close to market but can be nudged modestly toward TB. The obvious counter-case is that bookmakers likely know more about Gibson's true talent than this surface sheet reveals, so overreacting to missing logs would create false edge."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "BAL",
+          "reasoning": "The obvious narrative is 'unknown Baltimore starter equals auto-fade,' but markets often price that uncertainty efficiently. Matz is hardly a trustworthy favorite-type arm, and Baltimore's right-handed lineup construction gives them a plausible early ambush path. Counter-case: if Gibson is genuinely below MLB average or on a restricted pitch count, the contrarian case collapses and Tampa's early-game edge becomes real."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.486,
+          "away_win_prob": 0.514,
+          "value_side": "away",
+          "edge": 0.02,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.4002,
+          "value_side": "underdog_rl",
+          "edge": 0.05,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 8.8752,
+          "over_prob": 0.4913,
+          "under_prob": 0.5087,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "under",
+          "edge": 0.02,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.5437,
+          "f1_home_lead_prob": 0.2136,
+          "f1_away_lead_prob": 0.25,
+          "f1_tie_prob": 0.5628,
+          "nrfi_value": "none",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.381,
+          "f3_away_win_prob": 0.4058,
+          "f3_projected_total": 3.283,
+          "f3_home_lead_prob": 0.3176,
+          "f3_away_lead_prob": 0.36,
+          "f3_tie_prob": 0.3415,
+          "f3_ml_value": "away",
+          "f3_total_value": "under",
+          "f3_rl_value": "away",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.4273,
+          "f5_away_win_prob": 0.4561,
+          "f5_projected_total": 5.0835,
+          "f5_home_lead_prob": 0.3595,
+          "f5_away_lead_prob": 0.4,
+          "f5_tie_prob": 0.2538,
+          "f5_ml_value": "away",
+          "f5_total_value": "under",
+          "f5_rl_value": "away",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "home": 4.11,
+          "away": 4.47
+        },
+        "key_factors": [
+          "Tampa gets a small early edge from having the more knowable starter, while Baltimore's Gibson uncertainty keeps variance elevated",
+          "Both offenses have underwhelming current slash lines, limiting conviction on the over despite a slightly positive park factor",
+          "Fresh bullpens on both sides reduce late-game separation and support underdog/run-line resistance in a near pick'em game"
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 39,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 6,
+          "soft": 7,
+          "none": 0
+        },
+        "killed": [],
+        "challenger_verdicts": {
+          "run_line": {
+            "verdict": "approve",
+            "reasoning": "Strong 6/6 consensus on BAL +1.5 in a near pick'em game with fresh bullpens. Underdog run line in close games is mathematically sound.",
+            "flaw_found": null
+          },
+          "total": {
+            "verdict": "approve",
+            "reasoning": "5/6 model agreement on under. Both offenses showing weak slash lines, projected total 8.87 vs line 9.0. Reasonable edge.",
+            "flaw_found": null
+          },
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "5/6 agreement on BAL under 4.5, projected 4.11. Weak BAL offensive profile supports it.",
+            "flaw_found": null
+          },
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "6/6 strong consensus. NRFI at +108 with 54.4% model probability is solid value, both starters historically capable of clean first frames.",
+            "flaw_found": null
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "5/6 agreement on under, projected F3 total 3.28. Consistent with overall under lean.",
+            "flaw_found": null
+          },
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "team_total_away": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_1_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "gemini": {
+            "runs": 7,
+            "weight_sum": 13.2
+          },
+          "claude": {
+            "runs": 3,
+            "weight_sum": 13.0
+          },
+          "gpt4o": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 13.4
+          },
+          "kimi": {
+            "runs": 7,
+            "weight_sum": 13.2
+          },
+          "deepseek": {
+            "runs": 7,
+            "weight_sum": 13.2
+          }
+        },
+        "cost_usd": 0.5958
+      },
+      "ensemble_runs": 1
+    }
+  },
+  "824104:10ef69cd4c0e3c6f": {
+    "starters_hash": "10ef69cd4c0e3c6f",
+    "game_pk": 824104,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "NYY",
+          "reasoning": "Gerrit Cole represents a true ace-level profile (3.20 xERA baseline) despite limited 2026 data, featuring elite fastball spin and slider command that generates weak contact. Noah Cameron must be regressed heavily to league average (4.50 ERA, 1.35 WHIP) due to <30 IP sample; his 0 ER last start is unsustainable variance. Cole owns a 25-30% K-rate advantage over Cameron's regressed 20% projection. Time-through-order degradation favors Cole significantly in F5, where he typically faces 18-20 batters with <0.300 wOBA allowed first two passes."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "NYY",
+          "reasoning": "NYY lineup features four above-average bats (Judge, Goldschmidt, Bellinger, Rice) with ISO >.180 and BB% >10%, creating lineup churn against Cameron's average stuff. KC's lineup is bottom-third in wOBA, with only Witt Jr. representing a true threat. Pasquantino (.203 AVG) and Perez (.213 AVG) show declining bat speed. Platoon advantage is neutral (both RHP), but NYY's right-handed power (Judge, Rice) plays well in Kauffman's spacious alleys, while KC's contact-oriented approach struggles against Cole's high-velocity four-seamer."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "NYY",
+          "reasoning": "Both pens are fresh, but NYY's relief corps (implied: Holmes, Kahnle, Weaver) offers higher strikeout upside and better Stuff+ metrics than KC's middle-inning options. The critical delta occurs if Cameron exits early (high probability given NYY's patient approach); KC's long relievers are replacement-level. NYY's bullpen can maintain a lead, while KC's faces a high-leverage mismatch against NYY's core lineup in innings 6-7."
+        },
+        {
+          "role": "environment",
+          "game_winner": "KC",
+          "reasoning": "Kauffman Stadium's 1.01 park factor plays neutral overall, but its spacious gaps (415 CF, 387 alleys) suppress HRs by 8-10% while boosting triples. This slightly favors KC's contact hitters (Garcia, Collins) who can use the gaps over NYY's flyball-heavy approach (Judge, Bellinger). Day game with 72\u00b0F and calm winds eliminates pitching advantages from cold or wind-in, adding 0.3-0.4 runs to both teams' projections compared to night games."
+        },
+        {
+          "role": "market",
+          "game_winner": "NYY",
+          "reasoning": "Market prices NYY at -139 (59.1% implied), which is efficient but slightly soft given the Cole/Cameron gap. Public money flows toward NYY due to Cole's name recognition and Judge's market profile, but the line hasn't moved to -150+ due to KC's home status and Cameron's recent shutout optics. The run line pricing (if NYY -1.5 is +110) implies 47.6% cover probability, which is 4-5% too high given KC's ability to keep games close via contact. Value lies on NYY ML (small) and KC RL (larger)."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "KC",
+          "reasoning": "The obvious narrative is 'Cole dominates, NYY rolls.' This ignores Cole's 2026 workload management (6 IP max shown, 72 pitches last start) suggesting a 5-inning ceiling today, exposing NYY's middle relief early. Cameron's 8 K/0 BB shutdown last start shows he can neutralize power for 4-5 innings. KC +140 represents value in a game likely decided by the bullpen after the 6th. F5 tie or KC lead is more probable than the 32% market implies."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.38,
+          "away_win_prob": 0.62,
+          "value_side": "away",
+          "edge": 0.029,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.42,
+          "value_side": "underdog_rl",
+          "edge": 0.056,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 7.8,
+          "over_prob": 0.45,
+          "under_prob": 0.55,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "over",
+          "edge": 0.062,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.6,
+          "f1_home_lead_prob": 0.15,
+          "f1_away_lead_prob": 0.25,
+          "f1_tie_prob": 0.6,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "away",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.35,
+          "f3_away_win_prob": 0.45,
+          "f3_projected_total": 3.1,
+          "f3_home_lead_prob": 0.35,
+          "f3_away_lead_prob": 0.45,
+          "f3_tie_prob": 0.2,
+          "f3_ml_value": "away",
+          "f3_total_value": "over",
+          "f3_rl_value": "away",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.32,
+          "f5_away_win_prob": 0.55,
+          "f5_projected_total": 4.6,
+          "f5_home_lead_prob": 0.32,
+          "f5_away_lead_prob": 0.55,
+          "f5_tie_prob": 0.13,
+          "f5_ml_value": "away",
+          "f5_total_value": "over",
+          "f5_rl_value": "away",
+          "confidence": "high"
+        },
+        "predicted_score": {
+          "away": 5,
+          "home": 3
+        },
+        "key_factors": [
+          "Cole's ace-level dominance against regressed Cameron in F5",
+          "NYY lineup depth creating early runs vs KC's weak bottom order",
+          "Kauffman Stadium spacious gaps neutralizing NYY power slightly but aiding their gap hitters"
+        ]
+      }
+    },
+    "cached_at": "2026-05-27T21:52:37.640166+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "NYY",
+          "reasoning": "Gerrit Cole has a strong recent start and is facing a KC lineup with average power. Noah Cameron has shown some inconsistency in his last few starts."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "NYY",
+          "reasoning": "NYY lineup has a slight edge in overall hitting metrics and platoon advantages against Noah Cameron. KC lineup is more streaky."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "NYY",
+          "reasoning": "Both bullpens are fresh, but NYY has a slightly stronger bullpen overall. This doesn't sway the prediction much but supports NYY."
+        },
+        {
+          "role": "environment",
+          "game_winner": "none",
+          "reasoning": "Kauffman Stadium has a neutral park factor (1.01), and the weather is calm. This doesn't significantly impact the prediction."
+        },
+        {
+          "role": "market",
+          "game_winner": "NYY",
+          "reasoning": "The market implies NYY has a 59.1% win probability. Our analysis doesn't reveal a strong reason to materially differ from this."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "KC",
+          "reasoning": "While the market and most analysis favor NYY, Noah Cameron's recent K/9 is promising, and KC's lineup has shown flashes of strong hitting. This could be an overpriced NYY ML."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.3942,
+          "away_win_prob": 0.6058,
+          "value_side": "none",
+          "edge": 0.0,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.4769,
+          "value_side": "none",
+          "edge": 0.0,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 7.8914,
+          "over_prob": 0.4513,
+          "under_prob": 0.5487,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "under",
+          "edge": 0.05,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.6129,
+          "f1_home_lead_prob": 0.1542,
+          "f1_away_lead_prob": 0.25,
+          "f1_tie_prob": 0.6226,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.296,
+          "f3_away_win_prob": 0.4874,
+          "f3_projected_total": 2.7958,
+          "f3_home_lead_prob": 0.2691,
+          "f3_away_lead_prob": 0.4,
+          "f3_tie_prob": 0.2859,
+          "f3_ml_value": "away",
+          "f3_total_value": "under",
+          "f3_rl_value": "away",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.323,
+          "f5_away_win_prob": 0.5502,
+          "f5_projected_total": 4.3797,
+          "f5_home_lead_prob": 0.293,
+          "f5_away_lead_prob": 0.45,
+          "f5_tie_prob": 0.2029,
+          "f5_ml_value": "away",
+          "f5_total_value": "under",
+          "f5_rl_value": "away",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "home": 2.87,
+          "away": 4.67
+        },
+        "key_factors": [
+          "Gerrit Cole's strong recent start",
+          "NYY lineup's overall hitting edge",
+          "Neutral park factor and weather conditions"
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 31,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 12,
+          "soft": 1,
+          "none": 0
+        },
+        "killed": [],
+        "challenger_verdicts": {
+          "total_under": {
+            "verdict": "approve",
+            "reasoning": "Projected 7.89 vs line 8.5, strong 6/6 consensus, neutral park/weather. No concrete flaw.",
+            "flaw_found": null
+          },
+          "team_total_home_under": {
+            "verdict": "approve",
+            "reasoning": "KC projected 2.87 vs 3.5 line. Cole on 5 days rest vs weak KC offense (multiple sub-.220 hitters). Strong consensus.",
+            "flaw_found": null
+          },
+          "team_total_away_under": {
+            "verdict": "approve",
+            "reasoning": "NYY projected 4.67 vs 4.5 \u2014 narrow projection above line but soft 4/6 consensus. Slight concern but not a concrete flaw to kill.",
+            "flaw_found": null
+          },
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "NRFI prob 0.613 vs implied ~0.515. Both starters fresh on 5 days rest, KC top of order not threatening. Strong consensus.",
+            "flaw_found": null
+          },
+          "first_1_rl_away": {
+            "verdict": "approve",
+            "reasoning": "NYY lineup quality edge in first inning. Consensus 5/6. No concrete flaw.",
+            "flaw_found": null
+          },
+          "first_3_ml_away": {
+            "verdict": "approve",
+            "reasoning": "NYY 48.7% vs implied ~43% at +116 odds shown as -145... wait, F3 ML is KC +116/NYY -145, implying NYY ~58%. Model has NYY at 48.7% which is BELOW market implied. This would not be value on NYY F3 ML.",
+            "flaw_found": "Model F3 away win prob (48.7%) is lower than market implied (~58% at -145), so 'away' is not the value side \u2014 this appears mathematically inconsistent with calling away the value."
+          },
+          "first_3_total_under": {
+            "verdict": "approve",
+            "reasoning": "Projected 2.80, low-scoring projection consistent with full-game under. Strong consensus.",
+            "flaw_found": null
+          },
+          "first_3_rl_away": {
+            "verdict": "approve",
+            "reasoning": "Consistent with full game lean to NYY. Strong consensus.",
+            "flaw_found": null
+          },
+          "first_5_ml_away": {
+            "verdict": "approve",
+            "reasoning": "NYY 55% vs Cole advantage over Cameron through 5. Strong 6/6 consensus.",
+            "flaw_found": null
+          },
+          "first_5_total_under": {
+            "verdict": "approve",
+            "reasoning": "Projected 4.38 F5 total, consistent with starter quality. Strong consensus.",
+            "flaw_found": null
+          },
+          "first_5_rl_away": {
+            "verdict": "approve",
+            "reasoning": "Consistent with NYY lean through 5 innings. Strong consensus.",
+            "flaw_found": null
+          },
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "run_line": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "team_total_away": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_1_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "gemini": {
+            "runs": 3,
+            "weight_sum": 13.0
+          },
+          "claude": {
+            "runs": 3,
+            "weight_sum": 13.0
+          },
+          "gpt4o": {
+            "runs": 3,
+            "weight_sum": 13.0
+          },
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "kimi": {
+            "runs": 7,
+            "weight_sum": 13.2
+          },
+          "deepseek": {
+            "runs": 7,
+            "weight_sum": 13.0
+          }
+        },
+        "cost_usd": 0.4892
+      },
+      "ensemble_runs": 1
+    }
+  },
+  "822897:eaeb8c97806057d3": {
+    "starters_hash": "eaeb8c97806057d3",
+    "game_pk": 822897,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "TEX",
+          "reasoning": "Jacob deGrom possesses elite swing-and-miss stuff that can neutralize HOU's power bats, but his 3.0 IP/6 ER disaster last start introduces significant volatility. Mike Burrows is a backend arm with a 5.14 ERA in his last five starts and lacks the stuff to miss bats consistently. While deGrom's health is a question mark, his ceiling remains significantly higher than Burrows' floor. The F5 edge belongs to Texas, though with elevated blow-up risk."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "HOU",
+          "reasoning": "Houston's lineup features superior thump with Yordan Alvarez (5.6% HR rate) and Christian Walker (5.0% HR rate) capable of changing the game with one swing. Texas's lineup is contact-oriented but lacks elite power (no regular above 4.0% HR rate) and struggles with RISP. Against Burrows, who is homer-prone, HOU's power advantage could exploit the slight 1.02 park factor more effectively than TEX can against deGrom."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "NEUTRAL",
+          "reasoning": "Both bullpens are fresh with no reported fatigue or heavy usage issues. With deGrom potentially on a short leash after his last disaster, TEX may need 4+ innings from their pen, but they are fully rested. HOU's pen is also fresh, neutralizing any late-game advantage. Expect a coin-flip situation from the 6th inning onward, making the full-game outcome heavily dependent on the starters."
+        },
+        {
+          "role": "environment",
+          "game_winner": "NEUTRAL",
+          "reasoning": "Globe Life Field plays slightly hitter-friendly (1.02 PF), but with 72\u00b0F calm winds and a day game, conditions are neutral. No extreme heat or wind to affect fly balls. The retractable roof is likely closed or irrelevant given the temperature. Slight advantage to hitters over pitchers compared to a pitcher's park, but not significantly."
+        },
+        {
+          "role": "market",
+          "game_winner": "HOU",
+          "reasoning": "The market is pricing TEX at -132 (57.4% implied), which assumes a healthy, dominant deGrom. Given his recent volatility (6 ER in 3 IP) and Burrows' potential to eat innings, the true probability is closer to 55/45. HOU +130 offers value as the market overweights deGrom's name recognition versus his current form. The total of 7.0 is also shaded toward deGrom's dominance; the true total should be closer to 7.2."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "HOU",
+          "reasoning": "The obvious narrative is 'deGrom bounces back at home.' The contrarian view is that deGrom's last start indicates a physical limitation (velocity dip, tipping pitches) that won't fix itself in five days. Burrows is an unknown commodity that the market underrates. HOU's power hitters feast on fastballs, and if deGrom is off, this game gets away from Texas early. The value lies with the Astros in the first 5 innings specifically."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.54,
+          "away_win_prob": 0.46,
+          "value_side": "away",
+          "edge": 0.034,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.36,
+          "value_side": "underdog_rl",
+          "edge": 0.01,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 7.2,
+          "over_prob": 0.52,
+          "under_prob": 0.48,
+          "value_side": "over",
+          "home_total_value": "over",
+          "away_total_value": "under",
+          "edge": 0.02,
+          "confidence": "low"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.64,
+          "f1_home_lead_prob": 0.18,
+          "f1_away_lead_prob": 0.15,
+          "f1_tie_prob": 0.67,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.56,
+          "f3_away_win_prob": 0.34,
+          "f3_projected_total": 2.6,
+          "f3_home_lead_prob": 0.56,
+          "f3_away_lead_prob": 0.34,
+          "f3_tie_prob": 0.1,
+          "f3_ml_value": "none",
+          "f3_total_value": "over",
+          "f3_rl_value": "none",
+          "confidence": "low"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.54,
+          "f5_away_win_prob": 0.36,
+          "f5_projected_total": 4.4,
+          "f5_home_lead_prob": 0.54,
+          "f5_away_lead_prob": 0.36,
+          "f5_tie_prob": 0.1,
+          "f5_ml_value": "away",
+          "f5_total_value": "over",
+          "f5_rl_value": "away",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "away": 4,
+          "home": 3
+        },
+        "key_factors": [
+          "deGrom volatility and health uncertainty following 6 ER disaster start",
+          "HOU power advantage (Alvarez/Walker) vs Burrows' hittable fastball",
+          "Fresh bullpens on both sides minimizing late-game variance"
+        ]
+      }
+    },
+    "cached_at": "2026-05-27T21:48:35.890927+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "TEX",
+          "reasoning": "deGrom is still the clearly superior starter on baseline talent and expected strikeout/walk profile, even with recent volatility. Burrows' form line is mixed and likely closer to a back-end starter than the market's ace counterpart. For first-5 specifically, Texas gets the edge because deGrom's ceiling and ability to dominate a weaker Houston lineup remain higher. Counter-case: deGrom's recent 3.0 IP/6 ER start could indicate health/command instability, and if his pitch count is managed tightly the advantage narrows."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "TEX",
+          "reasoning": "Neither offense looks explosive from the listed rates, but Houston's lineup is top-heavy with Alvarez and Walker carrying much of the damage threat. Texas has more average-ish depth 1 through 7 and faces the less proven arm. With thin samples regressed, the Rangers project slightly better run creation overall. Counter-case: Houston's top-end power can flip a low-total game quickly, especially if Alvarez gets a mistake from deGrom."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "TEX",
+          "reasoning": "Both pens are fresh, so there is no major availability edge. The slight full-game lean to Texas comes from expected game state: if deGrom gets Texas into the middle innings with a lead, the Rangers can deploy leverage relievers conventionally. Counter-case: because both bullpens are fresh and closers are unspecified, bullpen impact is close to neutral and offers limited separation from the F5 view."
+        },
+        {
+          "role": "environment",
+          "game_winner": "TEX",
+          "reasoning": "Globe Life plays near neutral here with a 1.02 park factor, 72 degrees, no wind, day game. Conditions do not strongly inflate scoring, which slightly benefits the better starter/favorite. Counter-case: neutral conditions also mean one or two early homers can disproportionately drive an over and upset in a 7.0 total environment."
+        },
+        {
+          "role": "market",
+          "game_winner": "TEX",
+          "reasoning": "The market is already pricing Texas as a moderate favorite around 57-58%, and that should be the anchor. deGrom's name value may attract public money, but Houston's lineup quality is not strong enough to warrant a major deviation toward the dog. Fair price is a bit more toward Texas than the listed line, though only modestly. Counter-case: if the market is shading too heavily toward deGrom's reputation despite recent inconsistency, Houston could be the sharper side."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "HOU",
+          "reasoning": "The obvious story is deGrom over an unproven starter, but recent game logs show real volatility from deGrom and this Houston lineup still has enough power at the top to punish mistakes. In a low-total game, the dog plus runs or even small-moneyline exposure can be live. Counter-case: Burrows may simply be outclassed here, and if deGrom has even a B+ outing Houston may not score enough."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.5768,
+          "away_win_prob": 0.4232,
+          "value_side": "home",
+          "edge": 0.026,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.443,
+          "value_side": "underdog_rl",
+          "edge": 0.049,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 7.1891,
+          "over_prob": 0.5182,
+          "under_prob": 0.4818,
+          "value_side": "none",
+          "home_total_value": "over",
+          "away_total_value": "under",
+          "edge": 0.01,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.5795,
+          "f1_home_lead_prob": 0.2292,
+          "f1_away_lead_prob": 0.21,
+          "f1_tie_prob": 0.5939,
+          "nrfi_value": "none",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.5125,
+          "f3_away_win_prob": 0.3396,
+          "f3_projected_total": 2.8009,
+          "f3_home_lead_prob": 0.417,
+          "f3_away_lead_prob": 0.27,
+          "f3_tie_prob": 0.3085,
+          "f3_ml_value": "none",
+          "f3_total_value": "under",
+          "f3_rl_value": "home",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.5512,
+          "f5_away_win_prob": 0.3397,
+          "f5_projected_total": 4.1617,
+          "f5_home_lead_prob": 0.4711,
+          "f5_away_lead_prob": 0.26,
+          "f5_tie_prob": 0.2415,
+          "f5_ml_value": "home",
+          "f5_total_value": "under",
+          "f5_rl_value": "home",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "home": 4.05,
+          "away": 3.12
+        },
+        "key_factors": [
+          "deGrom retains the best starter ceiling in the matchup, giving Texas the main first-5 edge despite recent volatility",
+          "Both lineups project below elite and conditions are mostly neutral, keeping the total near market",
+          "Fresh bullpens reduce late-game randomness edge for either side, but low total supports underdog run-line viability"
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 43,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 2,
+          "soft": 11,
+          "none": 0
+        },
+        "killed": [],
+        "challenger_verdicts": {
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "Strong 6/6 consensus on TEX over 3.5. Projected score has TEX at 4.05, comfortably above 3.5. deGrom is on the mound but the bet is on TEX scoring, not allowing. Burrows has shown volatility (4 ER and 7 ER in two of last 5). No factual error found.",
+            "flaw_found": null
+          },
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "run_line": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "team_total_away": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_1_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "gemini": {
+            "runs": 7,
+            "weight_sum": 13.2
+          },
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "claude": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "gpt4o": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "kimi": {
+            "runs": 7,
+            "weight_sum": 12.8
+          },
+          "deepseek": {
+            "runs": 7,
+            "weight_sum": 13.4
+          }
+        },
+        "cost_usd": 0.6688
+      },
+      "ensemble_runs": 1
+    }
+  },
+  "824596:ad2d5a76b9869e29": {
+    "starters_hash": "ad2d5a76b9869e29",
+    "game_pk": 824596,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "MIN",
+          "reasoning": "Connor Prielipp has demonstrated MLB competency with a 6.0 IP/1 ER ceiling and 5 days rest, while David Sandlin has zero recent game logs and represents a complete variance play. Prielipp's strikeout ability (8 K potential) provides a path to limit damage, whereas Sandlin's unknown pitch mix and command present significant downside risk. First-time-through-the-order advantage is neutralized by Sandlin's likely short leash and Prielipp's early control issues (3 BB last start), but the experience gap favors Minnesota."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "CWS",
+          "reasoning": "Both lineups feature sub-.240 averages and elevated strikeout rates (20-28%), but CWS holds a slight edge in plate discipline. Murakami (13.3% BB) and Vargas (11.8% BB) can exploit Prielipp's walk tendencies (3 BB/9 in last outing), extending innings. MIN's Buxton provides power variance, but CWS's deeper lineup patience creates more scoring opportunities against an erratic starter. Home field batting second in close games provides a structural advantage."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "none",
+          "reasoning": "Both bullpens are listed as fresh with no fatigue advantages or disclosed closer availability. With both starters likely to pitch 4-5 innings maximum given pitch counts and uncertainty, the game will be decided by middle relief. Without data indicating superiority for either pen, this is a neutral factor with high variance. Expect a close game where bullpen usage patterns in innings 6-7 decide the outcome."
+        },
+        {
+          "role": "environment",
+          "game_winner": "none",
+          "reasoning": "Guaranteed Rate Field's 1.05 park factor provides a slight offensive boost, particularly for right-handed pull hitters. Day game conditions at 72\u00b0F with calm winds (0 mph) eliminate wind suppression of fly balls, creating neutral-to-slight hitter conditions. The absence of wind variance increases the reliability of fly ball outcomes, slightly favoring the over on total runs but not materially shifting win probability toward either side."
+        },
+        {
+          "role": "market",
+          "game_winner": "MIN",
+          "reasoning": "The pick'em pricing (CWS -103/MIN 102) implies a 50/50 coin flip, but the market underweights Prielipp's established floor relative to Sandlin's unknown quantity. Prielipp's 5-start sample provides actionable data (sub-4.00 ERA in 4 of 5 starts) versus Sandlin's complete data darkness. The public likely overreacts to MIN's poor team batting averages without accounting for CWS's equally anemic offense. MIN at +102 offers value against a true probability closer to 52%."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "CWS",
+          "reasoning": "The obvious narrative is 'two terrible offenses + unknown pitchers = low scoring,' creating NRFI and Under steam. However, young pitchers with thin data often face first-inning jitters or get exposed by major league hitting in their second time through the order. Sandlin specifically could face a disastrous debut or early hook. The contrarian angle attacks the overvalued NRFI (-118) and assumes at least one starter implodes, favoring YRFI and Overs while questioning whether MIN's slight pitching edge justifies them as favorites."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.49,
+          "away_win_prob": 0.51,
+          "value_side": "away",
+          "edge": 0.015,
+          "confidence": "low"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.31,
+          "value_side": "none",
+          "edge": 0.0,
+          "confidence": "low"
+        },
+        "total": {
+          "projected_total": 8.3,
+          "over_prob": 0.52,
+          "under_prob": 0.48,
+          "value_side": "over",
+          "home_total_value": "over",
+          "away_total_value": "over",
+          "edge": 0.02,
+          "confidence": "low"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.48,
+          "f1_home_lead_prob": 0.28,
+          "f1_away_lead_prob": 0.25,
+          "f1_tie_prob": 0.47,
+          "nrfi_value": "yrfi",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.3,
+          "f3_away_win_prob": 0.33,
+          "f3_projected_total": 3.4,
+          "f3_home_lead_prob": 0.3,
+          "f3_away_lead_prob": 0.33,
+          "f3_tie_prob": 0.37,
+          "f3_ml_value": "away",
+          "f3_total_value": "over",
+          "f3_rl_value": "none",
+          "confidence": "low"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.32,
+          "f5_away_win_prob": 0.36,
+          "f5_projected_total": 5.1,
+          "f5_home_lead_prob": 0.32,
+          "f5_away_lead_prob": 0.36,
+          "f5_tie_prob": 0.32,
+          "f5_ml_value": "away",
+          "f5_total_value": "over",
+          "f5_rl_value": "none",
+          "confidence": "low"
+        },
+        "predicted_score": {
+          "away": 4,
+          "home": 4
+        },
+        "key_factors": [
+          "Thin data on both starting pitchers creates high variance in early innings",
+          "Both lineups feature high strikeout rates but CWS shows superior plate discipline",
+          "Bullpen neutrality shifts focus to starter volatility in the F5 period"
+        ]
+      }
+    },
+    "cached_at": "2026-05-27T21:58:36.448689+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "MIN",
+          "reasoning": "Prielipp shows better recent form with 6.0 IP, 1 ER performance vs Sandlin's complete unknown. Quality of innings and strikeout ability favor MIN starter despite some volatility."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "CWS",
+          "reasoning": "CWS has more power upside with Murakami (5.9 HR%), Montgomery (4.6 HR%), and Vargas (4.3 HR%) vs MIN's power-light lineup. Park factor slightly favors offense."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "PUSH",
+          "reasoning": "Both bullpens fresh, no meaningful data to differentiate. Game likely decided by starters and early offense rather than late-inning relief."
+        },
+        {
+          "role": "environment",
+          "game_winner": "PUSH",
+          "reasoning": "Neutral conditions - 72\u00b0F, calm wind, slight park factor boost (1.05) favors neither team significantly. Day game slightly reduces offense historically."
+        },
+        {
+          "role": "market",
+          "game_winner": "MIN",
+          "reasoning": "Market essentially pick'em (-103/+102) but may be undervaluing Prielipp's recent quality vs complete unknown in Sandlin. Small edge to MIN."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "CWS",
+          "reasoning": "Everyone will see Prielipp's recent starts and fade the unknown Sandlin, but MIN's offense is genuinely weak (.214-.238 averages across lineup) while CWS has legitimate power threats."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.4938,
+          "away_win_prob": 0.5062,
+          "value_side": "away",
+          "edge": 0.015,
+          "confidence": "low"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.4032,
+          "value_side": "underdog_rl",
+          "edge": 0.06,
+          "confidence": "low"
+        },
+        "total": {
+          "projected_total": 8.0774,
+          "over_prob": 0.5063,
+          "under_prob": 0.4937,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "under",
+          "edge": 0.04,
+          "confidence": "low"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.5706,
+          "f1_home_lead_prob": 0.1997,
+          "f1_away_lead_prob": 0.11,
+          "f1_tie_prob": 0.5874,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "low"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.3991,
+          "f3_away_win_prob": 0.4145,
+          "f3_projected_total": 3.0321,
+          "f3_home_lead_prob": 0.3285,
+          "f3_away_lead_prob": 0.42,
+          "f3_tie_prob": 0.3253,
+          "f3_ml_value": "away",
+          "f3_total_value": "under",
+          "f3_rl_value": "away",
+          "confidence": "low"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.4391,
+          "f5_away_win_prob": 0.4581,
+          "f5_projected_total": 4.671,
+          "f5_home_lead_prob": 0.3597,
+          "f5_away_lead_prob": 0.45,
+          "f5_tie_prob": 0.2575,
+          "f5_ml_value": "away",
+          "f5_total_value": "under",
+          "f5_rl_value": "away",
+          "confidence": "low"
+        },
+        "predicted_score": {
+          "home": 3.52,
+          "away": 4.04
+        },
+        "key_factors": [
+          "Prielipp recent form vs Sandlin unknown",
+          "Both offenses below-average but CWS has more power",
+          "Fresh bullpens neutralize late-game advantage"
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 39,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 4,
+          "soft": 9,
+          "none": 0
+        },
+        "killed": [
+          "total_under"
+        ],
+        "challenger_verdicts": {
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "Away ML at +102 with 5/6 model consensus and survives devig. No concrete flaw identified. Both pitchers have unknown/thin data but ensemble already accounts for this.",
+            "flaw_found": null
+          },
+          "run_line": {
+            "verdict": "approve",
+            "reasoning": "Away +1.5 at -170 with strong consensus. Reasonable in a projected close game between two below-average offenses.",
+            "flaw_found": null
+          },
+          "total_under": {
+            "verdict": "kill",
+            "reasoning": "Internal inconsistency: projected total is 8.0774 (above the 8.0 line) yet the value side is listed as under. Model agreement also shows 4/6 agree on OVER, contradicting the under recommendation. This appears to be a logic error in the ensemble output.",
+            "flaw_found": "Projected total 8.08 exceeds line of 8.0 but bet is tagged under; model agreement says over. Inconsistent recommendation."
+          },
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "NRFI at -118 with 5/6 consensus and 57% model prob is reasonable. No concrete flaw.",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "approve",
+            "reasoning": "Away F3 ML at -110 with soft consensus but survives devig. Prielipp's recent form (mixed but mostly solid) vs unknown Sandlin is acceptable basis.",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "Strong consensus (5/6) on away F5. Consistent with starter matchup assessment.",
+            "flaw_found": null
+          },
+          "total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "team_total_away": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_1_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "gemini": {
+            "runs": 7,
+            "weight_sum": 13.4
+          },
+          "claude": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "gpt4o": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "kimi": {
+            "runs": 3,
+            "weight_sum": 13.0
+          },
+          "deepseek": {
+            "runs": 7,
+            "weight_sum": 13.0
+          }
+        },
+        "cost_usd": 0.6519
+      },
+      "ensemble_runs": 1
+    }
+  }
+}

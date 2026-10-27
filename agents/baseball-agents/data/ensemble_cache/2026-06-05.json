@@ -1,0 +1,315 @@
+{
+  "824673:b18609c8a274286d": {
+    "starters_hash": "b18609c8a274286d",
+    "game_pk": 824673,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "CHC",
+          "reasoning": "Cabrera possesses swing-and-miss stuff (8 K in his last quality start) and faces a Giants lineup with multiple high-K% bats. However, his 16-day layoff introduces rust risk and command volatility. Ray is the wildcard: capable of 6 IP/1 ER dominance or complete implosion (9 ER in 4.1 IP two starts ago). His walk rate spiked to 7 BB in his last outing, signaling control issues. Slight edge to Cabrera due to home field and Ray's recent volatility, but both starters have short leashes."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "CHC",
+          "reasoning": "The Cubs lineup construction emphasizes plate discipline (Happ 12.3% BB, Busch 13.0% BB, Swanson 11.3% BB), which directly attacks Ray's current control problems. While the Giants possess name recognition (Devers, Chapman), both are struggling significantly (.218 and .213 AVG respectively) and must be regressed toward league averages due to underperformance. The Cubs' collective OBP skills give them more margin for error against a wild Ray."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "none",
+          "reasoning": "Both bullpens are listed as 'fresh' with no reported usage concerns. With both starters likely facing pitch counts in the 85-95 range given recent trends, the game will likely see middle innings from rested relievers on both sides. No structural advantage exists here; the game will be decided by starter performance or early offense."
+        },
+        {
+          "role": "environment",
+          "game_winner": "none",
+          "reasoning": "Wrigley's park factor of 1.05 suggests slight run inflation, but the 0mph calm wind neutralizes the stadium's typical home run boosting effects. Day game conditions at 72\u00b0F are neutral for offense. The total of 10.5 prices in significant volatility from both starters, but the calm air should suppress some fly ball production, slightly favoring pitchers over the true 'Wrigley effect'."
+        },
+        {
+          "role": "market",
+          "game_winner": "SF",
+          "reasoning": "The market has overreacted to Ray's 9 ER disaster start, pushing CHC to -164 (62.8%). This ignores his 6 IP/1 ER gem just three starts prior and his Cy Young pedigree. Meanwhile, Cabrera's 16-day rest is being underweighted. The Giants at +162 (implied 38%) offer value against a true probability closer to 43%, especially with both lineups performing similarly below average."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "SF",
+          "reasoning": "The obvious narrative is 'Cabrera at home vs the wild Ray.' The contrarian view: Ray's volatility cuts both ways, and Cabrera's extended rest (16 days) historically correlates with first-inning command issues and elevated pitch counts early. The Cubs' patience only matters if Ray is wild; if Ray has his A-stuff (which he showed 5/31), he can silence this lineup. The Giants' star power (Devers, Adames, Chapman) has positive regression due."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.57,
+          "away_win_prob": 0.43,
+          "value_side": "away",
+          "edge": 0.058,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.36,
+          "value_side": "underdog_rl",
+          "edge": 0.085,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 10.2,
+          "over_prob": 0.48,
+          "under_prob": 0.52,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "over",
+          "edge": 0.04,
+          "confidence": "low"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.42,
+          "f1_home_lead_prob": 0.32,
+          "f1_away_lead_prob": 0.26,
+          "f1_tie_prob": 0.42,
+          "nrfi_value": "none",
+          "f1_rl_value": "none",
+          "confidence": "low"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.48,
+          "f3_away_win_prob": 0.32,
+          "f3_projected_total": 4.8,
+          "f3_home_lead_prob": 0.48,
+          "f3_away_lead_prob": 0.32,
+          "f3_tie_prob": 0.2,
+          "f3_ml_value": "none",
+          "f3_total_value": "none",
+          "f3_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.54,
+          "f5_away_win_prob": 0.4,
+          "f5_projected_total": 7.8,
+          "f5_home_lead_prob": 0.54,
+          "f5_away_lead_prob": 0.4,
+          "f5_tie_prob": 0.06,
+          "f5_ml_value": "none",
+          "f5_total_value": "none",
+          "f5_rl_value": "none",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "away": 4,
+          "home": 5
+        },
+        "key_factors": [
+          "Cabrera's 16-day layoff creating rust/command risk",
+          "Ray's bipolar volatility with recent 9 ER implosion vs 6 IP/1 ER potential",
+          "Calm wind neutralizing Wrigley's typical home run advantage",
+          "CHC lineup's high BB% vs Ray's elevated walk rates"
+        ]
+      }
+    },
+    "cached_at": "2026-06-06T18:17:54.041856+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "CHC",
+          "reasoning": "Slight edge to CHC, but mostly because Robbie Ray's recent form is shakier than Edward Cabrera's. Ray has not completed 5 innings in four straight starts and has allowed 17 ER over his last 21.0 IP, with volatile command and workload inefficiency. Cabrera also carries walk-risk and only modest length certainty, especially on 16 days rest, but his recent run prevention is less disastrous and his raw stuff can miss bats early. For F5, the main takeaway is both starters are unlikely to work deep, which raises variance, but Ray's current instability gives CHC the early lean. Counter-case: Cabrera's long layoff disrupts command and he exits by the third inning."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "CHC",
+          "reasoning": "Neither lineup is performing at a high level on the surface, but CHC has the deeper on-base profile and more patient hitters to exploit Ray's wavering command. Happ, Busch, Swanson, Hoerner, Bregman, and Suzuki all bring some walk equity, which matters against a pitcher with recent control inconsistency. SF has more contact-oriented bats, but outside of Devers/Adames/Chapman there is limited proven damage in this specific form snapshot, and several core bats are underperforming. Counter-case: SF's left-to-right contact mix puts Cabrera into deep counts and gets into the Cubs bullpen early."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "CHC",
+          "reasoning": "Both bullpens are listed fresh, so there is no large availability edge. That said, because both starters project for shorter outings, full-game win equity depends more on middle relief quality and lineup depth than usual. With the market already making CHC a meaningful favorite, the bullpen piece likely supports the favorite modestly rather than creating a major edge. Counter-case: if Cabrera is on a strict pitch cap, CHC may need 5-6 innings from the bullpen, increasing late volatility and helping the dog cover or steal the game."
+        },
+        {
+          "role": "environment",
+          "game_winner": "CHC",
+          "reasoning": "Wrigley at 72 degrees with calm wind is much more neutral than the extreme wind-driven versions of this park. Park factor 1.05 still nudges run scoring up slightly, but with 0 mph wind there is less reason to project a true Wrigley shootout than the 10.5 total suggests. Day conditions can aid visibility and offense somewhat, yet absent wind the environment is only mildly hitter-friendly. Counter-case: both starters' command issues matter more than park/weather, driving crooked numbers despite calm conditions."
+        },
+        {
+          "role": "market",
+          "game_winner": "CHC",
+          "reasoning": "The market is clearly pricing CHC's starter and home-field edge, and likely shading toward runs because of two volatile starters plus a public tendency to bet overs at Wrigley. Given the calibration guidance, there is not a strong reason to move far off CHC's implied 62.8%. My fair number is close to CHC 61-63%, meaning limited moneyline value. Total-wise, 10.5 looks a touch high relative to the calm weather and both lineups' mediocre baseline production, though starter volatility prevents a strong under stance. Counter-case: if the market is correctly identifying both pitchers as sub-5 inning arms with walk trouble, the over is still cheap."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "SF",
+          "reasoning": "The obvious narrative is Ray is currently less trustworthy and Cabrera's stuff gives CHC the edge. But Cabrera on 16 days rest with recent short starts could be the more fragile profile than the market assumes, and the Cubs lineup is hardly mashing. If Cabrera is wild early, SF's disciplined-enough middle can scratch out a lead and neutralize the starter gap. The unpopular side is SF plus the runs, especially because this projects as a bullpen-heavy game rather than a classic favorite-dominates setup. Counter-case: Ray's recent command collapse is real and CHC gets multiple early baserunners before SF can settle in."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.6171,
+          "away_win_prob": 0.3829,
+          "value_side": "none",
+          "edge": 0.01,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.4718,
+          "value_side": "underdog_rl",
+          "edge": 0.06,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 10.2939,
+          "over_prob": 0.4973,
+          "under_prob": 0.5027,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "under",
+          "edge": 0.03,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.5136,
+          "f1_home_lead_prob": 0.2705,
+          "f1_away_lead_prob": 0.24,
+          "f1_tie_prob": 0.5343,
+          "nrfi_value": "none",
+          "f1_rl_value": "home",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.5208,
+          "f3_away_win_prob": 0.3414,
+          "f3_projected_total": 3.9518,
+          "f3_home_lead_prob": 0.4229,
+          "f3_away_lead_prob": 0.27,
+          "f3_tie_prob": 0.2896,
+          "f3_ml_value": "none",
+          "f3_total_value": "under",
+          "f3_rl_value": "home",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.5527,
+          "f5_away_win_prob": 0.3473,
+          "f5_projected_total": 6.0585,
+          "f5_home_lead_prob": 0.4645,
+          "f5_away_lead_prob": 0.31,
+          "f5_tie_prob": 0.2241,
+          "f5_ml_value": "none",
+          "f5_total_value": "under",
+          "f5_rl_value": "home",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "home": 5.92,
+          "away": 4.19
+        },
+        "key_factors": [
+          "Robbie Ray's recent form and inability to work deep create the largest starting-pitching risk",
+          "Edward Cabrera has the better raw early-game profile, but 16 days rest adds command and workload uncertainty",
+          "Calm Wrigley conditions reduce the usual wind-driven over case, making 10.5 slightly high despite volatile starters"
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 38,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 1,
+          "soft": 12,
+          "none": 0
+        },
+        "killed": [],
+        "challenger_verdicts": {
+          "run_line": {
+            "verdict": "approve",
+            "reasoning": "SF +1.5 has 6% edge with model consensus and survives devig. Ray's volatility is real but +1.5 cushion accounts for blowout risk. No concrete flaw.",
+            "flaw_found": null
+          },
+          "total": {
+            "verdict": "approve",
+            "reasoning": "Under 10.5 has strong 5/6 model agreement and 3% edge. Calm wind at Wrigley supports under. No concrete flaw identified.",
+            "flaw_found": null
+          },
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "CHC under 5.5 aligns with 4/6 consensus. Cabrera's 16 days rest is flagged but doesn't invalidate the under given Ray could implode separately. No concrete flaw.",
+            "flaw_found": null
+          },
+          "team_total_away": {
+            "verdict": "approve",
+            "reasoning": "SF under 4.5 aligns with consensus. SF lineup is below average offensively (multiple sub-.230 AVG hitters). No concrete flaw.",
+            "flaw_found": null
+          },
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_1_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 13.4
+          },
+          "gemini": {
+            "runs": 7,
+            "weight_sum": 13.2
+          },
+          "claude": {
+            "runs": 7,
+            "weight_sum": 13.2
+          },
+          "gpt4o": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "kimi": {
+            "runs": 2,
+            "weight_sum": 13.6
+          },
+          "deepseek": {
+            "runs": 7,
+            "weight_sum": 13.2
+          }
+        },
+        "cost_usd": 0.6692
+      },
+      "ensemble_runs": 1
+    }
+  }
+}

@@ -1,0 +1,328 @@
+{
+  "J. Sinner vs C. Norrie": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 6,
+      "cost_usd": 0.0671
+    }
+  },
+  "T. M. Etcheverry vs A. Fils": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 6,
+      "cost_usd": 0.074
+    }
+  },
+  "F. Cerundolo vs A. Blockx": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 5,
+      "cost_usd": 0.0454
+    }
+  },
+  "V. Kopriva vs R. Jodar": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 6,
+      "cost_usd": 0.0754
+    }
+  },
+  "D. Medvedev vs F. Cobolli": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Daniil Medvedev",
+        "reasoning": "Medvedev has a higher first serve percentage and more aces per match, indicating a stronger serve. His second serve win percentage is slightly lower than Cobolli's, but overall his serve statistics are more impressive."
+      },
+      {
+        "role": "return",
+        "pick": "Daniil Medvedev",
+        "reasoning": "Medvedev wins more return points and has a higher break point conversion rate than Cobolli. This suggests he will be more effective at breaking Cobolli's serve."
+      },
+      {
+        "role": "surface",
+        "pick": "Daniil Medvedev",
+        "reasoning": "Both players are on a hard court, which is a common surface. Medvedev has a higher surface Elo rating, indicating he is more suited to this surface."
+      },
+      {
+        "role": "form",
+        "pick": "Daniil Medvedev",
+        "reasoning": "Medvedev has a stronger recent form, with more convincing wins in his last 10 matches. Both players have played a match recently, so fatigue shouldn't be a significant factor."
+      },
+      {
+        "role": "market",
+        "pick": "Flavio Cobolli",
+        "reasoning": "The market has Medvedev as the favorite at -120, implying a 54.5% win probability. Given Medvedev's superior statistics and recent form, Cobolli at +100 offers value."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Flavio Cobolli",
+        "reasoning": "While Medvedev is the favorite, Cobolli has shown strong form recently and could potentially cause an upset if he can neutralize Medvedev's serve. The head-to-head is limited, and Cobolli's style might be a difficult matchup for Medvedev."
+      }
+    ],
+    "predictions": {
+      "game_handicap": {
+        "favorite_cover_prob": 0.65,
+        "value_side": "underdog",
+        "edge": 0.05,
+        "confidence": "high",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "maverick": 0.55,
+            "gemini": 0.68,
+            "gpt4o": 0.65,
+            "claude": 0.68,
+            "kimi": 0.635,
+            "deepseek": 0.65
+          }
+        }
+      },
+      "total_games": {
+        "projected_games": 20.5,
+        "over_prob": 0.435,
+        "under_prob": 0.565,
+        "value_side": "over",
+        "edge": 0.02,
+        "confidence": "high",
+        "_per_model_medians": {
+          "over_prob": {
+            "maverick": 0.52,
+            "gemini": 0.35,
+            "gpt4o": 0.45,
+            "claude": 0.45,
+            "kimi": 0.42,
+            "deepseek": 0.4
+          },
+          "under_prob": {
+            "maverick": 0.48,
+            "gemini": 0.65,
+            "gpt4o": 0.55,
+            "claude": 0.55,
+            "kimi": 0.58,
+            "deepseek": 0.6
+          },
+          "projected_games": {
+            "maverick": 21.5,
+            "gemini": 20.5,
+            "gpt4o": 20.5,
+            "claude": 20.5,
+            "kimi": 21.0,
+            "deepseek": 19.5
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Daniil Medvedev",
+        "score": "6-4 6-3"
+      },
+      "key_factors": [
+        "Medvedev's strong serve and return",
+        "Cobolli's recent form",
+        "Surface suitability for Medvedev"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 26,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 3,
+        "soft": 0,
+        "none": 0
+      },
+      "killed": [
+        "moneyline"
+      ],
+      "challenger_verdicts": {
+        "moneyline": "kill",
+        "game_handicap": "approve",
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "maverick": {
+          "runs": 7,
+          "weight_sum": 3.9
+        },
+        "gemini": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "gpt4o": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "claude": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "kimi": {
+          "runs": 6,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 3,
+          "weight_sum": 3.0
+        }
+      },
+      "cost_usd": 0.2152
+    },
+    "ensemble_runs": 1
+  },
+  "A. Sabalenka vs H. Baptiste": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Aryna Sabalenka",
+        "reasoning": "Sabalenka has a stronger serve with 65.5% first serve percentage and 74.4% first serve won, compared to Baptiste's 58.2% and 70.2%. Sabalenka's service games are likely to be more secure."
+      },
+      {
+        "role": "return",
+        "pick": "Aryna Sabalenka",
+        "reasoning": "Sabalenka wins 46.0% of return points and has a 47.5% break point conversion rate, outpacing Baptiste's 42.7% and 39.2%. Sabalenka is more effective at breaking Baptiste's serve."
+      },
+      {
+        "role": "surface",
+        "pick": "Aryna Sabalenka",
+        "reasoning": "Both players are on a hard court, which is a common surface. Sabalenka has a higher Surface Elo (2052) compared to Baptiste (1600), indicating a stronger performance on hard courts."
+      },
+      {
+        "role": "form",
+        "pick": "Aryna Sabalenka",
+        "reasoning": "Sabalenka has a strong recent form with a 26-1 season record and has been playing consistently well in her last 10 matches. Baptiste has a less consistent record at 15-9."
+      },
+      {
+        "role": "market",
+        "pick": "Hailey Baptiste",
+        "reasoning": "The moneyline odds heavily favor Sabalenka at -835, implying a high win probability. The market might be overestimating Sabalenka's chances given their previous close match."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Hailey Baptiste",
+        "reasoning": "Baptiste has shown she can compete with Sabalenka closely in their previous encounter (6-4 6-4). Given the right conditions and a potential off-day for Sabalenka, Baptiste could capitalize on any mistakes."
+      }
+    ],
+    "predictions": {
+      "total_games": {
+        "projected_games": 18.75,
+        "over_prob": 0.435,
+        "under_prob": 0.565,
+        "value_side": "under 19.5",
+        "edge": 0.04,
+        "confidence": "high",
+        "_per_model_medians": {
+          "over_prob": {
+            "gemini": 0.35,
+            "gpt4o": 0.4,
+            "claude": 0.42,
+            "maverick": 0.48,
+            "kimi": 0.555,
+            "deepseek": 0.45
+          },
+          "under_prob": {
+            "gemini": 0.65,
+            "gpt4o": 0.6,
+            "claude": 0.58,
+            "maverick": 0.52,
+            "kimi": 0.445,
+            "deepseek": 0.55
+          },
+          "projected_games": {
+            "gemini": 18.5,
+            "gpt4o": 18.5,
+            "claude": 18.2,
+            "maverick": 19.2,
+            "kimi": 20.5,
+            "deepseek": 19.0
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Aryna Sabalenka",
+        "score": "6-4 6-3"
+      },
+      "key_factors": [
+        "Sabalenka's strong serve and return",
+        "Baptiste's potential to capitalize on Sabalenka's mistakes",
+        "Surface Elo ratings favoring Sabalenka"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 30,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 1,
+        "soft": 0,
+        "none": 2
+      },
+      "killed": [],
+      "challenger_verdicts": {
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "gemini": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "gpt4o": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "claude": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "maverick": {
+          "runs": 7,
+          "weight_sum": 3.3
+        },
+        "kimi": {
+          "runs": 6,
+          "weight_sum": 2.6
+        },
+        "deepseek": {
+          "runs": 7,
+          "weight_sum": 2.2
+        }
+      },
+      "cost_usd": 0.338
+    },
+    "ensemble_runs": 1
+  },
+  "J. Mensik vs A. Zverev": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "challenger_killed_all",
+      "phase_reached": 3,
+      "total_calls": 27,
+      "cost_usd": 0.3419,
+      "killed": [
+        "total_games"
+      ],
+      "challenger_verdicts": {
+        "total_games": "kill"
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+
+============================================================
+  MAINLINE BET CARD — 2026-04-27
+  7 picks across 5 games
+============================================================
+
+  CHC@SD — 9:40 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  +102 | Mkt: 47.8% | Model: 57.1% | Edge:  9.4% | Kelly:  3.78% | BE:  -125
+
+  SEA@MIN — 7:40 PM ET
+  ----------------------------------------
+    team_total_home    | home under 3.5       |  +119 | Mkt: 43.6% | Model: 54.2% | Edge: 10.5% | Kelly:  3.91% | BE:  -110
+    nrfi               | NRFI                 |  -104 | Mkt: 49.5% | Model: 59.1% | Edge:  9.6% | Kelly:  4.13% | BE:  -135
+    team_total_away    | away under 4.5       |  -105 | Mkt: 49.3% | Model: 56.4% | Edge:  7.1% | Kelly:  2.66% | BE:  -120
+
+  BOS@TOR — 7:07 PM ET
+  ----------------------------------------
+    run_line           | home -1.5            |  +175 | Mkt: 36.4% | Model: 43.7% | Edge:  7.3% | Kelly:  2.87% | BE:  +120
+
+  LAA@CWS — 7:40 PM ET
+  ----------------------------------------
+    team_total_away    | away under 4.5       |  -110 | Mkt: 51.2% | Model: 56.4% | Edge:  5.2% | Kelly:  2.11% | BE:  -120
+
+  MIA@LAD — 10:10 PM ET
+  ----------------------------------------
+    team_total_away    | away under 2.5       |  +118 | Mkt: 44.9% | Model: 56.4% | Edge: 11.5% | Kelly:  4.87% | BE:  -120
+
+  Status: Pending
+============================================================

@@ -1,0 +1,170 @@
+{
+  "date": "2026-05-01",
+  "generated_at": "2026-05-01T19:50:22",
+  "total_picks": 11,
+  "games": [
+    {
+      "game": "ARI@CHC",
+      "game_time_et": "2:20 PM ET",
+      "picks": [
+        {
+          "bet_type": "run_line",
+          "side": "home -1.5",
+          "odds": 165,
+          "market_prob": 0.3774,
+          "model_prob": 0.4288,
+          "edge": 0.0514,
+          "kelly_pct": 0.0207,
+          "be_odds": 125,
+          "result": null
+        },
+        {
+          "bet_type": "team_total_home",
+          "side": "home under 3.5",
+          "odds": 100,
+          "market_prob": 0.4915,
+          "model_prob": 0.5417,
+          "edge": 0.0502,
+          "kelly_pct": 0.0209,
+          "be_odds": -110,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "CIN@PIT",
+      "game_time_et": "6:45 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": 105,
+          "market_prob": 0.4686,
+          "model_prob": 0.5714,
+          "edge": 0.1028,
+          "kelly_pct": 0.0408,
+          "be_odds": -125,
+          "result": null
+        },
+        {
+          "bet_type": "run_line",
+          "side": "home -1.5",
+          "odds": 163,
+          "market_prob": 0.3771,
+          "model_prob": 0.4439,
+          "edge": 0.0668,
+          "kelly_pct": 0.0257,
+          "be_odds": 120,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "SF@TB",
+      "game_time_et": "7:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "run_line",
+          "side": "home -1.5",
+          "odds": 160,
+          "market_prob": 0.3838,
+          "model_prob": 0.4571,
+          "edge": 0.0733,
+          "kelly_pct": 0.0295,
+          "be_odds": 110,
+          "result": null
+        },
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": -115,
+          "market_prob": 0.5202,
+          "model_prob": 0.5714,
+          "edge": 0.0512,
+          "kelly_pct": 0.0196,
+          "be_odds": -125,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "TEX@DET",
+      "game_time_et": "6:40 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_home",
+          "side": "home under 3.5",
+          "odds": 116,
+          "market_prob": 0.4492,
+          "model_prob": 0.5417,
+          "edge": 0.0925,
+          "kelly_pct": 0.0367,
+          "be_odds": -110,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "PHI@MIA",
+      "game_time_et": "7:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "moneyline",
+          "side": "away",
+          "odds": -104,
+          "market_prob": 0.5144,
+          "model_prob": 0.56,
+          "edge": 0.0456,
+          "kelly_pct": 0.0256,
+          "be_odds": -120,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "CWS@SD",
+      "game_time_et": "9:40 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": -102,
+          "market_prob": 0.4847,
+          "model_prob": 0.5714,
+          "edge": 0.0867,
+          "kelly_pct": 0.0336,
+          "be_odds": -125,
+          "result": null
+        },
+        {
+          "bet_type": "run_line",
+          "side": "home -1.5",
+          "odds": 154,
+          "market_prob": 0.3847,
+          "model_prob": 0.4622,
+          "edge": 0.0775,
+          "kelly_pct": 0.0283,
+          "be_odds": 110,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "NYM@LAA",
+      "game_time_et": "9:38 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 4.5",
+          "odds": -103,
+          "market_prob": 0.4917,
+          "model_prob": 0.5658,
+          "edge": 0.0741,
+          "kelly_pct": 0.0296,
+          "be_odds": -125,
+          "result": null
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+
+============================================================
+  MAINLINE BET CARD — 2026-05-08
+  8 picks across 7 games
+============================================================
+
+  TB@BOS — 7:10 PM ET
+  ----------------------------------------
+    run_line           | home -1.5            |  +166 | Mkt: 37.1% | Model: 43.9% | Edge:  6.7% | Kelly:  2.51% | BE:  +120
+
+  OAK@BAL — 7:05 PM ET
+  ----------------------------------------
+    run_line           | home -1.5            |  +154 | Mkt: 38.6% | Model: 44.1% | Edge:  5.5% | Kelly:  1.94% | BE:  +120
+
+  WSH@MIA — 7:10 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  +104 | Mkt: 47.7% | Model: 56.4% | Edge:  8.7% | Kelly:  3.62% | BE:  -120
+    total              | under 8.0            |  +103 | Mkt: 48.8% | Model: 54.8% | Edge:  6.0% | Kelly:  2.71% | BE:  -115
+
+  NYM@ARI — 9:40 PM ET
+  ----------------------------------------
+    team_total_away    | away under 4.5       |  -110 | Mkt: 51.0% | Model: 56.4% | Edge:  5.5% | Kelly:  2.11% | BE:  -120
+
+  STL@SD — 9:45 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  -107 | Mkt: 50.2% | Model: 57.1% | Edge:  6.9% | Kelly:  2.82% | BE:  -125
+
+  ATL@LAD — 10:10 PM ET
+  ----------------------------------------
+    moneyline          | away                 |  +108 | Mkt: 47.7% | Model: 50.8% | Edge:  3.2% | Kelly:  1.34% | BE:   -95
+
+  PIT@SF — 10:15 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  +105 | Mkt: 47.1% | Model: 57.1% | Edge: 10.1% | Kelly:  4.08% | BE:  -125
+
+  Status: Pending
+============================================================

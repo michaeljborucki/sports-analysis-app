@@ -1,0 +1,91 @@
+{
+  "date": "2026-05-22",
+  "generated_at": "2026-05-22T20:29:25",
+  "total_picks": 6,
+  "games": [
+    {
+      "game": "CLE@PHI",
+      "game_time_et": "6:40 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 2.5",
+          "odds": 101,
+          "market_prob": 0.4777,
+          "model_prob": 0.5665,
+          "edge": 0.0888,
+          "kelly_pct": 0.0343,
+          "be_odds": -125,
+          "result": null
+        },
+        {
+          "bet_type": "first_5_rl",
+          "side": "away +0.5",
+          "odds": 100,
+          "market_prob": 0.4768,
+          "model_prob": 0.549,
+          "edge": 0.0722,
+          "kelly_pct": 0.0245,
+          "be_odds": -115,
+          "result": null
+        },
+        {
+          "bet_type": "run_line",
+          "side": "home -1.5",
+          "odds": 136,
+          "market_prob": 0.4153,
+          "model_prob": 0.4707,
+          "edge": 0.0554,
+          "kelly_pct": 0.0204,
+          "be_odds": 105,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "CWS@SF",
+      "game_time_et": "10:15 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": 101,
+          "market_prob": 0.4777,
+          "model_prob": 0.5641,
+          "edge": 0.0864,
+          "kelly_pct": 0.0331,
+          "be_odds": -120,
+          "result": null
+        },
+        {
+          "bet_type": "run_line",
+          "side": "away -1.5",
+          "odds": 160,
+          "market_prob": 0.383,
+          "model_prob": 0.4354,
+          "edge": 0.0524,
+          "kelly_pct": 0.0206,
+          "be_odds": 125,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "OAK@SD",
+      "game_time_et": "9:40 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": -102,
+          "market_prob": 0.4859,
+          "model_prob": 0.5714,
+          "edge": 0.0855,
+          "kelly_pct": 0.0336,
+          "be_odds": -125,
+          "result": null
+        }
+      ]
+    }
+  ]
+}

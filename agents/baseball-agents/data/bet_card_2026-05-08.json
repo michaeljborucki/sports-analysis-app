@@ -1,0 +1,137 @@
+{
+  "date": "2026-05-08",
+  "generated_at": "2026-05-08T19:06:31",
+  "total_picks": 8,
+  "games": [
+    {
+      "game": "TB@BOS",
+      "game_time_et": "7:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "run_line",
+          "side": "home -1.5",
+          "odds": 166,
+          "market_prob": 0.3713,
+          "model_prob": 0.4387,
+          "edge": 0.0674,
+          "kelly_pct": 0.0251,
+          "be_odds": 120,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "OAK@BAL",
+      "game_time_et": "7:05 PM ET",
+      "picks": [
+        {
+          "bet_type": "run_line",
+          "side": "home -1.5",
+          "odds": 154,
+          "market_prob": 0.3855,
+          "model_prob": 0.4407,
+          "edge": 0.0552,
+          "kelly_pct": 0.0194,
+          "be_odds": 120,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "WSH@MIA",
+      "game_time_et": "7:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": 104,
+          "market_prob": 0.4774,
+          "model_prob": 0.5641,
+          "edge": 0.0867,
+          "kelly_pct": 0.0362,
+          "be_odds": -120,
+          "result": null
+        },
+        {
+          "bet_type": "total",
+          "side": "under 8.0",
+          "odds": 103,
+          "market_prob": 0.4878,
+          "model_prob": 0.5476,
+          "edge": 0.0598,
+          "kelly_pct": 0.0271,
+          "be_odds": -115,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "NYM@ARI",
+      "game_time_et": "9:40 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 4.5",
+          "odds": -110,
+          "market_prob": 0.5096,
+          "model_prob": 0.5641,
+          "edge": 0.0545,
+          "kelly_pct": 0.0211,
+          "be_odds": -120,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "STL@SD",
+      "game_time_et": "9:45 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": -107,
+          "market_prob": 0.5024,
+          "model_prob": 0.5714,
+          "edge": 0.069,
+          "kelly_pct": 0.0282,
+          "be_odds": -125,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "ATL@LAD",
+      "game_time_et": "10:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "moneyline",
+          "side": "away",
+          "odds": 108,
+          "market_prob": 0.4767,
+          "model_prob": 0.5085,
+          "edge": 0.0318,
+          "kelly_pct": 0.0134,
+          "be_odds": -95,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "PIT@SF",
+      "game_time_et": "10:15 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": 105,
+          "market_prob": 0.4707,
+          "model_prob": 0.5714,
+          "edge": 0.1007,
+          "kelly_pct": 0.0408,
+          "be_odds": -125,
+          "result": null
+        }
+      ]
+    }
+  ]
+}

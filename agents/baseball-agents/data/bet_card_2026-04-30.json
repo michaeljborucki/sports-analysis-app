@@ -1,0 +1,103 @@
+{
+  "date": "2026-04-30",
+  "generated_at": "2026-04-30T15:02:51",
+  "total_picks": 6,
+  "games": [
+    {
+      "game": "COL@CIN",
+      "game_time_et": "12:40 PM ET",
+      "picks": [
+        {
+          "bet_type": "run_line",
+          "side": "home -1.5",
+          "odds": 140,
+          "market_prob": 0.4167,
+          "model_prob": 0.4759,
+          "edge": 0.0592,
+          "kelly_pct": 0.0254,
+          "be_odds": 105,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "STL@PIT",
+      "game_time_et": "12:35 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 2.5",
+          "odds": -105,
+          "market_prob": 0.4964,
+          "model_prob": 0.5665,
+          "edge": 0.0701,
+          "kelly_pct": 0.0278,
+          "be_odds": -125,
+          "result": null
+        },
+        {
+          "bet_type": "run_line",
+          "side": "home -1.5",
+          "odds": 105,
+          "market_prob": 0.4915,
+          "model_prob": 0.5415,
+          "edge": 0.05,
+          "kelly_pct": 0.0262,
+          "be_odds": -110,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "WSH@NYM",
+      "game_time_et": "1:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "run_line",
+          "side": "home -1.5",
+          "odds": 120,
+          "market_prob": 0.4514,
+          "model_prob": 0.5115,
+          "edge": 0.0601,
+          "kelly_pct": 0.0261,
+          "be_odds": -100,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "KC@OAK",
+      "game_time_et": "3:05 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 4.5",
+          "odds": -106,
+          "market_prob": 0.4953,
+          "model_prob": 0.5714,
+          "edge": 0.0761,
+          "kelly_pct": 0.0293,
+          "be_odds": -125,
+          "result": null
+        }
+      ]
+    },
+    {
+      "game": "SF@PHI",
+      "game_time_et": "12:35 PM ET",
+      "picks": [
+        {
+          "bet_type": "run_line",
+          "side": "home -1.5",
+          "odds": 170,
+          "market_prob": 0.3727,
+          "model_prob": 0.4552,
+          "edge": 0.0825,
+          "kelly_pct": 0.0337,
+          "be_odds": 115,
+          "result": null
+        }
+      ]
+    }
+  ]
+}

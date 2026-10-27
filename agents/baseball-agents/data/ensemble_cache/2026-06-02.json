@@ -1,0 +1,733 @@
+{
+  "824026:dd8abc9cd3a35ed9": {
+    "starters_hash": "dd8abc9cd3a35ed9",
+    "game_pk": 824026,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "LAA",
+          "reasoning": "Grayson Rodriguez possesses significant swing-and-miss stuff (5 K/9 in recent starts) that can neutralize Colorado's high-strikeout lineup (5 of 9 hitters >22% K-rate). While Rodriguez showed volatility in his 7-ER disaster start two outings ago, his ceiling exceeds Tomoyuki Sugano's limited upside. Sugano is a pitch-to-contact artist with sub-15% K-rates in Japan, translating to a high-BABIP risk in MLB against LAA's albeit struggling lineup. Over 5 innings, Rodriguez's stuff plays up in daytime conditions, giving LAA a narrow F5 edge. However, Sugano's command limits walks, keeping COL in the game longer than market expects."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "COL",
+          "reasoning": "Both offenses rank in the bottom quartile, but Colorado's lineup construction offers subtle advantages. The Rockies deploy four left-handed bats (McCarthy, Rumfield, Johnston, Julien) against Rodriguez, who has shown reverse-splits vulnerability in limited samples. While Trout and Soler provide thunder for LAA, both are hitting below .215 with declining contact rates. Colorado's lineup has better plate discipline (Julien 10.4% BB, Karros 10.6% BB) to extend at-bats against Rodriguez's erratic command. In a battle of inept offenses, the platoon edge and superior walk rates give COL slight value as the underdog."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "LAA",
+          "reasoning": "Both bullpens enter fresh with no immediate fatigue concerns, neutralizing Colorado's typical late-inning disadvantage. However, LAA maintains a structural advantage in high-leverage arms and home-field bullpen management. With both starters likely capped at 5-6 innings (Sugano averaging 83 pitches, Rodriguez volatile), the game transitions to relief in the 6th-7th. LAA's ability to deploy matchups against Colorado's bottom-third (Tovar, Thompson, Karros) provides a decisive edge in the final nine outs, particularly if the game remains within one run."
+        },
+        {
+          "role": "environment",
+          "game_winner": "LAA",
+          "reasoning": "Angel Stadium's 0.97 park factor suppresses run scoring slightly, particularly for left-handed power (Soler, Trout benefit). The 72\u00b0F temperature supports carry but 0mph wind eliminates any directional advantage. Day games in Anaheim typically see reduced offense compared to night games due to batter eye adjustments and marine layer considerations. These conditions favor Rodriguez's fastball plane and Sugano's ground-ball tendencies, projecting a lower-scoring affair than the 8.5 total suggests. The environment dampens Colorado's already minimal power output more than LAA's."
+        },
+        {
+          "role": "market",
+          "game_winner": "COL",
+          "reasoning": "The market is overvaluing LAA (-152) based on name recognition (Trout, Rodriguez prospect pedigree) and home-field bias while undervaluing Sugano's floor. The public narrative assumes Rodriguez dominates the 'unknown' Japanese import, ignoring Sugano's superior consistency (3+ IP in every start vs Rodriguez's 3.2 IP blowup). At +144, COL presents clear value\u2014the implied 40.9% win probability underestimates a contact pitcher in a pitcher's park against a struggling offense. The total 8.5 with under juice (-107) correctly identifies run suppression, but the moneyline remains inefficient."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "COL",
+          "reasoning": "The obvious narrative is 'LAA bounces back at home against a soft Rockies team,' but this ignores that both teams are equally terrible offensively (LAA team OPS likely bottom-5). The contrarian angle is that Sugano's low-velocity, high-command approach plays better in his second MLB season than Rodriguez's high-variance, high-walk profile. Colorado's lefty-heavy lineup specifically targets Rodriguez's command issues. The market has priced this as LAA 60/40; true odds are closer to 55/45, creating value on the dog. Additionally, the under 8.5 is too high given two offenses with combined .220 BA and limited power."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.54,
+          "away_win_prob": 0.46,
+          "value_side": "away",
+          "edge": 0.051,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.35,
+          "value_side": "none",
+          "edge": -0.077,
+          "confidence": "low"
+        },
+        "total": {
+          "projected_total": 7.6,
+          "over_prob": 0.44,
+          "under_prob": 0.56,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "under",
+          "edge": 0.043,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.6,
+          "f1_home_lead_prob": 0.18,
+          "f1_away_lead_prob": 0.15,
+          "f1_tie_prob": 0.67,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.48,
+          "f3_away_win_prob": 0.42,
+          "f3_projected_total": 2.8,
+          "f3_home_lead_prob": 0.28,
+          "f3_away_lead_prob": 0.24,
+          "f3_tie_prob": 0.48,
+          "f3_ml_value": "none",
+          "f3_total_value": "under",
+          "f3_rl_value": "none",
+          "confidence": "low"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.52,
+          "f5_away_win_prob": 0.44,
+          "f5_projected_total": 4.2,
+          "f5_home_lead_prob": 0.38,
+          "f5_away_lead_prob": 0.32,
+          "f5_tie_prob": 0.3,
+          "f5_ml_value": "none",
+          "f5_total_value": "under",
+          "f5_rl_value": "none",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "away": 3,
+          "home": 4
+        },
+        "key_factors": [
+          "Both offenses exhibit bottom-decile contact rates and power metrics",
+          "Sugano's pitch-to-contact approach vs Rodriguez's high-volatility command profile",
+          "Angel Stadium's neutral-to-pitcher park factor with calm wind limiting fly-ball production",
+          "Colorado's left-handed lineup concentration exploitable against Rodriguez's control issues",
+          "Market overvaluation of LAA based on prospect pedigree versus Sugano's established floor"
+        ]
+      }
+    },
+    "cached_at": "2026-06-03T01:29:09.489919+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "LAA",
+          "reasoning": "Grayson Rodriguez, despite a rough outing recently, has shown flashes of being a solid mid-rotation arm. His last start with 5 IP and 1 ER is promising. Sugano, on the other hand, has struggled significantly in his last five starts, consistently giving up runs and failing to go deep into games. His last two starts were particularly concerning. This sets up a clear advantage for LAA in the F5."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "LAA",
+          "reasoning": "The Angels lineup, while not elite, features Mike Trout who, despite a lower AVG, still has a high OBP and HR potential. Soler also provides power. The Rockies lineup has several players with high K% and generally lower OBPs, particularly against a right-handed pitcher like Rodriguez. The Angels' top of the order has better on-base skills to capitalize on any mistakes by Sugano."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "LAA",
+          "reasoning": "Both bullpens are listed as 'fresh,' which means we don't have recent performance data to lean on. However, given Sugano's recent struggles to go deep into games, the Rockies bullpen is likely to be utilized earlier and potentially for more innings. This increases the chance of fatigue or exposure of weaker arms as the game progresses, giving a slight edge to the Angels if their starter can manage more innings."
+        },
+        {
+          "role": "environment",
+          "game_winner": "LAA",
+          "reasoning": "Angel Stadium has a park factor of 0.97, which is slightly pitcher-friendly. With calm winds and a comfortable 72\u00b0F temperature, there are no extreme environmental factors that would significantly sway the game towards offense or defense. This neutral environment mostly favors the team with better pitching, which I believe is LAA today. The day game aspect could slightly suppress offense compared to night games due to different vision conditions, but it's a minor factor here."
+        },
+        {
+          "role": "market",
+          "game_winner": "LAA",
+          "reasoning": "The market has LAA as solid -152 favorites, implying a 60% win probability. This aligns with the perceived pitching mismatch. Given Sugano's recent form, the market might even be slightly underestimating the Angels' advantage, especially in the early innings. The total of 8.5 with a slight lean to the under (-107) suggests the market expects a moderate scoring game, but not a slugfest. The NRFI at -106 also indicates some respect for the starters early on. I see potential value in LAA on the F5 line given Sugano's struggles."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "COL",
+          "reasoning": "While Sugano's recent starts have been poor, Grayson Rodriguez also had a 7 ER outing recently and struggled to get past 5.2 innings in another. His 'good' start was against an undisclosed opponent. The Angels lineup, despite Trout, isn't particularly fearsome and has its own share of high K% bats. The market might be over-correcting for Sugano's recent struggles without fully considering Rodriguez's inconsistency and the overall weakness of both offenses. There's a scenario where Sugano pitches to his potential (which is better than his last 5 suggest, even if not elite) and Rodriguez has another rough outing, making the Rockies an interesting underdog play, especially if the line moves further towards LAA."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.6012,
+          "away_win_prob": 0.3988,
+          "value_side": "home",
+          "edge": 0.03,
+          "confidence": "medium"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.4424,
+          "value_side": "none",
+          "edge": 0.0,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 8.0632,
+          "over_prob": 0.4565,
+          "under_prob": 0.5435,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "under",
+          "edge": 0.03,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.5896,
+          "f1_home_lead_prob": 0.2204,
+          "f1_away_lead_prob": 0.15,
+          "f1_tie_prob": 0.6171,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.4935,
+          "f3_away_win_prob": 0.3175,
+          "f3_projected_total": 2.9213,
+          "f3_home_lead_prob": 0.3863,
+          "f3_away_lead_prob": 0.15,
+          "f3_tie_prob": 0.3532,
+          "f3_ml_value": "home",
+          "f3_total_value": "under",
+          "f3_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.5431,
+          "f5_away_win_prob": 0.334,
+          "f5_projected_total": 4.5164,
+          "f5_home_lead_prob": 0.4437,
+          "f5_away_lead_prob": 0.2,
+          "f5_tie_prob": 0.265,
+          "f5_ml_value": "home",
+          "f5_total_value": "under",
+          "f5_rl_value": "none",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "home": 4.67,
+          "away": 3.14
+        },
+        "key_factors": [
+          "Tomoyuki Sugano's recent poor form and inability to pitch deep into games",
+          "Grayson Rodriguez's potential for a quality start at home",
+          "Slightly pitcher-friendly park factor at Angel Stadium",
+          "Rockies lineup's high K% and lower OBP against a right-handed starter"
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 43,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 7,
+          "soft": 6,
+          "none": 0
+        },
+        "killed": [],
+        "challenger_verdicts": {
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "Home ML at -152 with model at 60.1% matches market consensus 60.04%. Edge is thin but ensemble passed consensus and worst-case devig.",
+            "flaw_found": null
+          },
+          "total": {
+            "verdict": "approve",
+            "reasoning": "Under 8.5 has strong 6/6 consensus, projected 8.06, calm weather, slightly pitcher-friendly park, both lineups with high K%. No concrete flaw.",
+            "flaw_found": null
+          },
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "LAA under 4.5 with 6/6 consensus aligns with projected 4.67 \u2014 very close to line but Sugano has shown ability to limit damage in recent starts. Acceptable.",
+            "flaw_found": null
+          },
+          "team_total_away": {
+            "verdict": "approve",
+            "reasoning": "COL under 3.5 with 6/6 consensus, projected 3.14, Rockies lineup high K% facing Rodriguez at home in pitcher-friendly park.",
+            "flaw_found": null
+          },
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "NRFI with 6/6 strong consensus, both starters with decent recent form in early innings, no concrete flaw identified.",
+            "flaw_found": null
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "F3 under with 6/6 consensus, projected 2.92 well under typical F3 lines. No flaw.",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "F5 under with 6/6 strong consensus, projected 4.52, consistent with full game under thesis.",
+            "flaw_found": null
+          },
+          "run_line": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_1_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "gemini": {
+            "runs": 7,
+            "weight_sum": 13.8
+          },
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "claude": {
+            "runs": 7,
+            "weight_sum": 13.4
+          },
+          "gpt4o": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "kimi": {
+            "runs": 7,
+            "weight_sum": 13.4
+          },
+          "deepseek": {
+            "runs": 7,
+            "weight_sum": 13.2
+          }
+        },
+        "cost_usd": 0.7073
+      },
+      "ensemble_runs": 1
+    }
+  },
+  "825079:5886600d8dcedbaa": {
+    "starters_hash": "5886600d8dcedbaa",
+    "game_pk": 825079,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "ARI",
+          "reasoning": "Soroka has been elite over his last five starts (1.80 ERA, 0.90 WHIP, 24 K vs 5 BB), inducing ground balls at a high rate which neutralizes Chase Field's hitter-friendly dimensions. Lauer has shown volatility (5.09 ERA in sample, 6 ER blowup three starts ago) and lacks the pitch mix to consistently navigate a lineup with power potential multiple times. Soroka's ability to work efficiently (6+ innings in 4 of last 5) provides a significant F5 advantage."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "LAD",
+          "reasoning": "Despite depressed batting averages (.213-.234 across the core), the LAD lineup possesses elite plate discipline (Ohtani 12.2% BB, Freeman 10.4%) and power upside (Muncy 5.1% HR rate) that can exploit Soroka's occasional command lapses against left-handed hitters. ARI's lineup lacks depth past Carroll and Arenado, with the 7-9 hitters (Barrosa, Troy, Fernandez) projecting below league average against LHP."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "LAD",
+          "reasoning": "Both bullpens are fresh, but LAD's relief corps typically ranks in the top tier for high-leverage situations. With Soroka likely to provide 6 innings but Lauer potentially exiting after 5, the game state in the 6th-7th favors LAD's ability to hold leads or keep deficits manageable. ARI's middle relief is more vulnerable to the top of LAD's order."
+        },
+        {
+          "role": "environment",
+          "game_winner": "over",
+          "reasoning": "Chase Field's 1.05 park factor combined with 72\u00b0F temperature and calm winds creates slight offensive inflation. While Soroka's ground ball profile mitigates some park effects, Lauer's fly ball tendencies (historically 40%+ FB rate) expose him to damage in this environment. Day games here typically see roof status (likely open) favoring hitters."
+        },
+        {
+          "role": "market",
+          "game_winner": "ARI",
+          "reasoning": "The market prices LAD as -109 favorites (52.4% implied) based on name recognition and star power, but this ignores Lauer's replacement-level profile and Soroka's current form. The public is likely overvaluing LAD's struggling superstars (Freeman .231, Betts .213) and undervaluing Soroka's recent dominance. ARI +108 offers slight value."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "ARI",
+          "reasoning": "The obvious narrative is 'LAD superteam bounces back against mediocre ARI,' but Lauer is not a frontline starter\u2014he's a depth piece with a 5+ ERA projection. Soroka is pitching like an ace right now. The contrarian play is to fade the LAD hype entirely and take ARI on the moneyline and F5, as the pitching mismatch is the most deterministic factor in a short sample."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.49,
+          "away_win_prob": 0.51,
+          "value_side": "home",
+          "edge": 0.014,
+          "confidence": "low"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.4,
+          "value_side": "underdog_rl",
+          "edge": 0.012,
+          "confidence": "low"
+        },
+        "total": {
+          "projected_total": 9.2,
+          "over_prob": 0.54,
+          "under_prob": 0.46,
+          "value_side": "over",
+          "home_total_value": "over",
+          "away_total_value": "none",
+          "edge": 0.018,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.55,
+          "f1_home_lead_prob": 0.17,
+          "f1_away_lead_prob": 0.18,
+          "f1_tie_prob": 0.65,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "low"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.46,
+          "f3_away_win_prob": 0.39,
+          "f3_projected_total": 3.8,
+          "f3_home_lead_prob": 0.46,
+          "f3_away_lead_prob": 0.39,
+          "f3_tie_prob": 0.15,
+          "f3_ml_value": "none",
+          "f3_total_value": "over",
+          "f3_rl_value": "none",
+          "confidence": "low"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.48,
+          "f5_away_win_prob": 0.42,
+          "f5_projected_total": 4.7,
+          "f5_home_lead_prob": 0.48,
+          "f5_away_lead_prob": 0.42,
+          "f5_tie_prob": 0.1,
+          "f5_ml_value": "home",
+          "f5_total_value": "over",
+          "f5_rl_value": "none",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "away": 5,
+          "home": 4
+        },
+        "key_factors": [
+          "Soroka's dominant recent form (1.80 ERA last 5 starts) vs Lauer's volatility",
+          "Chase Field's 1.05 park factor and favorable hitting weather",
+          "LAD lineup's star power undermined by depressed early-season batting averages"
+        ]
+      }
+    },
+    "cached_at": "2026-06-03T01:12:56.693670+00:00"
+  },
+  "823129:dc56bb4af20e0a27": {
+    "starters_hash": "dc56bb4af20e0a27",
+    "game_pk": 823129,
+    "screening": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "SEA",
+          "reasoning": "Extreme mismatch in starting pitcher profiles. Gilbert is a legitimate workhorse (6+ IP in 4 of last 5 starts) with plus stuff and 6 days rest. Brazob\u00e1n is clearly a reliever being used as an opener/opener\u2014his last 5 appearances are all \u22641.0 IP. This forces the Mets into a bullpen game early, creating massive F5 and full-game advantages for Seattle as they face patchwork pitching while the Mariners get a traditional starter."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "SEA",
+          "reasoning": "Both lineups are below-average with thin samples requiring regression, but Seattle holds the power advantage with Rodr\u00edguez, Arozarena, and Raley (combined 11.3 HR%) against a bullpen game. The Mets have Soto but lack protection; against Gilbert's command, their contact-heavy approach (multiple hitters with K% < 22) plays into his strengths."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "SEA",
+          "reasoning": "The Mets are forced to cover 8+ innings with their bullpen due to the opener strategy, taxing even a 'fresh' pen by the 6th-7th inning. Seattle's pen remains pristine with Gilbert able to deliver 6-7 innings. Late-game leverage heavily favors the Mariners if the Mets are forced to use low-leverage arms in high-leverage spots."
+        },
+        {
+          "role": "environment",
+          "game_winner": "SEA",
+          "reasoning": "T-Mobile Park's 0.95 run factor suppresses offense, particularly extra-base hits. 72\u00b0F with calm wind eliminates carry advantage for either side. These conditions amplify the pitching mismatch\u2014Gilbert's flyball tendencies are protected by the park, while the Mets' bullpen has no margin for error in a low-run environment."
+        },
+        {
+          "role": "market",
+          "game_winner": "SEA",
+          "reasoning": "Market prices SEA at 58.3% (-137), which underweights the starting pitching disparity. A legitimate starter vs. a bullpen game in a pitcher-friendly park should price closer to 65-68%. Clear value on SEA moneyline and run line (+151 implies only 40% cover probability; true probability is higher). Total of 7.5 is sharp but slightly high given the matchup."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "NYM",
+          "reasoning": "The consensus is heavy on Seattle due to the pitching mismatch, but bullpen games can be unpredictable\u2014multiple looks and high-velocity relievers can keep hitters off balance for 4-5 innings. Gilbert's 7 ER blowup on 5/16 proves he's vulnerable to crooked numbers. At +135, the Mets offer value if their opener/bullpen sequence works and Gilbert has an off day."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.66,
+          "away_win_prob": 0.34,
+          "value_side": "home",
+          "edge": 0.08,
+          "confidence": "high"
+        },
+        "run_line": {
+          "favorite_cover_prob": 0.46,
+          "value_side": "favorite_rl",
+          "edge": 0.06,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 7.2,
+          "over_prob": 0.42,
+          "under_prob": 0.58,
+          "value_side": "under",
+          "home_total_value": "over",
+          "away_total_value": "under",
+          "edge": 0.03,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.58,
+          "f1_home_lead_prob": 0.22,
+          "f1_away_lead_prob": 0.15,
+          "f1_tie_prob": 0.63,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.6,
+          "f3_away_win_prob": 0.28,
+          "f3_projected_total": 2.3,
+          "f3_home_lead_prob": 0.25,
+          "f3_away_lead_prob": 0.12,
+          "f3_tie_prob": 0.63,
+          "f3_ml_value": "home",
+          "f3_total_value": "under",
+          "f3_rl_value": "home",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.63,
+          "f5_away_win_prob": 0.26,
+          "f5_projected_total": 4.0,
+          "f5_home_lead_prob": 0.3,
+          "f5_away_lead_prob": 0.1,
+          "f5_tie_prob": 0.6,
+          "f5_ml_value": "home",
+          "f5_total_value": "under",
+          "f5_rl_value": "home",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "away": 3,
+          "home": 4
+        },
+        "key_factors": [
+          "Gilbert vs bullpen game starting pitching mismatch",
+          "T-Mobile Park pitcher-friendly environment",
+          "Mets thin bullpen depth behind opener"
+        ]
+      }
+    },
+    "cached_at": "2026-06-03T01:26:58.604536+00:00",
+    "ensemble": {
+      "analyst_assessments": [
+        {
+          "role": "pitching",
+          "game_winner": "SEA",
+          "reasoning": "Logan Gilbert has shown better form in his last 5 starts, with 2 quality starts allowing 0 ER over 11.2 IP. Huascar Brazob\u00e1n's last 5 starts are all relief appearances with limited innings, making it difficult to assess his starting quality."
+        },
+        {
+          "role": "hitting",
+          "game_winner": "SEA",
+          "reasoning": "Both teams have similar lineup strength, but SEA's lineup has a slight edge in power and overall stats. Julio Rodr\u00edguez and Luke Raley are key factors for SEA."
+        },
+        {
+          "role": "bullpen",
+          "game_winner": "SEA",
+          "reasoning": "Both bullpens are fresh, but SEA's bullpen has been more reliable in recent games. Still, the starting pitchers will heavily influence the early game outcome."
+        },
+        {
+          "role": "environment",
+          "game_winner": "none",
+          "reasoning": "T-Mobile Park has a park factor of 0.95, which is slightly below average. The weather is calm and temperate, not expected to significantly impact the game."
+        },
+        {
+          "role": "market",
+          "game_winner": "SEA",
+          "reasoning": "The market implies a 58.3% win probability for SEA, which aligns with the analysis of the starting pitchers and lineup strength. There's no clear indication of market inefficiency."
+        },
+        {
+          "role": "contrarian",
+          "game_winner": "NYM",
+          "reasoning": "The market and most analysis favor SEA due to Gilbert's recent form. However, Brazob\u00e1n's rest and potential for a strong start could challenge this narrative. If NYM's offense can capitalize on Gilbert's occasional lapses, they could keep the game close."
+        }
+      ],
+      "predictions": {
+        "moneyline": {
+          "home_win_prob": 0.6197,
+          "away_win_prob": 0.3803,
+          "value_side": "none",
+          "edge": 0.0,
+          "confidence": "medium"
+        },
+        "total": {
+          "projected_total": 7.1242,
+          "over_prob": 0.4575,
+          "under_prob": 0.5425,
+          "value_side": "under",
+          "home_total_value": "under",
+          "away_total_value": "under",
+          "edge": 0.02,
+          "confidence": "medium"
+        },
+        "first_inning": {
+          "nrfi_prob": 0.5864,
+          "f1_home_lead_prob": 0.2197,
+          "f1_away_lead_prob": 0.19,
+          "f1_tie_prob": 0.6213,
+          "nrfi_value": "nrfi",
+          "f1_rl_value": "none",
+          "confidence": "medium"
+        },
+        "first_3": {
+          "f3_home_win_prob": 0.5041,
+          "f3_away_win_prob": 0.2974,
+          "f3_projected_total": 2.7047,
+          "f3_home_lead_prob": 0.4415,
+          "f3_away_lead_prob": 0.26,
+          "f3_tie_prob": 0.2996,
+          "f3_ml_value": "home",
+          "f3_total_value": "under",
+          "f3_rl_value": "home",
+          "confidence": "medium"
+        },
+        "first_5": {
+          "f5_home_win_prob": 0.5776,
+          "f5_away_win_prob": 0.2882,
+          "f5_projected_total": 4.1114,
+          "f5_home_lead_prob": 0.5139,
+          "f5_away_lead_prob": 0.3,
+          "f5_tie_prob": 0.2369,
+          "f5_ml_value": "home",
+          "f5_total_value": "under",
+          "f5_rl_value": "home",
+          "confidence": "medium"
+        },
+        "predicted_score": {
+          "home": 4.08,
+          "away": 2.92
+        },
+        "key_factors": [
+          "Logan Gilbert's recent form",
+          "Lineup strength for both teams",
+          "Park factor and weather conditions"
+        ]
+      },
+      "ensemble_meta": {
+        "total_calls": 39,
+        "phase_reached": 3,
+        "consensus": {
+          "strong": 10,
+          "soft": 3,
+          "none": 0
+        },
+        "killed": [
+          "run_line",
+          "first_3_ml",
+          "first_3_rl"
+        ],
+        "challenger_verdicts": {
+          "run_line": {
+            "verdict": "kill",
+            "reasoning": "The briefing identifies Huascar Brazob\u00e1n as the NYM starter, but his last 5 'starts' show 0.2-1.0 IP outings with 8-19 pitches \u2014 he is clearly a reliever/opener, not a true starter. This means NYM will use a bullpen game with fresh relievers, which significantly changes the run-scoring dynamic. The model projects SEA 4.08 runs assuming a traditional starter matchup, but against a bullpen game NYM can deploy matchup-specific arms for 9 innings. The -1.5 RL favoring SEA at 48% cover is questionable when the opposing 'starter' situation is actually a fresh bullpen that limits big innings. This is a concrete factual blind spot.",
+            "flaw_found": "Brazob\u00e1n is an opener/reliever (1 IP outings, ~15 pitches), not a starter \u2014 NYM is running a bullpen game which changes run distribution and reduces SEA's -1.5 cover probability"
+          },
+          "total": {
+            "verdict": "approve",
+            "reasoning": "Under 7.5 has 6/6 model consensus, T-Mobile is a pitcher's park (0.95 factor), Gilbert is sharp recently, and even with a NYM bullpen game, fresh relievers can suppress runs. Projection 7.12 is reasonable.",
+            "flaw_found": null
+          },
+          "first_5_ml": {
+            "verdict": "approve",
+            "reasoning": "6/6 consensus on SEA F5 ML. Gilbert has been excellent recently (0 ER in last two starts) facing an NYM lineup with poor production. Even accounting for NYM bullpen game, SEA's offensive edge through 5 innings holds.",
+            "flaw_found": null
+          },
+          "first_5_total": {
+            "verdict": "approve",
+            "reasoning": "6/6 consensus under, Gilbert dominant, pitcher's park, projection 4.11 vs typical 4.5 line implies under value. Solid.",
+            "flaw_found": null
+          },
+          "team_total_away": {
+            "verdict": "approve",
+            "reasoning": "6/6 consensus NYM under 3.5. Gilbert + pitcher's park + weak NYM offense (multiple sub-.230 hitters) supports under 3.5 strongly. Projection 2.92.",
+            "flaw_found": null
+          },
+          "first_5_rl": {
+            "verdict": "approve",
+            "reasoning": "6/6 consensus. Consistent with F5 ML projection and under total. No specific flaw.",
+            "flaw_found": null
+          },
+          "nrfi": {
+            "verdict": "approve",
+            "reasoning": "5/6 consensus. NYM uses an opener (Brazob\u00e1n) which actually supports NRFI if anything \u2014 relievers often start clean. SEA top of order vs reliever is the risk but model accounts for it at 58.6% NRFI.",
+            "flaw_found": null
+          },
+          "first_3_ml": {
+            "verdict": "kill",
+            "reasoning": "This bet is built on Gilbert dominating early vs a struggling NYM lineup, which is reasonable. HOWEVER, the model's f3_home_win_prob of 50.4% combined with the fact NYM is using an OPENER (Brazob\u00e1n pitches only 1 inning) means NYM's actual F3 pitching is opener + fresh reliever \u2014 potentially their best matchup-optimized arms. The model treated Brazob\u00e1n as a starter projecting poor stuff over 3 innings, but he'll only face 3-4 batters. This materially overstates SEA's F3 scoring edge.",
+            "flaw_found": "Models likely projected Brazob\u00e1n pitching all 3 innings as a starter; he's actually an opener facing only 1 inning, with fresh high-leverage relievers behind him for innings 2-3"
+          },
+          "first_3_total": {
+            "verdict": "approve",
+            "reasoning": "6/6 consensus under. Even with opener situation, low-scoring early innings are likely in pitcher's park. Projection 2.70 supports under.",
+            "flaw_found": null
+          },
+          "first_3_rl": {
+            "verdict": "kill",
+            "reasoning": "Same flaw as F3 ML \u2014 the opener situation for NYM means innings 2-3 are pitched by fresh, matchup-optimized relievers, not a tiring starter. F3 RL favoring SEA assumes Brazob\u00e1n gives up runs as a starter, but he only pitches inning 1.",
+            "flaw_found": "Brazob\u00e1n is an opener, not a starter; F3 RL projection overestimates SEA scoring against what is effectively a fresh bullpen sequence"
+          },
+          "moneyline": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "team_total_home": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          },
+          "first_1_rl": {
+            "verdict": "approve",
+            "reasoning": "",
+            "flaw_found": null
+          }
+        },
+        "model_contributions": {
+          "gemini": {
+            "runs": 3,
+            "weight_sum": 13.0
+          },
+          "maverick": {
+            "runs": 7,
+            "weight_sum": 13.8
+          },
+          "claude": {
+            "runs": 7,
+            "weight_sum": 13.4
+          },
+          "gpt4o": {
+            "runs": 7,
+            "weight_sum": 13.6
+          },
+          "kimi": {
+            "runs": 7,
+            "weight_sum": 13.4
+          },
+          "deepseek": {
+            "runs": 7,
+            "weight_sum": 13.4
+          }
+        },
+        "cost_usd": 0.7109
+      },
+      "ensemble_runs": 1
+    }
+  }
+}

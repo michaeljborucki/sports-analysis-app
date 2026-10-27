@@ -1,0 +1,54 @@
+
+============================================================
+  MAINLINE BET CARD — 2026-04-20
+  22 picks across 8 games
+============================================================
+
+  STL@MIA
+  ----------------------------------------
+    total              | under 8.5            |  +106 | Mkt: 48.3% | Model: 64.2% | Edge: 15.0% | Kelly:  7.17% | BE:  -170
+    team_total_away    | away under 3.5       |  +110 | Mkt: 46.0% | Model: 58.0% | Edge: 12.0% | Kelly:  4.94% | BE:  -130
+    nrfi               | NRFI                 |  -102 | Mkt: 49.5% | Model: 60.6% | Edge: 11.1% | Kelly:  5.12% | BE:  -145
+    run_line           | home -1.5            |  +162 | Mkt: 37.8% | Model: 45.1% | Edge:  7.3% | Kelly:  2.81% | BE:  +115
+
+  CIN@TB
+  ----------------------------------------
+    total              | under 8.0            |  -104 | Mkt: 49.9% | Model: 68.1% | Edge: 15.0% | Kelly:  7.09% | BE:  -205
+    team_total_away    | away under 3.5       |  +107 | Mkt: 46.4% | Model: 59.7% | Edge: 13.2% | Kelly:  5.49% | BE:  -140
+    nrfi               | NRFI                 |  -114 | Mkt: 52.3% | Model: 62.1% | Edge:  9.8% | Kelly:  4.72% | BE:  -155
+
+  ATL@WSH
+  ----------------------------------------
+    total              | under 8.0            |  -102 | Mkt: 49.3% | Model: 59.4% | Edge: 10.1% | Kelly:  4.50% | BE:  -140
+    team_total_home    | home under 3.5       |  -120 | Mkt: 52.7% | Model: 62.8% | Edge: 10.1% | Kelly:  4.53% | BE:  -160
+    nrfi               | NRFI                 |  -107 | Mkt: 50.8% | Model: 58.5% | Edge:  7.7% | Kelly:  3.53% | BE:  -135
+
+  HOU@CLE
+  ----------------------------------------
+    team_total_home    | home under 3.5       |  +100 | Mkt: 48.8% | Model: 59.7% | Edge: 10.9% | Kelly:  4.83% | BE:  -140
+    total              | under 7.5            |  -115 | Mkt: 53.2% | Model: 59.8% | Edge:  6.7% | Kelly:  3.41% | BE:  -140
+
+  BAL@KC
+  ----------------------------------------
+    team_total_away    | away under 4.5       |  -114 | Mkt: 51.5% | Model: 66.2% | Edge: 14.7% | Kelly:  6.94% | BE:  -190
+    total              | under 9.0            |  -113 | Mkt: 51.8% | Model: 64.2% | Edge: 12.4% | Kelly:  5.93% | BE:  -170
+    nrfi               | NRFI                 |  -108 | Mkt: 51.6% | Model: 60.5% | Edge:  8.9% | Kelly:  4.46% | BE:  -145
+
+  PHI@CHC
+  ----------------------------------------
+    team_total_home    | home under 3.5       |  +104 | Mkt: 47.6% | Model: 60.0% | Edge: 12.3% | Kelly:  5.37% | BE:  -145
+
+  TOR@LAA
+  ----------------------------------------
+    team_total_home    | home under 3.5       |  -110 | Mkt: 50.5% | Model: 65.8% | Edge: 15.0% | Kelly:  6.87% | BE:  -185
+    total              | under 7.5            |  +100 | Mkt: 49.0% | Model: 60.8% | Edge: 11.7% | Kelly:  5.39% | BE:  -150
+
+  OAK@SEA
+  ----------------------------------------
+    total              | under 8.0            |  +103 | Mkt: 48.8% | Model: 67.0% | Edge: 15.0% | Kelly:  7.15% | BE:  -195
+    team_total_away    | away under 3.5       |  +100 | Mkt: 48.3% | Model: 66.1% | Edge: 15.0% | Kelly:  6.67% | BE:  -190
+    nrfi               | NRFI                 |  -103 | Mkt: 49.6% | Model: 60.9% | Edge: 11.3% | Kelly:  5.18% | BE:  -150
+    run_line           | home -1.5            |  +154 | Mkt: 39.0% | Model: 47.2% | Edge:  8.2% | Kelly:  3.21% | BE:  +105
+
+  Status: Pending
+============================================================

@@ -1,0 +1,41 @@
+
+============================================================
+  MAINLINE BET CARD — 2026-06-06
+  12 picks across 7 games
+============================================================
+
+  KC@MIN — 2:10 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  +102 | Mkt: 48.0% | Model: 57.1% | Edge:  9.2% | Kelly:  3.78% | BE:  -125
+    run_line           | home -1.5            |  +150 | Mkt: 38.8% | Model: 47.6% | Edge:  8.8% | Kelly:  3.17% | BE:  +105
+    first_5_rl         | away +0.5            |  +100 | Mkt: 48.3% | Model: 55.0% | Edge:  6.6% | Kelly:  2.49% | BE:  -115
+
+  CIN@STL — 2:15 PM ET
+  ----------------------------------------
+    total              | under 9.0            |  -103 | Mkt: 49.5% | Model: 54.8% | Edge:  5.2% | Kelly:  2.04% | BE:  -115
+
+  CWS@PHI — 4:05 PM ET
+  ----------------------------------------
+    team_total_away    | away under 4.5       |  +101 | Mkt: 48.3% | Model: 57.1% | Edge:  8.8% | Kelly:  3.67% | BE:  -125
+    run_line           | home -1.5            |  +152 | Mkt: 39.1% | Model: 47.1% | Edge:  8.0% | Kelly:  3.07% | BE:  +105
+    moneyline          | home                 |  -126 | Mkt: 55.7% | Model: 59.6% | Edge:  3.9% | Kelly:  2.17% | BE:  -140
+
+  WSH@ARI — 4:10 PM ET
+  ----------------------------------------
+    first_5_rl         | away +0.5            |  -118 | Mkt: 52.1% | Model: 59.5% | Edge:  7.4% | Kelly:  2.91% | BE:  -140
+
+  PIT@ATL — 4:10 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  +115 | Mkt: 45.4% | Model: 56.4% | Edge: 11.0% | Kelly:  4.63% | BE:  -120
+    first_5_rl         | home +0.5            |  -145 | Mkt: 57.5% | Model: 65.6% | Edge:  8.1% | Kelly:  3.96% | BE:  -185
+
+  TB@MIA — 4:10 PM ET
+  ----------------------------------------
+    moneyline          | away                 |  -122 | Mkt: 55.1% | Model: 58.6% | Edge:  3.5% | Kelly:  2.02% | BE:  -135
+
+  CLE@TEX — 7:35 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  +101 | Mkt: 48.3% | Model: 56.4% | Edge:  8.1% | Kelly:  3.31% | BE:  -120
+
+  Status: Pending
+============================================================

@@ -1,0 +1,24 @@
+{
+  "date": "2026-05-16",
+  "generated_at": "2026-05-16T11:14:14",
+  "total_picks": 1,
+  "games": [
+    {
+      "game": "TOR@DET",
+      "game_time_et": "1:10 PM ET",
+      "picks": [
+        {
+          "bet_type": "team_total_away",
+          "side": "away under 3.5",
+          "odds": 114,
+          "market_prob": 0.4463,
+          "model_prob": 0.5641,
+          "edge": 0.1178,
+          "kelly_pct": 0.0454,
+          "be_odds": -120,
+          "result": null
+        }
+      ]
+    }
+  ]
+}

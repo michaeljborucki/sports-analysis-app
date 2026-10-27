@@ -1,0 +1,40 @@
+
+============================================================
+  MAINLINE BET CARD — 2026-05-01
+  11 picks across 7 games
+============================================================
+
+  ARI@CHC — 2:20 PM ET
+  ----------------------------------------
+    run_line           | home -1.5            |  +165 | Mkt: 37.7% | Model: 42.9% | Edge:  5.1% | Kelly:  2.07% | BE:  +125
+    team_total_home    | home under 3.5       |  +100 | Mkt: 49.1% | Model: 54.2% | Edge:  5.0% | Kelly:  2.09% | BE:  -110
+
+  CIN@PIT — 6:45 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  +105 | Mkt: 46.9% | Model: 57.1% | Edge: 10.3% | Kelly:  4.08% | BE:  -125
+    run_line           | home -1.5            |  +163 | Mkt: 37.7% | Model: 44.4% | Edge:  6.7% | Kelly:  2.57% | BE:  +120
+
+  SF@TB — 7:10 PM ET
+  ----------------------------------------
+    run_line           | home -1.5            |  +160 | Mkt: 38.4% | Model: 45.7% | Edge:  7.3% | Kelly:  2.95% | BE:  +110
+    team_total_away    | away under 3.5       |  -115 | Mkt: 52.0% | Model: 57.1% | Edge:  5.1% | Kelly:  1.96% | BE:  -125
+
+  TEX@DET — 6:40 PM ET
+  ----------------------------------------
+    team_total_home    | home under 3.5       |  +116 | Mkt: 44.9% | Model: 54.2% | Edge:  9.2% | Kelly:  3.67% | BE:  -110
+
+  PHI@MIA — 7:10 PM ET
+  ----------------------------------------
+    moneyline          | away                 |  -104 | Mkt: 51.4% | Model: 56.0% | Edge:  4.6% | Kelly:  2.56% | BE:  -120
+
+  CWS@SD — 9:40 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  -102 | Mkt: 48.5% | Model: 57.1% | Edge:  8.7% | Kelly:  3.36% | BE:  -125
+    run_line           | home -1.5            |  +154 | Mkt: 38.5% | Model: 46.2% | Edge:  7.8% | Kelly:  2.83% | BE:  +110
+
+  NYM@LAA — 9:38 PM ET
+  ----------------------------------------
+    team_total_away    | away under 4.5       |  -103 | Mkt: 49.2% | Model: 56.6% | Edge:  7.4% | Kelly:  2.96% | BE:  -125
+
+  Status: Pending
+============================================================

@@ -1,0 +1,1501 @@
+{
+  "T. Griekspoor vs L. Musetti": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Tallon Griekspoor",
+        "reasoning": "Griekspoor's serve statistics indicate a strong first serve percentage and ace potential, which could be effective against Musetti's slightly weaker second serve returns on hard courts."
+      },
+      {
+        "role": "return",
+        "pick": "Lorenzo Musetti",
+        "reasoning": "Musetti's return game is superior, with a higher percentage of return points won and the ability to convert break points effectively, which should help him control the rallies."
+      },
+      {
+        "role": "surface",
+        "pick": "Lorenzo Musetti",
+        "reasoning": "While Musetti's Elo on hard courts is slightly lower, his overall form and ability to adapt to different surfaces give him the edge in these conditions."
+      },
+      {
+        "role": "form",
+        "pick": "Lorenzo Musetti",
+        "reasoning": "Musetti has been in better form recently with a stronger season record, showing consistency and competitive sharpness."
+      },
+      {
+        "role": "market",
+        "pick": "Tallon Griekspoor",
+        "reasoning": "The betting lines heavily favor Musetti, but Griekspoor's strong serving and potential to disrupt Musetti's rhythm might be undervalued, offering potential value on the moneyline."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Tallon Griekspoor",
+        "reasoning": "Griekspoor's powerful serve could cause trouble for Musetti, and if he maintains high first serve percentages, he could push the match to a deciding set."
+      }
+    ],
+    "predictions": {
+      "moneyline": {
+        "player_a_win_prob": 0.3,
+        "player_b_win_prob": 0.7,
+        "value_side": "player_a",
+        "edge": 0.08,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "player_a_win_prob": {
+            "gpt4o": 0.28,
+            "gemini": 0.3,
+            "maverick": 0.3,
+            "claude": 0.38,
+            "kimi": 0.34,
+            "deepseek": 0.273
+          },
+          "player_b_win_prob": {
+            "gpt4o": 0.72,
+            "gemini": 0.7,
+            "maverick": 0.7,
+            "claude": 0.62,
+            "kimi": 0.66,
+            "deepseek": 0.727
+          }
+        }
+      },
+      "game_handicap": {
+        "favorite_cover_prob": 0.575,
+        "value_side": "none",
+        "edge": 0.0,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gpt4o": 0.65,
+            "gemini": 0.55,
+            "maverick": 0.6,
+            "claude": 0.45,
+            "kimi": 0.46,
+            "deepseek": 0.65
+          }
+        }
+      },
+      "total_games": {
+        "projected_games": 22.0,
+        "over_prob": 0.55,
+        "under_prob": 0.45,
+        "value_side": "over",
+        "edge": 0.05,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "over_prob": {
+            "gpt4o": 0.55,
+            "gemini": 0.55,
+            "maverick": 0.55,
+            "claude": 0.55,
+            "kimi": 0.56,
+            "deepseek": 0.4
+          },
+          "under_prob": {
+            "gpt4o": 0.45,
+            "gemini": 0.45,
+            "maverick": 0.45,
+            "claude": 0.45,
+            "kimi": 0.44,
+            "deepseek": 0.6
+          },
+          "projected_games": {
+            "gpt4o": 22.5,
+            "gemini": 22.5,
+            "maverick": 21.5,
+            "claude": 21.5,
+            "kimi": 23.2,
+            "deepseek": 19.5
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Lorenzo Musetti",
+        "score": "6-4 6-3"
+      },
+      "key_factors": [
+        "Musetti's superior return game",
+        "Griekspoor's strong serve potential",
+        "Recent form and surface adaptability of Musetti"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 27,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 3,
+        "soft": 0,
+        "none": 0
+      },
+      "killed": [],
+      "challenger_verdicts": {
+        "moneyline": "approve",
+        "game_handicap": "approve",
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "gpt4o": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "gemini": {
+          "runs": 7,
+          "weight_sum": 3.0
+        },
+        "maverick": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "claude": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "kimi": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 7,
+          "weight_sum": 1.5
+        }
+      },
+      "cost_usd": 0.2626
+    },
+    "ensemble_runs": 1
+  },
+  "J. Sinner vs E. Moller": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Jannik Sinner",
+        "reasoning": "Massive serve differential. Sinner's 82.2% first serve points won vs Moller's 66.2% is enormous. Sinner averages 9.6 aces vs 2.7 for Moller, while Moller doubles his double faults (5.4 vs 1.3). Sinner will dominate service games completely."
+      },
+      {
+        "role": "return",
+        "pick": "Jannik Sinner",
+        "reasoning": "Sinner returns at 41.7% vs Moller's 37.8%, but the gap widens when facing different serve qualities. Sinner will feast on Moller's weak serve (66.2% first serve won), while Moller will struggle against Sinner's elite serving. Break point conversion favors Moller slightly (51.7% vs 41%) but he'll get far fewer opportunities."
+      },
+      {
+        "role": "surface",
+        "pick": "Jannik Sinner",
+        "reasoning": "Hard courts favor Sinner's aggressive baseline game and powerful serve. His surface Elo of 2178 vs Moller's 1528 shows a 650-point gap - historically massive. Sinner's recent form includes wins over top players on similar surfaces, while Moller's competition level has been significantly lower."
+      },
+      {
+        "role": "form",
+        "pick": "Jannik Sinner",
+        "reasoning": "Sinner's 24-2 season record with wins over Zverev, Alcaraz, and other top players shows elite form. Recent 2-day rest is perfect. Moller's 7-5 record against much weaker opposition and 4-day layoff suggests he may be rusty against this level of competition."
+      },
+      {
+        "role": "market",
+        "pick": "Elmer Moller",
+        "reasoning": "At -20000, Sinner is essentially free money, but the 1.3% implied probability for Moller seems too low. While Sinner should win easily, tennis upsets happen around 2-3% of the time even in massive mismatches. The 1840 price on Moller offers slight mathematical value despite the likely outcome."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Elmer Moller",
+        "reasoning": "Young players sometimes have nothing-to-lose mentality in big moments. Moller's recent wins show he can handle pressure situations. If Sinner has any physical issues or mental lapses, the 690-point Elo gap could narrow. However, this is more theoretical than practical given the skill disparity."
+      }
+    ],
+    "predictions": {
+      "game_handicap": {
+        "favorite_cover_prob": 0.875,
+        "value_side": "none",
+        "edge": 0.0,
+        "confidence": "high",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gpt4o": 0.9,
+            "gemini": 0.9,
+            "claude": 0.85,
+            "maverick": 0.8,
+            "deepseek": 0.95,
+            "kimi": 0.75
+          }
+        }
+      },
+      "total_games": {
+        "projected_games": 17.5,
+        "over_prob": 0.3,
+        "under_prob": 0.7,
+        "value_side": "none",
+        "edge": 0.0,
+        "confidence": "high",
+        "_per_model_medians": {
+          "over_prob": {
+            "gpt4o": 0.45,
+            "gemini": 0.05,
+            "claude": 0.25,
+            "maverick": 0.55,
+            "deepseek": 0.1,
+            "kimi": 0.35
+          },
+          "under_prob": {
+            "gpt4o": 0.55,
+            "gemini": 0.95,
+            "claude": 0.75,
+            "maverick": 0.45,
+            "deepseek": 0.9,
+            "kimi": 0.65
+          },
+          "projected_games": {
+            "gpt4o": 18.5,
+            "gemini": 16.5,
+            "claude": 15.5,
+            "maverick": 19.5,
+            "deepseek": 15.0,
+            "kimi": 18.5
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Jannik Sinner",
+        "score": "6-2 6-1"
+      },
+      "key_factors": [
+        "massive_skill_gap",
+        "serve_differential",
+        "competition_level_disparity"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 27,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 2,
+        "soft": 0,
+        "none": 1
+      },
+      "killed": [],
+      "challenger_verdicts": {
+        "moneyline": "approve",
+        "game_handicap": "approve",
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "gpt4o": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "gemini": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "claude": {
+          "runs": 7,
+          "weight_sum": 3.3
+        },
+        "maverick": {
+          "runs": 7,
+          "weight_sum": 3.3
+        },
+        "deepseek": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "kimi": {
+          "runs": 3,
+          "weight_sum": 3.0
+        }
+      },
+      "cost_usd": 0.2672
+    },
+    "ensemble_runs": 1
+  },
+  "A. Davidovich Fokina vs C. Ruud": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 6,
+      "cost_usd": 0.0567
+    }
+  },
+  "J. Fonseca vs R. Jodar": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 6,
+      "cost_usd": 0.0606
+    }
+  },
+  "A. Potapova vs J. Ostapenko": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Jelena Ostapenko",
+        "reasoning": "Both players have similar first serve percentages, but Ostapenko's first serve win percentage is slightly higher (65.7% vs 64.9%). Potapova's second serve is slightly more vulnerable (46.5% won vs Ostapenko's 41.8%), but Ostapenko's higher DF rate (4.8 vs 4.5) evens it out somewhat. However, Ostapenko's ability to hit big aces often comes at crucial moments, giving her a slight edge in holding serve, especially on a hard court where her power is amplified."
+      },
+      {
+        "role": "return",
+        "pick": "Jelena Ostapenko",
+        "reasoning": "Ostapenko's return game is aggressive and she wins 45.2% of return points, slightly higher than Potapova's 44.2%. More significantly, Ostapenko converts break points at a much higher rate (55.8% vs 46.1%). This indicates she is more clinical when given opportunities, which is crucial against a player like Potapova who can be erratic on her second serve."
+      },
+      {
+        "role": "surface",
+        "pick": "Jelena Ostapenko",
+        "reasoning": "Hard courts perfectly suit Ostapenko's aggressive, flat-hitting game style. Her powerful groundstrokes and serve are more effective on this faster surface, allowing her to dictate points and finish them quickly. Potapova also plays well on hard courts, but Ostapenko's peak aggressive game is arguably more potent on this surface."
+      },
+      {
+        "role": "form",
+        "pick": "Jelena Ostapenko",
+        "reasoning": "Both players have had mixed recent results. Potapova has a 13-10 season record, Ostapenko 11-9. However, looking at the quality of wins, Ostapenko has shown she can beat higher-ranked opponents recently (Pegula, Yastremska) even if she has also had surprising losses. Potapova's recent wins are against lower-ranked players. Ostapenko's ability to consistently beat top players suggests a higher competitive sharpness, despite some inconsistencies."
+      },
+      {
+        "role": "market",
+        "pick": "Jelena Ostapenko",
+        "reasoning": "The market has Ostapenko as a slight favorite at -135 (54.8% implied win probability), which seems reasonable. Given her head-to-head advantage (2-0), her aggressive game translating well to hard courts, and her superior break point conversion, I believe her true win probability is slightly higher than the implied 54.8%. There might be marginal value on Ostapenko at this price."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Anastasia Potapova",
+        "reasoning": "While Ostapenko's power game is formidable, it comes with inherent volatility. Her high double fault rate and tendency for unforced errors can derail her quickly, especially if she's not feeling her shots. Potapova, despite being the underdog, has shown flashes of brilliance and can absorb pace well. If Potapova can weather the early storm, stay consistent, and force Ostapenko into long rallies, Ostapenko's error count could skyrocket. The 2-0 H2H for Ostapenko is a strong factor, but upsets happen, and Potapova's fighting spirit could exploit Ostapenko's occasional mental lapses."
+      }
+    ],
+    "predictions": {
+      "game_handicap": {
+        "favorite_cover_prob": 0.53,
+        "value_side": "none",
+        "edge": 0.0,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gpt4o": 0.51,
+            "gemini": 0.55,
+            "claude": 0.45,
+            "maverick": 0.55,
+            "kimi": 0.47,
+            "deepseek": 0.6
+          }
+        }
+      },
+      "total_games": {
+        "projected_games": 21.5,
+        "over_prob": 0.535,
+        "under_prob": 0.465,
+        "value_side": "none",
+        "edge": 0.0,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "over_prob": {
+            "gpt4o": 0.55,
+            "gemini": 0.52,
+            "claude": 0.55,
+            "maverick": 0.52,
+            "kimi": 0.58,
+            "deepseek": 0.5
+          },
+          "under_prob": {
+            "gpt4o": 0.45,
+            "gemini": 0.48,
+            "claude": 0.45,
+            "maverick": 0.48,
+            "kimi": 0.42,
+            "deepseek": 0.5
+          },
+          "projected_games": {
+            "gpt4o": 21.5,
+            "gemini": 22.0,
+            "claude": 21.5,
+            "maverick": 20.5,
+            "kimi": 22.5,
+            "deepseek": 19.5
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Jelena Ostapenko",
+        "score": "6-4 6-4"
+      },
+      "key_factors": [
+        "Ostapenko's aggressive game on hard court",
+        "Ostapenko's superior break point conversion",
+        "Potapova's second serve vulnerability",
+        "Ostapenko's H2H dominance (2-0)"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 27,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 1,
+        "soft": 1,
+        "none": 1
+      },
+      "killed": [],
+      "challenger_verdicts": {
+        "moneyline": "approve",
+        "game_handicap": "approve",
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "gpt4o": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "gemini": {
+          "runs": 7,
+          "weight_sum": 3.6
+        },
+        "claude": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "maverick": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "kimi": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 7,
+          "weight_sum": 2.9
+        }
+      },
+      "cost_usd": 0.2528
+    },
+    "ensemble_runs": 1
+  },
+  "Q. Zheng vs E. Rybakina": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 6,
+      "cost_usd": 0.0673
+    }
+  },
+  "K. Siniakova vs C. McNally": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Caty McNally",
+        "reasoning": "McNally boasts a significantly higher first serve percentage (72.1% vs 66.5%) which is crucial for dictating points, especially on hard courts. While Siniakova has a slightly better first serve won percentage (66.0% vs 62.1%), McNally's consistency in getting that first serve in will put more pressure on Siniakova's return. Both players have similar second serve win percentages, so the first serve advantage leans towards McNally. Siniakova's higher double fault rate (3.7 vs 2.9) also presents more free points for McNally."
+      },
+      {
+        "role": "return",
+        "pick": "Katerina Siniakova",
+        "reasoning": "Siniakova wins a higher percentage of return points (47.9% vs 45.5%) and has a slightly better break point conversion rate (51.4% vs 48.2%). This suggests she is more effective at neutralizing serves and capitalizing on opportunities. McNally's high first serve percentage could be a double-edged sword if Siniakova is returning well, as it gives her more chances to get into the rally. Siniakova's aggressive baseline play will allow her to control rallies against McNally."
+      },
+      {
+        "role": "surface",
+        "pick": "Katerina Siniakova",
+        "reasoning": "While neither player has a specific surface record for this season, Siniakova's overall game, characterized by aggressive groundstrokes and good court coverage, tends to translate well to hard courts. Her higher Elo rating on hard courts (though not explicitly stated as 'hard' but implied by overall Elo being higher) suggests a better historical performance on this surface type. McNally's game, often involving slice and net play, might be slightly less dominant on a faster hard court surface compared to Siniakova's power game."
+      },
+      {
+        "role": "form",
+        "pick": "Katerina Siniakova",
+        "reasoning": "Siniakova's recent form is superior, with 9 wins in her last 10 matches, including impressive victories over higher-ranked opponents like Paula Badosa and Sofia Kenin. This indicates she is currently playing at a high level and is competitively sharp. McNally's 6 wins in her last 10 matches, while decent, includes losses to players Siniakova has beaten or would be expected to beat. Both players had 2 days since their last match, so fatigue is not a major factor, but Siniakova's momentum is undeniable."
+      },
+      {
+        "role": "market",
+        "pick": "Katerina Siniakova",
+        "reasoning": "The market has McNally as the favorite at -145 (56.1% implied probability) and Siniakova as the underdog at +115 (43.9% implied probability). Given Siniakova's significantly higher Elo rating (1729 vs 1504), superior recent form (9-1 vs 6-4 in last 10), and better return game, the market appears to be underestimating her chances. Her Elo suggests a win probability closer to 65-70%. Therefore, Siniakova at +115 offers significant value."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Caty McNally",
+        "reasoning": "While Siniakova's recent form looks strong, a closer look reveals many of those wins were from earlier in the season or against opponents not currently in peak form. McNally's game, with its variety including slice and net approaches, can be disruptive, especially if Siniakova is expecting a more straightforward baseline battle. McNally's higher first serve percentage, if she can maintain it, could frustrate Siniakova's return game and force errors. The head-to-head is 1-0 for Siniakova, but that doesn't tell the full story; McNally could be highly motivated to even the score, especially with the market favoring her, adding a psychological edge that might be overlooked."
+      }
+    ],
+    "predictions": {
+      "game_handicap": {
+        "favorite_cover_prob": 0.465,
+        "value_side": "favorite",
+        "edge": 0.05,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gemini": 0.6,
+            "gpt4o": 0.48,
+            "claude": 0.45,
+            "maverick": 0.55,
+            "kimi": 0.42,
+            "deepseek": 0.4
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Katerina Siniakova",
+        "score": "6-4 6-3"
+      },
+      "key_factors": [
+        "Siniakova's superior recent form and higher Elo rating",
+        "Siniakova's effective return game and break point conversion",
+        "McNally's high first serve percentage could be a weapon or a risk",
+        "Siniakova's aggressive baseline game suits hard courts",
+        "Market underpricing Siniakova based on current form and Elo"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 7,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 2,
+        "soft": 0,
+        "none": 1
+      },
+      "killed": [
+        "moneyline"
+      ],
+      "challenger_verdicts": {
+        "moneyline": "kill",
+        "game_handicap": "approve"
+      },
+      "model_contributions": {
+        "gemini": {
+          "runs": 1,
+          "weight_sum": 3.0
+        },
+        "gpt4o": {
+          "runs": 1,
+          "weight_sum": 3.0
+        },
+        "claude": {
+          "runs": 1,
+          "weight_sum": 3.0
+        },
+        "maverick": {
+          "runs": 1,
+          "weight_sum": 3.0
+        },
+        "kimi": {
+          "runs": 1,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 1,
+          "weight_sum": 3.0
+        }
+      },
+      "cost_usd": 0.0697
+    },
+    "ensemble_runs": 1
+  },
+  "L. Noskova vs L. Samsonova": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Linda Noskova",
+        "reasoning": "Noskova has a slightly better first serve percentage and a higher ace rate, which should help her in holding serve against Samsonova who is less effective on second serve."
+      },
+      {
+        "role": "return",
+        "pick": "L. Samsonova",
+        "reasoning": "Samsonova has a higher return points won percentage and break point conversion rate, indicating she may be able to pressure Noskova's serve effectively."
+      },
+      {
+        "role": "surface",
+        "pick": "Linda Noskova",
+        "reasoning": "Noskova's recent form and surface Elo suggest she is better suited to hard courts, while Samsonova's current form is less convincing."
+      },
+      {
+        "role": "form",
+        "pick": "Linda Noskova",
+        "reasoning": "Noskova's recent victories over higher-ranked players like Sabalenka and Bencic indicate strong form, while Samsonova has struggled to maintain consistency."
+      },
+      {
+        "role": "market",
+        "pick": "Linda Noskova",
+        "reasoning": "The betting lines are pricing Noskova as the favorite correctly, given her superior form and surface adaptation, but there might be slight value on Samsonova due to her return capabilities."
+      },
+      {
+        "role": "contrarian",
+        "pick": "L. Samsonova",
+        "reasoning": "Despite Noskova's recent form, Samsonova's ability to return well could create opportunities for an upset, especially if Noskova's serve falters."
+      }
+    ],
+    "predictions": {
+      "game_handicap": {
+        "favorite_cover_prob": 0.61,
+        "value_side": "none",
+        "edge": 0.01,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gpt4o": 0.6,
+            "gemini": 0.6,
+            "maverick": 0.55,
+            "claude": 0.62,
+            "deepseek": 0.65,
+            "kimi": 0.63
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Linda Noskova",
+        "score": "6-4 6-3"
+      },
+      "key_factors": [
+        "Noskova's superior serve and recent form",
+        "Samsonova's return effectiveness",
+        "Overall adaptation to hard court conditions"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 27,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 0,
+        "soft": 2,
+        "none": 1
+      },
+      "killed": [
+        "moneyline"
+      ],
+      "challenger_verdicts": {
+        "moneyline": "kill",
+        "game_handicap": "approve"
+      },
+      "model_contributions": {
+        "gpt4o": {
+          "runs": 7,
+          "weight_sum": 3.9
+        },
+        "gemini": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "maverick": {
+          "runs": 7,
+          "weight_sum": 3.3
+        },
+        "claude": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "kimi": {
+          "runs": 3,
+          "weight_sum": 3.0
+        }
+      },
+      "cost_usd": 0.2335
+    },
+    "ensemble_runs": 1
+  },
+  "S. Cirstea vs C. Gauff": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Coco Gauff",
+        "reasoning": "While Cirstea has a higher first serve percentage and wins more points on her first serve, Gauff's overall first serve percentage is higher, suggesting more consistent pressure. Cirstea's second serve points won percentage is significantly better, which is interesting, but Gauff's ability to get more first serves in could mitigate this. Gauff's high double fault rate is a concern but Cirstea's ace count is also quite high, suggesting a more aggressive, but potentially riskier, serve. On hard courts, Gauff's serve generally holds up well against top competition, despite the DFs."
+      },
+      {
+        "role": "return",
+        "pick": "Coco Gauff",
+        "reasoning": "Gauff has a slight edge in return points won (48.8% vs 45.4%) and is known for her exceptional athleticism and ability to neutralize powerful serves. Cirstea's aggressive style can lead to unforced errors when under pressure. Gauff's ability to extend rallies and force errors from Cirstea will be crucial. While Cirstea has a higher break point conversion, Gauff's consistent pressure on return games will likely generate more opportunities."
+      },
+      {
+        "role": "surface",
+        "pick": "Coco Gauff",
+        "reasoning": "Both players have shown good form on hard courts, but Gauff's game is arguably better suited for the pace and bounce of outdoor hard courts. Her athleticism, defensive skills, and ability to generate pace on her shots translate very well. Cirstea's powerful groundstrokes are effective, but her movement can be exploited on a fast hard court by a player like Gauff. Gauff's higher Elo rating on this surface also indicates her consistent performance."
+      },
+      {
+        "role": "form",
+        "pick": "Coco Gauff",
+        "reasoning": "Both players are coming off good seasons, but Gauff's season record of 18-6 is slightly better than Cirstea's 21-6, considering the level of competition Gauff typically faces. Gauff recently beat Cirstea, which is a strong indicator of current form and head-to-head advantage. Neither player has any reported injury concerns and both have had sufficient rest. Gauff appears to be in competitive sharpness and has been consistently performing at a high level."
+      },
+      {
+        "role": "market",
+        "pick": "Coco Gauff",
+        "reasoning": "The market is heavily favoring Gauff at -416, which implies a 78.7% win probability. Given Gauff's superior ranking, Elo, recent head-to-head win against Cirstea, and overall consistency, this pricing seems largely correct. While Cirstea has shown flashes of brilliance, her consistency against top players like Gauff is questionable. There might be some slight value in Gauff on a game handicap if it were available, but the moneyline itself offers little value for Gauff given the steep odds."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Sorana Cirstea",
+        "reasoning": "The market is heavily discounting Cirstea, implying she has only a 21.3% chance of winning. However, Cirstea has demonstrated the ability to upset top players on her day, and her aggressive, first-strike tennis can be a nightmare for anyone if she's hitting her spots. She has a higher break point conversion rate than Gauff in the stats provided, and her second serve win percentage is also quite good. While Gauff won their last encounter, Cirstea took a set, showing she can compete. If Cirstea can limit her unforced errors and serve well, she could push Gauff, making the 314 odds potentially undervalued for a player with her power and experience, especially if Gauff has an off-day with her double faults."
+      }
+    ],
+    "predictions": {
+      "moneyline": {
+        "player_a_win_prob": 0.29,
+        "player_b_win_prob": 0.71,
+        "value_side": "none",
+        "edge": 0.0,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "player_a_win_prob": {
+            "gpt4o": 0.28,
+            "gemini": 0.28,
+            "claude": 0.35,
+            "maverick": 0.25,
+            "deepseek": 0.3,
+            "kimi": 0.38
+          },
+          "player_b_win_prob": {
+            "gpt4o": 0.72,
+            "gemini": 0.72,
+            "claude": 0.65,
+            "maverick": 0.75,
+            "deepseek": 0.7,
+            "kimi": 0.62
+          }
+        }
+      },
+      "total_games": {
+        "projected_games": 21.5,
+        "over_prob": 0.535,
+        "under_prob": 0.465,
+        "value_side": "over",
+        "edge": 0.05,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "over_prob": {
+            "gpt4o": 0.55,
+            "gemini": 0.45,
+            "claude": 0.52,
+            "maverick": 0.55,
+            "deepseek": 0.5,
+            "kimi": 0.58
+          },
+          "under_prob": {
+            "gpt4o": 0.45,
+            "gemini": 0.55,
+            "claude": 0.48,
+            "maverick": 0.45,
+            "deepseek": 0.5,
+            "kimi": 0.42
+          },
+          "projected_games": {
+            "gpt4o": 21.5,
+            "gemini": 21.5,
+            "claude": 21.5,
+            "maverick": 20.5,
+            "deepseek": 19.5,
+            "kimi": 22.5
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Coco Gauff",
+        "score": "6-4 6-3"
+      },
+      "key_factors": [
+        "Coco Gauff's athleticism and defensive prowess",
+        "Sorana Cirstea's aggressive, high-risk, high-reward game style",
+        "Gauff's recent head-to-head victory over Cirstea",
+        "Gauff's consistency and higher Elo rating on hard courts",
+        "Cirstea's potential to hit through the court if she finds her rhythm"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 27,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 2,
+        "soft": 0,
+        "none": 1
+      },
+      "killed": [],
+      "challenger_verdicts": {
+        "moneyline": "approve",
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "gpt4o": {
+          "runs": 7,
+          "weight_sum": 2.3
+        },
+        "gemini": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "claude": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "maverick": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 7,
+          "weight_sum": 2.2
+        },
+        "kimi": {
+          "runs": 3,
+          "weight_sum": 3.0
+        }
+      },
+      "cost_usd": 0.2946
+    },
+    "ensemble_runs": 1
+  },
+  "J. Pegula vs M. Kostyuk": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Jessica Pegula",
+        "reasoning": "Pegula has a higher first serve percentage and is more consistent on second serves, aiding her in holding service games more effectively than Kostyuk."
+      },
+      {
+        "role": "return",
+        "pick": "Marta Kostyuk",
+        "reasoning": "Kostyuk has superior return statistics, winning nearly 49% of return points, which could give her an edge in breaking Pegula's serve."
+      },
+      {
+        "role": "surface",
+        "pick": "Jessica Pegula",
+        "reasoning": "Pegula's game is well-suited for hard courts, and she has demonstrated strong recent form on this surface."
+      },
+      {
+        "role": "form",
+        "pick": "Jessica Pegula",
+        "reasoning": "Pegula is in excellent form with a 24-4 season record, showcasing her ability to win matches consistently."
+      },
+      {
+        "role": "market",
+        "pick": "Jessica Pegula",
+        "reasoning": "The market lines appear to favor Pegula correctly, as her superior ranking and form justify the odds."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Marta Kostyuk",
+        "reasoning": "Kostyuk's strong return game and recent victories against top players like Rybakina suggest she could upset Pegula if she capitalizes on break points."
+      }
+    ],
+    "predictions": {
+      "game_handicap": {
+        "favorite_cover_prob": 0.565,
+        "value_side": "favorite",
+        "edge": 0.01,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gpt4o": 0.55,
+            "gemini": 0.55,
+            "claude": 0.58,
+            "maverick": 0.55,
+            "kimi": 0.58,
+            "deepseek": 0.65
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Jessica Pegula",
+        "score": "6-4 6-3"
+      },
+      "key_factors": [
+        "Pegula's superior serve statistics",
+        "Kostyuk's strong return game",
+        "Pegula's current form and consistency"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 27,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 1,
+        "soft": 1,
+        "none": 1
+      },
+      "killed": [
+        "moneyline"
+      ],
+      "challenger_verdicts": {
+        "moneyline": "kill",
+        "game_handicap": "approve"
+      },
+      "model_contributions": {
+        "gpt4o": {
+          "runs": 7,
+          "weight_sum": 3.9
+        },
+        "gemini": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "claude": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "maverick": {
+          "runs": 7,
+          "weight_sum": 3.9
+        },
+        "kimi": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 3,
+          "weight_sum": 3.0
+        }
+      },
+      "cost_usd": 0.2336
+    },
+    "ensemble_runs": 1
+  },
+  "C. Norrie vs T. A. Tirante": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Cameron Norrie",
+        "reasoning": "Cameron Norrie has a higher first serve percentage (64.0% vs 59.3%) and while Agustin Tirante Thiago has a slightly higher first serve win percentage (75.0% vs 70.9%), Norrie's overall serve statistics and height advantage suggest he will hold serve more consistently."
+      },
+      {
+        "role": "return",
+        "pick": "Cameron Norrie",
+        "reasoning": "Both players have similar return statistics, but Norrie's slightly lower return points won (36.7% vs 37.5%) is offset by his better break point conversion (39.5% vs 42.7% is actually in Tirante's favor, but Norrie's overall rally control might give him an edge)."
+      },
+      {
+        "role": "surface",
+        "pick": "Cameron Norrie",
+        "reasoning": "Both players are on a hard court, which is a common surface. Norrie has a slightly higher surface Elo rating (1667 vs 1613), indicating a potential advantage on this surface."
+      },
+      {
+        "role": "form",
+        "pick": "Cameron Norrie",
+        "reasoning": "Both players have played their last match 2 days ago and have similar season records (13-9). Norrie has a slightly more consistent recent form against stronger opponents, giving him a slight edge in terms of competitive sharpness."
+      },
+      {
+        "role": "market",
+        "pick": "Agustin Tirante Thiago",
+        "reasoning": "The market has Cameron Norrie at -147 (implied probability 59.5%), which might be overvaluing him given their relatively similar statistics and lack of head-to-head history. Agustin Tirante Thiago at +120 (implied probability 45.5%) might offer value."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Agustin Tirante Thiago",
+        "reasoning": "Tirante has been in good form recently, winning against various opponents. His serve statistics (8.0 aces per match) and break point conversion (42.7%) are strong. The lack of head-to-head history and Norrie's potential overvaluation by the market make Tirante an attractive contrarian pick."
+      }
+    ],
+    "predictions": {
+      "game_handicap": {
+        "favorite_cover_prob": 0.515,
+        "value_side": "underdog",
+        "edge": 0.02,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gemini": 0.48,
+            "gpt4o": 0.55,
+            "claude": 0.45,
+            "maverick": 0.55,
+            "kimi": 0.44,
+            "deepseek": 0.55
+          }
+        }
+      },
+      "total_games": {
+        "projected_games": 22.0,
+        "over_prob": 0.55,
+        "under_prob": 0.45,
+        "value_side": "over",
+        "edge": 0.02,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "over_prob": {
+            "gemini": 0.55,
+            "gpt4o": 0.52,
+            "claude": 0.55,
+            "maverick": 0.52,
+            "kimi": 0.56,
+            "deepseek": 0.55
+          },
+          "under_prob": {
+            "gemini": 0.45,
+            "gpt4o": 0.48,
+            "claude": 0.45,
+            "maverick": 0.48,
+            "kimi": 0.44,
+            "deepseek": 0.45
+          },
+          "projected_games": {
+            "gemini": 23.5,
+            "gpt4o": 22.5,
+            "claude": 21.5,
+            "maverick": 21.5,
+            "kimi": 23.2,
+            "deepseek": 21.0
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Cameron Norrie",
+        "score": "6-4 6-3"
+      },
+      "key_factors": [
+        "serve advantage for Norrie",
+        "similar return statistics",
+        "Norrie's slightly higher surface Elo",
+        "Tirante's strong serve and break point conversion"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 31,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 2,
+        "soft": 1,
+        "none": 0
+      },
+      "killed": [
+        "moneyline"
+      ],
+      "challenger_verdicts": {
+        "moneyline": "kill",
+        "game_handicap": "approve",
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "gemini": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "gpt4o": {
+          "runs": 7,
+          "weight_sum": 3.6
+        },
+        "claude": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "maverick": {
+          "runs": 7,
+          "weight_sum": 3.9
+        },
+        "kimi": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 7,
+          "weight_sum": 1.6
+        }
+      },
+      "cost_usd": 0.3088
+    },
+    "ensemble_runs": 1
+  },
+  "D. Prizmic vs T. M. Etcheverry": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Martin Etcheverry Tomas",
+        "reasoning": "Etcheverry's serve stats are slightly better with a higher first serve percentage (64.5% vs 59.1%) and significantly fewer double faults per match (1.7 vs 3.0). While Prizmic has a higher 1st serve won percentage, Etcheverry's consistency and lower DFs suggest more reliable hold potential, especially against a strong returner."
+      },
+      {
+        "role": "return",
+        "pick": "Dino Prizmic",
+        "reasoning": "Prizmic's return game is notably stronger, winning 40.4% of return points compared to Etcheverry's 34.9%. His break point conversion rate is also higher (40.8% vs 37.7%). This indicates Prizmic is more adept at neutralizing serves and creating break opportunities, which is crucial in tight matches."
+      },
+      {
+        "role": "surface",
+        "pick": "Martin Etcheverry Tomas",
+        "reasoning": "While both players have 0-0 surface records for the season, Etcheverry's overall Elo rating is higher, suggesting a more established game on hard courts. Prizmic's surface Elo is lower than his overall Elo, indicating he might be less comfortable on hard courts, or at least has less proven success on this surface historically."
+      },
+      {
+        "role": "form",
+        "pick": "Martin Etcheverry Tomas",
+        "reasoning": "Etcheverry's recent form is impressive, with wins against strong opponents like Tommy Paul and Grigor Dimitrov. His season record of 18-9 is also solid. Prizmic has a good season record, but the names of his opponents in his recent matches are generally lower-ranked, making Etcheverry's form appear more robust against higher competition."
+      },
+      {
+        "role": "market",
+        "pick": "Dino Prizmic",
+        "reasoning": "The market has Etcheverry as a slight favorite at -128 (53.1% implied probability) against Prizmic at +105 (46.9%). Given Prizmic's strong return game and recent match wins (even if against lower-ranked players), this match could be closer than implied. Prizmic at +105 offers potential value as an underdog, especially if his return game can disrupt Etcheverry's serve."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Dino Prizmic",
+        "reasoning": "Etcheverry's recent form is strong, but he's also faced a heavy match load. Prizmic, despite a lower ranking, is a young player (20) with significant upside and a strong season record. His ability to win return points and convert break points could expose Etcheverry's second serve vulnerability (55.3% 2nd won). The market might be overvaluing Etcheverry's ranking and recent wins against established players, overlooking Prizmic's potential to cause an upset with his aggressive return game."
+      }
+    ],
+    "predictions": {
+      "game_handicap": {
+        "favorite_cover_prob": 0.525,
+        "value_side": "none",
+        "edge": 0.0,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gpt4o": 0.54,
+            "gemini": 0.53,
+            "claude": 0.45,
+            "maverick": 0.55,
+            "deepseek": 0.52,
+            "kimi": 0.52
+          }
+        }
+      },
+      "total_games": {
+        "projected_games": 22.5,
+        "over_prob": 0.535,
+        "under_prob": 0.465,
+        "value_side": "none",
+        "edge": 0.0,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "over_prob": {
+            "gpt4o": 0.51,
+            "gemini": 0.55,
+            "claude": 0.55,
+            "maverick": 0.52,
+            "deepseek": 0.5,
+            "kimi": 0.56
+          },
+          "under_prob": {
+            "gpt4o": 0.49,
+            "gemini": 0.45,
+            "claude": 0.45,
+            "maverick": 0.48,
+            "deepseek": 0.5,
+            "kimi": 0.44
+          },
+          "projected_games": {
+            "gpt4o": 22.5,
+            "gemini": 23.5,
+            "claude": 22.5,
+            "maverick": 21.5,
+            "deepseek": 21.0,
+            "kimi": 22.8
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Martin Etcheverry Tomas",
+        "score": "7-6 4-6 6-4"
+      },
+      "key_factors": [
+        "Prizmic's strong return game vs. Etcheverry's reliable serve",
+        "Etcheverry's superior recent form against higher-ranked opponents",
+        "Prizmic's potential as an upset candidate due to youth and aggressive play",
+        "Etcheverry's lower double fault rate and higher first serve percentage"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 27,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 1,
+        "soft": 1,
+        "none": 1
+      },
+      "killed": [],
+      "challenger_verdicts": {
+        "moneyline": "approve",
+        "game_handicap": "approve",
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "gpt4o": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "gemini": {
+          "runs": 7,
+          "weight_sum": 3.3
+        },
+        "claude": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "maverick": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 7,
+          "weight_sum": 3.0
+        },
+        "kimi": {
+          "runs": 3,
+          "weight_sum": 3.0
+        }
+      },
+      "cost_usd": 0.2676
+    },
+    "ensemble_runs": 1
+  },
+  "V. Kopriva vs A. Rinderknech": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Arthur Rinderknech",
+        "reasoning": "Rinderknech has a higher first serve percentage (67.7% vs 63.4%) and wins more points on his first serve (74.7% vs 69.1%). He also averages more aces per match (9.8 vs 4.2), indicating a stronger serve."
+      },
+      {
+        "role": "return",
+        "pick": "Vit Kopriva",
+        "reasoning": "Kopriva has a higher return points won percentage (39.4% vs 32.1%) and a higher break point conversion rate (45.7% vs 35.0%), suggesting he is more effective at breaking his opponent's serve."
+      },
+      {
+        "role": "surface",
+        "pick": "Arthur Rinderknech",
+        "reasoning": "Both players are on a hard court, but Rinderknech has a higher surface Elo (1630 vs 1550), indicating he is more suited to this surface. Rinderknech's stronger serve will also be an advantage on hard courts."
+      },
+      {
+        "role": "form",
+        "pick": "Vit Kopriva",
+        "reasoning": "Kopriva has a slightly better season record (14-9 vs 8-9) and has won more of his recent matches. He also has a more consistent recent form, with 7 wins in his last 10 matches."
+      },
+      {
+        "role": "market",
+        "pick": "Arthur Rinderknech",
+        "reasoning": "The market has Rinderknech as the favorite at -140, which is in line with our assessment of his stronger serve and surface Elo. However, Kopriva's return game and recent form suggest that the odds may not fully reflect his chances."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Vit Kopriva",
+        "reasoning": "Kopriva's return game and recent form are being undervalued by the market. If he can capitalize on Rinderknech's relatively low break point conversion rate against (35.0%), he may be able to pull off an upset."
+      }
+    ],
+    "predictions": {
+      "game_handicap": {
+        "favorite_cover_prob": 0.535,
+        "value_side": "underdog",
+        "edge": 0.05,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gpt4o": 0.52,
+            "gemini": 0.55,
+            "maverick": 0.6,
+            "claude": 0.45,
+            "kimi": 0.44,
+            "deepseek": 0.6
+          }
+        }
+      },
+      "total_games": {
+        "projected_games": 22.0,
+        "over_prob": 0.53,
+        "under_prob": 0.47,
+        "value_side": "over",
+        "edge": 0.02,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "over_prob": {
+            "gpt4o": 0.52,
+            "gemini": 0.52,
+            "maverick": 0.55,
+            "claude": 0.52,
+            "kimi": 0.54,
+            "deepseek": 0.55
+          },
+          "under_prob": {
+            "gpt4o": 0.48,
+            "gemini": 0.48,
+            "maverick": 0.45,
+            "claude": 0.48,
+            "kimi": 0.46,
+            "deepseek": 0.45
+          },
+          "projected_games": {
+            "gpt4o": 22.5,
+            "gemini": 22.5,
+            "maverick": 21.5,
+            "claude": 21.5,
+            "kimi": 22.5,
+            "deepseek": 21.5
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Arthur Rinderknech",
+        "score": "6-4 7-5"
+      },
+      "key_factors": [
+        "Rinderknech's stronger serve",
+        "Kopriva's effective return game",
+        "Surface Elo advantage for Rinderknech"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 31,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 1,
+        "soft": 1,
+        "none": 1
+      },
+      "killed": [],
+      "challenger_verdicts": {
+        "moneyline": "approve",
+        "game_handicap": "approve",
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "gpt4o": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "gemini": {
+          "runs": 7,
+          "weight_sum": 3.3
+        },
+        "maverick": {
+          "runs": 7,
+          "weight_sum": 3.6
+        },
+        "claude": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "kimi": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 7,
+          "weight_sum": 2.2
+        }
+      },
+      "cost_usd": 0.2567
+    },
+    "ensemble_runs": 1
+  },
+  "S. Sierra vs Z. Sonmez": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Zeynep Sonmez",
+        "reasoning": "Zeynep Sonmez has a slightly higher first serve percentage (61.5% vs 59.2%) and wins more points on her first serve (61.1% vs 58.5%). Both players have similar second serve win percentages, but Sonmez's overall serve statistics appear more robust."
+      },
+      {
+        "role": "return",
+        "pick": "Zeynep Sonmez",
+        "reasoning": "Zeynep Sonmez wins more return points (47.8% vs 38.3%) and has a similar break point conversion rate to Solana Sierra (48.3% vs 48.8%). Sonmez's return game is more effective at neutralizing opponents' serves."
+      },
+      {
+        "role": "surface",
+        "pick": "Zeynep Sonmez",
+        "reasoning": "Both players are on a hard court surface, which is considered neutral for both. However, Zeynep Sonmez has a higher surface Elo rating (1617 vs 1548), indicating she has been more effective on hard courts in the past."
+      },
+      {
+        "role": "form",
+        "pick": "Zeynep Sonmez",
+        "reasoning": "Zeynep Sonmez has a better season record (15-9 vs 6-9) and has won against stronger opponents recently, such as Anna Kalinskaya and Beatriz Haddad Maia. Solana Sierra has also shown strong form but against relatively weaker opponents."
+      },
+      {
+        "role": "market",
+        "pick": "Solana Sierra",
+        "reasoning": "The market odds imply a 60.9% win probability for Zeynep Sonmez, which may be overestimating her advantage. Solana Sierra is priced at +135, offering potential value if her recent form can be sustained against a stronger opponent."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Solana Sierra",
+        "reasoning": "Solana Sierra has been on a strong winning streak, with 8 consecutive wins, including victories against higher-ranked players. Her recent form and momentum could lead to an upset against Zeynep Sonmez, who is not significantly superior in all aspects of the game."
+      }
+    ],
+    "predictions": {
+      "game_handicap": {
+        "favorite_cover_prob": 0.6,
+        "value_side": "underdog",
+        "edge": 0.02,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gemini": 0.6,
+            "claude": 0.65,
+            "gpt4o": 0.6,
+            "maverick": 0.55,
+            "deepseek": 0.7,
+            "kimi": 0.58
+          }
+        }
+      },
+      "total_games": {
+        "projected_games": 20.5,
+        "over_prob": 0.45,
+        "under_prob": 0.55,
+        "value_side": "over",
+        "edge": 0.02,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "over_prob": {
+            "gemini": 0.45,
+            "claude": 0.45,
+            "gpt4o": 0.52,
+            "maverick": 0.52,
+            "deepseek": 0.45,
+            "kimi": 0.45
+          },
+          "under_prob": {
+            "gemini": 0.55,
+            "claude": 0.55,
+            "gpt4o": 0.48,
+            "maverick": 0.48,
+            "deepseek": 0.55,
+            "kimi": 0.55
+          },
+          "projected_games": {
+            "gemini": 21.5,
+            "claude": 19.5,
+            "gpt4o": 20.5,
+            "maverick": 20.5,
+            "deepseek": 19.0,
+            "kimi": 20.5
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Zeynep Sonmez",
+        "score": "6-4 6-7 6-3"
+      },
+      "key_factors": [
+        "Zeynep Sonmez's stronger serve and return statistics",
+        "Solana Sierra's recent winning streak and potential for an upset",
+        "Both players' similar break point conversion rates"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 27,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 2,
+        "soft": 1,
+        "none": 0
+      },
+      "killed": [
+        "moneyline"
+      ],
+      "challenger_verdicts": {
+        "moneyline": "kill",
+        "game_handicap": "approve",
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "gemini": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "claude": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "gpt4o": {
+          "runs": 7,
+          "weight_sum": 2.9
+        },
+        "maverick": {
+          "runs": 7,
+          "weight_sum": 3.6
+        },
+        "deepseek": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "kimi": {
+          "runs": 3,
+          "weight_sum": 3.0
+        }
+      },
+      "cost_usd": 0.2232
+    },
+    "ensemble_runs": 1
+  }
+}

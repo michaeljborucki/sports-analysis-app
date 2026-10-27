@@ -1,0 +1,482 @@
+{
+  "A. Li vs L. Fernandez": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Ann Li",
+        "reasoning": "Ann Li has a solid serve with a first serve percentage of 59.8% and an ace potential of 5.7 per match. Lya Fernandez lacks recent match data, making her serve quality uncertain."
+      },
+      {
+        "role": "return",
+        "pick": "Ann Li",
+        "reasoning": "Ann Li has shown effective return skills with 41.2% points won on return and a break point conversion rate of 47.5%. Lya Fernandez's return game is unknown due to lack of recent data."
+      },
+      {
+        "role": "surface",
+        "pick": "Ann Li",
+        "reasoning": "Ann Li's surface Elo is higher at 1585 compared to Lya Fernandez's 1500. The hard outdoor surface should favor Ann Li's game style more, given her more recent match experience."
+      },
+      {
+        "role": "form",
+        "pick": "Ann Li",
+        "reasoning": "Ann Li is match-fit with recent competitive play, whereas Lya Fernandez hasn't played in 999 days, making her form and fitness highly questionable."
+      },
+      {
+        "role": "market",
+        "pick": "Ann Li",
+        "reasoning": "The betting market seems to undervalue Ann Li's chances given her recent play and Lya Fernandez's long absence. There could be value in backing Ann Li at her current odds."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Lya Fernandez",
+        "reasoning": "Despite the long absence, Lya Fernandez could be a surprise package if she has been training effectively off the radar. The element of the unknown could work in her favor."
+      }
+    ],
+    "predictions": {
+      "game_handicap": {
+        "favorite_cover_prob": 0.435,
+        "value_side": "underdog",
+        "edge": 0.12,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gpt4o": 0.48,
+            "gemini": 0.35,
+            "claude": 0.45,
+            "maverick": 0.55,
+            "kimi": 0.42,
+            "deepseek": 0.35
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Ann Li",
+        "score": "6-4 6-3"
+      },
+      "key_factors": [
+        "Ann Li's recent match experience",
+        "Lya Fernandez's long absence from competition",
+        "Surface advantage for Ann Li"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 7,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 2,
+        "soft": 0,
+        "none": 1
+      },
+      "killed": [
+        "moneyline"
+      ],
+      "challenger_verdicts": {
+        "moneyline": "kill",
+        "game_handicap": "approve"
+      },
+      "model_contributions": {
+        "gpt4o": {
+          "runs": 1,
+          "weight_sum": 3.0
+        },
+        "gemini": {
+          "runs": 1,
+          "weight_sum": 3.0
+        },
+        "claude": {
+          "runs": 1,
+          "weight_sum": 3.0
+        },
+        "maverick": {
+          "runs": 1,
+          "weight_sum": 3.0
+        },
+        "kimi": {
+          "runs": 1,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 1,
+          "weight_sum": 3.0
+        }
+      },
+      "cost_usd": 0.0592
+    },
+    "ensemble_runs": 1
+  },
+  "A. Davidovich Fokina vs C. Ruud": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Casper Ruud",
+        "reasoning": "Ruud's higher ace count and slightly better second serve points won percentage make him a stronger server overall. His serve should perform well against Davidovich Fokina's return skills."
+      },
+      {
+        "role": "return",
+        "pick": "Alejandro Davidovich Fokina",
+        "reasoning": "Davidovich Fokina has a higher break point conversion rate and better return points won percentage, giving him an edge in neutralizing Ruud's serve."
+      },
+      {
+        "role": "surface",
+        "pick": "Casper Ruud",
+        "reasoning": "Both players have similar hard court records, but Ruud's overall game adaptability gives him a slight edge on outdoor hard courts."
+      },
+      {
+        "role": "form",
+        "pick": "Alejandro Davidovich Fokina",
+        "reasoning": "Davidovich Fokina's recent results indicate he is in good form, with several straight-set wins. He appears to be peaking at the right time."
+      },
+      {
+        "role": "market",
+        "pick": "none",
+        "reasoning": "The betting market seems to accurately reflect the probabilities, with no significant value on either side given the players' comparable form and head-to-head record."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Alejandro Davidovich Fokina",
+        "reasoning": "Davidovich Fokina's aggressive playstyle and recent form may trouble Ruud, who has had issues closing matches against strong returners."
+      }
+    ],
+    "predictions": {
+      "moneyline": {
+        "player_a_win_prob": 0.4,
+        "player_b_win_prob": 0.6,
+        "value_side": "none",
+        "edge": 0.0,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "player_a_win_prob": {
+            "gpt4o": 0.4,
+            "gemini": 0.38,
+            "maverick": 0.4,
+            "claude": 0.42,
+            "kimi": 0.425,
+            "deepseek": 0.35
+          },
+          "player_b_win_prob": {
+            "gpt4o": 0.6,
+            "gemini": 0.62,
+            "maverick": 0.6,
+            "claude": 0.58,
+            "kimi": 0.575,
+            "deepseek": 0.65
+          }
+        }
+      },
+      "game_handicap": {
+        "favorite_cover_prob": 0.55,
+        "value_side": "none",
+        "edge": 0.0,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gpt4o": 0.55,
+            "gemini": 0.55,
+            "maverick": 0.55,
+            "claude": 0.48,
+            "kimi": 0.455,
+            "deepseek": 0.6
+          }
+        }
+      },
+      "total_games": {
+        "projected_games": 22.0,
+        "over_prob": 0.52,
+        "under_prob": 0.48,
+        "value_side": "none",
+        "edge": 0.0,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "over_prob": {
+            "gpt4o": 0.52,
+            "gemini": 0.52,
+            "maverick": 0.52,
+            "claude": 0.55,
+            "kimi": 0.575,
+            "deepseek": 0.52
+          },
+          "under_prob": {
+            "gpt4o": 0.48,
+            "gemini": 0.48,
+            "maverick": 0.48,
+            "claude": 0.45,
+            "kimi": 0.425,
+            "deepseek": 0.48
+          },
+          "projected_games": {
+            "gpt4o": 22.5,
+            "gemini": 23.5,
+            "maverick": 21.5,
+            "claude": 21.5,
+            "kimi": 23.35,
+            "deepseek": 21.0
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Casper Ruud",
+        "score": "6-4 6-3"
+      },
+      "key_factors": [
+        "Ruud's superior serve performance",
+        "Davidovich Fokina's strong return game",
+        "Current form and recent match performance"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 26,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 3,
+        "soft": 0,
+        "none": 0
+      },
+      "killed": [],
+      "challenger_verdicts": {
+        "moneyline": "approve",
+        "game_handicap": "approve",
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "gpt4o": {
+          "runs": 7,
+          "weight_sum": 3.0
+        },
+        "gemini": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "maverick": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "claude": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "kimi": {
+          "runs": 2,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 7,
+          "weight_sum": 2.2
+        }
+      },
+      "cost_usd": 0.284
+    },
+    "ensemble_runs": 1
+  },
+  "F. Cerundolo vs L. Darderi": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 6,
+      "cost_usd": 0.0718
+    }
+  },
+  "D. Medvedev vs N. Budkov Kjaer": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 6,
+      "cost_usd": 0.0721
+    }
+  },
+  "A. Blockx vs F. Auger-Aliassime": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 6,
+      "cost_usd": 0.0562
+    }
+  },
+  "D. Vallejo vs F. Cobolli": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 5,
+      "cost_usd": 0.0498
+    }
+  },
+  "L. Noskova vs C. Gauff": {
+    "analyst_assessments": [
+      {
+        "role": "serve",
+        "pick": "Linda Noskova",
+        "reasoning": "Noskova's serve is slightly more reliable with a higher first serve win percentage. Gauff struggles with double faults, which could be exploited."
+      },
+      {
+        "role": "return",
+        "pick": "Coco Gauff",
+        "reasoning": "Gauff has a superior return game, winning a higher percentage of return points and having a better break point conversion rate."
+      },
+      {
+        "role": "surface",
+        "pick": "Coco Gauff",
+        "reasoning": "Gauff's game is well-suited to hard courts, with strong baseline play and athleticism that can be advantageous on this surface."
+      },
+      {
+        "role": "form",
+        "pick": "Coco Gauff",
+        "reasoning": "Gauff has shown better form against top players recently, with wins over Sabalenka and Bencic, indicating higher competitive sharpness."
+      },
+      {
+        "role": "market",
+        "pick": "Coco Gauff",
+        "reasoning": "The market slightly favors Noskova, but Gauff's recent form and return game suggest potential value in backing her."
+      },
+      {
+        "role": "contrarian",
+        "pick": "Linda Noskova",
+        "reasoning": "Noskova's recent upset wins, including against Sabalenka, show she can perform well against top players, and Gauff's potential vulnerability on second serve could be a factor."
+      }
+    ],
+    "predictions": {
+      "game_handicap": {
+        "favorite_cover_prob": 0.52,
+        "value_side": "none",
+        "edge": 0.02,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "favorite_cover_prob": {
+            "gemini": 0.53,
+            "gpt4o": 0.5,
+            "claude": 0.52,
+            "maverick": 0.52,
+            "kimi": 0.44,
+            "deepseek": 0.525
+          }
+        }
+      },
+      "total_games": {
+        "projected_games": 22.5,
+        "over_prob": 0.55,
+        "under_prob": 0.45,
+        "value_side": "under",
+        "edge": 0.04,
+        "confidence": "medium",
+        "_per_model_medians": {
+          "over_prob": {
+            "gemini": 0.53,
+            "gpt4o": 0.55,
+            "claude": 0.58,
+            "maverick": 0.55,
+            "kimi": 0.58,
+            "deepseek": 0.51
+          },
+          "under_prob": {
+            "gemini": 0.47,
+            "gpt4o": 0.45,
+            "claude": 0.42,
+            "maverick": 0.45,
+            "kimi": 0.42,
+            "deepseek": 0.49
+          },
+          "projected_games": {
+            "gemini": 22.5,
+            "gpt4o": 22.5,
+            "claude": 21.5,
+            "maverick": 21.5,
+            "kimi": 22.5,
+            "deepseek": 23.775
+          }
+        }
+      },
+      "predicted_result": {
+        "winner": "Coco Gauff",
+        "score": "6-4 6-3"
+      },
+      "key_factors": [
+        "Gauff's superior return game",
+        "Noskova's recent victory over top players",
+        "Gauff's double fault issues"
+      ]
+    },
+    "ensemble_meta": {
+      "total_calls": 34,
+      "phase_reached": 3,
+      "consensus": {
+        "strong": 1,
+        "soft": 2,
+        "none": 0
+      },
+      "killed": [
+        "moneyline"
+      ],
+      "challenger_verdicts": {
+        "moneyline": "kill",
+        "game_handicap": "approve",
+        "total_games": "approve"
+      },
+      "model_contributions": {
+        "gemini": {
+          "runs": 7,
+          "weight_sum": 3.3
+        },
+        "gpt4o": {
+          "runs": 7,
+          "weight_sum": 3.6
+        },
+        "claude": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "maverick": {
+          "runs": 7,
+          "weight_sum": 2.6
+        },
+        "kimi": {
+          "runs": 3,
+          "weight_sum": 3.0
+        },
+        "deepseek": {
+          "runs": 6,
+          "weight_sum": 2.5
+        }
+      },
+      "cost_usd": 0.3489
+    },
+    "ensemble_runs": 1
+  },
+  "K. Khachanov vs J. Mensik": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 6,
+      "cost_usd": 0.0678
+    }
+  },
+  "T. Atmane vs A. Zverev": {
+    "analyst_assessments": [],
+    "predictions": {},
+    "ensemble_runs": 1,
+    "ensemble_meta": {
+      "abstained": true,
+      "abstain_reason": "no_consensus",
+      "phase_reached": 1,
+      "total_calls": 6,
+      "cost_usd": 0.0724
+    }
+  }
+}

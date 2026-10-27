@@ -1,0 +1,42 @@
+
+============================================================
+  MAINLINE BET CARD — 2026-04-25
+  13 picks across 7 games
+============================================================
+
+  BOS@BAL — 12:05 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  -104 | Mkt: 49.9% | Model: 56.6% | Edge:  6.8% | Kelly:  2.88% | BE:  -125
+
+  SEA@STL — 2:15 PM ET
+  ----------------------------------------
+    team_total_home    | home under 3.5       |  -125 | Mkt: 54.7% | Model: 71.8% | Edge: 15.0% | Kelly:  7.94% | BE:  -245
+
+  CLE@TOR — 3:07 PM ET
+  ----------------------------------------
+    team_total_home    | home under 3.5       |  +102 | Mkt: 47.5% | Model: 55.5% | Edge:  7.9% | Kelly:  2.95% | BE:  -115
+    run_line           | home -1.5            |  +156 | Mkt: 38.6% | Model: 46.4% | Edge:  7.8% | Kelly:  3.02% | BE:  +110
+
+  MIN@TB — 4:10 PM ET
+  ----------------------------------------
+    team_total_home    | home under 4.5       |  -133 | Mkt: 55.4% | Model: 65.4% | Edge: 10.1% | Kelly:  4.86% | BE:  -180
+    run_line           | home -1.5            |  +166 | Mkt: 37.1% | Model: 44.1% | Edge:  7.0% | Kelly:  2.61% | BE:  +120
+    team_total_away    | away under 3.5       |  +110 | Mkt: 46.0% | Model: 52.9% | Edge:  7.0% | Kelly:  2.54% | BE:  -105
+
+  MIA@SF — 4:05 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  +100 | Mkt: 48.1% | Model: 56.6% | Edge:  8.5% | Kelly:  3.31% | BE:  -125
+    team_total_home    | home under 3.5       |  -104 | Mkt: 49.3% | Model: 56.9% | Edge:  7.6% | Kelly:  3.02% | BE:  -125
+
+  WSH@CWS — 4:10 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  +104 | Mkt: 47.2% | Model: 52.9% | Edge:  5.8% | Kelly:  1.92% | BE:  -105
+
+  SD@ARI — 6:05 PM ET
+  ----------------------------------------
+    total              | under 16.0           |  -105 | Mkt: 50.4% | Model: 100.0% | Edge: 15.0% | Kelly:  7.25% | BE:  LOCK
+    team_total_home    | home under 7.5       |  +105 | Mkt: 47.4% | Model: 72.9% | Edge: 15.0% | Kelly:  6.65% | BE:  -260
+    nrfi               | NRFI                 |  +200 | Mkt: 31.3% | Model: 46.9% | Edge: 15.0% | Kelly:  4.86% | BE:  +105
+
+  Status: Pending
+============================================================

@@ -1,0 +1,44 @@
+
+============================================================
+  MAINLINE BET CARD — 2026-05-29
+  15 picks across 7 games
+============================================================
+
+  BOS@CLE — 7:10 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  +109 | Mkt: 46.6% | Model: 57.1% | Edge: 10.5% | Kelly:  4.45% | BE:  -125
+    moneyline          | home                 |  -118 | Mkt: 54.5% | Model: 57.6% | Edge:  3.0% | Kelly:  1.88% | BE:  -130
+
+  TOR@BAL — 7:05 PM ET
+  ----------------------------------------
+    first_5_rl         | away +0.5            |  -130 | Mkt: 55.1% | Model: 61.5% | Edge:  6.5% | Kelly:  2.89% | BE:  -155
+    moneyline          | away                 |  +108 | Mkt: 48.4% | Model: 51.9% | Edge:  3.5% | Kelly:  1.82% | BE:  -100
+
+  CHC@STL — 7:15 PM ET
+  ----------------------------------------
+    first_5_rl         | home +0.5            |  -130 | Mkt: 55.1% | Model: 62.4% | Edge:  7.4% | Kelly:  3.40% | BE:  -160
+
+  KC@TEX — 8:05 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  -102 | Mkt: 49.6% | Model: 57.1% | Edge:  7.5% | Kelly:  3.36% | BE:  -125
+
+  MIN@PIT — 6:45 PM ET
+  ----------------------------------------
+    first_5_rl         | away +0.5            |  -120 | Mkt: 53.2% | Model: 71.0% | Edge: 15.0% | Kelly:  7.49% | BE:  -235
+    team_total_away    | away under 3.5       |  +106 | Mkt: 47.0% | Model: 56.4% | Edge:  9.4% | Kelly:  3.82% | BE:  -120
+    run_line           | home -1.5            |  +166 | Mkt: 37.5% | Model: 44.1% | Edge:  6.6% | Kelly:  2.62% | BE:  +120
+    nrfi               | NRFI                 |  -115 | Mkt: 52.4% | Model: 58.4% | Edge:  6.1% | Kelly:  2.66% | BE:  -135
+    total              | under 8.0            |  +100 | Mkt: 48.8% | Model: 54.8% | Edge:  6.0% | Kelly:  2.38% | BE:  -115
+
+  MIA@NYM — 7:10 PM ET
+  ----------------------------------------
+    team_total_away    | away under 3.5       |  -102 | Mkt: 49.0% | Model: 56.4% | Edge:  7.4% | Kelly:  2.99% | BE:  -120
+
+  MIL@HOU — 8:10 PM ET
+  ----------------------------------------
+    first_5_rl         | home +0.5            |  -128 | Mkt: 54.9% | Model: 61.4% | Edge:  6.6% | Kelly:  3.01% | BE:  -150
+    team_total_away    | away under 4.5       |  -114 | Mkt: 51.7% | Model: 56.8% | Edge:  5.2% | Kelly:  1.90% | BE:  -125
+    moneyline          | home                 |  +126 | Mkt: 43.6% | Model: 46.9% | Edge:  3.4% | Kelly:  1.21% | BE:  +105
+
+  Status: Pending
+============================================================

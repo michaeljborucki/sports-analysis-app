@@ -1,0 +1,50 @@
+{
+  "label": "2026-04-19",
+  "generated_at": "2026-04-19T03:17:32",
+  "total_picks": 2,
+  "total_matches": 2,
+  "record": {
+    "wins": 0,
+    "losses": 0,
+    "pushes": 0,
+    "settled": 0,
+    "pending": 2,
+    "profit_units": 0.0
+  },
+  "picks": [
+    {
+      "date": "2026-04-19",
+      "start_time": "2026-04-19 13:30",
+      "game": "F. Cobolli vs B. Shelton",
+      "player_a": "F. Cobolli",
+      "player_b": "B. Shelton",
+      "bet_type": "moneyline",
+      "side": "B. Shelton",
+      "side_raw": "player_b",
+      "odds": -125,
+      "sim_prob": 0.58,
+      "market_prob": 0.5214,
+      "edge": 0.0586,
+      "kelly_pct": 0.0096,
+      "result": null,
+      "profit": null
+    },
+    {
+      "date": "2026-04-19",
+      "start_time": "2026-04-19 16:00",
+      "game": "A. Rublev vs A. Fils",
+      "player_a": "A. Rublev",
+      "player_b": "A. Fils",
+      "bet_type": "moneyline",
+      "side": "A. Rublev",
+      "side_raw": "player_a",
+      "odds": 196,
+      "sim_prob": 0.43,
+      "market_prob": 0.31,
+      "edge": 0.12,
+      "kelly_pct": 0.0244,
+      "result": null,
+      "profit": null
+    }
+  ]
+}
